@@ -55,14 +55,14 @@ import string
 import os
 
 # The following points to the location of exodus.py
-path_to_exodus_py = '/usr/local/bin/trilinos/lib'
+path_to_exodus_py = '/usr/local/src/seacas/lib/'
 
 # The path above must also point to the netcdf libraries.  These libraries are not generally included in
 # the Trilinos install.  One solution is to create symbolic links in this directory that point to the
 # netcdf libraries (which you built as a TPL for Trilinos)
 
-sys.path.append("/Users/djlittl/Software/seacas/GCC_4.9.4_THREAD_SAFE/lib")
-import exodus
+sys.path.append(path_to_exodus_py)
+import exodus2 as exodus
 
 def read_line(file):
     """Scans the input file and ignores lines starting with a '#' or '\n'."""
