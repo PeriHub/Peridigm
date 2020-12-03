@@ -4895,7 +4895,8 @@ void PeridigmNS::Peridigm::writeRestart(Teuchos::RCP<Teuchos::ParameterList> sol
 
   double timeInitial = solverParams->get("Initial Time", 0.0);
   if(peridigmComm->MyPID() == 0)
-      if (currentTime != timeInitial){
+      if(std::abs(currentTime-timeInitial)>1e-10){
+      //if (currentTime != timeInitial){
           char timeError[251];
           sprintf(timeError, "Error, Incompatible times:\nPrevious restart final time is %e, while initial time is %e.\n",currentTime,timeInitial);
           TEUCHOS_TEST_FOR_EXCEPT_MSG(true,timeError);

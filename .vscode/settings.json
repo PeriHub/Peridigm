@@ -1,0 +1,16 @@
+{
+    "files.associations": {
+        "unordered_set": "cpp"
+    },
+    "cmake.buildDirectory": "/usr/local/src/peridigmVsBuild/",
+    "cmake.configureSettings": { 
+        "CMAKE_BUILD_TYPE":"Debug",
+        "Trilinos_DIR":"/usr/local/bin/trilinos/lib/cmake/Trilinos/",
+        "CMAKE_C_COMPILER":"/usr/local/lib/openmpi/bin/mpicc",
+        "CMAKE_CXX_COMPILER":"/usr/local/lib/openmpi/bin/mpicxx",
+        "BOOST_ROOT":"/usr/local/lib/boost/",
+        "CMAKE_CXX_FLAGS":"-O2 -Wall -std=c++11 -pedantic -Wno-long-long -ftrapv -Wno-deprecated",
+        "CMAKE_INSTALL_PREFIX": "/home/jt"
+    },
+    "python.pythonPath": "/usr/local/bin/python"
+}
