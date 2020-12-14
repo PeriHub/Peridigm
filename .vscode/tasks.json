@@ -18,6 +18,18 @@
             ],
             "group": "build",
             "detail": "Generated task by Debugger"
+        },
+        {
+            "label": "removeRestartFolder",
+            "type": "shell",
+            "command": "rm -Rf ~/peridigmJobs/waviness/constantWaviness/meshResolution80/restart-000002/"
+        },
+        {
+            "label": "RemoveAndBuild",
+            "dependsOn": [
+                "removeRestartFolder",
+                "C/C++: g++ build active file"
+            ]
         }
     ],
     "version": "2.0.0"
