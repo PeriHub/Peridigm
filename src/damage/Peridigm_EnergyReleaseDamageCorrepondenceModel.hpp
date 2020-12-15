@@ -105,7 +105,6 @@ namespace PeridigmNS {
                        const int* neighborhoodList,
                        PeridigmNS::DataManager& dataManager) const ;
         
-    PeridigmNS::InfluenceFunction::functionPointer m_OMEGA;
         
     protected:
         //! Computes the distance between nodes (a1, a2, a3) and (b1, b2, b3).
@@ -130,20 +129,20 @@ namespace PeridigmNS {
     std::vector<int> m_fieldIds;
     int m_modelCoordinatesFieldId;
     int m_coordinatesFieldId;
+    int m_volumeFieldId;
+    int m_weightedVolumeFieldId;
+    int m_dilatationFieldId;
     int m_damageFieldId;    
     int m_bondDamageFieldId;
-    int m_deltaTemperatureFieldId;
-    int m_volumeFieldId;
-    int m_dilatationFieldId;
-    int m_weightedVolumeFieldId;
     double m_horizon;
     int m_horizonFieldId;
-    int m_detachedNodesFieldId;
+    int m_deltaTemperatureFieldId;
     bool m_plane;
     bool detachedNodesCheck;
     int m_piolaStressTimesInvShapeTensorXId;
     int m_piolaStressTimesInvShapeTensorYId;
     int m_piolaStressTimesInvShapeTensorZId;
+    int m_detachedNodesFieldId;
     int m_forceDensityFieldId;
     int m_netdamageFieldId;
     int m_deformationGradientFieldId;
@@ -156,6 +155,8 @@ namespace PeridigmNS {
     double m_hourglassCoefficient;
     double degradationFactor;
     bool m_incremental;
+
+    PeridigmNS::InfluenceFunction::functionPointer m_OMEGA;
   };
 
 }

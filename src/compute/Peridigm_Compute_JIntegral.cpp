@@ -130,9 +130,9 @@ int PeridigmNS::Compute_JIntegral::compute( Teuchos::RCP< std::vector<PeridigmNS
 
   // Compute the velocity gradient
   int neighborhoodListIndex = 0;
-  int bondListIndex = 0;
+  //int bondListIndex = 0;
   for(int iID=0 ; iID<numOwnedPoints ; ++iID){
-    double nodeModelCoord[3];
+    /*double nodeModelCoord[3];
     nodeModelCoord[0] = modelCoord[iID*3];
     nodeModelCoord[1] = modelCoord[iID*3+1];
     nodeModelCoord[2] = modelCoord[iID*3+2];
@@ -147,12 +147,12 @@ int PeridigmNS::Compute_JIntegral::compute( Teuchos::RCP< std::vector<PeridigmNS
     double nodeVelocityStepNP1[3];
     nodeVelocityStepNP1[0] = velocityStepNP1[iID*3];
     nodeVelocityStepNP1[1] = velocityStepNP1[iID*3+1];
-    nodeVelocityStepNP1[2] = velocityStepNP1[iID*3+2];
+    nodeVelocityStepNP1[2] = velocityStepNP1[iID*3+2];*/
     double* nodeVelocityGradient = &velocityGradient[iID*9];
     int numNeighbors = neighborhoodList[neighborhoodListIndex++];
     for(int iNID=0 ; iNID<numNeighbors ; ++iNID){
       int neighborID = neighborhoodList[neighborhoodListIndex++];
-      double neighborModelCoord[3];
+      /*double neighborModelCoord[3];
       neighborModelCoord[0] = modelCoord[neighborID*3];
       neighborModelCoord[1] = modelCoord[neighborID*3+1];
       neighborModelCoord[2] = modelCoord[neighborID*3+2];
@@ -167,7 +167,7 @@ int PeridigmNS::Compute_JIntegral::compute( Teuchos::RCP< std::vector<PeridigmNS
       double neighborVelocityStepNP1[3];
       neighborVelocityStepNP1[0] = velocityStepNP1[neighborID*3];
       neighborVelocityStepNP1[1] = velocityStepNP1[neighborID*3+1];
-      neighborVelocityStepNP1[2] = velocityStepNP1[neighborID*3+2];
+      neighborVelocityStepNP1[2] = velocityStepNP1[neighborID*3+2];*/
 
       // COMPUTE AND STORE THE VELOCITY GRADIENT
       // delta t is stored in m_dt, which unfortunately must be passed in through the input deck for now

@@ -647,6 +647,7 @@ namespace PeridigmNS {
     int forceDensityFieldId;
     int contactForceDensityFieldId;
     int externalForceDensityFieldId;
+    int fluidFlowDensityFieldId;
     int damageModelFieldId;
 //    int deviatoricPlasticExtensionFieldId;
     int plasticModelFieldId;
@@ -659,7 +660,6 @@ namespace PeridigmNS {
     int fluidPressureYFieldId;
     int fluidPressureUFieldId;
     int fluidPressureVFieldId;
-    int fluidFlowDensityFieldId;
     int numMultiphysDoFs;
     string textMultiphysDoFs;
 

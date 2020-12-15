@@ -121,7 +121,7 @@ namespace PeridigmNS {
     //              PeridigmNS::DataManager& dataManager) const ;              
                   
 
-        PeridigmNS::InfluenceFunction::functionPointer m_OMEGA;
+   
         
     protected:
         //! Computes the distance between nodes (a1, a2, a3) and (b1, b2, b3).
@@ -139,9 +139,6 @@ namespace PeridigmNS {
     double m_shearModulus; 
     double m_alpha;
     bool m_applyThermalStrains;
-    bool m_planeStrain;
-    bool m_planeStress;
-    bool m_onlyTension;
     bool detachedNodesCheck;
     int m_detachedNodesFieldId;
     // field ids for all relevant data
@@ -157,10 +154,15 @@ namespace PeridigmNS {
     double m_horizon;
     int m_horizonFieldId;
     int m_damageModelFieldId;
+    bool m_planeStrain;
+    bool m_planeStress;
+    bool m_onlyTension;
     int m_type;
+	  bool m_rot;
     double m_Thickness;
-	bool m_rot;
-	double maxRad;
+	  double maxRad;
+
+         PeridigmNS::InfluenceFunction::functionPointer m_OMEGA;
   };
 
 }

@@ -434,6 +434,16 @@ double* detachedNodes
 
     for(int n=0; n<numNeighbors; n++, neighborListPtr++, bondDamage++){
       
+      if(iID==0 && false)
+      {
+      std::cout << "numNeighbors: " << numNeighbors << " modelCoord: " << *modelCoord  << " defGrad: " << *defGrad << " detachedNodes: "<< *detachedNodes << " bondDamage: " << *bondDamage << std::endl;
+      }
+
+      if(*(detachedNodes+iID)!=0)
+      {
+      std::cout << "numNeighbors: " << numNeighbors << " modelCoord: " << *modelCoord  << " defGrad: " << *defGrad << " detachedNodes: "<< *detachedNodes << " bondDamage: " << *bondDamage << std::endl;
+      }
+
       neighborIndex = *neighborListPtr;
 
       neighborVolume = volume[neighborIndex];
@@ -488,7 +498,13 @@ double* detachedNodes
       *(defGradFirstTerm+8) += temp * deformedBondZ * undeformedBondZ;
 
     }
-    
+
+    //DefGradBug
+    if(iID==0 && *(defGradFirstTerm) != *(defGradFirstTerm) )
+    {
+      std::cout << "temp: " << temp << " bondDamage: " << *bondDamage << " omega: " << omega << " neighbourVolume: "<< neighborVolume << std::endl;
+    }
+
     if (*(detachedNodes+iID) == 0) {
         
             if (type==true){
@@ -1327,7 +1343,7 @@ const double* bondDamage
 )
 {
   // S.A. Silling, "Stability of peridynamic correspondence material models and their
- // particle discretizations" in Comput. Methods Appl. Mech. Engrg. 322 (2017) 42–57,http://dx.doi.org/10.1016/j.cma.2017.03.043
+ // particle discretizations" in Comput. Methods Appl. Mech. Engrg. 322 (2017) 42ï¿½57,http://dx.doi.org/10.1016/j.cma.2017.03.043
 
   double undeformedBondX, undeformedBondY, undeformedBondZ, undeformedBondLength;
   ScalarT deformedBondX, deformedBondY, deformedBondZ;

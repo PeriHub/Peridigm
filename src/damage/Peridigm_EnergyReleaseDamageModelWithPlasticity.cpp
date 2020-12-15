@@ -72,22 +72,22 @@ using namespace std;
 PeridigmNS::EnergyReleaseDamageModelWithPlasticity::EnergyReleaseDamageModelWithPlasticity(const Teuchos::ParameterList& params)
 : DamageModel(params), 
 m_applyThermalStrains(false),
-m_modelCoordinatesFieldId(-1),
-m_coordinatesFieldId(-1),
-m_damageFieldId(-1),
-m_bondDamageFieldId(-1),
-m_deltaTemperatureFieldId(-1),
-m_dilatationFieldId(-1),
-m_weightedVolumeFieldId(-1),
-m_horizonFieldId(-1),
-m_damageModelFieldId(-1),
 m_planeStrain(false),
 m_planeStress(false),
 m_onlyTension(false),
-m_Thickness(-1),
-m_damagePlasticModelFieldId(-1),
+m_modelCoordinatesFieldId(-1),
+m_coordinatesFieldId(-1),
+m_deltaTemperatureFieldId(-1),
+m_weightedVolumeFieldId(-1),
+m_dilatationFieldId(-1),
+m_damageFieldId(-1),
+m_bondDamageFieldId(-1),
+m_horizonFieldId(-1),
+m_damageModelFieldId(-1),
 m_deviatoricPlasticExtensionFieldId(-1), 
 m_isotropicPlasticExtensionFieldId(-1),
+m_damagePlasticModelFieldId(-1),
+m_Thickness(-1),
 m_yieldPressure(-1),
 m_pressureSensitive(false),
 m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
@@ -259,29 +259,29 @@ PeridigmNS::EnergyReleaseDamageModelWithPlasticity::computeDamage(const double d
     double totalDamage, totalVol;
     double nodeInitialX[3], nodeCurrentX[3], relativeExtension(0.0);
     double omegaP1, omegaP2;
-    double critIso, factor; 
+    double critIso;//, factor; 
     double degradationFactor = 1.0; // Optional parameter if bond should be degradated and not fully destroyed instantaneously 
     //double avgHorizon;
     double quadhorizon;
-    double eiP1, eiP2, tiP1, tiP2;
-    double edP1, edP2, tdP1, tdP2;
+    double tiP1;//eiP1, eiP2, tiP1, tiP2;
+    double tdP1;//edP1, edP2, tdP1, tdP2;
     double BulkModP1, BulkModP2;
     double ShearModP1, ShearModP2;
     double bondEnergy(0);
-    double gammaP1 = 1.0, gammaP2 = 1.0;
+    double gammaP2 = 1.0, gammaP1 = 1.0;
     double alphaP1 = 0.0, kappaP2 = 0.0;
     double kappaP1 = 0.0, alphaP2 = 0.0;
-    double tdNormP1=0.0, tdNormP2=0.0;
+    //double tdNormP1=0.0, tdNormP2=0.0;
     double dilatationP1, dilatationP2;
-    double deltaLambdaP1, deltaLambdaP2;
-    bool   elasticP1, elasticP2;
-    double flowFunction;
-    double t0P1, t0P2, betaP1, betaP2, psiP1, psiP2;
-    double pTrialP1, pTrialP2;
-    double weightedVolP1, weightedVolP2, KP1, KP2;
-    double edpP1, edpP2, eipP1, eipP2, pN1;
-    double tdTrialP1, tiTrialP1, tdTrialP2, tiTrialP2;
-    double edpNp1P1, edpNp1P2, eipNp1P1(0.0), eipNp1P2(0.0);
+    //double deltaLambdaP1, deltaLambdaP2;
+    //bool   elasticP1, elasticP2;
+    //double flowFunction;
+    //double t0P1, t0P2, betaP1, betaP2, psiP1, psiP2;
+    //double pTrialP1, pTrialP2;
+    double weightedVolP1, weightedVolP2, KP1;//, KP2;
+    double edpP1, edpP2;//, eipP1, eipP2, pN1;
+    //double tdTrialP1, tiTrialP1, tdTrialP2, tiTrialP2;
+    //double edpNp1P1, edpNp1P2, eipNp1P1(0.0), eipNp1P2(0.0);
     double zeta, dY, eP;
     double avgHorizon;
     //double m_Thickness;

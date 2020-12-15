@@ -65,11 +65,11 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::EnergyReleaseDamageCorreponde
 m_applyThermalStrains(false),
 m_modelCoordinatesFieldId(-1),
 m_coordinatesFieldId(-1),
+m_weightedVolumeFieldId(-1),
+m_dilatationFieldId(-1),
 m_damageFieldId(-1),
 m_bondDamageFieldId(-1),
-m_deltaTemperatureFieldId(-1),
-m_dilatationFieldId(-1),
-m_weightedVolumeFieldId(-1),
+//m_deltaTemperatureFieldId(-1),
 m_horizonFieldId(-1),
 m_piolaStressTimesInvShapeTensorXId(-1),
 m_piolaStressTimesInvShapeTensorYId(-1),
@@ -179,8 +179,8 @@ m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
     m_fieldIds.push_back(m_piolaStressTimesInvShapeTensorYId);
     m_fieldIds.push_back(m_piolaStressTimesInvShapeTensorZId);
     m_fieldIds.push_back(m_forceDensityFieldId);
-    m_fieldIds.push_back(m_hourglassStiffId);
     m_fieldIds.push_back(m_deformationGradientFieldId);
+    m_fieldIds.push_back(m_hourglassStiffId);
 
 }
 
@@ -234,7 +234,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     
     double criticalEnergyTension(-1.0);
     // for temperature dependencies easy to extent
-    double *deltaTemperature = NULL;
+    //double *deltaTemperature = NULL;
     double *tempStressX, *tempStressY, *tempStressZ;
     dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
 
@@ -261,8 +261,8 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     double* hStiff = &hourglassStiffVector[0];
     double* TS = &TSvector[0];
     ///////////////////////////////////////////////////////
-    dataManager.getData(m_hourglassStiffId, PeridigmField::STEP_NONE)->ExtractView(&hourglassStiff);
     dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&defGrad);
+    dataManager.getData(m_hourglassStiffId, PeridigmField::STEP_NONE)->ExtractView(&hourglassStiff);
     //std::cout<< "heredam"<<std::endl;
     // Set the bond damage to the previous value --> needed for iteration in implicit time integration
     *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)) = *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N));

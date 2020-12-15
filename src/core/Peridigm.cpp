@@ -1481,6 +1481,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
   for(int step=1; step<=nsteps; step++){
 
+    cout << step << "/" << nsteps << endl;
+
     timePrevious = timeCurrent;
     timeCurrent = timeInitial + (step*dt);
 
@@ -2734,8 +2736,8 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
   bool solverFailedToConverge = false;
   bool adaptiveLoadStepping = false;
   bool switchToExplicit = false;
-  int maxSolverFailureInOneStep;
-  int maxTotalSolverFailure;
+  int maxSolverFailureInOneStep = -1;
+  int maxTotalSolverFailure = -1;
   bool reduceAllSteps = false;
   bool adaptiveOutputFrequency = false;
   Teuchos::RCP< Teuchos::ParameterList > adaptiveQSparams;
@@ -3183,7 +3185,7 @@ void PeridigmNS::Peridigm::executeImplicitDiffusion(Teuchos::RCP<Teuchos::Parame
   Teuchos::RCP<Epetra_Vector> lhs = Teuchos::rcp(new Epetra_Vector(tangent->Map()));
   Teuchos::RCP<Epetra_Vector> reaction = Teuchos::rcp(new Epetra_Vector(fluxDivergence->Map()));;
 
-  bool solverVerbose = solverParams->get("Verbose", false);
+  //bool solverVerbose = solverParams->get("Verbose", false);
   Teuchos::RCP<Teuchos::ParameterList> implicitSolverParams = sublist(solverParams, "ImplicitDiffusion", true);
   int maxSolverIterations = implicitSolverParams->get("Maximum Solver Iterations", 10);
 
@@ -3834,6 +3836,7 @@ void PeridigmNS::Peridigm::executeImplicit(Teuchos::RCP<Teuchos::ParameterList> 
     CWillberg = implicitParams->get<bool>("CWillberg");
   if(CWillberg){
   if (implicitParams->isParameter("Numerical Damping"))
+    {
         numericalDamping = implicitParams->get<double>("Numerical Damping");
         if (implicitParams->isParameter("Change t")){
             changeTime              = implicitParams->get<double>("Change t");
@@ -3857,6 +3860,7 @@ void PeridigmNS::Peridigm::executeImplicit(Teuchos::RCP<Teuchos::ParameterList> 
         dtMin = dtInit;
         adaptiveDt = false;
         }
+      }
     // set time step for analysis
   }
   else{
@@ -3868,7 +3872,7 @@ void PeridigmNS::Peridigm::executeImplicit(Teuchos::RCP<Teuchos::ParameterList> 
   workset->timeStep = dtInit;
 
   
-  int nsteps = (int)floor((timeFinal-timeInitial)/dtInit);
+  //int nsteps = (int)floor((timeFinal-timeInitial)/dtInit);
 
   // Pointer index into sub-vectors for use with BLAS
   double *xPtr, *uPtr, *yPtr, *vPtr, *aPtr, *deltaUPtr;
@@ -4180,7 +4184,7 @@ if(analysisHasMultiphysics){
     // Modify residual for kinematic BC
     // set values to zero where a BC exists
     boundaryAndInitialConditionManager->applyKinematicBC_InsertZeros(residual);
-
+    
 
     double errorEstimatorNorm, crefNorm;
     residual->Norm2(&residualNorm);

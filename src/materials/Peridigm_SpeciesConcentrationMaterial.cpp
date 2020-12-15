@@ -106,7 +106,7 @@ PeridigmNS::SpeciesConcentrationMaterial::computeFluxDivergence(const double dt,
   dataManager.getData(m_concentrationFieldId, PeridigmField::STEP_NP1)->ExtractView(&concentration);
   dataManager.getData(m_fluxDivergenceFieldId, PeridigmField::STEP_NP1)->ExtractView(&fluxDivergence);
 
-  const double pi = value_of_pi();
+  //const double pi = value_of_pi();
 
   int neighborhoodListIndex = 0;
   for(int iID=0 ; iID<numOwnedPoints ; ++iID){
