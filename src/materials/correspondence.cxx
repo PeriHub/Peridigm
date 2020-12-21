@@ -58,6 +58,7 @@
 #include <Epetra_SerialComm.h>
 #include <vector> 
 #include <string> 
+#include "Peridigm.hpp"
 namespace CORRESPONDENCE {
 
 template<typename ScalarT>
@@ -434,16 +435,6 @@ double* detachedNodes
 
     for(int n=0; n<numNeighbors; n++, neighborListPtr++, bondDamage++){
       
-      if(iID==0 && false)
-      {
-      std::cout << "numNeighbors: " << numNeighbors << " modelCoord: " << *modelCoord  << " defGrad: " << *defGrad << " detachedNodes: "<< *detachedNodes << " bondDamage: " << *bondDamage << std::endl;
-      }
-
-      if(*(detachedNodes+iID)!=0)
-      {
-      std::cout << "numNeighbors: " << numNeighbors << " modelCoord: " << *modelCoord  << " defGrad: " << *defGrad << " detachedNodes: "<< *detachedNodes << " bondDamage: " << *bondDamage << std::endl;
-      }
-
       neighborIndex = *neighborListPtr;
 
       neighborVolume = volume[neighborIndex];
@@ -497,13 +488,38 @@ double* detachedNodes
       *(defGradFirstTerm+7) += temp * deformedBondZ * undeformedBondY;
       *(defGradFirstTerm+8) += temp * deformedBondZ * undeformedBondZ;
 
+
+      
+      /*if(iID!=0 && *(detachedNodes+iID)!=0)
+      {
+      //std::cout << "iID: " << iID <<  " modelCoord: " << *modelCoord  << " defGrad: " << *defGrad << " detachedNodes: "<< *(detachedNodes+iID) << " temp: " << temp << " bondDamage: " << *bondDamage << " omega: " << omega << " neighbourVolume: "<< neighborVolume << " NeighborIndex: " << neighborIndex << " bondDamageNeighbor: " << bondDamage[neighborIndex] << std::endl;
+      }
+
+      if(iID!=0 && *(bondDamage)==1)
+      {
+      //std::cout << "iID: " << iID <<  " modelCoord: " << *modelCoord  << " defGrad: " << *defGrad << " detachedNodes: "<< *(detachedNodes+iID) << " temp: " << temp << " bondDamage: " << *bondDamage << " omega: " << omega << " neighbourVolume: "<< neighborVolume << " NeighborIndex: " << neighborIndex << " bondDamageNeighbor: " << bondDamage[neighborIndex] << std::endl;
+      }
+
+      if(iID==0)
+      {
+      //std::cout << "iID: " << iID <<  " modelCoord: " << *modelCoord  << " defGrad: " << *defGrad << " detachedNodes: "<< *(detachedNodes+iID) << " temp: " << temp << " bondDamage: " << *bondDamage << " omega: " << omega << " neighbourVolume: "<< neighborVolume << " bondDamageNeighbor: " << bondDamage[neighborIndex] << std::endl;
+      }
+
+      if(temp != temp || deformedBondX != deformedBondX || deformedBondY!=deformedBondY ||  undeformedBondX != undeformedBondX || undeformedBondY!=undeformedBondY)
+      {
+        std::cout << " neighborCoordNP1: " << *(neighborCoordNP1) << " CoordNP1: " << *(coordNP1) << " deformedBondX: " << deformedBondX << " deformedBondY: " << deformedBondY <<  
+        " undeformedBondX: "<< undeformedBondX << " undeformedBondY: " << undeformedBondY << " undeformedBondY: " << undeformedBondY <<  
+        " iID: " << iID <<  " modelCoord: " << *modelCoord  << " defGrad: " << *defGrad << " detachedNodes: "<< *(detachedNodes+iID) << 
+        " temp: " << temp << " bondDamage: " << *bondDamage << " omega: " << omega << " neighbourVolume: "<< neighborVolume << " bondDamageNeighbor: " << bondDamage[neighborIndex] << std::endl;
+      }
+
+      if(*(defGradFirstTerm) != *(defGradFirstTerm) )
+      {
+        //std::cout  << "iID: " << iID <<  " modelCoord: " << *modelCoord  << " defGrad: " << *defGrad << " detachedNodes: "<< *(detachedNodes+iID) << " temp: " << temp << " bondDamage: " << *bondDamage << " omega: " << omega << " neighbourVolume: "<< neighborVolume << " bondDamageNeighbor: " << bondDamage[neighborIndex] << std::endl;
+        break;
+      }*/
     }
 
-    //DefGradBug
-    if(iID==0 && *(defGradFirstTerm) != *(defGradFirstTerm) )
-    {
-      std::cout << "temp: " << temp << " bondDamage: " << *bondDamage << " omega: " << omega << " neighbourVolume: "<< neighborVolume << std::endl;
-    }
 
     if (*(detachedNodes+iID) == 0) {
         
@@ -959,8 +975,8 @@ void computeForcesAndStresses
   ScalarT* defGradInv = &defGradInvVector[0];
   ScalarT* piolaStress = &piolaStressVector[0];
   ScalarT* hourglassStiffVal = &hourglassStiffVector[0];
-  ScalarT* tempStress = &tempStressVector[0];
-  ScalarT* tempDefGrad = &tempDefGradVector[0];
+  //ScalarT* tempStress = &tempStressVector[0];
+ // ScalarT* tempDefGrad = &tempDefGradVector[0];
   ScalarT  One = 1.0;
 
 
@@ -995,8 +1011,15 @@ void computeForcesAndStresses
 
     // Inner product of Piola stress and the inverse of the shape tensor
     //if (iID == 0)std::cout<<*(temp)<<std::endl;
+    
     CORRESPONDENCE::MatrixMultiply(false, false, One, piolaStress, shapeTensorInv, temp);
+    if(detachedNodes[iID]!=0||*(temp)!=*(temp) )
+      {
+        std::cout<<"Break before damage."<<std::endl;
+        PeridigmNS::Peridigm::cancelAndSave = true;
 
+        std::cout << " *(defGrad): " << *(defGrad) << " *(temp): " << *(temp) << " piolaStress: " << *piolaStress  << " defGradInv: " << *defGradInv << " stress: " << *stress << " jacobianDeterminant: " << jacobianDeterminant <<std::endl;
+      }
     if (matrixInversionReturnCode != 0){
         *(temp)   = 0;*(temp+1) = 0;*(temp+2) = 0;
         *(temp+3) = 0;*(temp+4) = 0;*(temp+5) = 0;
@@ -1070,7 +1093,11 @@ void computeForcesAndStresses
           TY =  (1-bondDamage[bondIndex]) * omega * ( *(temp+3) * X_dx + *(temp+4) * X_dy + *(temp+5) * X_dz+ m_hourglassCoefficient*TS[1]);
           TZ =  (1-bondDamage[bondIndex]) * omega * ( *(temp+6) * X_dx + *(temp+7) * X_dy + *(temp+8) * X_dz+ m_hourglassCoefficient*TS[2]);
           
-         
+         if(iID!=0 && TX!=TX )
+          {
+            //std::cout << " *(temp): " << *(temp) << " omega: " << omega <<  " X_dx: " << X_dx  << " TX: " << TX << " TY: "<< TY <<  std::endl;
+          }
+
           neighborVol = volume[neighborIndex];
           vol = volume[iID];
           
@@ -1085,6 +1112,11 @@ void computeForcesAndStresses
           force[3*neighborIndex+1] -= TY * vol;
           force[3*neighborIndex+2] -= TZ * vol;
         
+          if(iID!=0 && *(forceDensityPtr)!=*(forceDensityPtr) || force[3*neighborIndex+0]!=force[3*neighborIndex+0] )
+          {
+            //std::cout << "*(forceDensityPtr): " << *(forceDensityPtr) <<  " force[3*neighborIndex+0]: " << force[3*neighborIndex+0]  << " TX: " << TX << " neighborVol: "<< neighborVol << std::endl;
+          }
+
           partialStressPtr = partialStress + 9*iID;
           *(partialStressPtr)   += TX*X_dx*neighborVol;
           *(partialStressPtr+1) += TX*X_dy*neighborVol;

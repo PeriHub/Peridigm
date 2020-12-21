@@ -2,7 +2,7 @@
 # CMakeLists.txt file for Peridigm
 #
 
-Cmake_minimum_required (VERSION 2.6)
+Cmake_minimum_required (VERSION 3.0)
 
 enable_testing ()
 project(Peridigm)

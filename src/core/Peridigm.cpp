@@ -102,6 +102,10 @@
 
 using namespace std;
 
+
+bool PeridigmNS::Peridigm::cancelAndSave=false; 
+
+
 PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
                                Teuchos::RCP<Teuchos::ParameterList> params,
                                Teuchos::RCP<Discretization> inputPeridigmDiscretization)
@@ -1481,7 +1485,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
   for(int step=1; step<=nsteps; step++){
 
-    cout << step << "/" << nsteps << endl;
+    cout << endl << step << "/" << nsteps;
 
     timePrevious = timeCurrent;
     timeCurrent = timeInitial + (step*dt);
@@ -1542,6 +1546,13 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     for(int i=0 ; i<y->MyLength() ; ++i){
       vPtr[i] = vPtr[i] * (1 - numericalDamping);
       yPtr[i] = xPtr[i] + uPtr[i] + dt*vPtr[i] ;
+
+      if(yPtr[i] != yPtr[i] || vPtr[i] != vPtr[i] || xPtr[i]!=xPtr[i] ||  uPtr[i] != uPtr[i])
+      {
+        std::cout << " yPtr[i]: " << yPtr[i] << " vPtr[i]: " << vPtr[i] <<
+        " xPtr[i]: " << xPtr[i] << " uPtr[i]: " << uPtr[i] << " aPtr[i]: " << aPtr[i] << std::endl;
+      }
+
     }
     // U^{n+1} = U^{n} + (dt)*V^{n+1/2}
     // blas.AXPY(const int N, const double ALPHA, const double *X, double *Y, const int INCX=1, const int INCY=1) const
@@ -1698,8 +1709,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
     // Check for NaNs in force evaluation
     // We'd like to know now because a NaN will likely cause a difficult-to-unravel crash downstream.
-    //for(int i=0 ; i<force->MyLength() ; ++i)
-    //  TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite((*force)[i]), "**** NaN returned by force evaluation.\n");
+    for(int i=0 ; i<force->MyLength() ; ++i)
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(!std::isfinite((*scratch)[i]), "**** NaN returned by force evaluation.\n");
 
     // Check for NaNs in force evaluation
     // We'd like to know now because a NaN will likely cause a difficult-to-unravel crash downstream.
@@ -1721,6 +1732,13 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       (*a)[i] += (*externalForce)[i];
       (*a)[i] /= (*density)[i/3];
       if ((*detachedNodesList)[i/3]!=0) (*a)[i] = 0;
+
+      if((*a)[i] != (*a)[i])
+        {
+          //std::cout << " (*a)[i]: " << (*a)[i] << " (*externalForce)[i]: " << (*externalForce)[i] <<
+          //" (*density)[i]: " << (*density)[i] << " (*force)[i]: " << (*force)[i] << " (*detachedNodesList)[i/3]: " << (*detachedNodesList)[i/3] << std::endl;
+        }
+
     }
     
     //blas.AXPY(const int N, const double ALPHA, const double *X, double *Y, const int INCX=1, const int INCY=1) const
@@ -1737,6 +1755,16 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     // swap state N and state NP1
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++)
       blockIt->updateState();
+
+    // mpi cancel test
+    int root=0; 
+    MPI_Bcast(&cancelAndSave, 1, MPI_CXX_BOOL, root, MPI_COMM_WORLD);
+
+    if (PeridigmNS::Peridigm::cancelAndSave)
+    {
+      break;
+    }
+    
   }
   displayProgress("Explicit time integration", 100.0);
   *out << "\n\n";

@@ -162,7 +162,7 @@ namespace PeridigmNS {
     bool hasTangentStiffnessMatrix(){
       bool hasTangent = false;
       if(!tangent.is_null()){
-	hasTangent = true;
+	    hasTangent = true;
       }
       return hasTangent;
     }
@@ -223,7 +223,7 @@ namespace PeridigmNS {
       PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
 
       if(!fieldManager.hasField(fieldName)){
-	return false;
+	    return false;
       }
 
       int fieldId = fieldManager.getFieldId(fieldName);
@@ -380,6 +380,10 @@ namespace PeridigmNS {
 
     //! Display information about memory usage
     void printMemoryStats(){Memstat * memstat = Memstat::Instance(); memstat->printStats();};
+
+
+    //! Flag for canceling calculation and saving
+    static bool cancelAndSave;
 
   private:
 

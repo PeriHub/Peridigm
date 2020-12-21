@@ -211,7 +211,11 @@ PeridigmNS::ModelEvaluator::updateCauchyStress(Teuchos::RCP<Workset> workset) co
   // what if no damage is included in a block
   // test 
 
-  for(blockIt = workset->blocks->begin() ; blockIt != workset->blocks->end() ; blockIt++){
+  int blockIndex = 0;
+
+  for(blockIt = workset->blocks->begin() ; blockIt != workset->blocks->end() ; blockIt++, blockIndex++){
+
+    cout << " Blocks: "<< blockIndex << "/11" ;
 
     Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData = blockIt->getNeighborhoodData();
     const int numOwnedPoints = neighborhoodData->NumOwnedPoints();
