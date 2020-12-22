@@ -1013,7 +1013,7 @@ void computeForcesAndStresses
     //if (iID == 0)std::cout<<*(temp)<<std::endl;
     
     CORRESPONDENCE::MatrixMultiply(false, false, One, piolaStress, shapeTensorInv, temp);
-    if(detachedNodes[iID]!=0||*(temp)!=*(temp) )
+    if(*(temp)!=*(temp) )
       {
         std::cout<<"Break before damage."<<std::endl;
         PeridigmNS::Peridigm::cancelAndSave = true;

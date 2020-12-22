@@ -1709,8 +1709,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
     // Check for NaNs in force evaluation
     // We'd like to know now because a NaN will likely cause a difficult-to-unravel crash downstream.
-    for(int i=0 ; i<force->MyLength() ; ++i)
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(!std::isfinite((*scratch)[i]), "**** NaN returned by force evaluation.\n");
+    //for(int i=0 ; i<force->MyLength() ; ++i)
+    // TEUCHOS_TEST_FOR_EXCEPT_MSG(!std::isfinite((*scratch)[i]), "**** NaN returned by force evaluation.\n");
 
     // Check for NaNs in force evaluation
     // We'd like to know now because a NaN will likely cause a difficult-to-unravel crash downstream.
@@ -1760,8 +1760,9 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     int root=0; 
     MPI_Bcast(&cancelAndSave, 1, MPI_CXX_BOOL, root, MPI_COMM_WORLD);
 
-    if (PeridigmNS::Peridigm::cancelAndSave)
+    if (cancelAndSave)
     {
+      std::cout<<"Break!!!"<<std::endl;
       break;
     }
     
