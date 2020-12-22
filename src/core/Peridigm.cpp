@@ -4920,7 +4920,7 @@ void PeridigmNS::Peridigm::writeRestart(Teuchos::RCP<Teuchos::ParameterList> sol
   if(peridigmComm->MyPID() == 0){
   IterationNumber = atoi(firstNumbersSring( restartFiles["path"]  ).c_str())+1;
   sprintf(path,"restart-%06d",IterationNumber);
-  cout << "The restart folder is " << path  <<"." << endl;
+  cout << "The restart folder is " << path  << " and the current time is " << currentTime << endl;
   setRestartNames(path);
   sprintf(createDirectory,"mkdir %s",path);
   system(createDirectory);
