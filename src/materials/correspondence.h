@@ -95,6 +95,19 @@ void MatrixMultiply3x3
  ScalarT C[][3]
 );
 
+template<typename ScalarT>
+int EigenVec2x2
+(
+ const ScalarT* a,
+ ScalarT* result
+);
+
+//! Hencky-Strain E = 0.5*ln(C).
+template<typename ScalarT>
+int computeLogDefGrad
+(
+ ScalarT* strain
+);
 
 template<typename ScalarT>
 void rotateCauchyStress

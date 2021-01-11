@@ -210,7 +210,7 @@ bool incremental
         strain[1] = 0.5 * ( *(defGrad)*   *(defGrad+1) + *(defGrad+1)* *(defGrad+4) );
         strain[3] = 0.5 * ( *(defGrad+3)* *(defGrad)   + *(defGrad+4)* *(defGrad+3) );
         strain[4] = 0.5 * ( *(defGrad+3)* *(defGrad+1) + *(defGrad+4)* *(defGrad+4) +   - 1.0 );
-        
+
         *(sigmaNP1)   = C[0][0]*strain[0] + C[0][1]*strain[4] + C[0][5]*(strain[1]+strain[3]);
         *(sigmaNP1+1) = C[5][0]*strain[0] + C[5][1]*strain[4] + C[5][5]*(strain[1]+strain[3]);
 
@@ -222,7 +222,13 @@ bool incremental
         *(sigmaNP1+6) = 0.0;
         *(sigmaNP1+7) = 0.0;
         *(sigmaNP1+8) = 0.0;
-        
+
+        if (*(sigmaNP1) !=*(sigmaNP1) )
+        {
+           std::cout << " strain[0]: " << strain[0] << " strain[1]: " << strain[1] << " strain[3]: " << strain[3] << " strain[4]: " << strain[4] <<std::endl;
+           std::cout << " *(defGrad): " << *(defGrad) << " *(defGrad+1): " << *(defGrad+1) << " *(defGrad+3): " << *(defGrad+3) << " *(defGrad+4): " << *(defGrad+4) <<std::endl;
+        }
+
       }
       //if (incremental == true){
       //   for (int i = 0; i < 9; i++) {

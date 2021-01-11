@@ -11,7 +11,7 @@
             "request": "launch",
             "program": "/home/jt/bin/Peridigm",
             "args": [
-                "FEModel_Run2.xml"
+                "FEModel_TestRun.xml"
             ],
             "stopAtEntry": true,
             "cwd": "/home/jt/peridigmJobs/waviness/constantWaviness/meshResolution80/",

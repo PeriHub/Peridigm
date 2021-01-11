@@ -1549,8 +1549,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
       if(yPtr[i] != yPtr[i] || vPtr[i] != vPtr[i] || xPtr[i]!=xPtr[i] ||  uPtr[i] != uPtr[i])
       {
-        std::cout << " yPtr[i]: " << yPtr[i] << " vPtr[i]: " << vPtr[i] <<
-        " xPtr[i]: " << xPtr[i] << " uPtr[i]: " << uPtr[i] << " aPtr[i]: " << aPtr[i] << std::endl;
+        //std::cout << " yPtr[i]: " << yPtr[i] << " vPtr[i]: " << vPtr[i] <<
+        //" xPtr[i]: " << xPtr[i] << " uPtr[i]: " << uPtr[i] << " aPtr[i]: " << aPtr[i] << std::endl;
       }
 
     }
@@ -1709,8 +1709,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
     // Check for NaNs in force evaluation
     // We'd like to know now because a NaN will likely cause a difficult-to-unravel crash downstream.
-    //for(int i=0 ; i<force->MyLength() ; ++i)
-    // TEUCHOS_TEST_FOR_EXCEPT_MSG(!std::isfinite((*scratch)[i]), "**** NaN returned by force evaluation.\n");
+    for(int i=0 ; i<force->MyLength() ; ++i)
+     TEUCHOS_TEST_FOR_EXCEPT_MSG(!std::isfinite((*scratch)[i]), "**** NaN returned by force evaluation.\n");
 
     // Check for NaNs in force evaluation
     // We'd like to know now because a NaN will likely cause a difficult-to-unravel crash downstream.
@@ -1756,8 +1756,14 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++)
       blockIt->updateState();
 
+    int root=0;
+
     // mpi cancel test
-    int root=0; 
+    //if (cancelAndSave)
+    //{
+    //  int root=0;
+    //}
+    
     MPI_Bcast(&cancelAndSave, 1, MPI_CXX_BOOL, root, MPI_COMM_WORLD);
 
     if (cancelAndSave)
