@@ -78,6 +78,10 @@ PeridigmNS::ElasticLinearCorrespondenceMaterial::ElasticLinearCorrespondenceMate
 
         m_incremental = true;
       }
+  m_hencky = false;
+  if (params.isParameter("HenckyStrain")){
+      m_hencky = params.get<bool>("HenckyStrain");
+  }
  
   double C11=0.0, C44=0.0, C55=0.0, C66=0.0, C12=0.0, C13=0.0, C14=0.0, C15=0.0, C16=0.0, C22=0.0, C33=0.0;
   double  C23=0.0, C24=0.0, C25=0.0, C26=0.0, C34=0.0, C35=0.0, C36=0.0, C45=0.0, C46=0.0, C56=0.0;
@@ -304,6 +308,7 @@ PeridigmNS::ElasticLinearCorrespondenceMaterial::computeCauchyStress(const doubl
                                             angles,
                                             m_type,
                                             dt,
-                                            incremental);
+                                            incremental,
+                                            m_hencky);
                                            
 }

@@ -72,7 +72,8 @@ const ScalarT C[][6],
 double* angles,
 int type,
 double dt,
-bool incremental
+bool incremental,
+bool hencky
 );
 template<typename ScalarT>
 void createRotationMatrix

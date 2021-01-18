@@ -11,7 +11,7 @@
             "request": "launch",
             "program": "/home/jt/bin/Peridigm",
             "args": [
-                "FEModel_TestRun.xml"
+                "HenckyTest_Run2.xml"
             ],
             "stopAtEntry": true,
             "cwd": "/home/jt/peridigmJobs/waviness/constantWaviness/meshResolution80/",
@@ -35,7 +35,7 @@
             "request": "launch",
             "program": "/usr/bin/mpirun",
             "args": ["-np", "4", "Peridigm",
-                "FEModel_Run2.xml"
+                "HenckyTest_Run2.xml"
             ],
             "stopAtEntry": true,
             "cwd": "/home/jt/peridigmJobs/waviness/constantWaviness/meshResolution80/",

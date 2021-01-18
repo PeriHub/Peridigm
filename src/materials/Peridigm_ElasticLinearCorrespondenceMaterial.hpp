@@ -89,6 +89,7 @@ namespace PeridigmNS {
     int m_deformationGradientFieldId;
     int m_cauchyStressFieldId;
     bool m_incremental;
+    bool m_hencky;
   };
 }
 

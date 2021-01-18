@@ -104,9 +104,10 @@ int EigenVec2x2
 
 //! Hencky-Strain E = 0.5*ln(C).
 template<typename ScalarT>
-int computeLogDefGrad
+int computeLogStrain
 (
- ScalarT* strain
+ const ScalarT* defGrad,
+ ScalarT strain[9]
 );
 
 template<typename ScalarT>

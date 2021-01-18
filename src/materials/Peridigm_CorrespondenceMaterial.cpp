@@ -101,6 +101,10 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     if (params.isParameter("Incremental")){
         m_incremental = params.get<bool>("Incremental");
     }
+    m_hencky = true;
+    if (params.isParameter("HenckyStrain")){
+        m_hencky = params.get<bool>("HenckyStrain");
+    }
     if (m_planeStrain==true){
         m_plane=true;
         
@@ -847,7 +851,8 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
                                           angles,
                                           m_type,
                                           dt,
-                                          m_incremental);
+                                          m_incremental,
+                                          m_hencky);
     
     // define the sacadoFAD force vector
     vector<Sacado::Fad::DFad<double> > force_AD(numDof);

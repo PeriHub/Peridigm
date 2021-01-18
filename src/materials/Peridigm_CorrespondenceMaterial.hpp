@@ -203,6 +203,7 @@ namespace PeridigmNS {
     int m_type;
     int m_modelAnglesId;
     int m_incremental;
+    bool m_hencky;
     int m_deformationGradientNonIncFieldId;
     bool m_tension;
   };

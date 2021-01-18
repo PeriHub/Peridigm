@@ -60,6 +60,14 @@
 #include <string> 
 #include "Peridigm.hpp"
 #include <Teuchos_RCP.hpp>
+#include <AnasaziEigenproblem.hpp>
+#include <AnasaziEigensolver.hpp>
+#include <AnasaziFactory.hpp>
+#include <AnasaziMultiVec.hpp>
+#include <AnasaziOperator.hpp>
+#include <Epetra_MultiVector.h>
+#include "AnasaziLOBPCGSolMgr.hpp"
+#include <AnasaziSimpleLOBPCGSolMgr.hpp>
 namespace CORRESPONDENCE {
 
 template<typename ScalarT>
@@ -356,7 +364,7 @@ void MatrixMultiply
   }
 }
 
-template<typename ScalarT>
+/*template<typename ScalarT>
 int EigenVec
 (
  const ScalarT* a,
@@ -367,16 +375,248 @@ int EigenVec
   // where alpha is a scalar and a and b are 3x3 matrices
   // The arguments transA and transB denote whether or not
   // to use the transpose of a and b, respectively.
-  int returnCode(0);
+  //int returnCode(0);
+  bool boolret;
 
-  const int nev = 10;
-  const int blockSize = 10;
+  const int nev = 2;
+  //const int dim = 2;
+  const int blockSize = 9;
   const int maxIters = 500;
   const double tol = 1.0e-8;
+  int returnCode = -1;
 
-  Teuchos::RCP<Epetra
+  //int *colptr,*rowind;
+
+  typedef Epetra_MultiVector MV;
+  typedef Epetra_Operator OP;
+  typedef Anasazi::MultiVecTraits<double, Epetra_MultiVector> MVT;
+
+  Epetra_SerialComm Comm;
+
+  Teuchos::RCP<const Epetra_BlockMap> Map;
+
+  //Teuchos::RCP<Anasazi::Operator<double>> A;
+  //A->CloneCopy(blockSize, a);//  = Teuchos::rcp( new Anasazi::MultiVec<double>());
+
+  //Teuchos::RCP<Anasazi::MultiVec<double>> ivec;// = Teuchos::rcp( new Anasazi::MultiVec<double>(dim,blockSize));
+  //ivec->MvRandom();
+  //RCP<Epetra_RowMatrix> A = rcp (Galeri::CreateCrsMatrix ("Laplace2D", &*Map, GaleriList));
+  Teuchos::RCP<Epetra_MultiVector> A = Teuchos::rcp(new Epetra_MultiVector(*Map, 9));
+  //RCP<Epetra_MultiVector> A;// = rcp (new Epetra_MultiVector (Epetra_DataAccess::Copy, Map, 2));
+
+  Teuchos::RCP<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(*Map, blockSize) );
+  ivec->Random();
+
+ // Teuchos::RCP<Anasazi::BasicEigenproblem<double,MV,OP> > problem =
+ //   Teuchos::rcp( new Anasazi::BasicEigenproblem<double,MV,OP>(A,ivec) );
+
+//  problem->setHermitian(true);
+
+//  problem->setNEV( nev );
+
+//  boolret = problem->setProblem();
+//  if (boolret != true) {
+    //if (verbose && MyPID == 0) {
+ //     cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
+ //          << "End Result: TEST FAILED" << endl;
+ //   }
+
+  Teuchos::ParameterList MyPL;
+  //MyPL.set( "Verbosity", verbosity );
+  //MyPL.set( "Output Stream", fos );
+  //MyPL.set( "Which", which );
+  MyPL.set( "Block Size", blockSize );
+  MyPL.set( "Maximum Iterations", maxIters );
+  MyPL.set( "Convergence Tolerance", tol );
+  MyPL.set( "Use Locking", true );
+  MyPL.set( "Locking Tolerance", tol/10 );
+  MyPL.set( "Full Ortho", true );
+
+  //Anasazi::SimpleLOBPCGSolMgr<double, MV, OP> MySolverMan(problem, MyPL);
+  //auto MySolverMan = Anasazi::Factory::create("LOBPCG", problem, MyPL);
+
+  //Anasazi::ReturnType returnCode = MySolverMan.solve();
+
+  //Anasazi::Eigensolution<double,MV> sol = problem->getSolution();
+  //RCP<MV> evecs = sol.Evecs;
+  //int numev = sol.numVecs;
+
+  //std::cout << " defGrad: [" << numev << ", " << evecs << ", " << evecs << "]" << std::endl;
 
   return returnCode;
+}*/
+
+template<typename ScalarT>
+bool isDiag
+(
+ const ScalarT* a,
+ ScalarT* result
+)
+{
+  // Determine whether a matrix is diagonal
+  //isDiag(X) returns 1 if X is a diagonal matrix. Otherwise, it returns 0
+
+  bool returnBool = true;
+
+  for (int i = 0; i < 3; i++)
+  {
+    for (int j = 0; j < 3; j++)
+    {
+      if (i == j)
+      {
+        if (*(a+(i+j*3)) == 0.0)
+        {
+          returnBool=false;
+          break;
+        }
+      }
+      else
+      {
+        if (*(a+(i+j*3)) != 0.0)
+        {
+          returnBool=false;
+          break;
+        }
+      }
+    }
+  }
+  return returnBool;
+}
+
+template<typename ScalarT>
+bool isSchur
+(
+ const ScalarT* a,
+ ScalarT* result
+)
+{
+  // Determine whether a matrix is diagonal
+  //isDiag(X) returns 1 if X is a diagonal matrix. Otherwise, it returns 0
+
+  bool returnBool = true;
+
+  for (int i = 0; i < 2; i++)
+  {
+    if(*(a+(i+1+i*3)) != 0.0)
+    {
+      //Check that 1st subdiagonal is of valid form.
+      //It cannot have two nonzero adjacent entries.
+      if(i != 1 && *(a+(i+2+(i*3+1))) != 0.0)
+      {
+          returnBool = false;
+          break;
+      }
+      //Check that 2x2 block has the required form.
+      if (*(a+(i+i*3)) != *(a+(i+1+(i*3+1))) || sign(*(a+(i+1+i*3))) * sign(*(a+(i+(i*3+1)))) != -1)
+      {
+          returnBool=false;
+          break;
+        
+      }
+    }
+  }
+  return returnBool;
+}
+
+template <typename ScalarT> 
+int logm_params
+(
+  const ScalarT* T,
+  int maxroots,
+  int s,
+  int m,
+  ScalarT Troot
+) 
+{
+  int returnCode(0);
+
+  std::vector<ScalarT> xvalsVector(7);
+  ScalarT* xvals = &xvalsVector[0];
+  std::vector<ScalarT> dVector(3);
+  ScalarT* d = &dVector[0];
+
+  *(d+0) = *(T+0);
+  *(d+1) = *(T+4);
+  *(d+2) = *(T+8);
+
+  *(xvals+0) = 1.586970738772063e-005;
+  *(xvals+1) = 2.313807884242979e-003;
+  *(xvals+2) = 1.938179313533253e-002;
+  *(xvals+3) = 6.209171588994762e-002;
+  *(xvals+4) = 1.276404810806775e-001;
+  *(xvals+5) = 2.060962623452836e-001;
+  *(xvals+6) = 2.879093714241194e-001;
+
+  int nmax = 7;
+  bool foundm = false;
+
+  s = 0;
+
+  while (max(abs(*(d+0)),abs(*(d+1)),abs(*(d+2))) > *(xvals+nmax-1) && s < maxroots)
+  {
+    for (int i = 0; i < 3; i++)
+    {
+      *(d+i) = sqrt(*(d+i));
+      s++;
+    }
+  }
+  
+  int s0 = s;
+
+  if (s==maxroots)
+  {
+
+  }
+
+  for (int i = 0; i < 9; i++)
+  {
+    *(Troot+i) = *(T+i);
+  }
+
+  for (int i = 0; i < min(s, maxroots); i++)
+  {
+    *(Troot+i) = *(T+i);
+  }
+
+  return returnCode;
+}
+
+template <typename ScalarT> 
+int sign
+(
+  ScalarT val
+) 
+{
+  return (ScalarT(0) < val) - (val < ScalarT(0));
+}
+
+template <typename ScalarT> 
+int gaussLegendre
+(
+  int n,
+  ScalarT x,
+  ScalarT w
+) 
+{
+  //gauss_legendre Nodes and weights for Gauss-Legendre quadrature.
+  //[x,w] = gauss_legendre(n) computes the nodes x and weights w
+  //for n-point Gauss-Legendre quadrature.
+
+  //Reference:
+  //G. H. Golub and J. H. Welsch, Calculation of Gauss quadrature
+  //rules, Math. Comp., 23(106):221-230, 1969.
+  
+  int k[n-1];
+
+  double v[n-1];
+
+  for (int i = 0; i < n-1; i++)
+  {
+      k[i] = i+1;
+      v[i] = k[i]/sqrt((2*k[i])^2-1);
+  }
+
+  return 0;
 }
 
 template<typename ScalarT>
@@ -410,15 +650,17 @@ int EigenVec2x2
   return returnCode;
 }
 
-template int computeLogDefGrad<Sacado::Fad::DFad<double> >
-(
- Sacado::Fad::DFad<double>* strain
-);
+//template int computeLogStrain<Sacado::Fad::DFad<double> >
+//(
+// const Sacado::Fad::DFad<double>* defGrad,
+// Sacado::Fad::DFad<double> strain[9]
+//);
 
 template<typename ScalarT>
-int computeLogDefGrad
+int computeLogStrain
 (
- ScalarT* defGrad
+ const ScalarT* defGrad,
+ ScalarT strain[9]
 )
 {
   // Hencky-Strain E = 0.5*ln(C)
@@ -440,6 +682,8 @@ int computeLogDefGrad
   ScalarT* A1_D_log = &A1_D_logVector[0];
   std::vector<ScalarT> A_log_tempVector(9);
   ScalarT* A_log_temp = &A_log_tempVector[0];
+  std::vector<ScalarT> strainTempVector(9);
+  ScalarT* strainTemp = &strainTempVector[0];
   ScalarT determinant;
   int eigenVecReturnCode(1);
   int inversionReturnCode(1);
@@ -450,6 +694,7 @@ int computeLogDefGrad
 
   if(debug)
   {
+  std::cout << " strain: [" << strain[0] << ", " << strain[1] << ", " << strain[3] << ", " << strain[4] << "]" << std::endl;
   std::cout << " defGrad: [" << *(defGrad+0) << ", " << *(defGrad+1) << ", " << *(defGrad+3) << ", " << *(defGrad+4) << "]" << std::endl;
   }
   
@@ -536,16 +781,21 @@ int computeLogDefGrad
   std::cout << " defGrad: [" << *(defGrad+0) << ", " << *(defGrad+1) << ", " << *(defGrad+3) << ", " << *(defGrad+4) << "]" << std::endl;
   }
   
-  MatrixMultiply(false,false,OneHalf,A_log_temp, V_inv, defGrad);
+  MatrixMultiply(false,false,OneHalf,A_log_temp, V_inv, strainTemp);
 
   if(debug)
   {   
-  std::cout << " logDefGrad: [" << *(defGrad+0) << ", " << *(defGrad+1) << ", " << *(defGrad+3) << ", " << *(defGrad+4) << "]" << std::endl;
+  std::cout << " logStrain: [" << *(strainTemp+0) << ", " << *(strainTemp+1) << ", " << *(strainTemp+3) << ", " << *(strainTemp+4) << "]" << std::endl;
   }
 
-  if(debug)
+  strain[0] = *(strainTemp+0);
+  strain[1] = *(strainTemp+1);
+  strain[3] = *(strainTemp+3);
+  strain[4] = *(strainTemp+4);
+
+  if(false)
   {   
-    //std::cout << " defGrad: [" << *(defGrad+0) << ", " << *(defGrad+1) << ", " << *(defGrad+3) << ", " << *(defGrad+4) << "]" << std::endl;
+    //std::cout << " strain: [" << *(strain+0) << ", " << *(strain+1) << ", " << *(strain+3) << ", " << *(strain+4) << "]" << std::endl;
     std::cout << " defGradTemp: [" << *(defGradTemp+0) << ", " << *(defGradTemp+1) << ", " << *(defGradTemp+3) << ", " << *(defGradTemp+4) << "]" << std::endl;
     std::cout << " V:           [" << *(V+0) << ", " << *(V+1) << ", " << *(V+3) << ", " << *(V+4) << "]" << std::endl;
     std::cout << " V_inv:       [" << *(V_inv+0) << ", " << *(V_inv+1) << ", " << *(V_inv+3) << ", " << *(V_inv+4) << "]" << std::endl;
@@ -553,8 +803,84 @@ int computeLogDefGrad
     std::cout << " A1:          [" << *(A1+0) << ", " << *(A1+1) << ", " << *(A1+3) << ", " << *(A1+4) << "]" << std::endl;
     std::cout << " A1_D_log:    [" << *(A1_D_log+0) << ", " << *(A1_D_log+1) << ", " << *(A1_D_log+3) << ", " << *(A1_D_log+4) << "]" << std::endl;
     std::cout << " A_log_temp:  [" << *(A_log_temp+0) << ", " << *(A_log_temp+1) << ", " << *(A_log_temp+3) << ", " << *(A_log_temp+4) << "]" << std::endl;
-    std::cout << " logDefGrad:  [" << *(defGrad+0) << ", " << *(defGrad+1) << ", " << *(defGrad+3) << ", " << *(defGrad+4) << "]" << std::endl;
+    std::cout << " logStrain: [" << *(strainTemp+0) << ", " << *(strainTemp+1) << ", " << *(strainTemp+3) << ", " << *(strainTemp+4) << "]" << std::endl;
   }
+
+  return returnCode;
+}
+
+template<typename ScalarT>
+int computeLogM
+(
+ ScalarT* defGrad
+)
+{
+  // Hencky-Strain E = 0.5*ln(C)
+  // C = F^T*F
+
+  ScalarT One = 1.0;
+  int returnCode(0);
+  int logmReturncode(0);
+
+  std::vector<ScalarT> defGradTempVector(9);
+  ScalarT* defGradTemp = &defGradTempVector[0];
+
+  int maxroots = 100;
+
+  MatrixMultiply(true,false,One,defGrad, defGrad, defGradTemp);
+
+  bool schurInput = isSchur(defGradTemp);
+  if(schurInput)
+  {
+    
+  }
+
+  if(isDiag(defGradTemp))
+  {
+    if(schurInput)
+    {
+      for (int i = 0; i < 3; i++)
+      {
+        for (int j = 0; j < 3; j++)
+        {
+          if (i == j)
+          {
+            *(defGrad+(i+1+i*3)) = log(*(defGradTemp+(i+1+i*3)));
+          }
+        }
+      }
+    }
+    else
+    {
+      /* code */
+    }
+    
+  }
+  else
+  {
+    if (true)
+    {
+      if (true)
+      {
+        if (true)
+        {
+          if (schurInput)
+          {
+            //schurInput = false;
+          }
+        }
+      }
+    }
+
+  int s;
+  int m;
+  std::vector<ScalarT> TrootVector(9);
+  ScalarT* Troot = &TrootVector[0];
+
+  logmReturncode = logm_params(defGradTemp, maxroots, s, m, Troot);
+
+  }
+ 
 
   return returnCode;
 }
@@ -621,16 +947,8 @@ double* detachedNodes
 
   int inversionReturnCode(0);
 
-  int defGradLogReturnCode(0);
-
   int neighborIndex, numNeighbors;
   const int *neighborListPtr = neighborhoodList;
-
-  int defUsed(0);
-  int defNotUsed(0);
-  int eigenVecError(0);
-  int inverseError(0);
-  int logError(0);
   
   for(int iID=0 ; iID<numPoints ; ++iID, delta++, modelCoord+=3, coord+=3, coordNP1+=3,
         shapeTensorInv+=9, defGrad+=9){
@@ -767,42 +1085,9 @@ double* detachedNodes
                 *(defGrad)   = 1.0 ;     *(defGrad+1) = 0.0 ;     *(defGrad+2) = 0.0 ;
                 *(defGrad+3) = 0.0 ;     *(defGrad+4) = 1.0 ;     *(defGrad+5) = 0.0 ;
                 *(defGrad+6) = 0.0 ;     *(defGrad+7) = 0.0 ;     *(defGrad+8) = 1.0 ;
-
-                defNotUsed++;
            }
-           else
-           {
-            defGradLogReturnCode = computeLogDefGrad(defGrad);
-
-            if (defGradLogReturnCode==0)
-            {
-              defUsed++;
-            }
-            else if (defGradLogReturnCode==1)
-            {
-              eigenVecError++;
-            }
-            else if (defGradLogReturnCode==2)
-            {
-              inverseError++;
-            }
-            else if (defGradLogReturnCode==3)
-            {
-              logError++;
-            }
-           }
-           
-        
-
-
   }
 
-   std::cout << " numPoints:  [" << numPoints << "]" << std::endl;
-   std::cout << " defUsed:  [" << defUsed << "]" << std::endl;
-   std::cout << " defNotUsed:  [" << defNotUsed << "]" << std::endl;
-   std::cout << " eigenVecError:  [" << eigenVecError << "]" << std::endl;
-   std::cout << " inverseError:  [" << inverseError << "]" << std::endl;
-   std::cout << " logError:  [" << logError << "]" << std::endl;
 
   return returnCode;
 }
@@ -1269,7 +1554,7 @@ void computeForcesAndStresses
     if(*(temp)!=*(temp) )
       {
         std::cout<<"Break before damage."<<std::endl;
-        //PeridigmNS::Peridigm::cancelAndSave = true;
+        PeridigmNS::Peridigm::cancelAndSave = true;
 
         std::cout << " *(defGrad): " << *(defGrad) << " *(temp): " << *(temp) << " piolaStress: " << *piolaStress  << " defGradInv: " << *defGradInv << " stress: " << *stress << " jacobianDeterminant: " << jacobianDeterminant <<std::endl;
       }
@@ -2052,9 +2337,15 @@ template int Invert2by2Matrix<double>
  double* inverse
 );
 
-template int computeLogDefGrad<double>
+template int computeLogStrain<double>
 (
- double* defGrad
+ const double* defGrad,
+ double strain[9]
+);
+template int computeLogStrain<Sacado::Fad::DFad<double> >
+(
+ const Sacado::Fad::DFad<double>* defGrad,
+ Sacado::Fad::DFad<double>  strain[9]
 );
 
 template int computeShapeTensorInverseAndApproximateDeformationGradient<double>
