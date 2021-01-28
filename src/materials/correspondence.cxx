@@ -1553,17 +1553,22 @@ void computeForcesAndStresses
     CORRESPONDENCE::MatrixMultiply(false, false, One, piolaStress, shapeTensorInv, temp);
     if(*(temp)!=*(temp) )
       {
-        std::cout<<"Break before damage."<<std::endl;
-        PeridigmNS::Peridigm::cancelAndSave = true;
+        //std::cout<<"Break before damage."<<std::endl;
+        //PeridigmNS::Peridigm::cancelAndSave = true;
 
-        std::cout << " *(defGrad): " << *(defGrad) << " *(temp): " << *(temp) << " piolaStress: " << *piolaStress  << " defGradInv: " << *defGradInv << " stress: " << *stress << " jacobianDeterminant: " << jacobianDeterminant <<std::endl;
+        //std::cout << "matrixInversionReturnCode: " << matrixInversionReturnCode << " *(defGrad): " << *(defGrad) << " *(temp): " << *(temp) << " piolaStress: " << *piolaStress  << " defGradInv: " << *defGradInv << " stress: " << *stress << " jacobianDeterminant: " << jacobianDeterminant <<std::endl;
       }
-    if (matrixInversionReturnCode != 0){
-        *(temp)   = 0;*(temp+1) = 0;*(temp+2) = 0;
-        *(temp+3) = 0;*(temp+4) = 0;*(temp+5) = 0;
-        *(temp+6) = 0;*(temp+7) = 0;*(temp+8) = 0;
-        // as a last resort. might stabilize sometimes
-        detachedNodes[iID] = 1;
+    
+    for(int i=0 ; i<9 ; ++i)
+    {
+      if (matrixInversionReturnCode != 0 || (*temp+i)>DBL_MAX|| (*temp+i)<-DBL_MAX|| (*temp+i)!=(*temp+i)){
+          *(temp)   = 0;*(temp+1) = 0;*(temp+2) = 0;
+          *(temp+3) = 0;*(temp+4) = 0;*(temp+5) = 0;
+          *(temp+6) = 0;*(temp+7) = 0;*(temp+8) = 0;
+          // as a last resort. might stabilize sometimes
+          detachedNodes[iID] = 1;
+          break;
+      }
     }
 
     if (m_stabilizationType == 3){
@@ -1580,7 +1585,8 @@ void computeForcesAndStresses
     }
     
 
-    //int countNeighbors = 0;
+    int countNeighbors = 0;
+
     for(int n=0; n<numNeighbors; n++, neighborListPtr++){
 
       neighborIndex = *neighborListPtr;
@@ -1631,9 +1637,9 @@ void computeForcesAndStresses
           TY =  (1-bondDamage[bondIndex]) * omega * ( *(temp+3) * X_dx + *(temp+4) * X_dy + *(temp+5) * X_dz+ m_hourglassCoefficient*TS[1]);
           TZ =  (1-bondDamage[bondIndex]) * omega * ( *(temp+6) * X_dx + *(temp+7) * X_dy + *(temp+8) * X_dz+ m_hourglassCoefficient*TS[2]);
           
-         if(iID!=0 && TX!=TX )
+         if(bondDamage[bondIndex]==1)
           {
-            //std::cout << " *(temp): " << *(temp) << " omega: " << omega <<  " X_dx: " << X_dx  << " TX: " << TX << " TY: "<< TY <<  std::endl;
+            countNeighbors++;
           }
 
           neighborVol = volume[neighborIndex];
@@ -1665,13 +1671,18 @@ void computeForcesAndStresses
           *(partialStressPtr+6) += TZ*X_dx*neighborVol;
           *(partialStressPtr+7) += TZ*X_dy*neighborVol;
           *(partialStressPtr+8) += TZ*X_dz*neighborVol;
-       
+        
       }
 
       //  countNeighbors += bondDamage[bondIndex];
       
       bondIndex += 1;
 
+    }
+
+    if(countNeighbors>0)
+    {
+     //std::cout << force[0] << "/" << force[1] <<  "/" << force[2] <<"  ";
     }
     // store piolaStress*inverseShapeTensor
     //if (matrixInversionReturnCode == 0 and m_tension == true){
