@@ -79,8 +79,8 @@ PeridigmNS::ElasticLinearCorrespondenceMaterial::ElasticLinearCorrespondenceMate
         m_incremental = true;
       }
   m_hencky = false;
-  if (params.isParameter("HenckyStrain")){
-      m_hencky = params.get<bool>("HenckyStrain");
+  if (params.isParameter("Hencky Strain")){
+      m_hencky = params.get<bool>("Hencky Strain");
   }
  
   double C11=0.0, C44=0.0, C55=0.0, C66=0.0, C12=0.0, C13=0.0, C14=0.0, C15=0.0, C16=0.0, C22=0.0, C33=0.0;

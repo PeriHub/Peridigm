@@ -1710,13 +1710,17 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     // Check for NaNs in force evaluation
     // We'd like to know now because a NaN will likely cause a difficult-to-unravel crash downstream.
     for(int i=0 ; i<force->MyLength() ; ++i)
+    {
      TEUCHOS_TEST_FOR_EXCEPT_MSG(!std::isfinite((*scratch)[i]), "**** NaN returned by force evaluation.\n");
-
+     TEUCHOS_TEST_FOR_EXCEPT_MSG((*scratch)[i]!=(*scratch)[i], "**** NaN returned by external force evaluation.\n");
+    }
     // Check for NaNs in force evaluation
     // We'd like to know now because a NaN will likely cause a difficult-to-unravel crash downstream.
     for(int i=0 ; i<externalForce->MyLength() ; ++i)
+    {
       TEUCHOS_TEST_FOR_EXCEPT_MSG(!std::isfinite((*externalForce)[i]), "**** NaN returned by external force evaluation.\n");
-
+      TEUCHOS_TEST_FOR_EXCEPT_MSG((*externalForce)[i]!=(*externalForce)[i], "**** NaN returned by external force evaluation.\n");
+    }
     if(analysisHasContact){
       contactManager->exportData(contactForce);
       // Check for NaNs in contact force evaluation

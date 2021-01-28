@@ -196,15 +196,15 @@ bool hencky
       //  C[0][5] = Cstiff[0][5];C[1][5] = Cstiff[1][5];C[2][5] = Cstiff[2][5];C[3][5] = Cstiff[3][5];C[4][5] = Cstiff[4][5];C[5][5] = Cstiff[5][5];
       //}
       if (type==0){
-        strain[0] = 0.5 * ( *(defGrad)*   *(defGrad)   + *(defGrad+1)* *(defGrad+3) + *(defGrad+2) * *(defGrad+6)  - 1.0 );
-        strain[1] = 0.5 * ( *(defGrad)*   *(defGrad+1) + *(defGrad+1)* *(defGrad+4) + *(defGrad+2) * *(defGrad+7)  );
-        strain[2] = 0.5 * ( *(defGrad)*   *(defGrad+2) + *(defGrad+1)* *(defGrad+5) + *(defGrad+2) * *(defGrad+8)  );
-        strain[3] = 0.5 * ( *(defGrad+3)* *(defGrad)   + *(defGrad+4)* *(defGrad+3) + *(defGrad+5) * *(defGrad+6)  );
-        strain[4] = 0.5 * ( *(defGrad+3)* *(defGrad+1) + *(defGrad+4)* *(defGrad+4) + *(defGrad+5) * *(defGrad+7)  - 1.0 );
-        strain[5] = 0.5 * ( *(defGrad+3)* *(defGrad+2) + *(defGrad+4)* *(defGrad+5) + *(defGrad+5) * *(defGrad+8)  );
-        strain[6] = 0.5 * ( *(defGrad+6)* *(defGrad)   + *(defGrad+7)* *(defGrad+3) + *(defGrad+8) * *(defGrad+6)  );
-        strain[7] = 0.5 * ( *(defGrad+6)* *(defGrad+1) + *(defGrad+7)* *(defGrad+4) + *(defGrad+8) * *(defGrad+7)  );
-        strain[8] = 0.5 * ( *(defGrad+6)* *(defGrad+2) + *(defGrad+7)* *(defGrad+5) + *(defGrad+8) * *(defGrad+8)  - 1.0 );
+        strain[0] = 0.5 * ( *(defGrad)*   *(defGrad)   + *(defGrad+3)* *(defGrad+3) + *(defGrad+6) * *(defGrad+6)  - 1.0 );
+        strain[1] = 0.5 * ( *(defGrad)*   *(defGrad+1) + *(defGrad+3)* *(defGrad+4) + *(defGrad+6) * *(defGrad+7)  );
+        strain[2] = 0.5 * ( *(defGrad)*   *(defGrad+2) + *(defGrad+3)* *(defGrad+5) + *(defGrad+6) * *(defGrad+8)  );
+        strain[3] = 0.5 * ( *(defGrad)*   *(defGrad+1) + *(defGrad+3)* *(defGrad+4) + *(defGrad+6) * *(defGrad+7)  );
+        strain[4] = 0.5 * ( *(defGrad+1)* *(defGrad+1) + *(defGrad+4)* *(defGrad+4) + *(defGrad+7) * *(defGrad+7)  - 1.0 );
+        strain[5] = 0.5 * ( *(defGrad+1)* *(defGrad+2) + *(defGrad+4)* *(defGrad+5) + *(defGrad+7) * *(defGrad+8)  );
+        strain[6] = 0.5 * ( *(defGrad)*   *(defGrad+2) + *(defGrad+3)* *(defGrad+5) + *(defGrad+6) * *(defGrad+8)  );
+        strain[7] = 0.5 * ( *(defGrad+1)* *(defGrad+2) + *(defGrad+4)* *(defGrad+5) + *(defGrad+7) * *(defGrad+8)  );
+        strain[8] = 0.5 * ( *(defGrad+2)* *(defGrad+2) + *(defGrad+5)* *(defGrad+5) + *(defGrad+8) * *(defGrad+8)  - 1.0 );
         
         *(sigmaNP1)   = C[0][0]*strain[0] + C[0][1]*strain[4] + C[0][2]*strain[8] + C[0][3]*(strain[5]+strain[7]) + C[0][4]*(strain[2]+strain[6]) + C[0][5]*(strain[1]+strain[3]);
         *(sigmaNP1+1) = C[5][0]*strain[0] + C[5][1]*strain[4] + C[5][2]*strain[8] + C[5][3]*(strain[5]+strain[7]) + C[5][4]*(strain[2]+strain[6]) + C[5][5]*(strain[1]+strain[3]);
@@ -222,20 +222,12 @@ bool hencky
           strain[0] = 0.5 * ( *(defGrad)*   *(defGrad)   + *(defGrad+3)* *(defGrad+3) - 1.0 );
           strain[1] = 0.5 * ( *(defGrad)*   *(defGrad+1) + *(defGrad+3)* *(defGrad+4) );
           strain[3] = 0.5 * ( *(defGrad+1)* *(defGrad)   + *(defGrad+4)* *(defGrad+3) );
-          strain[4] = 0.5 * ( *(defGrad+1)* *(defGrad+1) + *(defGrad+4)* *(defGrad+4) +   - 1.0 );
+          strain[4] = 0.5 * ( *(defGrad+1)* *(defGrad+1) + *(defGrad+4)* *(defGrad+4) - 1.0 );
 
-        if(hencky)
+        if(hencky && *(defGrad)!=1 | *(defGrad+1)!=0 | *(defGrad+3)!=0 | *(defGrad+4)!=1)
         {
-          if (false)
-          {
-            std::cout << " defGrad: [" << *(defGrad) << ", " << *(defGrad+1) << ", " <<*(defGrad+3) << ", " << *(defGrad+4) << "]" << std::endl;
-            std::cout << " strain: [" << strain[0] << ", " << strain[1] << ", " << strain[3] << ", " << strain[4] << "]" << std::endl;
-          }
+          
           defGradLogReturnCode = CORRESPONDENCE::computeLogStrain(defGrad,logStrain);
-          if (false)
-          {
-            std::cout << " logStrain: [" << logStrain[0] << ", " << logStrain[1] << ", " << logStrain[3] << ", " << logStrain[4] << "]" << std::endl;
-          }
 
           if (defGradLogReturnCode==0)
           {
@@ -273,12 +265,6 @@ bool hencky
         *(sigmaNP1+7) = 0.0;
         *(sigmaNP1+8) = 0.0;
 
-        if (*(sigmaNP1) !=*(sigmaNP1) )
-        {
-           std::cout << " strain[0]: " << strain[0] << " strain[1]: " << strain[1] << " strain[3]: " << strain[3] << " strain[4]: " << strain[4] <<std::endl;
-           std::cout << " *(defGrad): " << *(defGrad) << " *(defGrad+1): " << *(defGrad+1) << " *(defGrad+3): " << *(defGrad+3) << " *(defGrad+4): " << *(defGrad+4) <<std::endl;
-        }
-
       }
       //if (incremental == true){
       //   for (int i = 0; i < 9; i++) {
@@ -295,6 +281,8 @@ bool hencky
       std::cout << " eigenVecError:  [" << eigenVecError << "]" << std::endl;
       std::cout << " inverseError:  [" << inverseError << "]" << std::endl;
       std::cout << " logError:  [" << logError << "]" << std::endl;
+      std::cout << " strain: [" << strain[0] << ", " << strain[1] << ", " << strain[3] << ", " << strain[4] << "]" << std::endl;
+      std::cout << " logStrain: [" << logStrain[0] << ", " << logStrain[1] << ", " << logStrain[3] << ", " << logStrain[4] << "]" << std::endl;
     }
 
 }       

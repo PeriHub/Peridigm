@@ -102,8 +102,8 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
         m_incremental = params.get<bool>("Incremental");
     }
     m_hencky = true;
-    if (params.isParameter("HenckyStrain")){
-        m_hencky = params.get<bool>("HenckyStrain");
+    if (params.isParameter("Hencky Strain")){
+        m_hencky = params.get<bool>("Hencky Strain");
     }
     if (m_planeStrain==true){
         m_plane=true;
