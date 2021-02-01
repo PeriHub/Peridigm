@@ -98,7 +98,7 @@ int PeridigmNS::Compute_Deformation_Gradient::compute( Teuchos::RCP< std::vector
     int* const neighborhoodList = neighborhoodData->NeighborhoodList();
     Teuchos::RCP<PeridigmNS::DataManager> dataManager = blockIt->getDataManager();
     
-    double *volume, *horizon, *modelCoordinates, *coordinates, *coordinatesNP1, *shapeTensorInverse, *deformationGradient, *bondDamage, *detachedNodes;
+    double *volume, *horizon, *modelCoordinates, *coordinates, *coordinatesNP1, *shapeTensorInverse, *deformationGradient, *bondDamage, *bondDamageNP1, *detachedNodes;
     dataManager->getData(m_volumeFId, PeridigmField::STEP_NONE)->ExtractView(&volume);
     dataManager->getData(m_horizonFId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
     dataManager->getData(m_modelCoordinatesFId, PeridigmField::STEP_NONE)->ExtractView(&modelCoordinates);
@@ -106,7 +106,8 @@ int PeridigmNS::Compute_Deformation_Gradient::compute( Teuchos::RCP< std::vector
     dataManager->getData(m_coordinatesFId, PeridigmField::STEP_NP1)->ExtractView(&coordinatesNP1);
     dataManager->getData(m_shapeTensorInverseFId, PeridigmField::STEP_NONE)->ExtractView(&shapeTensorInverse);
     dataManager->getData(m_deformationGradientFId, PeridigmField::STEP_NONE)->ExtractView(&deformationGradient);
-    dataManager->getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
+    dataManager->getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamage);
+    dataManager->getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
     dataManager->getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->ExtractView(&detachedNodes);
 
     bool m_type = false;
@@ -121,6 +122,7 @@ int PeridigmNS::Compute_Deformation_Gradient::compute( Teuchos::RCP< std::vector
                                                                                                   shapeTensorInverse,
                                                                                                   deformationGradient,
                                                                                                   bondDamage,
+                                                                                                  bondDamageNP1,
                                                                                                   neighborhoodList,
                                                                                                   numOwnedPoints,
                                                                                                   m_type,

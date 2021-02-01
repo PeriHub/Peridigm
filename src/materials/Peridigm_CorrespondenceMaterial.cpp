@@ -395,6 +395,7 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   double *shapeTensorInverse;
   double *deformationGradient;
   double *bondDamage;
+  double *bondDamageNP1;
 
 
   dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&volume);
@@ -406,7 +407,8 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   dataManager.getData(m_shapeTensorInverseFieldId, PeridigmField::STEP_NONE)->ExtractView(&shapeTensorInverse);
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&deformationGradient);
   
-  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
+  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamage);
+  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
 
  int shapeTensorReturnCode = 0;
   shapeTensorReturnCode = 
@@ -418,6 +420,7 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
                                                                                    shapeTensorInverse,
                                                                                    deformationGradient,
                                                                                    bondDamage,
+                                                                                   bondDamageNP1,
                                                                                    neighborhoodList,
                                                                                    numOwnedPoints,
                                                                                    m_plane,
@@ -443,7 +446,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_partialStressFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
 
-  double *horizon, *volume, *modelCoordinates, *coordinates, *coordinatesNP1, *shapeTensorInverse, *deformationGradient, *bondDamage, *pointAngles, *detachedNodes;
+  double *horizon, *volume, *modelCoordinates, *coordinates, *coordinatesNP1, *shapeTensorInverse, *deformationGradient, *bondDamage, *bondDamageNP1, *pointAngles, *detachedNodes;
   //double *deformationGradientNonInc;
 
   dataManager.getData(m_horizonFieldId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
@@ -456,8 +459,8 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&deformationGradient);
 
           
-          
-  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
+  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamage);
+  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
 
   
   dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->ExtractView(&detachedNodes);
@@ -480,6 +483,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                                                 shapeTensorInverse,
                                                                                 deformationGradient,
                                                                                 bondDamage,
+                                                                                bondDamageNP1,
                                                                                 neighborhoodList,
                                                                                 numOwnedPoints,
                                                                                 m_plane,
@@ -524,7 +528,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                                                                    neighborhoodList, 
                                                                                                    numOwnedPoints, 
                                                                                                    dt,
-                                                                                                   bondDamage,
+                                                                                                   bondDamageNP1,
                                                                                                    m_plane);
 
       string rotationTensorErrorMessage =
@@ -624,7 +628,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                        deformationGradient,
                                        cauchyStressNP1,
                                        shapeTensorInverse,
-                                       bondDamage,
+                                       bondDamageNP1,
                                        C,
                                        pointAngles,
                                        forceDensity,
@@ -654,7 +658,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                             numOwnedPoints,
                                             m_bulkModulus,
                                             m_hourglassCoefficient,
-                                            bondDamage
+                                            bondDamageNP1
                                             );
       }
       
@@ -670,7 +674,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                             numOwnedPoints,
                                             m_bulkModulus,
                                             m_hourglassCoefficient,
-                                            bondDamage
+                                            bondDamageNP1
                                             );
       }
   }
@@ -782,9 +786,10 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
     tempDataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_N)->ExtractView(&coordinates);
     tempDataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&coordinatesNP1);
     dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->ExtractView(&detachedNodes);
-    double *horizon, *bondDamage;
+    double *horizon, *bondDamage, *bondDamageNP1;
     tempDataManager.getData(m_horizonFieldId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
-    tempDataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
+    tempDataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamage);
+    tempDataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
  
     // Create arrays of Fad objects for the current coordinates, dilatation, and force density
     // Modify the existing vector of Fad objects for the current coordinates
@@ -834,6 +839,7 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
                                                                                        &shapeTensorInverse_AD[0],
                                                                                        &deformationGradient_AD[0],
                                                                                        bondDamage,
+                                                                                       bondDamageNP1,
                                                                                        &tempNeighborhoodList[0],
                                                                                        tempNumOwnedPoints,
                                                                                        m_plane,
@@ -867,7 +873,7 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
                                         &deformationGradient_AD[0],
                                         &cauchyStressNP1_AD[0],
                                         &shapeTensorInverse_AD[0],
-                                        bondDamage,
+                                        bondDamageNP1,
                                         &C_AD[0],
                                         angles,
                                         &force_AD[0],

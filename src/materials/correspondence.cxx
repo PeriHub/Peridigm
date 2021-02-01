@@ -895,6 +895,7 @@ template int computeShapeTensorInverseAndApproximateDeformationGradient<Sacado::
  Sacado::Fad::DFad<double>* shapeTensorInverse,
  Sacado::Fad::DFad<double>* deformationGradient,
  const double* bondDamage,
+ const double* bondDamageNP1,
  const int* neighborhoodList,
  int numPoints,
  const bool type,
@@ -913,6 +914,7 @@ const ScalarT* coordinatesNP1,
 ScalarT* shapeTensorInverse,
 ScalarT* deformationGradient,
 const double* bondDamage,
+const double* bondDamageNP1,
 const int* neighborhoodList,
 int numPoints,
 const bool type,
@@ -949,11 +951,13 @@ double* detachedNodes
 
   int neighborIndex, numNeighbors;
   const int *neighborListPtr = neighborhoodList;
-  
+
   for(int iID=0 ; iID<numPoints ; ++iID, delta++, modelCoord+=3, coord+=3, coordNP1+=3,
         shapeTensorInv+=9, defGrad+=9){
 
   //std::cout << iID << "/";
+  
+    int bondCheck(0), bondCheckNP1(0);
 
     *(shapeTensor)   = 0.0 ; *(shapeTensor+1) = 0.0 ; *(shapeTensor+2) = 0.0 ;
     *(shapeTensor+3) = 0.0 ; *(shapeTensor+4) = 0.0 ; *(shapeTensor+5) = 0.0 ;
@@ -964,7 +968,7 @@ double* detachedNodes
 
     numNeighbors = *neighborListPtr; neighborListPtr++;
 
-    for(int n=0; n<numNeighbors; n++, neighborListPtr++, bondDamage++){
+    for(int n=0; n<numNeighbors; n++, neighborListPtr++, bondDamage++, bondDamageNP1++){
       
       neighborIndex = *neighborListPtr;
 
@@ -992,7 +996,7 @@ double* detachedNodes
       omega = MATERIAL_EVALUATION::scalarInfluenceFunction(undeformedBondLength, *delta);
 
 
-      temp = (1.0 - *bondDamage) * omega * neighborVolume;
+      temp = (1.0 - *bondDamageNP1) * omega * neighborVolume;
       
       *(shapeTensor)   += temp * undeformedBondX * undeformedBondX;
       *(shapeTensor+1) += temp * undeformedBondX * undeformedBondY;
@@ -1049,8 +1053,28 @@ double* detachedNodes
         //std::cout  << "iID: " << iID <<  " modelCoord: " << *modelCoord  << " defGrad: " << *defGrad << " detachedNodes: "<< *(detachedNodes+iID) << " temp: " << temp << " bondDamage: " << *bondDamage << " omega: " << omega << " neighbourVolume: "<< neighborVolume << " bondDamageNeighbor: " << bondDamage[neighborIndex] << std::endl;
         break;
       }*/
+
+      if(*bondDamage==1)
+      {
+      bondCheck++;
+      }
+      if(*bondDamageNP1==1)
+      {
+      bondCheckNP1++;
+      }
+
+      //bondDamage[n] = *bondDamageNP1;
     }
 
+
+    if(bondCheckNP1-bondCheck>7)
+    {
+      std::cout << std::endl << " iID: " << iID << " bondcheck: "<< bondCheck << "/" << bondCheckNP1 << "/" << numNeighbors << std::endl;
+    }
+    if(bondCheck==0 & bondCheckNP1==numNeighbors)
+    {
+      std::cout << " All bonds detached in one step in iID: " << iID << std::endl ;
+    }
 
     if (*(detachedNodes+iID) == 0) {
         
@@ -1656,10 +1680,10 @@ void computeForcesAndStresses
           force[3*neighborIndex+1] -= TY * vol;
           force[3*neighborIndex+2] -= TZ * vol;
         
-          if(iID!=0 && *(forceDensityPtr)!=*(forceDensityPtr) || force[3*neighborIndex+0]!=force[3*neighborIndex+0] )
-          {
+          //if(iID!=0 && *(forceDensityPtr)!=*(forceDensityPtr) || force[3*neighborIndex+0]!=force[3*neighborIndex+0] )
+          //{
             //std::cout << "*(forceDensityPtr): " << *(forceDensityPtr) <<  " force[3*neighborIndex+0]: " << force[3*neighborIndex+0]  << " TX: " << TX << " neighborVol: "<< neighborVol << std::endl;
-          }
+          //}
 
           partialStressPtr = partialStress + 9*iID;
           *(partialStressPtr)   += TX*X_dx*neighborVol;
@@ -2369,6 +2393,7 @@ const double* coordinatesNP1,
 double* shapeTensorInverse,
 double* deformationGradient,
 const double* bondDamage,
+const double* bondDamageNP1,
 const int* neighborhoodList,
 int numPoints,
 const bool type,
