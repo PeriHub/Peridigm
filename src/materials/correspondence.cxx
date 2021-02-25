@@ -1062,18 +1062,12 @@ double* detachedNodes
       {
       bondCheckNP1++;
       }
-
-      //bondDamage[n] = *bondDamageNP1;
     }
 
 
     if(bondCheckNP1-bondCheck>7)
     {
-      std::cout << std::endl << " iID: " << iID << " bondcheck: "<< bondCheck << "/" << bondCheckNP1 << "/" << numNeighbors << std::endl;
-    }
-    if(bondCheck==0 & bondCheckNP1==numNeighbors)
-    {
-      std::cout << " All bonds detached in one step in iID: " << iID << std::endl ;
+      std::cout << " To much bonds detached in one step in iID: " << iID << std::endl ;
     }
 
     if (*(detachedNodes+iID) == 0) {
@@ -1110,6 +1104,31 @@ double* detachedNodes
                 *(defGrad+3) = 0.0 ;     *(defGrad+4) = 1.0 ;     *(defGrad+5) = 0.0 ;
                 *(defGrad+6) = 0.0 ;     *(defGrad+7) = 0.0 ;     *(defGrad+8) = 1.0 ;
            }
+
+    if(bondCheckNP1-bondCheck>7)
+    {
+      std::cout << std::endl << " *(shapeTensor): " << *(shapeTensor) << " inversionReturnCode: "<< inversionReturnCode << " *(shapeTensorInv): " << *(shapeTensorInv) << std::endl;
+      std::cout << " defGrad: [" << *(defGrad) << ", " << *(defGrad+1)  << ", " << *(defGrad+3) << ", " << *(defGrad+4) << "]" << std::endl;
+      std::cout << " defGradFirstTerm: [" << *(defGradFirstTerm) << ", " << *(defGradFirstTerm+1)  << ", " << *(defGradFirstTerm+3) << ", " << *(defGradFirstTerm+4) << "]" << std::endl;
+    }
+
+    if(bondCheckNP1-bondCheck > 5 && bondCheckNP1-bondCheck < 8)
+    {
+      std::cout << std::endl << "iiD" << iID << std::endl;
+      std::cout << "Bonddet = " <<  bondCheckNP1-bondCheck << "/" << numNeighbors << std::endl;
+      std::cout << " *(shapeTensor): " << *(shapeTensor) << " inversionReturnCode: "<< inversionReturnCode << " *(shapeTensorInv): " << *(shapeTensorInv) << std::endl;
+      std::cout << " defGrad: [" << *(defGrad) << ", " << *(defGrad+1)  << ", " << *(defGrad+3) << ", " << *(defGrad+4) << "]" << std::endl;
+      std::cout << " defGradFirstTerm: [" << *(defGradFirstTerm) << ", " << *(defGradFirstTerm+1)  << ", " << *(defGradFirstTerm+3) << ", " << *(defGradFirstTerm+4) << "]" << std::endl;
+    }
+
+    if(bondCheckNP1 == numNeighbors && bondCheckNP1-bondCheck>0)
+    {
+      std::cout << std::endl << "iiD" << iID << std::endl;
+      std::cout << "ALl Bonds = " <<  bondCheckNP1-bondCheck << "/" << numNeighbors << std::endl;
+      std::cout << " *(shapeTensor): " << *(shapeTensor) << " inversionReturnCode: "<< inversionReturnCode << " *(shapeTensorInv): " << *(shapeTensorInv) << std::endl;
+      std::cout << " defGrad: [" << *(defGrad) << ", " << *(defGrad+1)  << ", " << *(defGrad+3) << ", " << *(defGrad+4) << "]" << std::endl;
+      std::cout << " defGradFirstTerm: [" << *(defGradFirstTerm) << ", " << *(defGradFirstTerm+1)  << ", " << *(defGradFirstTerm+3) << ", " << *(defGradFirstTerm+4) << "]" << std::endl;
+    }
   }
 
 
@@ -1590,6 +1609,7 @@ void computeForcesAndStresses
           *(temp+3) = 0;*(temp+4) = 0;*(temp+5) = 0;
           *(temp+6) = 0;*(temp+7) = 0;*(temp+8) = 0;
           // as a last resort. might stabilize sometimes
+          std::cout<<"Break before damage."<<std::endl;
           detachedNodes[iID] = 1;
           break;
       }
