@@ -1485,10 +1485,26 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
   for(int step=1; step<=nsteps; step++){
 
-    cout << endl << step << "/" << nsteps;
+
+    /*if (step==11) adaptive Timestep
+    {
+      cout << endl << "dt: " << dt << "nsteps" << nsteps;
+      dt=3.8e-08;
+      nsteps = static_cast<int>( floor((timeFinal-timeCurrent)/dt) );
+      cout << endl << "dt: " << dt << "nsteps" << nsteps;
+      workset->timeStep = dt;
+    }*/
 
     timePrevious = timeCurrent;
     timeCurrent = timeInitial + (step*dt);
+
+    /*if (step!=0)
+    {
+    timeCurrent += dt;
+    }*/
+
+    
+    cout << endl << step << "/" << nsteps;// << " time: " << timeCurrent;
 
     // TODO this should not be here
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
