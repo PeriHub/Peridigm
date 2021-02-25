@@ -63,7 +63,7 @@ PeridigmNS::ModelEvaluator::evalDamageModel(Teuchos::RCP<Workset> workset) const
   for(blockIt = workset->blocks->begin() ; blockIt != workset->blocks->end() ; blockIt++){
 
     Teuchos::RCP<const PeridigmNS::DamageModel> damageModel = blockIt->getDamageModel();
-    if(!damageModel.is_null()){
+    if(!damageModel.is_null() && blockIt->getDamageEnabled()){
       Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData = blockIt->getNeighborhoodData();
       const int numOwnedPoints = neighborhoodData->NumOwnedPoints();
       const int* ownedIDs = neighborhoodData->OwnedIDs();

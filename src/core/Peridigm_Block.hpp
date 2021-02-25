@@ -109,6 +109,18 @@ namespace PeridigmNS {
       return blockParams.get<std::string>("Damage Model", "None");
     }
 
+    //! Get if damage is enabled
+    bool getDamageEnabled(){
+    if (blockParams.isParameter("Damage Enabled"))
+    {
+      return blockParams.get<bool>("Damage Enabled");
+    }
+    else
+    {
+      return true;
+    }
+    }
+
     //! Initialize the material model
     void initializeMaterialModel(double timeStep = 1.0);
 
