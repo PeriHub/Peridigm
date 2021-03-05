@@ -151,16 +151,7 @@ bool hencky
   ScalarT C[6][6];
   ScalarT rotationMat[3][3], rotationMatX[3][3], rotationMatY[3][3], rotationMatZ[3][3], temp[3][3];
   double alpha[3];
-
-  //bool useHencky = true;
-  
   int defGradLogReturnCode(0);
-
-  int defUsed(0);
-  int defNotUsed(0);
-  int eigenVecError(0);
-  int inverseError(0);
-  int logError(0);
 
   // 0 -> xx,  1 -> xy, 2 -> xz
   // 3 -> yx,  4 -> yy, 5 -> yz
@@ -218,7 +209,6 @@ bool hencky
         
       }
       if (type!=0){
-
           strain[0] = 0.5 * ( *(defGrad)*   *(defGrad)   + *(defGrad+3)* *(defGrad+3) - 1.0 );
           strain[1] = 0.5 * ( *(defGrad)*   *(defGrad+1) + *(defGrad+3)* *(defGrad+4) );
           strain[3] = 0.5 * ( *(defGrad+1)* *(defGrad)   + *(defGrad+4)* *(defGrad+3) );
@@ -226,7 +216,6 @@ bool hencky
 
         if(hencky && *(defGrad)!=1 | *(defGrad+1)!=0 | *(defGrad+3)!=0 | *(defGrad+4)!=1)
         {
-          
           defGradLogReturnCode = CORRESPONDENCE::computeLogStrain(defGrad,logStrain);
 
           if (defGradLogReturnCode==0)
@@ -235,24 +224,8 @@ bool hencky
             strain[1] = logStrain[1];
             strain[3] = logStrain[3];
             strain[4] = logStrain[4];
-
-            defUsed++;
-          }
-          else if (defGradLogReturnCode==1)
-          {
-            eigenVecError++;
-          }
-          else if (defGradLogReturnCode==2)
-          {
-            inverseError++;
-          }
-          else if (defGradLogReturnCode==3)
-          {
-            logError++;
           }
         }
-        
-
         *(sigmaNP1)   = C[0][0]*strain[0] + C[0][1]*strain[4] + C[0][5]*(strain[1]+strain[3]);
         *(sigmaNP1+1) = C[5][0]*strain[0] + C[5][1]*strain[4] + C[5][5]*(strain[1]+strain[3]);
 
@@ -264,7 +237,6 @@ bool hencky
         *(sigmaNP1+6) = 0.0;
         *(sigmaNP1+7) = 0.0;
         *(sigmaNP1+8) = 0.0;
-
       }
       //if (incremental == true){
       //   for (int i = 0; i < 9; i++) {
@@ -272,19 +244,6 @@ bool hencky
       //    }
       //}
   } 
-
-  if(hencky && false)
-    {
-      std::cout << " numPoints:  [" << numPoints << "]" << std::endl;
-      std::cout << " defUsed:  [" << defUsed << "]" << std::endl;
-      std::cout << " defNotUsed:  [" << defNotUsed << "]" << std::endl;
-      std::cout << " eigenVecError:  [" << eigenVecError << "]" << std::endl;
-      std::cout << " inverseError:  [" << inverseError << "]" << std::endl;
-      std::cout << " logError:  [" << logError << "]" << std::endl;
-      std::cout << " strain: [" << strain[0] << ", " << strain[1] << ", " << strain[3] << ", " << strain[4] << "]" << std::endl;
-      std::cout << " logStrain: [" << logStrain[0] << ", " << logStrain[1] << ", " << logStrain[3] << ", " << logStrain[4] << "]" << std::endl;
-    }
-
 }       
 
 

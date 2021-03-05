@@ -60,11 +60,7 @@ PeridigmNS::ModelEvaluator::evalDamageModel(Teuchos::RCP<Workset> workset) const
 
   // ---- Evaluate Damage ---
 
-  int blockIndex = 0;
-
-  for(blockIt = workset->blocks->begin() ; blockIt != workset->blocks->end() ; blockIt++, blockIndex++){
-
-    //cout << " Blocks: "<< blockIndex << "/11" << endl;
+  for(blockIt = workset->blocks->begin() ; blockIt != workset->blocks->end() ; blockIt++){
 
     Teuchos::RCP<const PeridigmNS::DamageModel> damageModel = blockIt->getDamageModel();
     if(!damageModel.is_null() && blockIt->getDamageEnabled()){
@@ -215,11 +211,7 @@ PeridigmNS::ModelEvaluator::updateCauchyStress(Teuchos::RCP<Workset> workset) co
   // what if no damage is included in a block
   // test 
 
-  int blockIndex = 0;
-
-  for(blockIt = workset->blocks->begin() ; blockIt != workset->blocks->end() ; blockIt++, blockIndex++){
-
-    //cout << " Blocks: "<< blockIndex << "/11" ;
+  for(blockIt = workset->blocks->begin() ; blockIt != workset->blocks->end() ; blockIt++){
 
     Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData = blockIt->getNeighborhoodData();
     const int numOwnedPoints = neighborhoodData->NumOwnedPoints();

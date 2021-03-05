@@ -137,7 +137,7 @@ namespace PeridigmNS {
     //! Compute the residual vector (pure virtual method in NOX::Epetra::Interface::Required)
     bool computeF(const Epetra_Vector& x, Epetra_Vector& FVec, FillType fillType = Residual);
 
-	  //! Check all Processors for damage
+	//! Check all Processors for damage
     void MpiDamageCheck(bool *cancelAndSave);		
 	
     //! Compute the Jacobian (pure virtual method in NOX::Epetra::Interface::Jacobian)
@@ -383,10 +383,6 @@ namespace PeridigmNS {
 
     //! Display information about memory usage
     void printMemoryStats(){Memstat * memstat = Memstat::Instance(); memstat->printStats();};
-
-
-												 
-							  
 
   private:
 
@@ -654,7 +650,6 @@ namespace PeridigmNS {
     int forceDensityFieldId;
     int contactForceDensityFieldId;
     int externalForceDensityFieldId;
-								
     int damageModelFieldId;
 //    int deviatoricPlasticExtensionFieldId;
     int plasticModelFieldId;

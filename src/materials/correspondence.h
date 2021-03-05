@@ -96,7 +96,7 @@ void MatrixMultiply3x3
 );
 
 template<typename ScalarT>
-int EigenVec2x2
+int EigenVec2D
 (
  const ScalarT* a,
  ScalarT* result

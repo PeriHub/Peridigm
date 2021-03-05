@@ -180,7 +180,7 @@ m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
     m_fieldIds.push_back(m_piolaStressTimesInvShapeTensorZId);
     m_fieldIds.push_back(m_forceDensityFieldId);
     m_fieldIds.push_back(m_deformationGradientFieldId);
-    m_fieldIds.push_back(m_hourglassStiffId);
+    m_fieldIds.push_back(m_hourglassStiffId);									 
 
 }
 
@@ -262,7 +262,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     double* TS = &TSvector[0];
     ///////////////////////////////////////////////////////
     dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&defGrad);
-    dataManager.getData(m_hourglassStiffId, PeridigmField::STEP_NONE)->ExtractView(&hourglassStiff);
+	dataManager.getData(m_hourglassStiffId, PeridigmField::STEP_NONE)->ExtractView(&hourglassStiff);																								
     //std::cout<< "heredam"<<std::endl;
     // Set the bond damage to the previous value --> needed for iteration in implicit time integration
     *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)) = *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N));
@@ -311,8 +311,6 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     //---------------------------
     bondIndex = 0;
 
-    double bondEnergyCheck(0);
-
     for (iID = 0; iID < numOwnedPoints; ++iID, defGrad+=9, hourglassStiff+=9) {
         numNeighbors = neighborhoodList[neighborhoodListIndex++];
         
@@ -323,9 +321,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
         nodeCurrentX[0] = y[nodeId*3];
         nodeCurrentX[1] = y[nodeId*3+1];
         nodeCurrentX[2] = y[nodeId*3+2];
-
-        bondEnergyCheck=0;
-
+        
         for (iNID = 0; iNID < numNeighbors; ++iNID) {
             
             
@@ -400,7 +396,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                     //TPXN = factorN*Y_dx; TPYN = factorN*Y_dy; TPZN = factorN*Y_dz;
                     
                     bondEnergy = 0.5*temp*(abs(TPX*etaX)+abs(TPXN*etaX)+abs(TPY*etaY)+abs(TPYN*etaY)+abs(TPZ*etaZ)+abs(TPZN*etaZ)) ;
-                    //if (iID == 511) std::cout<<"iNID: " << iNID <<"bondEnergy: "<<bondEnergy<<std::endl;
+                    //if (iID == 1) std::cout<<bondEnergy<<std::endl;
                 }
                 else
                 {
@@ -408,6 +404,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                 }
                 //bondEnergy = 0.5*(sqrt(TX*TX)+sqrt(TXN*TXN))*sqrt((uNx-ux)*(uNx-ux)) + 0.5*(sqrt(TY*TY)+sqrt(TYN*TYN))*sqrt((uNy-uy)*(uNy-uy)) + 0.5*(sqrt(TZ*TZ)+sqrt(TZN*TZN))*sqrt((uNz-uz)*(uNz-uz));
                 
+
                 double avgHorizon = 0.5*(horizon[nodeId]+horizon[neighborID]);
                 if (bondEnergy<0){
                     std::cout<<TPX<<" "<< TPXN<<" BE "<<bondEnergy<<std::endl;
@@ -443,12 +440,9 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
             }
             bondIndex += 1;
 
+            }
+
         }
-
-        //if (iID == 511) std::cout<< "bondEnergyCheck[" << iID << "]: " << bondEnergyCheck << std::endl;
-    }
-
-
     //  Update the element damage (percent of bonds broken)
     if (detachedNodesCheck == true){
         int check = 1;  //set check = 1 to start the loop
@@ -524,8 +518,6 @@ int PeridigmNS::EnergyReleaseDamageCorrepondenceModel::checkDetachedNodes(
       checkShapeTensor[6] = 0.0;
       checkShapeTensor[7] = 0.0;
       checkShapeTensor[8] = 0.0;
-
-      int bondcheck(0);
   
       for(iNID=0 ; iNID<numNeighbors ; ++iNID){
           
@@ -553,25 +545,13 @@ int PeridigmNS::EnergyReleaseDamageCorrepondenceModel::checkDetachedNodes(
               checkShapeTensor[6]  += temp * undeformedBondZ * undeformedBondX;
               checkShapeTensor[7]  += temp * undeformedBondZ * undeformedBondY;
               checkShapeTensor[8]  += temp * undeformedBondZ * undeformedBondZ;
-
-              if (temp==0)
-              {
-                 bondcheck++;
-              }
           }
           if (detachedNodes[neighborID]!=0&&bondDamageNP1[bondIndex] != 1.0){// bondDamage check to avoid infinite loop; all bonds then destroyed
               bondDamageNP1[bondIndex] = 1.0;
               check = 1;
-              
-            std::cout << "detachedNodes: " << detachedNodes[neighborID] << " iiD: " << iID << std::endl;
           }
           
           bondIndex += 1;
-      }
-
-      if(bondcheck==numNeighbors)
-      {
-          std::cout << "bondcheck, iiD: " << iID << std::endl;
       }
       
       if (detachedNodes[nodeId]!=0) continue;
@@ -586,14 +566,11 @@ int PeridigmNS::EnergyReleaseDamageCorrepondenceModel::checkDetachedNodes(
         }
       
       if (matrixInversionReturnCode != 0){// to be checked
-            std::cout << "matrixInversionReturnCode: " << matrixInversionReturnCode << " iiD: " << iID << std::endl ;
-            std::cout << "checkShapeTensor: [" << checkShapeTensor[0] << ", " << checkShapeTensor[1] << ", " << checkShapeTensor[3] << ", " << checkShapeTensor[4] << ", "<< std::endl ;
           check = 1;
           detachedNodes[nodeId]=1.;
           int bondIndex2 = bondIndex-numNeighbors; // set index back, to have the same correct bonds
           // delete all connected bonds
           for(iNID=0 ; iNID<numNeighbors ; ++iNID){
-                  //std::cout << "bondDamageNP1[bondIndex2]: " << bondDamageNP1[bondIndex2] << std::endl ;
                   bondDamageNP1[bondIndex2] = 1.0;
                   bondIndex2 += 1;
           }   

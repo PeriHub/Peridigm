@@ -2,7 +2,7 @@
 # CMakeLists.txt file for Peridigm
 #
 
-Cmake_minimum_required (VERSION 3.0)
+Cmake_minimum_required (VERSION 2.6)
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)
 
 enable_testing ()

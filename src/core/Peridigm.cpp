@@ -102,9 +102,6 @@
 
 using namespace std;
 
-
-
-
 PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
                                Teuchos::RCP<Teuchos::ParameterList> params,
                                Teuchos::RCP<Discretization> inputPeridigmDiscretization)
@@ -143,7 +140,6 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   // deviatoricPlasticExtensionFieldId(-1),
     numMultiphysDoFs(0)
 {
-
 #ifdef HAVE_MPI
   peridigmComm = Teuchos::rcp(new Epetra_MpiComm(comm));
 #else
@@ -1506,26 +1502,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
   for(int step=1; step<=nsteps; step++){
 
-
-									 
-	 
-														 
-				 
-																	 
-														 
-							 
-	   
-
     timePrevious = timeCurrent;
     timeCurrent = timeInitial + (step*dt);
-
-				  
-	 
-					  
-	   
-
-	
-																		 
 
     // TODO this should not be here
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
@@ -1583,13 +1561,6 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     for(int i=0 ; i<y->MyLength() ; ++i){
       vPtr[i] = vPtr[i] * (1 - numericalDamping);
       yPtr[i] = xPtr[i] + uPtr[i] + dt*vPtr[i] ;
-
-																							 
-	   
-																			
-																									 
-	   
-
     }
     // U^{n+1} = U^{n} + (dt)*V^{n+1/2}
     // blas.AXPY(const int N, const double ALPHA, const double *X, double *Y, const int INCX=1, const int INCY=1) const
@@ -1749,17 +1720,13 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     // Check for NaNs in force evaluation
     // We'd like to know now because a NaN will likely cause a difficult-to-unravel crash downstream.
     //for(int i=0 ; i<force->MyLength() ; ++i)
-	 
     //  TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite((*force)[i]), "**** NaN returned by force evaluation.\n");
 
-	 
     // Check for NaNs in force evaluation
     // We'd like to know now because a NaN will likely cause a difficult-to-unravel crash downstream.
     for(int i=0 ; i<externalForce->MyLength() ; ++i)
-	 
       TEUCHOS_TEST_FOR_EXCEPT_MSG(!std::isfinite((*externalForce)[i]), "**** NaN returned by external force evaluation.\n");
 
-	 
     if(analysisHasContact){
       contactManager->exportData(contactForce);
       // Check for NaNs in contact force evaluation
@@ -1777,33 +1744,24 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       (*a)[i] /= (*density)[i/3];
       if ((*detachedNodesList)[i/3]!=0) (*a)[i] = 0;
       if ((*netDamageField)[i/3]!=0) damageExist = true;
-
-							
-		 
-																									  
-																																							   
-		 
-
     }
     
     //blas.AXPY(const int N, const double ALPHA, const double *X, double *Y, const int INCX=1, const int INCY=1) const
     blas.AXPY(length, dt2, aPtr, vPtr, 1, 1);
-
+    
     PeridigmNS::Timer::self().startTimer("Output");
     synchDataManagers();
-    if (stopBeforeOutput){if (damageExist){ 
+    if (stopBeforeOutput && damageExist){ 
         std::cout<<"Break before damage."<<std::endl;
         stopPeridigm=true;
-        }
     }
-    if (stopAfterOutput){if (damageExist){ 
-								
-        dataLoader->loadData(timeCurrent, blocks);
-	   
+    if (stopAfterOutput && damageExist){ 
+		if(analysisHasDataLoader){
+			dataLoader->loadData(timeCurrent, blocks);
+		}
         outputManager->write(blocks, timeCurrent);
         std::cout<<"Break after damage."<<std::endl;
         stopPeridigm=true;
-        }
     }
     if(analysisHasDataLoader){
       dataLoader->loadData(timeCurrent, blocks);
@@ -1811,19 +1769,18 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
     outputManager->write(blocks, timeCurrent);
     PeridigmNS::Timer::self().stopTimer("Output");
-
     // swap state N and state NP1
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++)
       blockIt->updateState();
 
-	MpiDamageCheck(&stopPeridigm);
+	  MpiDamageCheck(&stopPeridigm);
+    MPI_Bcast(&stopPeridigm, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
     // mpi cancel
     if (stopPeridigm)
     {
       break;
     }	
-	
   }
   displayProgress("Explicit time integration", 100.0);
   *out << "\n\n";
@@ -1832,29 +1789,31 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 void PeridigmNS::Peridigm::MpiDamageCheck(bool *stopPeridigmRef){
   int rank, size;
   bool *rbuf;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  bool stopPeridigm=*stopPeridigmRef;
   MPI_Comm_size(MPI_COMM_WORLD, &size);
-  if (rank == 0)
+  if (size>1)
   {
-    rbuf = (bool *)malloc(size*sizeof(bool));
-  }
-  MPI_Gather(&stopPeridigmRef, 1, MPI_CXX_BOOL, rbuf, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
-
-  if(rank==0)
-  {
-    for (int i=0; i < size; i++)
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (rank == 0)
     {
-      if (rbuf[i])
+      rbuf = (bool *)malloc(size*sizeof(bool));
+    }
+    MPI_Gather(&stopPeridigm, 1, MPI_CXX_BOOL, rbuf, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+
+    if(rank==0)
+    {
+      for (int i=0; i < size; i++)
       {
-        *stopPeridigmRef = true;
-        break;
+        if (rbuf[i])
+        {
+          *stopPeridigmRef = true;
+          break;
+        }
       }
     }
   }
-
-  MPI_Bcast(&stopPeridigmRef, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
-}																 
-
+}
+											 
 bool PeridigmNS::Peridigm::computeF(const Epetra_Vector& x, Epetra_Vector& FVec, NOX::Epetra::Interface::Required::FillType fillType) {
   return evaluateNOX(fillType, &x, &FVec);
 }
@@ -3949,7 +3908,6 @@ void PeridigmNS::Peridigm::executeImplicit(Teuchos::RCP<Teuchos::ParameterList> 
     CWillberg = implicitParams->get<bool>("CWillberg");
   if(CWillberg){
   if (implicitParams->isParameter("Numerical Damping"))
-	 
         numericalDamping = implicitParams->get<double>("Numerical Damping");
         if (implicitParams->isParameter("Change t")){
             changeTime              = implicitParams->get<double>("Change t");
@@ -3973,7 +3931,6 @@ void PeridigmNS::Peridigm::executeImplicit(Teuchos::RCP<Teuchos::ParameterList> 
         dtMin = dtInit;
         adaptiveDt = false;
         }
-	   
     // set time step for analysis
   }
   else{

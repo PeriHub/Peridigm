@@ -335,35 +335,6 @@ void PeridigmNS::OutputManager_ExodusII::write(Teuchos::RCP< std::vector<Peridig
             xptr[msLID] = block_ptr[3*j];
             yptr[msLID] = block_ptr[3*j+1];
             zptr[msLID] = block_ptr[3*j+2];
-
-            if(name=="Displacement")
-            {
-              if (block_ptr[3*j]>1e30)
-              {
-                xptr[msLID] = 1e30;
-              }
-              if (block_ptr[3*j]<-1e30)
-              {
-                xptr[msLID] = -1e30;
-              }
-              if (block_ptr[3*j+1]>1e30)
-              {
-                yptr[msLID] = 1e30;
-              }
-              if (block_ptr[3*j+1]<-1e30)
-              {
-                yptr[msLID] = -1e30;
-              }
-              if (block_ptr[3*j+2]>1e30)
-              {
-                zptr[msLID] = 1e30;
-              }
-              if (block_ptr[3*j+2]<-1e30)
-              {
-                zptr[msLID] = -1e30;
-              }
-            }
-
           }
         } // end switch on data dimension
       } // end loop over blocks
@@ -382,7 +353,7 @@ void PeridigmNS::OutputManager_ExodusII::write(Teuchos::RCP< std::vector<Peridig
         retval = ex_put_nodal_var(file_handle, exodusCount, node_output_field_map[tmpnameY], num_nodes, yptr);
         if (retval!= 0) reportExodusError(retval, "write", "ex_put_nodal_var");
         retval = ex_put_nodal_var(file_handle, exodusCount, node_output_field_map[tmpnameZ], num_nodes, zptr);
-        if (retval!= 0) reportExodusError(retval, "write", "ex_put_nodal_var"); 
+        if (retval!= 0) reportExodusError(retval, "write", "ex_put_nodal_var");
       }
     } // end if per-node variable
     // Exodus wants element data written individually for each element block
