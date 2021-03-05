@@ -325,7 +325,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
         nodeCurrentX[2] = y[nodeId*3+2];
 
         bondEnergyCheck=0;
-        
+
         for (iNID = 0; iNID < numNeighbors; ++iNID) {
             
             
@@ -408,8 +408,6 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                 }
                 //bondEnergy = 0.5*(sqrt(TX*TX)+sqrt(TXN*TXN))*sqrt((uNx-ux)*(uNx-ux)) + 0.5*(sqrt(TY*TY)+sqrt(TYN*TYN))*sqrt((uNy-uy)*(uNy-uy)) + 0.5*(sqrt(TZ*TZ)+sqrt(TZN*TZN))*sqrt((uNz-uz)*(uNz-uz));
                 
-                //if (iID == 511) bondEnergyCheck+=bondEnergy;
-
                 double avgHorizon = 0.5*(horizon[nodeId]+horizon[neighborID]);
                 if (bondEnergy<0){
                     std::cout<<TPX<<" "<< TPXN<<" BE "<<bondEnergy<<std::endl;

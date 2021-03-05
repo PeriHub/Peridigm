@@ -137,6 +137,9 @@ namespace PeridigmNS {
     //! Compute the residual vector (pure virtual method in NOX::Epetra::Interface::Required)
     bool computeF(const Epetra_Vector& x, Epetra_Vector& FVec, FillType fillType = Residual);
 
+	  //! Check all Processors for damage
+    void MpiDamageCheck(bool *cancelAndSave);		
+	
     //! Compute the Jacobian (pure virtual method in NOX::Epetra::Interface::Jacobian)
     bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
 
@@ -162,7 +165,7 @@ namespace PeridigmNS {
     bool hasTangentStiffnessMatrix(){
       bool hasTangent = false;
       if(!tangent.is_null()){
-	    hasTangent = true;
+	hasTangent = true;
       }
       return hasTangent;
     }
@@ -223,7 +226,7 @@ namespace PeridigmNS {
       PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
 
       if(!fieldManager.hasField(fieldName)){
-	    return false;
+	return false;
       }
 
       int fieldId = fieldManager.getFieldId(fieldName);
@@ -382,8 +385,8 @@ namespace PeridigmNS {
     void printMemoryStats(){Memstat * memstat = Memstat::Instance(); memstat->printStats();};
 
 
-    //! Flag for canceling calculation and saving
-    static bool cancelAndSave;
+												 
+							  
 
   private:
 
@@ -651,7 +654,7 @@ namespace PeridigmNS {
     int forceDensityFieldId;
     int contactForceDensityFieldId;
     int externalForceDensityFieldId;
-    int fluidFlowDensityFieldId;
+								
     int damageModelFieldId;
 //    int deviatoricPlasticExtensionFieldId;
     int plasticModelFieldId;
@@ -660,10 +663,12 @@ namespace PeridigmNS {
     int piolaStressTimesInvShapeTensorZId;
     int partialVolumeFieldId;
     int detachedNodesFieldId;
+    int netDamageFieldId;
     // multiphyics information
     int fluidPressureYFieldId;
     int fluidPressureUFieldId;
     int fluidPressureVFieldId;
+    int fluidFlowDensityFieldId;
     int numMultiphysDoFs;
     string textMultiphysDoFs;
 

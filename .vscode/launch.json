@@ -35,7 +35,7 @@
             "request": "launch",
             "program": "/usr/bin/mpirun",
             "args": ["-np", "4", "Peridigm",
-                "HenckyTest_Run2.xml"
+                "Test_Run2.xml"
             ],
             "stopAtEntry": true,
             "cwd": "/home/jt/peridigmJobs/waviness/constantWaviness/meshResolution80/",

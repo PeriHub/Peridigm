@@ -3,6 +3,7 @@
 #
 
 Cmake_minimum_required (VERSION 3.0)
+add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)
 
 enable_testing ()
 project(Peridigm)
