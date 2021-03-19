@@ -334,7 +334,35 @@ void PeridigmNS::OutputManager_ExodusII::write(Teuchos::RCP< std::vector<Peridig
             int msLID = peridigm->getThreeDimensionalMap()->LID(GID);
             xptr[msLID] = block_ptr[3*j];
             yptr[msLID] = block_ptr[3*j+1];
-            zptr[msLID] = block_ptr[3*j+2];
+            zptr[msLID] = block_ptr[3*j+2];            
+            
+            if(name=="Displacement")
+            {
+              if (block_ptr[3*j]>1e30)
+              {
+                xptr[msLID] = 1e30;
+              }
+              if (block_ptr[3*j]<-1e30)
+              {
+                xptr[msLID] = -1e30;
+              }
+              if (block_ptr[3*j+1]>1e30)
+              {
+                yptr[msLID] = 1e30;
+              }
+              if (block_ptr[3*j+1]<-1e30)
+              {
+                yptr[msLID] = -1e30;
+              }
+              if (block_ptr[3*j+2]>1e30)
+              {
+                zptr[msLID] = 1e30;
+              }
+              if (block_ptr[3*j+2]<-1e30)
+              {
+                zptr[msLID] = -1e30;
+              }
+            }
           }
         } // end switch on data dimension
       } // end loop over blocks
