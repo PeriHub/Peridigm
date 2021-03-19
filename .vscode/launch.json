@@ -30,15 +30,15 @@
         },
 
         {
-            "name": "Peridigm Debug 4 Proc.",//ToDo mpirun not found
+            "name": "Peridigm Debug 4 Proc.",
             "type": "cppdbg",
             "request": "launch",
             "program": "/usr/bin/mpirun",
             "args": ["-np", "4", "Peridigm",
-                "Test_Run2.xml"
+                "FEModel.xml"
             ],
             "stopAtEntry": true,
-            "cwd": "/home/jt/peridigmJobs/waviness/constantWaviness/meshResolution80/",
+            "cwd": "/home/jt/peridigmJobs/waviness/constantWaviness/meshResolution160/",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",

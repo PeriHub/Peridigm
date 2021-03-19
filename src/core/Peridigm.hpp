@@ -137,8 +137,8 @@ namespace PeridigmNS {
     //! Compute the residual vector (pure virtual method in NOX::Epetra::Interface::Required)
     bool computeF(const Epetra_Vector& x, Epetra_Vector& FVec, FillType fillType = Residual);
 
-	//! Check all Processors for damage
-    void MpiDamageCheck(bool *cancelAndSave);		
+	  //! Gather and Bcast boolean
+    void MpiBoolGather(bool *valueRef, bool oneTrueOrAllFalse);		
 	
     //! Compute the Jacobian (pure virtual method in NOX::Epetra::Interface::Jacobian)
     bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
@@ -481,6 +481,9 @@ namespace PeridigmNS {
     //! Global vector for displacement
     Teuchos::RCP<Epetra_Vector> u;
 
+    //! Global vector for displacement
+    Teuchos::RCP<Epetra_Vector> u_previous;
+
 		//! Global vector for solid mechanics dof and additional
     Teuchos::RCP<Epetra_Vector> unknownsU;
 
@@ -550,6 +553,10 @@ namespace PeridigmNS {
 
     // damage synchronization vector 
     Teuchos::RCP<Epetra_Vector> netDamageField;
+
+    // bondDamage Difference synchronization vector 
+    Teuchos::RCP<Epetra_Vector> bondDamageDiffField;
+
     //! Global scratch space vector
     Teuchos::RCP<Epetra_Vector> scratch;
 
@@ -659,6 +666,7 @@ namespace PeridigmNS {
     int partialVolumeFieldId;
     int detachedNodesFieldId;
     int netDamageFieldId;
+    int bondDamageDiffFieldId;
     // multiphyics information
     int fluidPressureYFieldId;
     int fluidPressureUFieldId;

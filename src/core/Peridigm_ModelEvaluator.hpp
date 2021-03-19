@@ -61,6 +61,7 @@ namespace PeridigmNS {
     Teuchos::RCP< PeridigmNS::ContactManager > contactManager;
     Teuchos::RCP<PeridigmNS::Material::JacobianType> jacobianType;
     Teuchos::RCP< PeridigmNS::SerialMatrix > jacobian;
+    PeridigmField::Step adaptiveStep;
   };
   //! The main ModelEvaluator class; provides the interface between the driver code and the computational routines.
   class ModelEvaluator {

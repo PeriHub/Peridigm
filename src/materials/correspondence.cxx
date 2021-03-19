@@ -480,6 +480,7 @@ template int computeShapeTensorInverseAndApproximateDeformationGradient<Sacado::
  Sacado::Fad::DFad<double>* deformationGradient,
  const double* bondDamage,
  const double* bondDamageNP1,
+ double* bondDamageDiff,
  const int* neighborhoodList,
  int numPoints,
  const bool type,
@@ -499,6 +500,7 @@ ScalarT* shapeTensorInverse,
 ScalarT* deformationGradient,
 const double* bondDamage,
 const double* bondDamageNP1,
+double* bondDamageDifference,
 const int* neighborhoodList,
 int numPoints,
 const bool type,
@@ -516,6 +518,7 @@ double* detachedNodes
   const ScalarT* neighborCoordNP1;
   ScalarT* shapeTensorInv = shapeTensorInverse;
   ScalarT* defGrad = deformationGradient;
+  double* bondDamageDiff = bondDamageDifference;
   
   double undeformedBondX, undeformedBondY, undeformedBondZ, undeformedBondLength;
   ScalarT deformedBondX, deformedBondY, deformedBondZ;
@@ -537,9 +540,9 @@ double* detachedNodes
   const int *neighborListPtr = neighborhoodList;
 
   for(int iID=0 ; iID<numPoints ; ++iID, delta++, modelCoord+=3, coord+=3, coordNP1+=3,
-        shapeTensorInv+=9, defGrad+=9){
+        shapeTensorInv+=9, defGrad+=9, bondDamageDifference++){
   
-    int bondCheck(0), bondCheckNP1(0);
+    double bondCheck(0.0), bondCheckNP1(0.0);
 
     *(shapeTensor)   = 0.0 ; *(shapeTensor+1) = 0.0 ; *(shapeTensor+2) = 0.0 ;
     *(shapeTensor+3) = 0.0 ; *(shapeTensor+4) = 0.0 ; *(shapeTensor+5) = 0.0 ;
@@ -607,17 +610,23 @@ double* detachedNodes
 
       if(*bondDamage==1)
       {
-      bondCheck++;
+        bondCheck++;
       }
       if(*bondDamageNP1==1)
       {
-      bondCheckNP1++;
+        bondCheckNP1++;
       }
     }
+    
+    //if(*(bondDamageDifference)<bondCheckNP1-bondCheck)
+    //{
+    *(bondDamageDifference) = bondCheckNP1-bondCheck;
+    //std::cout << " To : " << iID <<  " *(bondDamageDiff): " << *(bondDamageDifference) << std::endl;
+    //}
 
     if(bondCheckNP1-bondCheck>7)
     {
-      std::cout << " To much bonds detached in one step in iID: " << iID << std::endl ;
+      //std::cout << " To much bonds detached in one step in iID: " << iID <<  " *(bondDamageDiff): " << *(bondDamageDifference) << std::endl;
     }
 
     if (*(detachedNodes+iID) == 0) {
@@ -1906,6 +1915,7 @@ double* shapeTensorInverse,
 double* deformationGradient,
 const double* bondDamage,
 const double* bondDamageNP1,
+double* bondDamageDiff,
 const int* neighborhoodList,
 int numPoints,
 const bool type,

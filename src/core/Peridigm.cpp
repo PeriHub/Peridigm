@@ -136,6 +136,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     damageModelFieldId(-1),
     detachedNodesFieldId(-1),
     netDamageFieldId(-1),
+    bondDamageDiffFieldId(-1),
   // plasticModelFieldId(-1),
   // deviatoricPlasticExtensionFieldId(-1),
     numMultiphysDoFs(0)
@@ -327,6 +328,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   piolaStressTimesInvShapeTensorZId  = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "PiolaStressTimesInvShapeTensorZ");
   detachedNodesFieldId               = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Detached_Nodes");
   netDamageFieldId                   = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Damage");
+  bondDamageDiffFieldId              = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage_Diff");
   //netDamageFieldId                   = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Damage_Status");
   // Create field ids that may be required for output
   fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Proc_Num");
@@ -489,6 +491,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   auxiliaryFieldIds.push_back(piolaStressTimesInvShapeTensorYId);
   auxiliaryFieldIds.push_back(piolaStressTimesInvShapeTensorZId);
   auxiliaryFieldIds.push_back(detachedNodesFieldId);
+  auxiliaryFieldIds.push_back(bondDamageDiffFieldId);
   if(analysisHasContact)
     auxiliaryFieldIds.push_back(contactForceDensityFieldId);
   if(analysisHasMultiphysics) {
@@ -857,7 +860,7 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
   bondMap = peridigmDisc->getGlobalBondMap();
 
   // Create mothership vectors
-  int numOneDimensionalMothershipVectors = 11;
+  int numOneDimensionalMothershipVectors = 12;
   bool initializeToZero = true;
   if(analysisHasMultiphysics)
     numOneDimensionalMothershipVectors += 7;
@@ -874,32 +877,34 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
   detachedNodesList = Teuchos::rcp((*oneDimensionalMothership)(8), false);          // detached Nodes
   netDamageField = Teuchos::rcp((*oneDimensionalMothership)(9), false);               // damage status
   scalarScratch = Teuchos::rcp((*oneDimensionalMothership)(10), false);               // scratch vector corresponding to oneDimensionalMap
+  bondDamageDiffField = Teuchos::rcp((*oneDimensionalMothership)(11), false);         // bondDamage difference
   
   if (analysisHasMultiphysics) {
-    fluidPressureU = Teuchos::rcp((*oneDimensionalMothership)(11), false);        // fluid pressure displacement
-    fluidPressureY = Teuchos::rcp((*oneDimensionalMothership)(12), false);       // fluid pressure current coordinates at anode
-    fluidPressureV = Teuchos::rcp((*oneDimensionalMothership)(13), false);       // fluid pressure first time derv at a node
-    fluidFlow = Teuchos::rcp((*oneDimensionalMothership)(14), false);            // flux through a node
-    fluidPressureDeltaU = Teuchos::rcp((*oneDimensionalMothership)(15), false);  // fluid pressure displacement analogue increment
-    fluidDensity = Teuchos::rcp((*oneDimensionalMothership)(16), false);              // fluid density at a node
-    fluidCompressibility = Teuchos::rcp((*oneDimensionalMothership)(17), false); // fluid compressibility at a node
+    fluidPressureU = Teuchos::rcp((*oneDimensionalMothership)(12), false);        // fluid pressure displacement
+    fluidPressureY = Teuchos::rcp((*oneDimensionalMothership)(13), false);       // fluid pressure current coordinates at anode
+    fluidPressureV = Teuchos::rcp((*oneDimensionalMothership)(14), false);       // fluid pressure first time derv at a node
+    fluidFlow = Teuchos::rcp((*oneDimensionalMothership)(15), false);            // flux through a node
+    fluidPressureDeltaU = Teuchos::rcp((*oneDimensionalMothership)(16), false);  // fluid pressure displacement analogue increment
+    fluidDensity = Teuchos::rcp((*oneDimensionalMothership)(17), false);              // fluid density at a node
+    fluidCompressibility = Teuchos::rcp((*oneDimensionalMothership)(18), false); // fluid compressibility at a node
   }
 
-  threeDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*threeDimensionalMap, 14));
+  threeDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*threeDimensionalMap, 15));
   x = Teuchos::rcp((*threeDimensionalMothership)(0), false);             // initial positions
   u = Teuchos::rcp((*threeDimensionalMothership)(1), false);             // displacement
-  y = Teuchos::rcp((*threeDimensionalMothership)(2), false);             // current positions
-  v = Teuchos::rcp((*threeDimensionalMothership)(3), false);             // velocities
-  a = Teuchos::rcp((*threeDimensionalMothership)(4), false);             // accelerations
-  force = Teuchos::rcp((*threeDimensionalMothership)(5), false);         // force
-  contactForce = Teuchos::rcp((*threeDimensionalMothership)(6), false);  // contact force (used only for contact simulations)
-  externalForce = Teuchos::rcp((*threeDimensionalMothership)(7), false); // external force
-  deltaU = Teuchos::rcp((*threeDimensionalMothership)(8), false);        // increment in displacement (used only for implicit time integration)
-  damageModelVal = Teuchos::rcp((*threeDimensionalMothership)(9), false);    // Damage Model data which has to be synchronized
-  scratch = Teuchos::rcp((*threeDimensionalMothership)(10), false);       // scratch space
-  piolaStressTimesInvShapeTensorX = Teuchos::rcp((*threeDimensionalMothership)(11), false);    // Piola Kirchhoff Stress Times Inverse of shape tensor
-  piolaStressTimesInvShapeTensorY = Teuchos::rcp((*threeDimensionalMothership)(12), false);    // Piola Kirchhoff Stress Times Inverse of shape tensor
-  piolaStressTimesInvShapeTensorZ = Teuchos::rcp((*threeDimensionalMothership)(13), false);    // Piola Kirchhoff Stress Times Inverse of shape tensor
+  u_previous = Teuchos::rcp((*threeDimensionalMothership)(2), false);             // displacement
+  y = Teuchos::rcp((*threeDimensionalMothership)(3), false);             // current positions
+  v = Teuchos::rcp((*threeDimensionalMothership)(4), false);             // velocities
+  a = Teuchos::rcp((*threeDimensionalMothership)(5), false);             // accelerations
+  force = Teuchos::rcp((*threeDimensionalMothership)(6), false);         // force
+  contactForce = Teuchos::rcp((*threeDimensionalMothership)(7), false);  // contact force (used only for contact simulations)
+  externalForce = Teuchos::rcp((*threeDimensionalMothership)(8), false); // external force
+  deltaU = Teuchos::rcp((*threeDimensionalMothership)(9), false);        // increment in displacement (used only for implicit time integration)
+  damageModelVal = Teuchos::rcp((*threeDimensionalMothership)(10), false);    // Damage Model data which has to be synchronized
+  scratch = Teuchos::rcp((*threeDimensionalMothership)(11), false);       // scratch space
+  piolaStressTimesInvShapeTensorX = Teuchos::rcp((*threeDimensionalMothership)(12), false);    // Piola Kirchhoff Stress Times Inverse of shape tensor
+  piolaStressTimesInvShapeTensorY = Teuchos::rcp((*threeDimensionalMothership)(13), false);    // Piola Kirchhoff Stress Times Inverse of shape tensor
+  piolaStressTimesInvShapeTensorZ = Teuchos::rcp((*threeDimensionalMothership)(14), false);    // Piola Kirchhoff Stress Times Inverse of shape tensor
   
   
   unknownsMothership = Teuchos::rcp(new Epetra_MultiVector(*unknownsMap, 5, initializeToZero));
@@ -957,6 +962,7 @@ void PeridigmNS::Peridigm::initializeWorkset() {
     workset->contactManager = contactManager;
   workset->jacobianType = Teuchos::rcpFromRef(jacobianType);
   workset->jacobian = overlapJacobian;
+  workset->adaptiveStep = PeridigmField::STEP_NP1;
 }
 
 std::string getCmdOutput(const std::string& mStr)
@@ -1332,7 +1338,11 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       stopAfterOutput = verletParams->get<bool>("Stop after damage initiation");
   }
   
-  
+  bool adaptiveTimeStepping = false;
+
+  if(verletParams->isParameter("Adaptive Time Stepping")){
+      adaptiveTimeStepping = verletParams->get<bool>("Adaptive Time Stepping");
+  }
   
   // Multiply the time step by the user-supplied safety factor, if provided
   double safetyFactor = 1.0;
@@ -1349,7 +1359,10 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
   double numericalDamping = 0.0;
 
-  bool stopPeridigm;
+  bool stopPeridigm = false;
+  bool highNumOfBondDetached = false;
+  bool lowNumOfBondDetached = false;
+  int stepTimeChanged = 0;
  
   int nsteps = static_cast<int>( floor((timeFinal-timeInitial)/dt) );
   if(verletParams->isParameter("Numerical Damping")){
@@ -1388,9 +1401,10 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   }
 
   // Pointer index into sub-vectors for use with BLAS
-  double *xPtr, *uPtr, *yPtr, *vPtr, *aPtr;
+  double *xPtr, *u_PreviousPtr, *uPtr, *yPtr, *vPtr, *aPtr;
   x->ExtractView( &xPtr );
   u->ExtractView( &uPtr );
+  u_previous->ExtractView( &u_PreviousPtr );
   y->ExtractView( &yPtr );
   v->ExtractView( &vPtr );
   a->ExtractView( &aPtr );
@@ -1500,10 +1514,82 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   double currentValue = 0.0;
   double previousValue = 0.0;
 
+  PeridigmField::Step adaptiveImportStep;
+  PeridigmField::Step adaptiveExportStep;
+
   for(int step=1; step<=nsteps; step++){
 
-    timePrevious = timeCurrent;
-    timeCurrent = timeInitial + (step*dt);
+    if (highNumOfBondDetached && adaptiveTimeStepping) //adaptive Timestep
+    {
+      if( dt>userDefinedTimeStep/20)
+      {
+        step -= 1;
+        dt = dt2;
+        dt2 = dt/2.0;
+
+        nsteps = static_cast<int>( floor((timeFinal-timeInitial)/dt) );
+        cout << "<- nsteps" << nsteps << endl;
+        workset->timeStep = dt;
+
+        adaptiveImportStep = PeridigmField::STEP_NP1;
+        adaptiveExportStep = PeridigmField::STEP_N;
+
+        workset->adaptiveStep = adaptiveExportStep;
+
+        //timePrevious = timeCurrent;
+        timeCurrent = timePrevious+dt;
+        
+        u = u_previous;
+      }
+
+      highNumOfBondDetached=false;
+      stepTimeChanged=step;
+    }
+    else if (lowNumOfBondDetached && adaptiveTimeStepping && dt < userDefinedTimeStep*safetyFactor | dt < globalCriticalTimeStep*safetyFactor && step-stepTimeChanged>4) //adaptive Timestep
+    {
+      //step -= 1;
+      dt *= 1.2;
+      dt2 = dt/2.0;
+
+      nsteps = static_cast<int>( floor((timeFinal-timeInitial)/dt) );
+      cout << "-> nsteps" << nsteps << endl;
+      workset->timeStep = dt;
+
+      adaptiveImportStep = PeridigmField::STEP_NP1;
+      adaptiveExportStep = PeridigmField::STEP_NP1;
+
+      workset->adaptiveStep = adaptiveExportStep;
+
+      timePrevious = timeCurrent;
+      timeCurrent += dt;
+
+      u_previous = u;
+
+      lowNumOfBondDetached=false;
+      stepTimeChanged=step;
+    }
+    else
+    {
+      adaptiveImportStep = PeridigmField::STEP_NP1;
+      adaptiveExportStep = PeridigmField::STEP_NP1;
+      
+      workset->adaptiveStep = adaptiveExportStep;
+
+      timePrevious = timeCurrent;
+
+      if (step==1)
+      {
+        timeCurrent = timeInitial + dt;
+      }
+      else
+      {
+        timeCurrent += dt;
+      }
+
+      u_previous = u;
+    }
+
+    std::cout << step << "/" << nsteps << " time: " << timeCurrent<< std::endl;
 
     // TODO this should not be here
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
@@ -1571,12 +1657,12 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     // Copy data from mothership vectors to overlap vectors in data manager
     PeridigmNS::Timer::self().startTimer("Gather/Scatter");
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-      blockIt->importData(u, displacementFieldId, PeridigmField::STEP_NP1, Insert);
-      blockIt->importData(y, coordinatesFieldId, PeridigmField::STEP_NP1, Insert);
-      blockIt->importData(v, velocityFieldId, PeridigmField::STEP_NP1, Insert);
-      blockIt->importData(deltaTemperature, deltaTemperatureFieldId, PeridigmField::STEP_NP1, Insert);
-      blockIt->importData(temperature, temperatureFieldId, PeridigmField::STEP_NP1, Insert);
-      blockIt->importData(concentration, concentrationFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(u, displacementFieldId, adaptiveImportStep, Insert);
+      blockIt->importData(y, coordinatesFieldId, adaptiveImportStep, Insert);
+      blockIt->importData(v, velocityFieldId, adaptiveImportStep, Insert);
+      blockIt->importData(deltaTemperature, deltaTemperatureFieldId, adaptiveImportStep, Insert);
+      blockIt->importData(temperature, temperatureFieldId, adaptiveImportStep, Insert);
+      blockIt->importData(concentration, concentrationFieldId, adaptiveImportStep, Insert);
     }
     if(analysisHasContact){
       for(contactBlockIt = contactBlocks->begin() ; contactBlockIt != contactBlocks->end() ; contactBlockIt++){
@@ -1593,19 +1679,19 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
       if (blockIt->getMaterialModel()->Name() == "Elastic" or blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
         damageModelVal->PutScalar(0.0); 
-        blockIt->importData(damageModelVal, damageModelFieldId, PeridigmField::STEP_NP1, Insert);
+        blockIt->importData(damageModelVal, damageModelFieldId, adaptiveImportStep, Insert);
       }
     //  if (blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
     //    plasticModelVal->PutScalar(0.0);
-    //    blockIt->importData(plasticModelVal, plasticModelFieldId, PeridigmField::STEP_NP1, Insert);
+    //    blockIt->importData(plasticModelVal, plasticModelFieldId, adaptiveImportStep, Insert);
     //  }
 	  if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
 	  	piolaStressTimesInvShapeTensorX->PutScalar(0.0); 
-	  	blockIt->importData(piolaStressTimesInvShapeTensorX, piolaStressTimesInvShapeTensorXId, PeridigmField::STEP_NP1, Insert);
+	  	blockIt->importData(piolaStressTimesInvShapeTensorX, piolaStressTimesInvShapeTensorXId, adaptiveImportStep, Insert);
 	  	piolaStressTimesInvShapeTensorY->PutScalar(0.0); 
-	  	blockIt->importData(piolaStressTimesInvShapeTensorY, piolaStressTimesInvShapeTensorYId, PeridigmField::STEP_NP1, Insert);
+	  	blockIt->importData(piolaStressTimesInvShapeTensorY, piolaStressTimesInvShapeTensorYId, adaptiveImportStep, Insert);
 	  	piolaStressTimesInvShapeTensorZ->PutScalar(0.0); 
-	  	blockIt->importData(piolaStressTimesInvShapeTensorZ, piolaStressTimesInvShapeTensorZId, PeridigmField::STEP_NP1, Insert);
+	  	blockIt->importData(piolaStressTimesInvShapeTensorZ, piolaStressTimesInvShapeTensorZId, adaptiveImportStep, Insert);
 	  }
     }
     // hier muss noch ein check rein, der die Sachen nur fuer die Schadensmodelle durchfuehrt
@@ -1627,38 +1713,38 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
         if (blockIt->getMaterialModel()->Name() == "Elastic" or blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
             scratch->PutScalar(0.0);           
-            blockIt->exportData(scratch, damageModelFieldId, PeridigmField::STEP_NP1, Add);
+            blockIt->exportData(scratch, damageModelFieldId, adaptiveExportStep, Add);
             damageModelVal->Update(1.0, *scratch, 1.0);
             }
         //if (blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
         //    scratch->PutScalar(0.0);
-        //    blockIt->exportData(scratch, plasticModelFieldId, PeridigmField::STEP_NP1, Add);
+        //    blockIt->exportData(scratch, plasticModelFieldId, adaptiveExportStep, Add);
         //    plasticModelVal->Update(1.0, *scratch, 1.0);
         //}
         if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
             scratch->PutScalar(0.0); 
-            blockIt->exportData(scratch, piolaStressTimesInvShapeTensorXId, PeridigmField::STEP_NP1, Add);
+            blockIt->exportData(scratch, piolaStressTimesInvShapeTensorXId, adaptiveExportStep, Add);
             piolaStressTimesInvShapeTensorX->Update(1.0, *scratch, 1.0);
             scratch->PutScalar(0.0); 
-            blockIt->exportData(scratch, piolaStressTimesInvShapeTensorYId, PeridigmField::STEP_NP1, Add);
+            blockIt->exportData(scratch, piolaStressTimesInvShapeTensorYId, adaptiveExportStep, Add);
             piolaStressTimesInvShapeTensorY->Update(1.0, *scratch, 1.0);
             scratch->PutScalar(0.0); 
-            blockIt->exportData(scratch, piolaStressTimesInvShapeTensorZId, PeridigmField::STEP_NP1, Add);
+            blockIt->exportData(scratch, piolaStressTimesInvShapeTensorZId, adaptiveExportStep, Add);
             piolaStressTimesInvShapeTensorZ->Update(1.0, *scratch, 1.0);
         }
     }
 
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
         if (blockIt->getMaterialModel()->Name() == "Elastic" or blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
-            blockIt->importData(damageModelVal, damageModelFieldId, PeridigmField::STEP_NP1, Insert);
+            blockIt->importData(damageModelVal, damageModelFieldId, adaptiveImportStep, Insert);
         }
         //if (blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
-        //    blockIt->importData(plasticModelVal, plasticModelFieldId, PeridigmField::STEP_NP1, Insert);
+        //    blockIt->importData(plasticModelVal, plasticModelFieldId, adaptiveImportStep, Insert);
         //}
         if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
-            blockIt->importData(piolaStressTimesInvShapeTensorX, piolaStressTimesInvShapeTensorXId, PeridigmField::STEP_NP1, Insert);
-            blockIt->importData(piolaStressTimesInvShapeTensorY, piolaStressTimesInvShapeTensorYId, PeridigmField::STEP_NP1, Insert);
-            blockIt->importData(piolaStressTimesInvShapeTensorZ, piolaStressTimesInvShapeTensorZId, PeridigmField::STEP_NP1, Insert);
+            blockIt->importData(piolaStressTimesInvShapeTensorX, piolaStressTimesInvShapeTensorXId, adaptiveImportStep, Insert);
+            blockIt->importData(piolaStressTimesInvShapeTensorY, piolaStressTimesInvShapeTensorYId, adaptiveImportStep, Insert);
+            blockIt->importData(piolaStressTimesInvShapeTensorZ, piolaStressTimesInvShapeTensorZId, adaptiveImportStep, Insert);
         }
     }
 
@@ -1681,13 +1767,11 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){      
     if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
           scalarScratch->PutScalar(0.0); 
-          blockIt->exportData(scalarScratch, detachedNodesFieldId, PeridigmField::STEP_NP1, Add);
+          blockIt->exportData(scalarScratch, detachedNodesFieldId, adaptiveExportStep, Add);
           detachedNodesList->Update(1.0, *scalarScratch, 1.0);
-                     
          
           scalarScratch->PutScalar(0.0); 
-          blockIt->exportData(scalarScratch, netDamageFieldId, PeridigmField::STEP_NP1, Add);
-          
+          blockIt->exportData(scalarScratch, netDamageFieldId, adaptiveExportStep, Add);
           netDamageField->Update(1.0, *scalarScratch, 1.0);
       }
   }
@@ -1695,8 +1779,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){      
     if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
       if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
-          blockIt->importData(detachedNodesList, detachedNodesFieldId, PeridigmField::STEP_NP1, Insert);
-          //blockIt->importData(*netDamageField, netDamageFieldId, PeridigmField::STEP_NP1, Insert);
+          blockIt->importData(detachedNodesList, detachedNodesFieldId, adaptiveImportStep, Insert);
+          //blockIt->importData(*netDamageField, netDamageFieldId, adaptiveImportStep, Insert);
       }
     }
   }
@@ -1710,12 +1794,41 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     // Copy force from the data manager to the mothership vector
     PeridigmNS::Timer::self().startTimer("Gather/Scatter");
     force->PutScalar(0.0);
+    bool allBondDiffLow = true;
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
       scratch->PutScalar(0.0);
-      blockIt->exportData(scratch, forceDensityFieldId, PeridigmField::STEP_NP1, Add);
+      blockIt->exportData(scratch, forceDensityFieldId, adaptiveExportStep, Add);
       force->Update(1.0, *scratch, 1.0);
+      
+      if(adaptiveTimeStepping)
+      {
+        scalarScratch->PutScalar(0.0);
+        bondDamageDiffField->PutScalar(0.0); 
+        blockIt->exportData(scalarScratch, bondDamageDiffFieldId, adaptiveExportStep, Add);
+        bondDamageDiffField->Update(1.0, *scalarScratch, 1.0);
+        
+        for(int i=0 ; i<bondDamageDiffField->MyLength() ; ++i){
+          if ((*bondDamageDiffField)[i]>1) cout << "bondDamageDiffField: " << (*bondDamageDiffField)[i] << " i: " << i << endl;
+          if ((*bondDamageDiffField)[i]>1) allBondDiffLow = false;
+          if ((*bondDamageDiffField)[i]>=4)  
+          {
+            highNumOfBondDetached = true;
+            break;
+          }
+        }
+      }
     }
+    lowNumOfBondDetached = allBondDiffLow;
+    
+    MpiBoolGather(&highNumOfBondDetached, true);
+    MPI_Bcast(&highNumOfBondDetached, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+
+    MpiBoolGather(&lowNumOfBondDetached, false);
+    MPI_Bcast(&lowNumOfBondDetached, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+
     PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
+
+    if (highNumOfBondDetached) continue;
 
     // Check for NaNs in force evaluation
     // We'd like to know now because a NaN will likely cause a difficult-to-unravel crash downstream.
@@ -1773,7 +1886,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++)
       blockIt->updateState();
 
-	  MpiDamageCheck(&stopPeridigm);
+	  MpiBoolGather(&stopPeridigm, true);
     MPI_Bcast(&stopPeridigm, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
     // mpi cancel
@@ -1786,10 +1899,10 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   *out << "\n\n";
 }
 
-void PeridigmNS::Peridigm::MpiDamageCheck(bool *stopPeridigmRef){
+void PeridigmNS::Peridigm::MpiBoolGather(bool *valueRef, bool oneTrueOrAllFalse){
   int rank, size;
   bool *rbuf;
-  bool stopPeridigm=*stopPeridigmRef;
+  bool value=*valueRef;
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   if (size>1)
   {
@@ -1798,17 +1911,34 @@ void PeridigmNS::Peridigm::MpiDamageCheck(bool *stopPeridigmRef){
     {
       rbuf = (bool *)malloc(size*sizeof(bool));
     }
-    MPI_Gather(&stopPeridigm, 1, MPI_CXX_BOOL, rbuf, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+
+    MPI_Gather(&value, 1, MPI_CXX_BOOL, rbuf, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
     if(rank==0)
     {
-      for (int i=0; i < size; i++)
+      if(oneTrueOrAllFalse)
       {
-        if (rbuf[i])
+        for (int i=0; i < size; i++)
         {
-          *stopPeridigmRef = true;
-          break;
+          if (rbuf[i])
+          {
+            *valueRef = true;
+            break;
+          }
         }
+      }
+      else
+      {
+        bool allFalse = true;
+        for (int i=0; i < size; i++)
+        {
+          if (!rbuf[i])
+          {
+            allFalse = false;
+            break;
+          }
+        }
+        *valueRef = allFalse;
       }
     }
   }
