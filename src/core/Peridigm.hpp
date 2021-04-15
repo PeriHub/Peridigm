@@ -496,6 +496,9 @@ namespace PeridigmNS {
     //! Global vector for velocity
     Teuchos::RCP<Epetra_Vector> v;
 
+    //! Global vector for velocity
+    Teuchos::RCP<Epetra_Vector> v_previous;
+
 		//! Gloval vector for solid mechanics velocity and analogous quantities
     Teuchos::RCP<Epetra_Vector> unknownsV;
 
@@ -664,14 +667,14 @@ namespace PeridigmNS {
     int piolaStressTimesInvShapeTensorYId;
     int piolaStressTimesInvShapeTensorZId;
     int partialVolumeFieldId;
-    int detachedNodesFieldId;
-    int netDamageFieldId;
-    int bondDamageDiffFieldId;
     // multiphyics information
     int fluidPressureYFieldId;
     int fluidPressureUFieldId;
     int fluidPressureVFieldId;
     int fluidFlowDensityFieldId;
+    int detachedNodesFieldId;
+    int netDamageFieldId;
+    int bondDamageDiffFieldId;
     int numMultiphysDoFs;
     string textMultiphysDoFs;
 

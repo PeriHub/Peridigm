@@ -128,12 +128,12 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     forceDensityFieldId(-1),
     contactForceDensityFieldId(-1),
     externalForceDensityFieldId(-1),
+    damageModelFieldId(-1),
     partialVolumeFieldId(-1),
     fluidPressureYFieldId(-1),
     fluidPressureUFieldId(-1),
     fluidPressureVFieldId(-1),
     fluidFlowDensityFieldId(-1),
-    damageModelFieldId(-1),
     detachedNodesFieldId(-1),
     netDamageFieldId(-1),
     bondDamageDiffFieldId(-1),
@@ -889,22 +889,23 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
     fluidCompressibility = Teuchos::rcp((*oneDimensionalMothership)(18), false); // fluid compressibility at a node
   }
 
-  threeDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*threeDimensionalMap, 15));
+  threeDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*threeDimensionalMap, 16));
   x = Teuchos::rcp((*threeDimensionalMothership)(0), false);             // initial positions
   u = Teuchos::rcp((*threeDimensionalMothership)(1), false);             // displacement
   u_previous = Teuchos::rcp((*threeDimensionalMothership)(2), false);             // displacement
   y = Teuchos::rcp((*threeDimensionalMothership)(3), false);             // current positions
   v = Teuchos::rcp((*threeDimensionalMothership)(4), false);             // velocities
-  a = Teuchos::rcp((*threeDimensionalMothership)(5), false);             // accelerations
-  force = Teuchos::rcp((*threeDimensionalMothership)(6), false);         // force
-  contactForce = Teuchos::rcp((*threeDimensionalMothership)(7), false);  // contact force (used only for contact simulations)
-  externalForce = Teuchos::rcp((*threeDimensionalMothership)(8), false); // external force
-  deltaU = Teuchos::rcp((*threeDimensionalMothership)(9), false);        // increment in displacement (used only for implicit time integration)
-  damageModelVal = Teuchos::rcp((*threeDimensionalMothership)(10), false);    // Damage Model data which has to be synchronized
-  scratch = Teuchos::rcp((*threeDimensionalMothership)(11), false);       // scratch space
-  piolaStressTimesInvShapeTensorX = Teuchos::rcp((*threeDimensionalMothership)(12), false);    // Piola Kirchhoff Stress Times Inverse of shape tensor
-  piolaStressTimesInvShapeTensorY = Teuchos::rcp((*threeDimensionalMothership)(13), false);    // Piola Kirchhoff Stress Times Inverse of shape tensor
-  piolaStressTimesInvShapeTensorZ = Teuchos::rcp((*threeDimensionalMothership)(14), false);    // Piola Kirchhoff Stress Times Inverse of shape tensor
+  v_previous = Teuchos::rcp((*threeDimensionalMothership)(5), false);             // velocities
+  a = Teuchos::rcp((*threeDimensionalMothership)(6), false);             // accelerations
+  force = Teuchos::rcp((*threeDimensionalMothership)(7), false);         // force
+  contactForce = Teuchos::rcp((*threeDimensionalMothership)(8), false);  // contact force (used only for contact simulations)
+  externalForce = Teuchos::rcp((*threeDimensionalMothership)(9), false); // external force
+  deltaU = Teuchos::rcp((*threeDimensionalMothership)(10), false);        // increment in displacement (used only for implicit time integration)
+  damageModelVal = Teuchos::rcp((*threeDimensionalMothership)(11), false);    // Damage Model data which has to be synchronized
+  scratch = Teuchos::rcp((*threeDimensionalMothership)(12), false);       // scratch space
+  piolaStressTimesInvShapeTensorX = Teuchos::rcp((*threeDimensionalMothership)(13), false);    // Piola Kirchhoff Stress Times Inverse of shape tensor
+  piolaStressTimesInvShapeTensorY = Teuchos::rcp((*threeDimensionalMothership)(14), false);    // Piola Kirchhoff Stress Times Inverse of shape tensor
+  piolaStressTimesInvShapeTensorZ = Teuchos::rcp((*threeDimensionalMothership)(15), false);    // Piola Kirchhoff Stress Times Inverse of shape tensor
   
   
   unknownsMothership = Teuchos::rcp(new Epetra_MultiVector(*unknownsMap, 5, initializeToZero));
@@ -1358,11 +1359,21 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   double dt2 = dt/2.0;
 
   double numericalDamping = 0.0;
+  
+  int stableStepDiff  = verletParams->get("Stable Step Difference", 4);
+  int bondDiffMax  = verletParams->get("Maximum Bond Difference", 4);
+  int bondDiffSt  = verletParams->get("Stable Bond Difference", 1);
+  double dtMax = verletParams->get<double>("max dt", dt);
+  double dtMin = verletParams->get<double>("min dt", dt/5);
+  double dtReduceFactor = verletParams->get<double>("dt Reduce Factor", 0.5);
+  double dtRaiseFactor = verletParams->get<double>("dt Raise Factor", 1.2);
+
 
   bool stopPeridigm = false;
   bool highNumOfBondDetached = false;
   bool lowNumOfBondDetached = false;
   int stepTimeChanged = 0;
+  int stepType = 0;
  
   int nsteps = static_cast<int>( floor((timeFinal-timeInitial)/dt) );
   if(verletParams->isParameter("Numerical Damping")){
@@ -1401,12 +1412,13 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   }
 
   // Pointer index into sub-vectors for use with BLAS
-  double *xPtr, *u_PreviousPtr, *uPtr, *yPtr, *vPtr, *aPtr;
+  double *xPtr, *u_previousPtr, *uPtr, *yPtr, *v_previousPtr, *vPtr, *aPtr;
   x->ExtractView( &xPtr );
   u->ExtractView( &uPtr );
-  u_previous->ExtractView( &u_PreviousPtr );
+  u_previous->ExtractView( &u_previousPtr );
   y->ExtractView( &yPtr );
   v->ExtractView( &vPtr );
+  v_previous->ExtractView( &v_previousPtr );
   a->ExtractView( &aPtr );
   int length = a->MyLength();
 
@@ -1514,82 +1526,113 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   double currentValue = 0.0;
   double previousValue = 0.0;
 
-  PeridigmField::Step adaptiveImportStep;
-  PeridigmField::Step adaptiveExportStep;
+  PeridigmField::Step adaptiveImportStep = PeridigmField::STEP_NP1;;
+  PeridigmField::Step adaptiveExportStep = PeridigmField::STEP_NP1;;
 
   for(int step=1; step<=nsteps; step++){
 
     if (highNumOfBondDetached && adaptiveTimeStepping) //adaptive Timestep
     {
-      if( dt>userDefinedTimeStep/20)
+      if( dt2>=dtMin)
       {
-        step -= 1;
-        dt = dt2;
-        dt2 = dt/2.0;
-
-        nsteps = static_cast<int>( floor((timeFinal-timeInitial)/dt) );
-        cout << "<- nsteps" << nsteps << endl;
-        workset->timeStep = dt;
-
-        adaptiveImportStep = PeridigmField::STEP_NP1;
-        adaptiveExportStep = PeridigmField::STEP_N;
-
-        workset->adaptiveStep = adaptiveExportStep;
-
-        //timePrevious = timeCurrent;
-        timeCurrent = timePrevious+dt;
-        
-        u = u_previous;
+        stepType = 1;
+      }
+      else
+      {
+        stepType = 0;
       }
 
       highNumOfBondDetached=false;
       stepTimeChanged=step;
+
     }
-    else if (lowNumOfBondDetached && adaptiveTimeStepping && dt < userDefinedTimeStep*safetyFactor | dt < globalCriticalTimeStep*safetyFactor && step-stepTimeChanged>4) //adaptive Timestep
+    else if (lowNumOfBondDetached && adaptiveTimeStepping && dt*1.2 <= dtMax && step-stepTimeChanged>stableStepDiff) //adaptive Timestep
     {
-      //step -= 1;
-      dt *= 1.2;
-      dt2 = dt/2.0;
-
-      nsteps = static_cast<int>( floor((timeFinal-timeInitial)/dt) );
-      cout << "-> nsteps" << nsteps << endl;
-      workset->timeStep = dt;
-
-      adaptiveImportStep = PeridigmField::STEP_NP1;
-      adaptiveExportStep = PeridigmField::STEP_NP1;
-
-      workset->adaptiveStep = adaptiveExportStep;
-
-      timePrevious = timeCurrent;
-      timeCurrent += dt;
-
-      u_previous = u;
-
+      stepType = 2;
+      
       lowNumOfBondDetached=false;
       stepTimeChanged=step;
     }
     else
     {
-      adaptiveImportStep = PeridigmField::STEP_NP1;
-      adaptiveExportStep = PeridigmField::STEP_NP1;
-      
-      workset->adaptiveStep = adaptiveExportStep;
-
-      timePrevious = timeCurrent;
-
-      if (step==1)
-      {
-        timeCurrent = timeInitial + dt;
-      }
-      else
-      {
-        timeCurrent += dt;
-      }
-
-      u_previous = u;
+      stepType = 0;
     }
 
-    std::cout << step << "/" << nsteps << " time: " << timeCurrent<< std::endl;
+    switch (stepType){
+      case 0: //normal timeStep
+        adaptiveImportStep = PeridigmField::STEP_NP1;
+        adaptiveExportStep = PeridigmField::STEP_NP1;
+        
+        //workset->adaptiveStep = adaptiveExportStep;
+
+        timePrevious = timeCurrent;
+
+        if (step==1)
+        {
+          timeCurrent = timeInitial + dt;
+        }
+        else
+        {
+          timeCurrent += dt;
+        }
+
+        for(int i=0 ; i<y->MyLength() ; ++i){
+          u_previousPtr[i] = uPtr[i];
+          v_previousPtr[i] = vPtr[i];
+        }
+      break;
+      case 1: //retry timeStep with reduced dt
+        step -= 1;
+        dt *= dtReduceFactor;
+        dt2 = dt*0.5;
+
+        nsteps = static_cast<int>( floor((timeFinal-timeInitial)/dt) );
+        if(peridigmComm->MyPID() == 0) {
+        cout << "<- Reduce dt: " << dt  << " nsteps: " << nsteps << endl;
+        }
+        workset->timeStep = dt;
+
+        adaptiveImportStep = PeridigmField::STEP_NP1;
+        adaptiveExportStep = PeridigmField::STEP_N;
+
+        //workset->adaptiveStep = adaptiveExportStep;
+
+        //timePrevious = timeCurrent;
+        timeCurrent = timePrevious+dt;
+
+        for(int i=0 ; i<y->MyLength() ; ++i){
+          uPtr[i] = u_previousPtr[i];
+          vPtr[i] = v_previousPtr[i];
+        }
+      break;
+      case 2: //normal timeStep with raised dt 
+        dt *= dtRaiseFactor;
+        dt2 = dt*0.5;
+
+        nsteps = static_cast<int>( floor((timeFinal-timeInitial)/dt) );
+        if(peridigmComm->MyPID() == 0) {
+          cout << "-> Raise dt: " << dt  << " nsteps: " << nsteps << endl;
+          }
+        workset->timeStep = dt;
+
+        adaptiveImportStep = PeridigmField::STEP_NP1;
+        adaptiveExportStep = PeridigmField::STEP_NP1;
+
+        //workset->adaptiveStep = adaptiveExportStep;
+
+        timePrevious = timeCurrent;
+        timeCurrent += dt;
+
+        for(int i=0 ; i<y->MyLength() ; ++i){
+          u_previousPtr[i] = uPtr[i];
+          v_previousPtr[i] = vPtr[i];
+        }
+      break;
+    }
+
+    currentTime = timeCurrent;
+
+    //std::cout << step << "/" << nsteps << " time: " << timeCurrent<< std::endl;
 
     // TODO this should not be here
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
@@ -1651,7 +1694,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     // U^{n+1} = U^{n} + (dt)*V^{n+1/2}
     // blas.AXPY(const int N, const double ALPHA, const double *X, double *Y, const int INCX=1, const int INCY=1) const
     blas.AXPY(length, dt, vPtr, uPtr, 1, 1);
-
+    
     // \todo The velocity copied into the DataManager is actually the midstep velocity, not the NP1 velocity; this can be fixed by creating a midstep velocity field in the DataManager and setting the NP1 value as invalid.
 
     // Copy data from mothership vectors to overlap vectors in data manager
@@ -1808,9 +1851,9 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         bondDamageDiffField->Update(1.0, *scalarScratch, 1.0);
         
         for(int i=0 ; i<bondDamageDiffField->MyLength() ; ++i){
-          if ((*bondDamageDiffField)[i]>1) cout << "bondDamageDiffField: " << (*bondDamageDiffField)[i] << " i: " << i << endl;
-          if ((*bondDamageDiffField)[i]>1) allBondDiffLow = false;
-          if ((*bondDamageDiffField)[i]>=4)  
+          //if ((*bondDamageDiffField)[i]>1) cout << "bondDamageDiffField: " << (*bondDamageDiffField)[i] << " i: " << i << endl;
+          if ((*bondDamageDiffField)[i]>bondDiffSt) allBondDiffLow = false;
+          if ((*bondDamageDiffField)[i]>=bondDiffMax)  
           {
             highNumOfBondDetached = true;
             break;
@@ -1828,7 +1871,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
     PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
 
-    if (highNumOfBondDetached) continue;
+    if (highNumOfBondDetached && dt2>=dtMin) continue;
 
     // Check for NaNs in force evaluation
     // We'd like to know now because a NaN will likely cause a difficult-to-unravel crash downstream.
@@ -1852,11 +1895,13 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     // fill the acceleration vector
     (*a) = (*force);
     bool damageExist = false;
+    bool allNodeDamage = true;
     for(int i=0 ; i<a->MyLength() ; ++i){
       (*a)[i] += (*externalForce)[i];
       (*a)[i] /= (*density)[i/3];
       if ((*detachedNodesList)[i/3]!=0) (*a)[i] = 0;
       if ((*netDamageField)[i/3]!=0) damageExist = true;
+      else allNodeDamage = false;
     }
     
     //blas.AXPY(const int N, const double ALPHA, const double *X, double *Y, const int INCX=1, const int INCY=1) const
@@ -1864,8 +1909,9 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     
     PeridigmNS::Timer::self().startTimer("Output");
     synchDataManagers();
-    if (stopBeforeOutput && damageExist){ 
-        std::cout<<"Break before damage."<<std::endl;
+    if ((stopBeforeOutput && damageExist) | allNodeDamage){ 
+        if (allNodeDamage) std::cout<<"Break before all nodes damaged."<<std::endl;
+        else std::cout<<"Break before damage."<<std::endl;
         stopPeridigm=true;
     }
     if (stopAfterOutput && damageExist){ 
@@ -1904,13 +1950,10 @@ void PeridigmNS::Peridigm::MpiBoolGather(bool *valueRef, bool oneTrueOrAllFalse)
   bool *rbuf;
   bool value=*valueRef;
   MPI_Comm_size(MPI_COMM_WORLD, &size);
+  rbuf = (bool *)malloc(size*sizeof(bool));
   if (size>1)
   {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    if (rank == 0)
-    {
-      rbuf = (bool *)malloc(size*sizeof(bool));
-    }
 
     MPI_Gather(&value, 1, MPI_CXX_BOOL, rbuf, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
@@ -2938,8 +2981,8 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
   bool solverFailedToConverge = false;
   bool adaptiveLoadStepping = false;
   bool switchToExplicit = false;
-  int maxSolverFailureInOneStep;
-  int maxTotalSolverFailure;
+  int maxSolverFailureInOneStep(1);
+  int maxTotalSolverFailure(100);
   bool reduceAllSteps = false;
   bool adaptiveOutputFrequency = false;
   Teuchos::RCP< Teuchos::ParameterList > adaptiveQSparams;
@@ -3387,7 +3430,7 @@ void PeridigmNS::Peridigm::executeImplicitDiffusion(Teuchos::RCP<Teuchos::Parame
   Teuchos::RCP<Epetra_Vector> lhs = Teuchos::rcp(new Epetra_Vector(tangent->Map()));
   Teuchos::RCP<Epetra_Vector> reaction = Teuchos::rcp(new Epetra_Vector(fluxDivergence->Map()));;
 
-  bool solverVerbose = solverParams->get("Verbose", false);
+  //bool solverVerbose = solverParams->get("Verbose", false);
   Teuchos::RCP<Teuchos::ParameterList> implicitSolverParams = sublist(solverParams, "ImplicitDiffusion", true);
   int maxSolverIterations = implicitSolverParams->get("Maximum Solver Iterations", 10);
 
@@ -3954,45 +3997,6 @@ double PeridigmNS::Peridigm::quasiStaticsLineSearch(Teuchos::RCP<Epetra_Vector> 
   return bestAlpha;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void PeridigmNS::Peridigm::executeImplicit(Teuchos::RCP<Teuchos::ParameterList> solverParams) {
     //TODO: Eliminate fluid pressure V
 
@@ -4031,36 +4035,37 @@ void PeridigmNS::Peridigm::executeImplicit(Teuchos::RCP<Teuchos::ParameterList> 
   
   // get numerical damping
   bool CWillberg = false;
-  double dtInit, dtMax, dtMin;
+  double dtInit, dtMax(1000), dtMin(0);
   bool adaptiveDt = false;
   double changeTime = 1e10, secdt = 0.0;
   if (implicitParams->isParameter("CWillberg"))
     CWillberg = implicitParams->get<bool>("CWillberg");
   if(CWillberg){
-  if (implicitParams->isParameter("Numerical Damping"))
+  if (implicitParams->isParameter("Numerical Damping")){
         numericalDamping = implicitParams->get<double>("Numerical Damping");
-        if (implicitParams->isParameter("Change t")){
-            changeTime              = implicitParams->get<double>("Change t");
-            secdt                   = implicitParams->get<double>("Second dt");
-            dtInit                  = implicitParams->get<double>("Fixed dt");
-            adaptiveDt              = false;
-            if(peridigmComm->MyPID() == 0)
-                cout <<  "change Time = " << changeTime << ": dt = " << dtInit << "\n" << endl;
+  }
+  if (implicitParams->isParameter("Change t")){
+      changeTime              = implicitParams->get<double>("Change t");
+      secdt                   = implicitParams->get<double>("Second dt");
+      dtInit                  = implicitParams->get<double>("Fixed dt");
+      adaptiveDt              = false;
+      if(peridigmComm->MyPID() == 0)
+          cout <<  "change Time = " << changeTime << ": dt = " << dtInit << "\n" << endl;
 //            Teuchos::RCP<Epetra_Vector> errorEstimator = Teuchos::rcp(new Epetra_Vector(tangent->Map()));
-        }
-        else if (implicitParams->isParameter("Initial dt")){
-            dtInit                  = implicitParams->get<double>("Initial dt");
-            dtMax                   = implicitParams->get<double>("max dt");
-            dtMin                   = implicitParams->get<double>("min dt");
-            adaptiveDt              = true;
+  }
+  else if (implicitParams->isParameter("Initial dt")){
+      dtInit                  = implicitParams->get<double>("Initial dt");
+      dtMax                   = implicitParams->get<double>("max dt");
+      dtMin                   = implicitParams->get<double>("min dt");
+      adaptiveDt              = true;
 //            Teuchos::RCP<Epetra_Vector> errorEstimator = Teuchos::rcp(new Epetra_Vector(tangent->Map()));
-        }
-        else{
-        dtInit                  = implicitParams->get<double>("Fixed dt");
-        dtMax = dtInit;
-        dtMin = dtInit;
-        adaptiveDt = false;
-        }
+  }
+  else{
+  dtInit                  = implicitParams->get<double>("Fixed dt");
+  dtMax = dtInit;
+  dtMin = dtInit;
+  adaptiveDt = false;
+  }
     // set time step for analysis
   }
   else{
@@ -4072,10 +4077,10 @@ void PeridigmNS::Peridigm::executeImplicit(Teuchos::RCP<Teuchos::ParameterList> 
   workset->timeStep = dtInit;
 
   
-  int nsteps = (int)floor((timeFinal-timeInitial)/dtInit);
+  //int nsteps = (int)floor((timeFinal-timeInitial)/dtInit);
 
   // Pointer index into sub-vectors for use with BLAS
-  double *xPtr, *uPtr, *yPtr, *vPtr, *aPtr, *deltaUPtr;
+  double *xPtr, *uPtr, *yPtr, *vPtr, *aPtr; // *deltaUPtr;
   double *fluidPressureUPtr, *fluidPressureYPtr, *fluidPressureVPtr;
   
   x->ExtractView( &xPtr );
@@ -4386,12 +4391,12 @@ if(analysisHasMultiphysics){
     boundaryAndInitialConditionManager->applyKinematicBC_InsertZeros(residual);
 
 
-    double errorEstimatorNorm, crefNorm;
+    double errorEstimatorNorm;//, crefNorm;
     residual->Norm2(&residualNorm);
 
     int NLSolverIteration = 0;
     // min one time running to avoid to small tolerances
-    while(residualNorm > absoluteTolerance && NLSolverIteration <= maxSolverIterations or NLSolverIteration == 0){ 
+    while(residualNorm > absoluteTolerance && (NLSolverIteration <= maxSolverIterations or NLSolverIteration == 0)){ 
       
       if (adaptiveDt){
          // for(int i=0 ; i<errorEstimator->MyLength() ; ++i){
@@ -4662,14 +4667,6 @@ void PeridigmNS::Peridigm::computeImplicitJacobian(double beta, double dt) {
     //diagonal[i] += (*density)[i/3]*(*volume)[i/3];
   tangent->ReplaceDiagonalValues(diagonal);
 }
-
-
-
-
-
-
-
-
 
 void PeridigmNS::Peridigm::allocateJacobian() {
 
@@ -4972,7 +4969,6 @@ double PeridigmNS::Peridigm::computeQuasiStaticResidual(Teuchos::RCP<Epetra_Vect
   return residualNorm2 + 20.0*residualNormInf;
 }
 
-
 void PeridigmNS::Peridigm::synchDataManagers() {
 
   // Copy data from mothership vectors to overlap vectors in blocks
@@ -5085,8 +5081,9 @@ void PeridigmNS::Peridigm::displayProgress(string title, double percentComplete)
 void PeridigmNS::Peridigm::writeRestart(Teuchos::RCP<Teuchos::ParameterList> solverParams){
 //  system("date +"%m-%d-%Y-%H-%M-%S"");
   char createDirectory[100];
-  char  path[100];
+  char  path[94];
   int IterationNumber;
+  int systemReturn;
 
   if(peridigmComm->MyPID() == 0){
   IterationNumber = atoi(firstNumbersSring( restartFiles["path"]  ).c_str())+1;
@@ -5094,20 +5091,21 @@ void PeridigmNS::Peridigm::writeRestart(Teuchos::RCP<Teuchos::ParameterList> sol
   cout << "The restart folder is " << path  <<"." << endl;
   setRestartNames(path);
   sprintf(createDirectory,"mkdir %s",path);
-  system(createDirectory);
+  systemReturn = system(createDirectory);
+  if (systemReturn) cout << "CreateDirectory Error. \n" << endl;
   cout << "Writing restart files. \n" << endl;
 
-  double timeInitial = solverParams->get("Initial Time", 0.0);
-  if(peridigmComm->MyPID() == 0)
-      if(std::abs(currentTime-timeInitial)>1e-10){
+  //double timeInitial = solverParams->get("Initial Time", 0.0);
+  //if(peridigmComm->MyPID() == 0)
+      //if(std::abs(currentTime-timeInitial)>1e-10){
       //if (currentTime != timeInitial){
-          char timeError[251];
-          sprintf(timeError, "Error, Incompatible times:\nPrevious restart final time is %e, while initial time is %e.\n",currentTime,timeInitial);
-          TEUCHOS_TEST_FOR_EXCEPT_MSG(true,timeError);
-          MPI_Finalize();
-          exit(0);
-      }
-  currentTime += solverParams->get("Final Time", 1.0)-timeInitial;
+          //char timeError[251];
+          //sprintf(timeError, "Error, Incompatible times:\nPrevious restart final time is %e, while initial time is %e.\n",currentTime,timeInitial);
+          //TEUCHOS_TEST_FOR_EXCEPT_MSG(true,timeError);
+          //MPI_Finalize();
+          //exit(0);
+      //}
+  //currentTime += solverParams->get("Final Time", 1.0)-timeInitial;
   ofstream outputFile;
   outputFile.open(restartFiles["currentTime"].c_str());
   outputFile << "Current time is " << "\n" << currentTime  << "\n";
