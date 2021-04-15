@@ -1,4 +1,4 @@
-/*! \file MemoryInclude.h */
+/*! \file Peridigm_VonMisesStressDamageModel.hpp */
 
 //@HEADER
 // ************************************************************************
@@ -45,29 +45,70 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef PERIDIGM_MEMORY_INCLUDES_H
-#define PERIDIGM_MEMORY_INCLUDES_H
+#ifndef PERIDIGM_VONMISESSTRESSDAMAGEMODEL_HPP
+#define PERIDIGM_VONMISESSTRESSDAMAGEMODEL_HPP
 
-// cstddef has definitions for __GLIBCXX__ and _HAS_TR1
-#include <cstddef>
+#include "Peridigm_DamageModel.hpp"
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Epetra_Vector.h>
+#include <Epetra_Map.h>
 
-// GNU or Intel with libstd++
-#if defined (__GNUC__) && __GNUC__ >= 4 && defined (__GLIBCXX__)
-#include <tr1/memory>
+namespace PeridigmNS {
 
-// IBM XL
-#elif defined (__xlC__) && __xlC__ >= 0x0900
-#define __IBMCPP_TR1__
-#include <memory>
+  //! Base class defining the Peridigm damage model interface.
+  class VonMisesStressDamageModel : public DamageModel{
 
-// If compiler-supplied memory.hpp is not available, use Boost
-#else
-#ifndef WARNING_PRINTED
-#warning "Could not find compiler-supplied memory.hpp, substituting boost/tr1/memory.hpp"
-#define WARNING_PRINTED
-#endif
-#include <boost/tr1/memory.hpp>
+  public:
 
-#endif
+    //! Standard constructor.
+    VonMisesStressDamageModel(const Teuchos::ParameterList& params);
 
-#endif // PERIDIGM_MEMORY_INCLUDES_H
+    //! Destructor.
+    virtual ~VonMisesStressDamageModel();
+
+    //! Return name of the model.
+    virtual std::string Name() const { return("Von Mises Stress"); }
+
+    //! Returns a vector of field IDs corresponding to the variables associated with the model.
+    virtual std::vector<int> FieldIds() const { return m_fieldIds; }
+
+    //! Initialize the damage model.
+    virtual void
+    initialize(const double dt,
+               const int numOwnedPoints,
+               const int* ownedIDs,
+               const int* neighborhoodList,
+               PeridigmNS::DataManager& dataManager) const ;
+
+    //! Evaluate the damage
+    virtual void
+    computeDamage(const double dt,
+                  const int numOwnedPoints,
+                  const int* ownedIDs,
+                  const int* neighborhoodList,
+                  PeridigmNS::DataManager& dataManager) const ;
+
+  protected:
+
+    double m_thresholdDamage;
+    double m_criticalDamage;
+    double m_criticalVonMisesStress;
+    double m_criticalDamageToNeglectMaterialPoint;
+
+    // field ids for all relevant data
+    std::vector<int> m_fieldIds;
+    int m_flyingPointFlagFieldId;
+    int m_bondDamageFieldId;
+    int m_bondLevelVonMisesStressFieldId;
+    int m_brokenBondVolumeAveragedFieldId;
+    int m_horizonFieldId;
+    int m_volumeFieldId;
+    int m_coordinatesFieldId;
+    int m_jacobianDeterminantFieldId;
+    int m_undamagedWeightedVolumeFieldId;
+ };
+
+}
+
+#endif // PERIDIGM_VONMISESSTRESSDAMAGEMODEL_HPP

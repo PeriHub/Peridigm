@@ -61,8 +61,8 @@ namespace PeridigmNS {
     Teuchos::RCP< PeridigmNS::ContactManager > contactManager;
     Teuchos::RCP<PeridigmNS::Material::JacobianType> jacobianType;
     Teuchos::RCP< PeridigmNS::SerialMatrix > jacobian;
-    PeridigmField::Step adaptiveStep;
   };
+
   //! The main ModelEvaluator class; provides the interface between the driver code and the computational routines.
   class ModelEvaluator {
 
@@ -72,7 +72,7 @@ namespace PeridigmNS {
     ModelEvaluator();
 
     //! Destructor
-	virtual ~ModelEvaluator();
+    virtual ~ModelEvaluator();
 
     //! Model evaluation that acts directly on the workset
     void evalModel(Teuchos::RCP<Workset> workset) const;
@@ -87,7 +87,10 @@ namespace PeridigmNS {
     //! Update Cauchy stress acts directly on the workset 
     // (basically the correspondence methods are called a second time for blocks with a damage model)
     void updateCauchyStress(Teuchos::RCP<Workset> workset) const;
+    void computeVelocityGradient(Teuchos::RCP<Workset> workset) const;
     
+    void computeBondVelocityGradient(Teuchos::RCP<Workset> workset) const;
+
   private:
 
     //! Private to prohibit copying

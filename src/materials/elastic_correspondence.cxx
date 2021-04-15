@@ -49,7 +49,7 @@
 #include "correspondence.h"
 #include "material_utilities.h"
 #include <Sacado.hpp>
-#include <cmath> 
+#include <math.h> // for sqrt
 
 //#include <Teuchos_Assert.hpp>
 //#include <Epetra_SerialComm.h>
@@ -58,20 +58,24 @@
 using namespace std;
 namespace CORRESPONDENCE {
 
-
-
 template<typename ScalarT>
 void updateElasticCauchyStress
 (
-const ScalarT* unrotatedRateOfDeformation, 
-const ScalarT* unrotatedCauchyStressN, 
-ScalarT* unrotatedCauchyStressNP1, 
-const int numPoints, 
+const ScalarT* deltaTemperatureN,
+const ScalarT* deltaTemperatureNP1,
+const ScalarT* unrotatedRateOfDeformation,
+const ScalarT* unrotatedCauchyStressN,
+ScalarT* unrotatedCauchyStressNP1,
+const int numPoints,
 const double bulkMod,
 const double shearMod,
+const double alpha,
 const double dt
 )
 {
+  const ScalarT* deltaTempN = deltaTemperatureN;
+  const ScalarT* deltaTempNP1 = deltaTemperatureNP1;
+
   // Hooke's law
   const ScalarT* rateOfDef = unrotatedRateOfDeformation;
   const ScalarT* sigmaN = unrotatedCauchyStressN;
@@ -81,11 +85,155 @@ const double dt
   ScalarT strainInc[9];
   ScalarT deviatoricStrainInc[9];
 
-  for(int iID=0 ; iID<numPoints ; ++iID, 
-        rateOfDef+=9, sigmaN+=9, sigmaNP1+=9){
+  for(int iID=0 ; iID<numPoints ; ++iID,
+      rateOfDef+=9, sigmaN+=9, sigmaNP1+=9){
 
       //strainInc = dt * rateOfDef
-      for (int i = 0; i < 9; i++) {
+      for(int i = 0; i < 9; i++){
+          strainInc[i] = *(rateOfDef+i)*dt;
+          deviatoricStrainInc[i] = strainInc[i];
+      }
+
+      //dilatation
+      dilatationInc = strainInc[0] + strainInc[4] + strainInc[8];
+
+      //deviatoric strain
+      deviatoricStrainInc[0] -= dilatationInc/3.0;
+      deviatoricStrainInc[4] -= dilatationInc/3.0;
+      deviatoricStrainInc[8] -= dilatationInc/3.0;
+
+      //thermal strains
+      if(deltaTemperatureN && deltaTemperatureNP1){
+        double thermalStrainN = alpha*deltaTemperatureN[iID];
+        double thermalStrainNP1 = alpha*deltaTemperatureNP1[iID];
+        dilatationInc -= 3.0*(thermalStrainNP1 - thermalStrainN);
+      }
+
+      //update stress
+      for(int i = 0; i < 9; i++){
+          *(sigmaNP1+i) = *(sigmaN+i) + deviatoricStrainInc[i]*2.0*shearMod;
+      }
+      *(sigmaNP1) += bulkMod*dilatationInc;
+      *(sigmaNP1+4) += bulkMod*dilatationInc;
+      *(sigmaNP1+8) += bulkMod*dilatationInc;
+
+  }
+}
+
+template<typename ScalarT>
+void updateElasticCauchyStress
+(
+    const ScalarT* unrotatedRateOfDeformation, 
+    const ScalarT* unrotatedCauchyStressN, 
+    ScalarT* unrotatedCauchyStressNP1, 
+    ScalarT* vonMisesStress,
+    const int numPoints, 
+    const double bulkMod,
+    const double shearMod,
+    const double dt
+)
+{
+  // Hooke's law
+  const ScalarT* rateOfDef = unrotatedRateOfDeformation;
+  const ScalarT* sigmaN = unrotatedCauchyStressN;
+  ScalarT* sigmaNP1 = unrotatedCauchyStressNP1;
+
+  ScalarT* vmStress = vonMisesStress;
+
+  ScalarT dilatationInc;
+  ScalarT strainInc[9];
+  ScalarT deviatoricStrainInc[9];
+
+  ScalarT deviatoricStressNP1[9];
+  ScalarT sphericalStressNP1;
+  ScalarT tempScalar;
+
+  for(int iID=0 ; iID<numPoints ; ++iID, 
+      rateOfDef+=9, sigmaN+=9, sigmaNP1+=9, ++vmStress){
+
+    //strainInc = dt * rateOfDef
+    for(int i = 0; i < 9; i++){
+        strainInc[i] = *(rateOfDef+i)*dt;
+        deviatoricStrainInc[i] = strainInc[i];
+    }
+
+    //dilatation
+    dilatationInc = strainInc[0] + strainInc[4] + strainInc[8];
+
+    //deviatoric strain
+    deviatoricStrainInc[0] -= dilatationInc/3.0;
+    deviatoricStrainInc[4] -= dilatationInc/3.0;
+    deviatoricStrainInc[8] -= dilatationInc/3.0;
+
+    //update stress
+    for(int i = 0; i < 9; i++){
+      *(sigmaNP1+i) = *(sigmaN+i) + deviatoricStrainInc[i]*2.0*shearMod;
+    }
+    *(sigmaNP1) += bulkMod*dilatationInc;
+    *(sigmaNP1+4) += bulkMod*dilatationInc;
+    *(sigmaNP1+8) += bulkMod*dilatationInc;
+
+    sphericalStressNP1 = (*(sigmaNP1) + *(sigmaNP1+4) + *(sigmaNP1+8))/3.0;
+
+    // Compute the ``trial'' von Mises stress
+    for(int i = 0; i < 9; i++){
+      deviatoricStressNP1[i] = *(sigmaNP1+i);
+    }
+    deviatoricStressNP1[0] -= sphericalStressNP1;
+    deviatoricStressNP1[4] -= sphericalStressNP1;
+    deviatoricStressNP1[8] -= sphericalStressNP1;
+
+    // Compute \sigma_ij * \sigma_ij
+    tempScalar = 0.0;
+    for(int j = 0; j < 3; j++){
+      for(int i = 0; i < 3; i++){
+        tempScalar += deviatoricStressNP1[i+3*j] * deviatoricStressNP1[i+3*j];
+      }
+    }
+
+    *vmStress = sqrt(3.0/2.0*tempScalar);
+  }
+}
+
+template<typename ScalarT>
+void updateElasticCauchyStress
+(
+    const ScalarT* unrotatedRateOfDeformation, 
+    const ScalarT* unrotatedCauchyStressN, 
+    ScalarT* unrotatedCauchyStressNP1, 
+    ScalarT* vonMisesStress,
+    const double* flyingPointFlag,
+    const int numPoints, 
+    const double bulkMod,
+    const double shearMod,
+    const double dt
+)
+{
+  // Hooke's law
+  const ScalarT* rateOfDef = unrotatedRateOfDeformation;
+  const ScalarT* sigmaN = unrotatedCauchyStressN;
+  ScalarT* sigmaNP1 = unrotatedCauchyStressNP1;
+
+  ScalarT* vmStress = vonMisesStress;
+
+  const double* flyingPointFlg = flyingPointFlag;
+
+  ScalarT dilatationInc;
+  ScalarT strainInc[9];
+  ScalarT deviatoricStrainInc[9];
+
+  ScalarT deviatoricStressNP1[9];
+  ScalarT sphericalStressNP1;
+  ScalarT tempScalar;
+
+  for(int iID=0 ; iID<numPoints ; ++iID, 
+      rateOfDef+=9, sigmaN+=9, sigmaNP1+=9, ++vmStress, ++flyingPointFlg){
+
+    // if the node is not flying, update the values. Otherwise, just skip
+    if(*flyingPointFlg < 0.0){
+
+      //strainInc = dt * rateOfDef
+      for(int i = 0; i < 9; i++){
           strainInc[i] = *(rateOfDef+i)*dt;
           deviatoricStrainInc[i] = strainInc[i];
       }
@@ -99,26 +247,476 @@ const double dt
       deviatoricStrainInc[8] -= dilatationInc/3.0;
 
       //update stress
-      for (int i = 0; i < 9; i++) {
+      for(int i = 0; i < 9; i++){
           *(sigmaNP1+i) = *(sigmaN+i) + deviatoricStrainInc[i]*2.0*shearMod;
       }
       *(sigmaNP1) += bulkMod*dilatationInc;
       *(sigmaNP1+4) += bulkMod*dilatationInc;
       *(sigmaNP1+8) += bulkMod*dilatationInc;
 
+      sphericalStressNP1 = (*(sigmaNP1) + *(sigmaNP1+4) + *(sigmaNP1+8))/3.0;
+
+      // Compute the ``trial'' von Mises stress
+      for(int i = 0; i < 9; i++){
+          deviatoricStressNP1[i] = *(sigmaNP1+i);
+      }
+      deviatoricStressNP1[0] -= sphericalStressNP1;
+      deviatoricStressNP1[4] -= sphericalStressNP1;
+      deviatoricStressNP1[8] -= sphericalStressNP1;
+
+      // Compute \sigma_ij * \sigma_ij
+      tempScalar = 0.0;
+      for(int j = 0; j < 3; j++){
+          for(int i = 0; i < 3; i++){
+              tempScalar += deviatoricStressNP1[i+3*j] * deviatoricStressNP1[i+3*j];
+          }
+      }
+
+      *vmStress = sqrt(3.0/2.0*tempScalar);
+    }
+  }
+
+}
+
+template<typename ScalarT>
+void updateBondLevelElasticCauchyStress
+(
+    const ScalarT* bondLevelUnrotatedRateOfDeformationXX, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationXY, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationXZ, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationYX, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationYY, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationYZ, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationZX, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationZY, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationZZ, 
+    const ScalarT* bondLevelUnrotatedCauchyStressXXN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressXYN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressXZN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressYXN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressYYN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressYZN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressZXN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressZYN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressZZN, 
+    ScalarT* bondLevelUnrotatedCauchyStressXXNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressXYNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressXZNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressYXNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressYYNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressYZNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressZXNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressZYNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressZZNP1, 
+    ScalarT* bondLevelVonMisesStress,
+    const int* neighborhoodList,
+    const int numPoints, 
+    const double bulkMod,
+    const double shearMod,
+    const double dt
+)
+{
+  // Hooke's law
+  const ScalarT* rateOfDefXX = bondLevelUnrotatedRateOfDeformationXX;
+  const ScalarT* rateOfDefXY = bondLevelUnrotatedRateOfDeformationXY;
+  const ScalarT* rateOfDefXZ = bondLevelUnrotatedRateOfDeformationXZ;
+  const ScalarT* rateOfDefYX = bondLevelUnrotatedRateOfDeformationYX;
+  const ScalarT* rateOfDefYY = bondLevelUnrotatedRateOfDeformationYY;
+  const ScalarT* rateOfDefYZ = bondLevelUnrotatedRateOfDeformationYZ;
+  const ScalarT* rateOfDefZX = bondLevelUnrotatedRateOfDeformationZX;
+  const ScalarT* rateOfDefZY = bondLevelUnrotatedRateOfDeformationZY;
+  const ScalarT* rateOfDefZZ = bondLevelUnrotatedRateOfDeformationZZ;
+  const ScalarT* sigmaXXN = bondLevelUnrotatedCauchyStressXXN;
+  const ScalarT* sigmaXYN = bondLevelUnrotatedCauchyStressXYN;
+  const ScalarT* sigmaXZN = bondLevelUnrotatedCauchyStressXZN;
+  const ScalarT* sigmaYXN = bondLevelUnrotatedCauchyStressYXN;
+  const ScalarT* sigmaYYN = bondLevelUnrotatedCauchyStressYYN;
+  const ScalarT* sigmaYZN = bondLevelUnrotatedCauchyStressYZN;
+  const ScalarT* sigmaZXN = bondLevelUnrotatedCauchyStressZXN;
+  const ScalarT* sigmaZYN = bondLevelUnrotatedCauchyStressZYN;
+  const ScalarT* sigmaZZN = bondLevelUnrotatedCauchyStressZZN;
+  ScalarT* sigmaXXNP1 = bondLevelUnrotatedCauchyStressXXNP1;
+  ScalarT* sigmaXYNP1 = bondLevelUnrotatedCauchyStressXYNP1;
+  ScalarT* sigmaXZNP1 = bondLevelUnrotatedCauchyStressXZNP1;
+  ScalarT* sigmaYXNP1 = bondLevelUnrotatedCauchyStressYXNP1;
+  ScalarT* sigmaYYNP1 = bondLevelUnrotatedCauchyStressYYNP1;
+  ScalarT* sigmaYZNP1 = bondLevelUnrotatedCauchyStressYZNP1;
+  ScalarT* sigmaZXNP1 = bondLevelUnrotatedCauchyStressZXNP1;
+  ScalarT* sigmaZYNP1 = bondLevelUnrotatedCauchyStressZYNP1;
+  ScalarT* sigmaZZNP1 = bondLevelUnrotatedCauchyStressZZNP1;
+  
+  ScalarT* vmStress = bondLevelVonMisesStress;
+
+  ScalarT dilatationInc;
+  ScalarT strainInc[9];
+  ScalarT deviatoricStrainInc[9];
+
+  ScalarT deviatoricStressNP1[9];
+  ScalarT sphericalStressNP1;
+  ScalarT tempScalar;
+
+  int numNeighbors;
+  const int *neighborListPtr = neighborhoodList;
+  for(int iID=0 ; iID<numPoints ; ++iID){
+
+    // All is bond level.
+    numNeighbors = *neighborListPtr; neighborListPtr++;
+    for(int n=0; n<numNeighbors; n++, neighborListPtr++, 
+        rateOfDefXX++, rateOfDefXY++, rateOfDefXZ++, 
+        rateOfDefYX++, rateOfDefYY++, rateOfDefYZ++, 
+        rateOfDefZX++, rateOfDefZY++, rateOfDefZZ++,
+        sigmaXXN++, sigmaXYN++, sigmaXZN++, 
+        sigmaYXN++, sigmaYYN++, sigmaYZN++, 
+        sigmaZXN++, sigmaZYN++, sigmaZZN++,
+        sigmaXXNP1++, sigmaXYNP1++, sigmaXZNP1++, 
+        sigmaYXNP1++, sigmaYYNP1++, sigmaYZNP1++, 
+        sigmaZXNP1++, sigmaZYNP1++, sigmaZZNP1++,
+        vmStress++){
+
+      //strainInc = dt * rateOfDef
+      strainInc[0] = *rateOfDefXX*dt; strainInc[1] = *rateOfDefXY*dt; strainInc[2] = *rateOfDefXZ*dt;
+      strainInc[3] = *rateOfDefYX*dt; strainInc[4] = *rateOfDefYY*dt; strainInc[5] = *rateOfDefYZ*dt;
+      strainInc[6] = *rateOfDefZX*dt; strainInc[7] = *rateOfDefZY*dt; strainInc[8] = *rateOfDefZZ*dt;
+
+      //dilatation
+      dilatationInc = strainInc[0] + strainInc[4] + strainInc[8];
+
+      //deviatoric strain
+      for (int i = 0; i < 9; i++) {
+        deviatoricStrainInc[i] = strainInc[i];
+      }
+      deviatoricStrainInc[0] -= dilatationInc/3.0;
+      deviatoricStrainInc[4] -= dilatationInc/3.0;
+      deviatoricStrainInc[8] -= dilatationInc/3.0;
+
+      //update stress
+      *sigmaXXNP1 = *sigmaXXN + deviatoricStrainInc[0]*2.0*shearMod;
+      *sigmaXYNP1 = *sigmaXYN + deviatoricStrainInc[1]*2.0*shearMod;
+      *sigmaXZNP1 = *sigmaXZN + deviatoricStrainInc[2]*2.0*shearMod;
+      *sigmaYXNP1 = *sigmaYXN + deviatoricStrainInc[3]*2.0*shearMod;
+      *sigmaYYNP1 = *sigmaYYN + deviatoricStrainInc[4]*2.0*shearMod;
+      *sigmaYZNP1 = *sigmaYZN + deviatoricStrainInc[5]*2.0*shearMod;
+      *sigmaZXNP1 = *sigmaZXN + deviatoricStrainInc[6]*2.0*shearMod;
+      *sigmaZYNP1 = *sigmaZYN + deviatoricStrainInc[7]*2.0*shearMod;
+      *sigmaZZNP1 = *sigmaZZN + deviatoricStrainInc[8]*2.0*shearMod;
+
+      *sigmaXXNP1 += bulkMod*dilatationInc;
+      *sigmaYYNP1 += bulkMod*dilatationInc;
+      *sigmaZZNP1 += bulkMod*dilatationInc;
+
+      // compute von mises stress for failure analysis
+      sphericalStressNP1 = (*sigmaXXNP1 + *sigmaYYNP1 + *sigmaZZNP1)/3.0;
+
+      // Compute the ``trial'' von Mises stress
+      deviatoricStressNP1[0] = *sigmaXXNP1; deviatoricStressNP1[1] = *sigmaXYNP1; deviatoricStressNP1[2] = *sigmaXZNP1;
+      deviatoricStressNP1[3] = *sigmaYXNP1; deviatoricStressNP1[4] = *sigmaYYNP1; deviatoricStressNP1[5] = *sigmaYZNP1;
+      deviatoricStressNP1[6] = *sigmaZXNP1; deviatoricStressNP1[7] = *sigmaZYNP1; deviatoricStressNP1[8] = *sigmaZZNP1;
+
+      deviatoricStressNP1[0] -= sphericalStressNP1;
+      deviatoricStressNP1[4] -= sphericalStressNP1;
+      deviatoricStressNP1[8] -= sphericalStressNP1;
+
+      // Compute \sigma_ij * \sigma_ij
+      tempScalar = 0.0;
+      for(int j = 0; j < 3; j++){
+        for(int i = 0; i < 3; i++){
+          tempScalar += deviatoricStressNP1[i+3*j] * deviatoricStressNP1[i+3*j];
+        }
+      }
+
+      *vmStress = sqrt(3.0/2.0*tempScalar);
+    }
+  }
+}
+
+template<typename ScalarT>
+void updateBondLevelElasticCauchyStress
+(
+    const ScalarT* bondLevelUnrotatedRateOfDeformationXX, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationXY, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationXZ, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationYX, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationYY, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationYZ, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationZX, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationZY, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationZZ, 
+    const ScalarT* bondLevelUnrotatedCauchyStressXXN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressXYN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressXZN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressYXN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressYYN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressYZN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressZXN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressZYN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressZZN, 
+    ScalarT* bondLevelUnrotatedCauchyStressXXNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressXYNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressXZNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressYXNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressYYNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressYZNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressZXNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressZYNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressZZNP1, 
+    ScalarT* bondLevelVonMisesStress,
+    const double* flyingPointFlag,
+    const int* neighborhoodList,
+    const int numPoints, 
+    const double bulkMod,
+    const double shearMod,
+    const double dt
+)
+{
+  // Hooke's law
+  const ScalarT* rateOfDefXX = bondLevelUnrotatedRateOfDeformationXX;
+  const ScalarT* rateOfDefXY = bondLevelUnrotatedRateOfDeformationXY;
+  const ScalarT* rateOfDefXZ = bondLevelUnrotatedRateOfDeformationXZ;
+  const ScalarT* rateOfDefYX = bondLevelUnrotatedRateOfDeformationYX;
+  const ScalarT* rateOfDefYY = bondLevelUnrotatedRateOfDeformationYY;
+  const ScalarT* rateOfDefYZ = bondLevelUnrotatedRateOfDeformationYZ;
+  const ScalarT* rateOfDefZX = bondLevelUnrotatedRateOfDeformationZX;
+  const ScalarT* rateOfDefZY = bondLevelUnrotatedRateOfDeformationZY;
+  const ScalarT* rateOfDefZZ = bondLevelUnrotatedRateOfDeformationZZ;
+  const ScalarT* sigmaXXN = bondLevelUnrotatedCauchyStressXXN;
+  const ScalarT* sigmaXYN = bondLevelUnrotatedCauchyStressXYN;
+  const ScalarT* sigmaXZN = bondLevelUnrotatedCauchyStressXZN;
+  const ScalarT* sigmaYXN = bondLevelUnrotatedCauchyStressYXN;
+  const ScalarT* sigmaYYN = bondLevelUnrotatedCauchyStressYYN;
+  const ScalarT* sigmaYZN = bondLevelUnrotatedCauchyStressYZN;
+  const ScalarT* sigmaZXN = bondLevelUnrotatedCauchyStressZXN;
+  const ScalarT* sigmaZYN = bondLevelUnrotatedCauchyStressZYN;
+  const ScalarT* sigmaZZN = bondLevelUnrotatedCauchyStressZZN;
+  ScalarT* sigmaXXNP1 = bondLevelUnrotatedCauchyStressXXNP1;
+  ScalarT* sigmaXYNP1 = bondLevelUnrotatedCauchyStressXYNP1;
+  ScalarT* sigmaXZNP1 = bondLevelUnrotatedCauchyStressXZNP1;
+  ScalarT* sigmaYXNP1 = bondLevelUnrotatedCauchyStressYXNP1;
+  ScalarT* sigmaYYNP1 = bondLevelUnrotatedCauchyStressYYNP1;
+  ScalarT* sigmaYZNP1 = bondLevelUnrotatedCauchyStressYZNP1;
+  ScalarT* sigmaZXNP1 = bondLevelUnrotatedCauchyStressZXNP1;
+  ScalarT* sigmaZYNP1 = bondLevelUnrotatedCauchyStressZYNP1;
+  ScalarT* sigmaZZNP1 = bondLevelUnrotatedCauchyStressZZNP1;
+  
+  ScalarT* vmStress = bondLevelVonMisesStress;
+
+  const double* flyingPointFlg = flyingPointFlag;
+
+  ScalarT dilatationInc;
+  ScalarT strainInc[9];
+  ScalarT deviatoricStrainInc[9];
+
+  ScalarT deviatoricStressNP1[9];
+  ScalarT sphericalStressNP1;
+  ScalarT tempScalar;
+
+  int numNeighbors;
+  const int *neighborListPtr = neighborhoodList;
+  for(int iID=0 ; iID<numPoints ; ++iID, flyingPointFlg++){
+
+    // if the node is not flying, update the values. Otherwise, just skip
+    if(*flyingPointFlg < 0.0){
+
+      // All is bond level.
+      numNeighbors = *neighborListPtr; neighborListPtr++;
+      for(int n=0; n<numNeighbors; n++, neighborListPtr++, 
+          rateOfDefXX++, rateOfDefXY++, rateOfDefXZ++, 
+          rateOfDefYX++, rateOfDefYY++, rateOfDefYZ++, 
+          rateOfDefZX++, rateOfDefZY++, rateOfDefZZ++,
+          sigmaXXN++, sigmaXYN++, sigmaXZN++, 
+          sigmaYXN++, sigmaYYN++, sigmaYZN++, 
+          sigmaZXN++, sigmaZYN++, sigmaZZN++,
+          sigmaXXNP1++, sigmaXYNP1++, sigmaXZNP1++, 
+          sigmaYXNP1++, sigmaYYNP1++, sigmaYZNP1++, 
+          sigmaZXNP1++, sigmaZYNP1++, sigmaZZNP1++,
+          vmStress++){
+
+        //strainInc = dt * rateOfDef
+        strainInc[0] = *rateOfDefXX*dt; strainInc[1] = *rateOfDefXY*dt; strainInc[2] = *rateOfDefXZ*dt;
+        strainInc[3] = *rateOfDefYX*dt; strainInc[4] = *rateOfDefYY*dt; strainInc[5] = *rateOfDefYZ*dt;
+        strainInc[6] = *rateOfDefZX*dt; strainInc[7] = *rateOfDefZY*dt; strainInc[8] = *rateOfDefZZ*dt;
+
+        //dilatation
+        dilatationInc = strainInc[0] + strainInc[4] + strainInc[8];
+
+        //deviatoric strain
+        for(int i = 0; i < 9; i++){
+          deviatoricStrainInc[i] = strainInc[i];
+        }
+        deviatoricStrainInc[0] -= dilatationInc/3.0;
+        deviatoricStrainInc[4] -= dilatationInc/3.0;
+        deviatoricStrainInc[8] -= dilatationInc/3.0;
+
+        //update stress
+        *sigmaXXNP1 = *sigmaXXN + deviatoricStrainInc[0]*2.0*shearMod;
+        *sigmaXYNP1 = *sigmaXYN + deviatoricStrainInc[1]*2.0*shearMod;
+        *sigmaXZNP1 = *sigmaXZN + deviatoricStrainInc[2]*2.0*shearMod;
+        *sigmaYXNP1 = *sigmaYXN + deviatoricStrainInc[3]*2.0*shearMod;
+        *sigmaYYNP1 = *sigmaYYN + deviatoricStrainInc[4]*2.0*shearMod;
+        *sigmaYZNP1 = *sigmaYZN + deviatoricStrainInc[5]*2.0*shearMod;
+        *sigmaZXNP1 = *sigmaZXN + deviatoricStrainInc[6]*2.0*shearMod;
+        *sigmaZYNP1 = *sigmaZYN + deviatoricStrainInc[7]*2.0*shearMod;
+        *sigmaZZNP1 = *sigmaZZN + deviatoricStrainInc[8]*2.0*shearMod;
+
+        *sigmaXXNP1 += bulkMod*dilatationInc;
+        *sigmaYYNP1 += bulkMod*dilatationInc;
+        *sigmaZZNP1 += bulkMod*dilatationInc;
+
+        // compute von mises stress for failure analysis
+        sphericalStressNP1 = (*sigmaXXNP1 + *sigmaYYNP1 + *sigmaZZNP1)/3.0;
+
+        // Compute the ``trial'' von Mises stress
+        deviatoricStressNP1[0] = *sigmaXXNP1; deviatoricStressNP1[1] = *sigmaXYNP1; deviatoricStressNP1[2] = *sigmaXZNP1;
+        deviatoricStressNP1[3] = *sigmaYXNP1; deviatoricStressNP1[4] = *sigmaYYNP1; deviatoricStressNP1[5] = *sigmaYZNP1;
+        deviatoricStressNP1[6] = *sigmaZXNP1; deviatoricStressNP1[7] = *sigmaZYNP1; deviatoricStressNP1[8] = *sigmaZZNP1;
+
+        deviatoricStressNP1[0] -= sphericalStressNP1;
+        deviatoricStressNP1[4] -= sphericalStressNP1;
+        deviatoricStressNP1[8] -= sphericalStressNP1;
+
+        // Compute \sigma_ij * \sigma_ij
+        tempScalar = 0.0;
+        for(int j = 0; j < 3; j++){
+          for(int i = 0; i < 3; i++){
+            tempScalar += deviatoricStressNP1[i+3*j] * deviatoricStressNP1[i+3*j];
+          }
+        }
+
+        *vmStress = sqrt(3.0/2.0*tempScalar);
+      }
+    }
+    else{
+      // adjust the neighborhood pointer for the next point
+      numNeighbors = *neighborListPtr; 
+      neighborListPtr += numNeighbors+1;
+
+      rateOfDefXX += numNeighbors; rateOfDefXY += numNeighbors; rateOfDefXZ += numNeighbors; 
+      rateOfDefYX += numNeighbors; rateOfDefYY += numNeighbors; rateOfDefYZ += numNeighbors;
+      rateOfDefZX += numNeighbors; rateOfDefZY += numNeighbors; rateOfDefZZ += numNeighbors;
+      sigmaXXN += numNeighbors; sigmaXYN += numNeighbors; sigmaXZN += numNeighbors; 
+      sigmaYXN += numNeighbors; sigmaYYN += numNeighbors; sigmaYZN += numNeighbors;
+      sigmaZXN += numNeighbors; sigmaZYN += numNeighbors; sigmaZZN += numNeighbors;
+      sigmaXXNP1 += numNeighbors; sigmaXYNP1 += numNeighbors; sigmaXZNP1 += numNeighbors; 
+      sigmaYXNP1 += numNeighbors; sigmaYYNP1 += numNeighbors; sigmaYZNP1 += numNeighbors;
+      sigmaZXNP1 += numNeighbors; sigmaZYNP1 += numNeighbors; sigmaZZNP1 += numNeighbors;
+      vmStress += numNeighbors; 
+    }
   }
 }
 
 // Explicit template instantiation for double
 template void updateElasticCauchyStress<double>
 (
-const double* unrotatedRateOfDeformation, 
-const double* unrotatedCauchyStressN, 
-double* unrotatedCauchyStressNP1, 
-int numPoints, 
-double bulkMod,
-double shearMod,
-double dt
+    const double* deltaTemperatureN,
+    const double* deltaTemperatureNP1,
+    const double* unrotatedRateOfDeformation,
+    const double* unrotatedCauchyStressN,
+    double* unrotatedCauchyStressNP1,
+    int numPoints,
+    double bulkMod,
+    double shearMod,
+    double alpha,
+    double dt
+);
+
+
+template void updateElasticCauchyStress<double>
+(
+    const double* unrotatedRateOfDeformation, 
+    const double* unrotatedCauchyStressN, 
+    double* unrotatedCauchyStressNP1, 
+    double* vonMisesStress,
+    int numPoints, 
+    double bulkMod,
+    double shearMod,
+    double dt
+);
+
+template void updateElasticCauchyStress<double>
+(
+    const double* unrotatedRateOfDeformation, 
+    const double* unrotatedCauchyStressN, 
+    double* unrotatedCauchyStressNP1, 
+    double* vonMisesStress,
+    const double* flyingPointFlag,
+    int numPoints, 
+    double bulkMod,
+    double shearMod,
+    double dt
+);
+
+template void updateBondLevelElasticCauchyStress<double>
+(
+    const double* bondLevelUnrotatedRateOfDeformationXX, 
+    const double* bondLevelUnrotatedRateOfDeformationXY, 
+    const double* bondLevelUnrotatedRateOfDeformationXZ, 
+    const double* bondLevelUnrotatedRateOfDeformationYX, 
+    const double* bondLevelUnrotatedRateOfDeformationYY, 
+    const double* bondLevelUnrotatedRateOfDeformationYZ, 
+    const double* bondLevelUnrotatedRateOfDeformationZX, 
+    const double* bondLevelUnrotatedRateOfDeformationZY, 
+    const double* bondLevelUnrotatedRateOfDeformationZZ, 
+    const double* bondLevelUnrotatedCauchyStressXXN, 
+    const double* bondLevelUnrotatedCauchyStressXYN, 
+    const double* bondLevelUnrotatedCauchyStressXZN, 
+    const double* bondLevelUnrotatedCauchyStressYXN, 
+    const double* bondLevelUnrotatedCauchyStressYYN, 
+    const double* bondLevelUnrotatedCauchyStressYZN, 
+    const double* bondLevelUnrotatedCauchyStressZXN, 
+    const double* bondLevelUnrotatedCauchyStressZYN, 
+    const double* bondLevelUnrotatedCauchyStressZZN, 
+    double* bondLevelUnrotatedCauchyStressXXNP1, 
+    double* bondLevelUnrotatedCauchyStressXYNP1, 
+    double* bondLevelUnrotatedCauchyStressXZNP1, 
+    double* bondLevelUnrotatedCauchyStressYXNP1, 
+    double* bondLevelUnrotatedCauchyStressYYNP1, 
+    double* bondLevelUnrotatedCauchyStressYZNP1, 
+    double* bondLevelUnrotatedCauchyStressZXNP1, 
+    double* bondLevelUnrotatedCauchyStressZYNP1, 
+    double* bondLevelUnrotatedCauchyStressZZNP1, 
+    double* bondLevelVonMisesStress,
+    const int* neighborhoodList,
+    const int numPoints, 
+    const double bulkMod,
+    const double shearMod,
+    const double dt
+);
+
+template void updateBondLevelElasticCauchyStress<double>
+(
+    const double* bondLevelUnrotatedRateOfDeformationXX, 
+    const double* bondLevelUnrotatedRateOfDeformationXY, 
+    const double* bondLevelUnrotatedRateOfDeformationXZ, 
+    const double* bondLevelUnrotatedRateOfDeformationYX, 
+    const double* bondLevelUnrotatedRateOfDeformationYY, 
+    const double* bondLevelUnrotatedRateOfDeformationYZ, 
+    const double* bondLevelUnrotatedRateOfDeformationZX, 
+    const double* bondLevelUnrotatedRateOfDeformationZY, 
+    const double* bondLevelUnrotatedRateOfDeformationZZ, 
+    const double* bondLevelUnrotatedCauchyStressXXN, 
+    const double* bondLevelUnrotatedCauchyStressXYN, 
+    const double* bondLevelUnrotatedCauchyStressXZN, 
+    const double* bondLevelUnrotatedCauchyStressYXN, 
+    const double* bondLevelUnrotatedCauchyStressYYN, 
+    const double* bondLevelUnrotatedCauchyStressYZN, 
+    const double* bondLevelUnrotatedCauchyStressZXN, 
+    const double* bondLevelUnrotatedCauchyStressZYN, 
+    const double* bondLevelUnrotatedCauchyStressZZN, 
+    double* bondLevelUnrotatedCauchyStressXXNP1, 
+    double* bondLevelUnrotatedCauchyStressXYNP1, 
+    double* bondLevelUnrotatedCauchyStressXZNP1, 
+    double* bondLevelUnrotatedCauchyStressYXNP1, 
+    double* bondLevelUnrotatedCauchyStressYYNP1, 
+    double* bondLevelUnrotatedCauchyStressYZNP1, 
+    double* bondLevelUnrotatedCauchyStressZXNP1, 
+    double* bondLevelUnrotatedCauchyStressZYNP1, 
+    double* bondLevelUnrotatedCauchyStressZZNP1, 
+    double* bondLevelVonMisesStress,
+    const double* flyingPointFlag,
+    const int* neighborhoodList,
+    const int numPoints, 
+    const double bulkMod,
+    const double shearMod,
+    const double dt
 );
 
 /** Explicit template instantiation for Sacado::Fad::DFad<double>. */
@@ -186,7 +784,7 @@ bool hencky
       //  C[0][4] = Cstiff[0][4];C[1][4] = Cstiff[1][4];C[2][4] = Cstiff[2][4];C[3][4] = Cstiff[3][4];C[4][4] = Cstiff[4][4];C[5][4] = Cstiff[5][4];
       //  C[0][5] = Cstiff[0][5];C[1][5] = Cstiff[1][5];C[2][5] = Cstiff[2][5];C[3][5] = Cstiff[3][5];C[4][5] = Cstiff[4][5];C[5][5] = Cstiff[5][5];
       //}
-      if (type==0){
+    if (type==0){
         strain[0] = 0.5 * ( *(defGrad)*   *(defGrad)   + *(defGrad+3)* *(defGrad+3) + *(defGrad+6) * *(defGrad+6)  - 1.0 );
         strain[1] = 0.5 * ( *(defGrad)*   *(defGrad+1) + *(defGrad+3)* *(defGrad+4) + *(defGrad+6) * *(defGrad+7)  );
         strain[2] = 0.5 * ( *(defGrad)*   *(defGrad+2) + *(defGrad+3)* *(defGrad+5) + *(defGrad+6) * *(defGrad+8)  );
@@ -209,6 +807,7 @@ bool hencky
         
       }
       if (type!=0){
+
           strain[0] = 0.5 * ( *(defGrad)*   *(defGrad)   + *(defGrad+3)* *(defGrad+3) - 1.0 );
           strain[1] = 0.5 * ( *(defGrad)*   *(defGrad+1) + *(defGrad+3)* *(defGrad+4) );
           strain[3] = 0.5 * ( *(defGrad+1)* *(defGrad)   + *(defGrad+4)* *(defGrad+3) );
@@ -237,13 +836,14 @@ bool hencky
         *(sigmaNP1+6) = 0.0;
         *(sigmaNP1+7) = 0.0;
         *(sigmaNP1+8) = 0.0;
+        
       }
       //if (incremental == true){
       //   for (int i = 0; i < 9; i++) {
       //        *(sigmaNP1+i) += *(sigmaN+i);
       //    }
       //}
-  } 
+  }     
 }       
 
 
@@ -385,67 +985,6 @@ const double C[][6],
 const double rotationMat[][3],
 double Cnew[][6]
 );
-
-template<typename ScalarT>
-void createRotatedPythonBasedStiff
-(
-const ScalarT C[][6],
-const double alpha[],
-ScalarT Cnew[][6]
-){
-    
-    const double PI  = 3.141592653589793238463;
-    double psi = alpha[2]*(PI)/180;
-    double theta = alpha[1]*(PI)/180;
-    double phi = alpha[0]*(PI)/180;
-    double cosPsi   = cos(psi);
-    double sinPsi   = sin(psi);
-    double cosTheta = cos(theta);
-    double sinTheta = sin(theta);
-    double cosPhi   = cos(phi);
-    double sinPhi   = sin(phi);
-    Cnew[0][0] =  -cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,4)*C[1][1] + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,3)*C[1][3]*cosPsi*sinTheta + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,3)*C[1][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[0][1]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][2]*cosPsi*pow(sinTheta,2) + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[3][3]*cosPsi*pow(sinTheta,2) + 8*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2) + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosPsi*sinTheta + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(sinPhi,3) + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][3]*cosPsi*pow(sinTheta,3) + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*pow(sinTheta,2) + 8*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosPsi*sinTheta + 8*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*pow(sinTheta,2) + C[0][0]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,4) + 2*C[0][2]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosPsi*pow(sinTheta,2) + 4*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*pow(sinPhi,3)*cosPsi*sinTheta + C[2][2]*cosPsi*pow(sinTheta,4) + 4*C[2][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*pow(sinTheta,3) + 4*C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosPsi*pow(sinTheta,2) ;
-    Cnew[0][1] =  -cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][1] + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][3]*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[0][1]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][2]*sinPsi*pow(sinTheta,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][4]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][3]*cosPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][3]*cosPsi*sinTheta*sinPsi*sinTheta + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[0][3]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][3]*cosPsi*sinTheta*sinPsi*pow(sinTheta,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*pow(sinTheta,2) + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[4][5]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[0][1]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2) - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][2]*cosPsi*pow(sinTheta,2) + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][3]*cosPsi*pow(sinTheta,2)*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][5]*cosPsi*pow(sinTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*sinTheta + C[0][0]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + C[0][2]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*pow(sinTheta,2) + C[0][2]*cosPsi*pow(sinTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + 2*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 2*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + C[2][2]*cosPsi*pow(sinTheta,2)*sinPsi*pow(sinTheta,2) + 2*C[2][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*pow(sinTheta,2) + 2*C[2][4]*cosPsi*pow(sinTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 4*C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta ;
-    Cnew[0][2] =  -cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinTheta*pow(cosPhi,2)*C[0][1] + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[1][4]*cosTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[1][5]*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][1]*sinTheta*pow(cosPhi,2) - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][2]*pow(cosTheta,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][3]*cosTheta*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[0][3]*cosPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][4]*cosPsi*sinTheta*sinTheta*sinPhi + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[4][5]*cosPsi*sinTheta*cosTheta + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][3]*cosPsi*sinTheta*sinTheta*pow(cosPhi,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinTheta*pow(cosPhi,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][3]*cosPsi*sinTheta*pow(cosTheta,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*pow(cosTheta,2) + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][3]*cosPsi*sinTheta*cosTheta*sinTheta*sinPhi + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinTheta*sinPhi - sinTheta*pow(cosPhi,2)*C[0][0]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2) - sinTheta*pow(cosPhi,2)*C[0][2]*cosPsi*pow(sinTheta,2) + 2*(-1)*sinTheta*pow(cosPhi,2)*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta + 2*(-1)*sinTheta*cosPhi*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosTheta + 2*(-1)*sinTheta*cosPhi*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinTheta*sinPhi + 2*(-1)*sinTheta*cosPhi*C[2][4]*cosPsi*pow(sinTheta,2)*cosTheta + 2*(-1)*sinTheta*cosPhi*C[2][5]*cosPsi*pow(sinTheta,2)*sinTheta*sinPhi + 4*(-1)*sinTheta*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinTheta*sinPhi + 4*(-1)*sinTheta*cosPhi*C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*cosTheta + C[0][1]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinTheta*pow(cosPhi,2) + C[0][2]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*pow(cosTheta,2) + 2*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosTheta*sinTheta*sinPhi + C[1][2]*cosPsi*pow(sinTheta,2)*sinTheta*pow(cosPhi,2) + 2*C[1][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinTheta*pow(cosPhi,2) + C[2][2]*cosPsi*pow(sinTheta,2)*pow(cosTheta,2) + 2*C[2][3]*cosPsi*pow(sinTheta,2)*cosTheta*sinTheta*sinPhi + 2*C[2][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*pow(cosTheta,2) + 4*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*cosTheta*sinTheta*sinPhi ;
-    Cnew[0][3] =  -cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[1][5] - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][1]*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][3]*cosTheta - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[0][1]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[1][4]*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][2]*cosTheta*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][3]*sinPsi*sinTheta*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][4]*cosPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][3]*cosPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][3]*cosPsi*sinTheta*cosTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][3]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[4][5]*cosPsi*sinTheta*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][3]*cosPsi*sinTheta*cosTheta*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][3]*cosPsi*sinTheta*sinPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[4][5]*cosPsi*sinTheta*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2) - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[2][5]*cosPsi*pow(sinTheta,2) + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[0][1]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][2]*cosPsi*pow(sinTheta,2)*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][3]*cosPsi*pow(sinTheta,2)*cosTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*cosTheta - sinTheta*cosPhi*C[0][0]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinTheta*cosPhi*C[0][2]*cosPsi*pow(sinTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinTheta*cosPhi*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*sinTheta + 2*(-1)*sinTheta*cosPhi*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinTheta*cosPhi*C[2][4]*cosPsi*pow(sinTheta,2)*sinPsi*sinTheta + 2*(-1)*sinTheta*cosPhi*C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*sinTheta + C[0][2]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosTheta*sinPsi*sinTheta + C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*sinTheta*sinTheta*sinPhi + C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + C[2][2]*cosPsi*pow(sinTheta,2)*cosTheta*sinPsi*sinTheta + C[2][3]*cosPsi*pow(sinTheta,2)*sinPsi*sinTheta*sinTheta*sinPhi + 2*C[2][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*cosTheta*sinPsi*sinTheta + C[2][4]*cosPsi*pow(sinTheta,2)*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + C[2][5]*cosPsi*pow(sinTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*sinTheta*sinTheta*sinPhi ;
-    Cnew[0][4] =  -cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,3)*(-1)*sinTheta*cosPhi*C[1][5] - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,3)*C[1][1]*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,3)*C[1][3]*cosTheta - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[0][1]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[1][4]*cosPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[3][4]*cosPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][2]*cosPsi*sinTheta*cosTheta + 3*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][3]*cosPsi*sinTheta*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta + 3*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[3][3]*cosPsi*sinTheta*cosTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta + 3*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[2][5]*cosPsi*pow(sinTheta,2) + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[4][5]*cosPsi*pow(sinTheta,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[0][1]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][2]*cosPsi*pow(sinTheta,2)*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinTheta*sinPhi + 3*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][3]*cosPsi*pow(sinTheta,2)*cosTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*cosTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][3]*cosPsi*pow(sinTheta,2)*sinTheta*sinPhi + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosTheta + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*cosTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinTheta*sinPhi - sinTheta*cosPhi*C[0][0]*cosPsi*cosTheta*cosPhi-sinPsi*pow(sinPhi,3) - sinTheta*cosPhi*C[0][2]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*pow(sinTheta,2) + 3*(-1)*sinTheta*cosPhi*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosPsi*sinTheta - sinTheta*cosPhi*C[2][4]*cosPsi*pow(sinTheta,3) + 2*(-1)*sinTheta*cosPhi*C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*pow(sinTheta,2) + C[0][2]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosPsi*sinTheta*cosTheta + C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosPsi*sinTheta*sinTheta*sinPhi + C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*pow(sinPhi,3)*cosTheta + C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(sinPhi,3)*sinTheta*sinPhi + C[2][2]*cosPsi*pow(sinTheta,3)*cosTheta + C[2][3]*cosPsi*pow(sinTheta,3)*sinTheta*sinPhi + 3*C[2][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*pow(sinTheta,2)*cosTheta + C[2][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*pow(sinTheta,2)*sinTheta*sinPhi + 2*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosPsi*sinTheta*sinTheta*sinPhi + 2*C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosPsi*sinTheta*cosTheta + 2*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*pow(sinTheta,2)*sinTheta*sinPhi ;
-    Cnew[0][5] =  -cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,3)*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][1] - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,3)*C[1][3]*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,3)*C[1][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 3*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][3]*cosPsi*sinTheta + 3*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[0][1]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][2]*cosPsi*sinTheta*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[3][3]*cosPsi*sinTheta*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[3][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[0][1]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][2]*cosPsi*pow(sinTheta,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][3]*cosPsi*pow(sinTheta,2) + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 3*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 3*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][3]*cosPsi*pow(sinTheta,2)*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][5]*cosPsi*pow(sinTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*sinTheta + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[4][5]*cosPsi*pow(sinTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosPsi*sinTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(sinPhi,3) - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][3]*cosPsi*pow(sinTheta,3) - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*pow(sinTheta,2) + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*pow(sinTheta,2) + C[0][0]*cosPsi*cosTheta*cosPhi-sinPsi*pow(sinPhi,3)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + C[0][2]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosPsi*sinTheta*sinPsi*sinTheta + C[0][2]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*pow(sinTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*pow(sinPhi,3)*sinPsi*sinTheta + 3*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + C[2][2]*cosPsi*pow(sinTheta,3)*sinPsi*sinTheta + 3*C[2][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*pow(sinTheta,2)*sinPsi*sinTheta + C[2][4]*cosPsi*pow(sinTheta,3)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosPsi*sinTheta*sinPsi*sinTheta + 2*C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*pow(sinTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi ;
-    Cnew[1][1] =  -sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,4)*C[1][1] + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,3)*C[1][3]*sinPsi*sinTheta + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,3)*C[1][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[0][1]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][2]*sinPsi*pow(sinTheta,2) + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][4]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[3][3]*sinPsi*pow(sinTheta,2) + 8*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[3][4]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[5][5]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[0][3]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinPsi*sinTheta + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[0][5]*sinPsi*cosTheta*cosPhi-cosPsi*pow(sinPhi,3) + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][3]*sinPsi*pow(sinTheta,3) + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*pow(sinTheta,2) + 8*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][5]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinPsi*sinTheta + 8*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[4][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*pow(sinTheta,2) + C[0][0]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,4) + 2*C[0][2]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinPsi*pow(sinTheta,2) + 4*C[0][4]*sinPsi*cosTheta*cosPhi-cosPsi*pow(sinPhi,3)*sinPsi*sinTheta + C[2][2]*sinPsi*pow(sinTheta,4) + 4*C[2][4]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*pow(sinTheta,3) + 4*C[4][4]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinPsi*pow(sinTheta,2) ;
-    Cnew[1][2] =  -sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*(-1)*sinTheta*pow(cosPhi,2)*C[0][1] + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[1][4]*cosTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[1][5]*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][1]*sinTheta*pow(cosPhi,2) - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][2]*pow(cosTheta,2) + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][3]*cosTheta*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[0][3]*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[0][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][4]*sinPsi*sinTheta*sinTheta*sinPhi + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][5]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[4][5]*cosTheta*sinPsi*sinTheta + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[5][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][3]*sinPsi*sinTheta*sinTheta*pow(cosPhi,2) + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*pow(cosPhi,2) + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][3]*pow(cosTheta,2)*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][5]*pow(cosTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][3]*cosTheta*sinPsi*sinTheta*sinTheta*sinPhi + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi - sinTheta*pow(cosPhi,2)*C[0][0]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) - sinTheta*pow(cosPhi,2)*C[0][2]*sinPsi*pow(sinTheta,2) + 2*(-1)*sinTheta*pow(cosPhi,2)*C[0][4]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*sinTheta*cosPhi*C[0][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + 2*(-1)*sinTheta*cosPhi*C[0][5]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinTheta*sinPhi + 2*(-1)*sinTheta*cosPhi*C[2][4]*cosTheta*sinPsi*pow(sinTheta,2) + 2*(-1)*sinTheta*cosPhi*C[2][5]*sinPsi*pow(sinTheta,2)*sinTheta*sinPhi + 4*(-1)*sinTheta*cosPhi*C[3][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi + 4*(-1)*sinTheta*cosPhi*C[4][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + C[0][1]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinTheta*pow(cosPhi,2) + C[0][2]*pow(cosTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + 2*C[0][3]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinTheta*sinPhi + C[1][2]*sinPsi*pow(sinTheta,2)*sinTheta*pow(cosPhi,2) + 2*C[1][4]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta*sinTheta*pow(cosPhi,2) + C[2][2]*pow(cosTheta,2)*sinPsi*pow(sinTheta,2) + 2*C[2][3]*cosTheta*sinPsi*pow(sinTheta,2)*sinTheta*sinPhi + 2*C[2][4]*pow(cosTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 4*C[4][5]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi ;
-    Cnew[1][3] =  -sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,3)*(-1)*sinTheta*cosPhi*C[1][5] - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,3)*C[1][1]*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,3)*C[1][3]*cosTheta - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[0][1]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[1][4]*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[3][4]*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[5][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][2]*cosTheta*sinPsi*sinTheta + 3*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][3]*sinPsi*sinTheta*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 3*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[3][3]*cosTheta*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[3][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][3]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 3*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][5]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[2][5]*sinPsi*pow(sinTheta,2) + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[4][5]*sinPsi*pow(sinTheta,2) - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[0][1]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[0][3]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][2]*sinPsi*pow(sinTheta,2)*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][4]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi + 3*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][3]*cosTheta*sinPsi*pow(sinTheta,2) + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][5]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][3]*sinPsi*pow(sinTheta,2)*sinTheta*sinPhi + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][4]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][5]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[4][5]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[5][5]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinTheta*sinPhi - sinTheta*cosPhi*C[0][0]*sinPsi*cosTheta*cosPhi-cosPsi*pow(sinPhi,3) - sinTheta*cosPhi*C[0][2]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*pow(sinTheta,2) + 3*(-1)*sinTheta*cosPhi*C[0][4]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinPsi*sinTheta - sinTheta*cosPhi*C[2][4]*sinPsi*pow(sinTheta,3) + 2*(-1)*sinTheta*cosPhi*C[4][4]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*pow(sinTheta,2) + C[0][2]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinPsi*sinTheta + C[0][3]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinPsi*sinTheta*sinTheta*sinPhi + C[0][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(sinPhi,3) + C[0][5]*sinPsi*cosTheta*cosPhi-cosPsi*pow(sinPhi,3)*sinTheta*sinPhi + C[2][2]*cosTheta*sinPsi*pow(sinTheta,3) + C[2][3]*sinPsi*pow(sinTheta,3)*sinTheta*sinPhi + 3*C[2][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*pow(sinTheta,2) + C[2][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*pow(sinTheta,2)*sinTheta*sinPhi + 2*C[3][5]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinPsi*sinTheta*sinTheta*sinPhi + 2*C[4][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinPsi*sinTheta + 2*C[4][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*pow(sinTheta,2)*sinTheta*sinPhi ;
-    Cnew[1][4] =  -cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[1][5] - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][1]*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][3]*cosTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][4]*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[5][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][3]*sinPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][3]*cosTheta*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][5]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[2][5]*sinPsi*pow(sinTheta,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[0][1]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[0][3]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][2]*sinPsi*pow(sinTheta,2)*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][4]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][3]*cosTheta*sinPsi*pow(sinTheta,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[4][5]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[0][1]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[1][4]*cosPsi*sinTheta - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][2]*cosPsi*sinTheta*cosTheta - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][3]*cosPsi*sinTheta*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][5]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[4][5]*cosPsi*sinTheta*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][3]*cosPsi*sinTheta*cosTheta*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][5]*cosPsi*sinTheta*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][3]*cosPsi*sinTheta*sinPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi - sinTheta*cosPhi*C[0][0]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) - sinTheta*cosPhi*C[0][2]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*pow(sinTheta,2) + 2*(-1)*sinTheta*cosPhi*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta - sinTheta*cosPhi*C[0][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) - sinTheta*cosPhi*C[2][4]*cosPsi*sinTheta*sinPsi*pow(sinTheta,2) + 2*(-1)*sinTheta*cosPhi*C[4][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + C[0][2]*cosPsi*sinTheta*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + C[0][3]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinTheta*sinPhi + C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinTheta*sinPhi + C[2][2]*cosPsi*sinTheta*cosTheta*sinPsi*pow(sinTheta,2) + C[2][3]*cosPsi*sinTheta*sinPsi*pow(sinTheta,2)*sinTheta*sinPhi + C[2][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*pow(sinTheta,2) + 2*C[2][4]*cosPsi*sinTheta*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + C[2][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*pow(sinTheta,2)*sinTheta*sinPhi + 2*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi + 2*C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 2*C[4][5]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi ;
-    Cnew[1][5] =  -cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,3)*C[1][1] + 3*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][3]*sinPsi*sinTheta + 3*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[0][1]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][2]*sinPsi*pow(sinTheta,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][4]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][3]*sinPsi*pow(sinTheta,2) + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][4]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[5][5]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[0][3]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[0][5]*sinPsi*cosTheta*cosPhi-cosPsi*pow(sinPhi,3) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][3]*sinPsi*pow(sinTheta,3) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*pow(sinTheta,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][5]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[4][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*pow(sinTheta,2) - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,3)*C[1][3]*cosPsi*sinTheta - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,3)*C[1][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[0][1]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][2]*cosPsi*sinTheta*sinPsi*sinTheta - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[3][3]*cosPsi*sinTheta*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[3][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[0][3]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + 3*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + 3*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][3]*cosPsi*sinTheta*sinPsi*pow(sinTheta,2) - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*pow(sinTheta,2) + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][5]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][5]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*pow(sinTheta,2) + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[4][5]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + C[0][0]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*pow(sinPhi,3) + C[0][2]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*pow(sinTheta,2) + C[0][2]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinPsi*sinTheta + 3*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinPsi*sinTheta + C[0][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(sinPhi,3) + C[2][2]*cosPsi*sinTheta*sinPsi*pow(sinTheta,3) + C[2][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*pow(sinTheta,3) + 3*C[2][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*pow(sinTheta,2) + 2*C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*pow(sinTheta,2) + 2*C[4][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinPsi*sinTheta ;
-    Cnew[2][2] =  -sinTheta*pow(cosPhi,4)*C[0][0] + 4*(-1)*sinTheta*pow(cosPhi,3)*C[0][4]*cosTheta + 4*(-1)*sinTheta*pow(cosPhi,3)*C[0][5]*sinTheta*sinPhi + 2*(-1)*sinTheta*pow(cosPhi,2)*C[0][1]*sinTheta*pow(cosPhi,2) + 2*(-1)*sinTheta*pow(cosPhi,2)*C[0][2]*pow(cosTheta,2) + 4*(-1)*sinTheta*pow(cosPhi,2)*C[0][3]*cosTheta*sinTheta*sinPhi + 8*(-1)*sinTheta*pow(cosPhi,2)*C[3][5]*cosTheta*sinTheta*sinPhi + 4*(-1)*sinTheta*pow(cosPhi,2)*C[4][4]*pow(cosTheta,2) + 4*(-1)*sinTheta*pow(cosPhi,2)*C[5][5]*sinTheta*pow(cosPhi,2) + 4*(-1)*sinTheta*cosPhi*C[1][4]*cosTheta*sinTheta*pow(cosPhi,2) + 4*(-1)*sinTheta*cosPhi*C[1][5]*sinTheta*pow(sinPhi,3) + 4*(-1)*sinTheta*cosPhi*C[2][4]*pow(cosTheta,3) + 4*(-1)*sinTheta*cosPhi*C[2][5]*pow(cosTheta,2)*sinTheta*sinPhi + 8*(-1)*sinTheta*cosPhi*C[3][4]*cosTheta*sinTheta*pow(cosPhi,2) + 8*(-1)*sinTheta*cosPhi*C[4][5]*pow(cosTheta,2)*sinTheta*sinPhi + C[1][1]*sinTheta*pow(cosPhi,4) + 2*C[1][2]*pow(cosTheta,2)*sinTheta*pow(cosPhi,2) + 4*C[1][3]*cosTheta*sinTheta*pow(sinPhi,3) + C[2][2]*pow(cosTheta,4) + 4*C[2][3]*pow(cosTheta,3)*sinTheta*sinPhi + 4*C[3][3]*pow(cosTheta,2)*sinTheta*pow(cosPhi,2) ;
-    Cnew[2][3] =  -sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,3)*C[0][5] - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[0][1]*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[0][3]*cosTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[3][5]*cosTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[5][5]*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[1][4]*cosTheta*sinTheta*sinPhi + 3*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[1][5]*sinTheta*pow(cosPhi,2) - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[2][5]*pow(cosTheta,2) + 4*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][4]*cosTheta*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[4][5]*pow(cosTheta,2) - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][1]*sinTheta*pow(sinPhi,3) - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][2]*pow(cosTheta,2)*sinTheta*sinPhi + 3*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][3]*cosTheta*sinTheta*pow(cosPhi,2) - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][3]*pow(cosTheta,3) + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][3]*pow(cosTheta,2)*sinTheta*sinPhi - sinTheta*pow(cosPhi,3)*C[0][0]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinTheta*pow(cosPhi,3)*C[0][4]*sinPsi*sinTheta - sinTheta*pow(cosPhi,2)*C[0][2]*cosTheta*sinPsi*sinTheta - sinTheta*pow(cosPhi,2)*C[0][3]*sinPsi*sinTheta*sinTheta*sinPhi + 3*(-1)*sinTheta*pow(cosPhi,2)*C[0][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 3*(-1)*sinTheta*pow(cosPhi,2)*C[0][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*sinTheta*pow(cosPhi,2)*C[3][5]*sinPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*sinTheta*pow(cosPhi,2)*C[4][4]*cosTheta*sinPsi*sinTheta - sinTheta*cosPhi*C[0][1]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*pow(cosPhi,2) - sinTheta*cosPhi*C[0][2]*pow(cosTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinTheta*cosPhi*C[0][3]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi - sinTheta*cosPhi*C[1][4]*sinPsi*sinTheta*sinTheta*pow(cosPhi,2) + 3*(-1)*sinTheta*cosPhi*C[2][4]*pow(cosTheta,2)*sinPsi*sinTheta + 2*(-1)*sinTheta*cosPhi*C[2][5]*cosTheta*sinPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*sinTheta*cosPhi*C[3][4]*sinPsi*sinTheta*sinTheta*pow(cosPhi,2) + 4*(-1)*sinTheta*cosPhi*C[3][5]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*sinTheta*cosPhi*C[4][4]*pow(cosTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 4*(-1)*sinTheta*cosPhi*C[4][5]*cosTheta*sinPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*sinTheta*cosPhi*C[5][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*pow(cosPhi,2) + C[1][2]*cosTheta*sinPsi*sinTheta*sinTheta*pow(cosPhi,2) + C[1][3]*sinPsi*sinTheta*sinTheta*pow(sinPhi,3) + C[1][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*pow(cosPhi,2) + C[1][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*pow(sinPhi,3) + C[2][2]*pow(cosTheta,3)*sinPsi*sinTheta + 3*C[2][3]*pow(cosTheta,2)*sinPsi*sinTheta*sinTheta*sinPhi + C[2][4]*pow(cosTheta,3)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + C[2][5]*pow(cosTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*C[3][3]*cosTheta*sinPsi*sinTheta*sinTheta*pow(cosPhi,2) + 2*C[3][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*pow(cosPhi,2) + 2*C[4][5]*pow(cosTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi ;
-    Cnew[2][4] =  -cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,3)*C[0][5] - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[0][1]*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[0][3]*cosTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[3][5]*cosTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[5][5]*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[1][4]*cosTheta*sinTheta*sinPhi + 3*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[1][5]*sinTheta*pow(cosPhi,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[2][5]*pow(cosTheta,2) + 4*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][4]*cosTheta*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[4][5]*pow(cosTheta,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][1]*sinTheta*pow(sinPhi,3) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][2]*pow(cosTheta,2)*sinTheta*sinPhi + 3*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][3]*cosTheta*sinTheta*pow(cosPhi,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][3]*pow(cosTheta,3) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][3]*pow(cosTheta,2)*sinTheta*sinPhi - sinTheta*pow(cosPhi,3)*C[0][0]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi - sinTheta*pow(cosPhi,3)*C[0][4]*cosPsi*sinTheta - sinTheta*pow(cosPhi,2)*C[0][2]*cosPsi*sinTheta*cosTheta - sinTheta*pow(cosPhi,2)*C[0][3]*cosPsi*sinTheta*sinTheta*sinPhi + 3*(-1)*sinTheta*pow(cosPhi,2)*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta + 3*(-1)*sinTheta*pow(cosPhi,2)*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*sinTheta*pow(cosPhi,2)*C[3][5]*cosPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*sinTheta*pow(cosPhi,2)*C[4][4]*cosPsi*sinTheta*cosTheta - sinTheta*cosPhi*C[0][1]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinTheta*pow(cosPhi,2) - sinTheta*cosPhi*C[0][2]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*pow(cosTheta,2) + 2*(-1)*sinTheta*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinTheta*sinPhi - sinTheta*cosPhi*C[1][4]*cosPsi*sinTheta*sinTheta*pow(cosPhi,2) + 3*(-1)*sinTheta*cosPhi*C[2][4]*cosPsi*sinTheta*pow(cosTheta,2) + 2*(-1)*sinTheta*cosPhi*C[2][5]*cosPsi*sinTheta*cosTheta*sinTheta*sinPhi + 2*(-1)*sinTheta*cosPhi*C[3][4]*cosPsi*sinTheta*sinTheta*pow(cosPhi,2) + 4*(-1)*sinTheta*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinTheta*sinPhi + 2*(-1)*sinTheta*cosPhi*C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*pow(cosTheta,2) + 4*(-1)*sinTheta*cosPhi*C[4][5]*cosPsi*sinTheta*cosTheta*sinTheta*sinPhi + 2*(-1)*sinTheta*cosPhi*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinTheta*pow(cosPhi,2) + C[1][2]*cosPsi*sinTheta*cosTheta*sinTheta*pow(cosPhi,2) + C[1][3]*cosPsi*sinTheta*sinTheta*pow(sinPhi,3) + C[1][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinTheta*pow(cosPhi,2) + C[1][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinTheta*pow(sinPhi,3) + C[2][2]*cosPsi*sinTheta*pow(cosTheta,3) + 3*C[2][3]*cosPsi*sinTheta*pow(cosTheta,2)*sinTheta*sinPhi + C[2][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*pow(cosTheta,3) + C[2][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*pow(cosTheta,2)*sinTheta*sinPhi + 2*C[3][3]*cosPsi*sinTheta*cosTheta*sinTheta*pow(cosPhi,2) + 2*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinTheta*pow(cosPhi,2) + 2*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*pow(cosTheta,2)*sinTheta*sinPhi ;
-    Cnew[2][5] =  -cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[0][1] + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[1][4]*cosTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[1][5]*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][1]*sinTheta*pow(cosPhi,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][2]*pow(cosTheta,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][3]*cosTheta*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[0][3]*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[0][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][4]*sinPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][5]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[4][5]*cosTheta*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[5][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][3]*sinPsi*sinTheta*sinTheta*pow(cosPhi,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*pow(cosPhi,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][3]*pow(cosTheta,2)*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][5]*pow(cosTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][3]*cosTheta*sinPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[0][3]*cosPsi*sinTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][4]*cosPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[4][5]*cosPsi*sinTheta*cosTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][3]*cosPsi*sinTheta*sinTheta*pow(cosPhi,2) - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinTheta*pow(cosPhi,2) - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][3]*cosPsi*sinTheta*pow(cosTheta,2) - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*pow(cosTheta,2) + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][3]*cosPsi*sinTheta*cosTheta*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinTheta*sinPhi - sinTheta*pow(cosPhi,2)*C[0][0]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinTheta*pow(cosPhi,2)*C[0][2]*cosPsi*sinTheta*sinPsi*sinTheta - sinTheta*pow(cosPhi,2)*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta - sinTheta*pow(cosPhi,2)*C[0][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinTheta*cosPhi*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinTheta*cosPhi*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*sinTheta*cosPhi*C[2][4]*cosPsi*sinTheta*cosTheta*sinPsi*sinTheta + 2*(-1)*sinTheta*cosPhi*C[2][5]*cosPsi*sinTheta*sinPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*sinTheta*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*sinTheta*cosPhi*C[3][5]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*sinTheta*cosPhi*C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*sinTheta + 2*(-1)*sinTheta*cosPhi*C[4][4]*cosPsi*sinTheta*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + C[0][1]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*pow(cosPhi,2) + C[0][2]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*pow(cosTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + C[1][2]*cosPsi*sinTheta*sinPsi*sinTheta*sinTheta*pow(cosPhi,2) + C[1][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta*sinTheta*pow(cosPhi,2) + C[1][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*pow(cosPhi,2) + C[2][2]*cosPsi*sinTheta*pow(cosTheta,2)*sinPsi*sinTheta + 2*C[2][3]*cosPsi*sinTheta*cosTheta*sinPsi*sinTheta*sinTheta*sinPhi + C[2][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*pow(cosTheta,2)*sinPsi*sinTheta + C[2][4]*cosPsi*sinTheta*pow(cosTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*sinTheta*sinTheta*sinPhi + 2*C[4][5]*cosPsi*sinTheta*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi ;
-    Cnew[3][3] =  -sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*(-1)*sinTheta*pow(cosPhi,2)*C[5][5] + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[1][5]*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[3][4]*cosTheta - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][1]*sinTheta*pow(cosPhi,2) + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][3]*cosTheta*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[3][3]*pow(cosTheta,2) + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[0][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[3][5]*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][1]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][3]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[1][4]*sinPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[2][5]*cosTheta*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][4]*sinPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][5]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[4][5]*cosTheta*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[5][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][2]*cosTheta*sinPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][3]*sinPsi*sinTheta*sinTheta*pow(cosPhi,2) + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*pow(cosPhi,2) + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][3]*pow(cosTheta,2)*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][3]*cosTheta*sinPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[4][5]*pow(cosTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinTheta*pow(cosPhi,2)*C[0][0]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + 2*(-1)*sinTheta*pow(cosPhi,2)*C[0][4]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta - sinTheta*pow(cosPhi,2)*C[4][4]*sinPsi*pow(sinTheta,2) + 2*(-1)*sinTheta*cosPhi*C[0][2]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*sinTheta*cosPhi*C[0][3]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*sinTheta*cosPhi*C[0][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + 2*(-1)*sinTheta*cosPhi*C[0][5]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinTheta*sinPhi + 2*(-1)*sinTheta*cosPhi*C[2][4]*cosTheta*sinPsi*pow(sinTheta,2) + 2*(-1)*sinTheta*cosPhi*C[3][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*sinTheta*cosPhi*C[4][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*sinTheta*cosPhi*C[4][5]*sinPsi*pow(sinTheta,2)*sinTheta*sinPhi + C[2][2]*pow(cosTheta,2)*sinPsi*pow(sinTheta,2) + 2*C[2][3]*cosTheta*sinPsi*pow(sinTheta,2)*sinTheta*sinPhi + 2*C[2][4]*pow(cosTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 2*C[2][5]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi + C[3][3]*sinPsi*pow(sinTheta,2)*sinTheta*pow(cosPhi,2) + 2*C[3][4]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta*sinTheta*pow(cosPhi,2) + 2*C[3][5]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinTheta*sinPhi + C[4][4]*pow(cosTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + 2*C[4][5]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi + C[5][5]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinTheta*pow(cosPhi,2) ;
-    Cnew[3][4] =  -cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[1][5] - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][1]*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][3]*cosTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][1]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[1][4]*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][4]*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[5][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][2]*cosTheta*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][3]*sinPsi*sinTheta*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][3]*cosTheta*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][3]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][5]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[4][5]*sinPsi*pow(sinTheta,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][3]*cosTheta*sinPsi*pow(sinTheta,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][5]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][3]*sinPsi*pow(sinTheta,2)*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][4]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][5]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[4][5]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[5][5]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[3][4]*cosPsi*sinTheta - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][3]*cosPsi*sinTheta*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[3][3]*cosPsi*sinTheta*cosTheta - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][3]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[2][5]*cosPsi*sinTheta*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][5]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[4][5]*cosPsi*sinTheta*sinPsi*sinTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[0][1]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][2]*cosPsi*sinTheta*sinPsi*sinTheta*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][3]*cosPsi*sinTheta*cosTheta*sinPsi*sinTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*sinTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][3]*cosPsi*sinTheta*sinPsi*sinTheta*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[4][5]*cosPsi*sinTheta*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi - sinTheta*cosPhi*C[0][0]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) - sinTheta*cosPhi*C[0][2]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*sinTheta*cosPhi*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta - sinTheta*cosPhi*C[0][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) - sinTheta*cosPhi*C[2][4]*cosPsi*sinTheta*sinPsi*pow(sinTheta,2) - sinTheta*cosPhi*C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*pow(sinTheta,2) - sinTheta*cosPhi*C[4][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + C[0][2]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi + C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinTheta*sinPhi + C[2][2]*cosPsi*sinTheta*cosTheta*sinPsi*pow(sinTheta,2) + C[2][3]*cosPsi*sinTheta*sinPsi*pow(sinTheta,2)*sinTheta*sinPhi + C[2][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*pow(sinTheta,2) + 2*C[2][4]*cosPsi*sinTheta*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + C[2][5]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi + C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi + C[3][5]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2)*sinTheta*sinPhi + C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + C[4][4]*cosPsi*sinTheta*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*pow(sinTheta,2)*sinTheta*sinPhi + C[4][5]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi ;
-    Cnew[3][5] =  -cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[1][5] - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][1]*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][3]*cosTheta - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[3][4]*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[5][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][3]*sinPsi*sinTheta*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[3][3]*cosTheta*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[3][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][1]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[1][4]*cosPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][4]*cosPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][2]*cosPsi*sinTheta*cosTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][3]*cosPsi*sinTheta*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][3]*cosPsi*sinTheta*cosTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[2][5]*cosPsi*sinTheta*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][5]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[4][5]*cosPsi*sinTheta*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[0][1]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][2]*cosPsi*sinTheta*sinPsi*sinTheta*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][3]*cosPsi*sinTheta*cosTheta*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][5]*cosPsi*sinTheta*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][3]*cosPsi*sinTheta*sinPsi*sinTheta*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[4][5]*cosPsi*sinTheta*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2) - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[4][5]*cosPsi*pow(sinTheta,2) - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][3]*cosPsi*pow(sinTheta,2)*cosTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*cosTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][3]*cosPsi*pow(sinTheta,2)*sinTheta*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*cosTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinTheta*sinPhi - sinTheta*cosPhi*C[0][0]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinTheta*cosPhi*C[0][2]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*sinTheta - sinTheta*cosPhi*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*sinTheta + 2*(-1)*sinTheta*cosPhi*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinTheta*cosPhi*C[2][4]*cosPsi*pow(sinTheta,2)*sinPsi*sinTheta - sinTheta*cosPhi*C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*sinTheta - sinTheta*cosPhi*C[4][4]*cosPsi*pow(sinTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + C[0][2]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + C[2][2]*cosPsi*pow(sinTheta,2)*cosTheta*sinPsi*sinTheta + C[2][3]*cosPsi*pow(sinTheta,2)*sinPsi*sinTheta*sinTheta*sinPhi + 2*C[2][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*cosTheta*sinPsi*sinTheta + C[2][4]*cosPsi*pow(sinTheta,2)*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + C[2][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*sinTheta*sinTheta*sinPhi + C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*sinTheta*sinTheta*sinPhi + C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosTheta*sinPsi*sinTheta + C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*sinTheta*sinTheta*sinPhi + C[4][5]*cosPsi*pow(sinTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi ;
-    Cnew[4][4] =  -cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinTheta*pow(cosPhi,2)*C[5][5] + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[1][5]*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinTheta*cosPhi*C[3][4]*cosTheta - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][1]*sinTheta*pow(cosPhi,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[1][3]*cosTheta*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[3][3]*pow(cosTheta,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[3][5]*cosPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][1]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[1][4]*cosPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[2][5]*cosPsi*sinTheta*cosTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][4]*cosPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[4][5]*cosPsi*sinTheta*cosTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][2]*cosPsi*sinTheta*cosTheta*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][3]*cosPsi*sinTheta*sinTheta*pow(cosPhi,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinTheta*pow(cosPhi,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][3]*cosPsi*sinTheta*pow(cosTheta,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][3]*cosPsi*sinTheta*cosTheta*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*pow(cosTheta,2) - sinTheta*pow(cosPhi,2)*C[0][0]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2) + 2*(-1)*sinTheta*pow(cosPhi,2)*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta - sinTheta*pow(cosPhi,2)*C[4][4]*cosPsi*pow(sinTheta,2) + 2*(-1)*sinTheta*cosPhi*C[0][2]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*cosTheta + 2*(-1)*sinTheta*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*sinTheta*cosPhi*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosTheta + 2*(-1)*sinTheta*cosPhi*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinTheta*sinPhi + 2*(-1)*sinTheta*cosPhi*C[2][4]*cosPsi*pow(sinTheta,2)*cosTheta + 2*(-1)*sinTheta*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinTheta*sinPhi + 2*(-1)*sinTheta*cosPhi*C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*cosTheta + 2*(-1)*sinTheta*cosPhi*C[4][5]*cosPsi*pow(sinTheta,2)*sinTheta*sinPhi + C[2][2]*cosPsi*pow(sinTheta,2)*pow(cosTheta,2) + 2*C[2][3]*cosPsi*pow(sinTheta,2)*cosTheta*sinTheta*sinPhi + 2*C[2][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*pow(cosTheta,2) + 2*C[2][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*cosTheta*sinTheta*sinPhi + C[3][3]*cosPsi*pow(sinTheta,2)*sinTheta*pow(cosPhi,2) + 2*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinTheta*pow(cosPhi,2) + 2*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*cosTheta*sinTheta*sinPhi + C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*pow(cosTheta,2) + 2*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*cosTheta*sinTheta*sinPhi + C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinTheta*pow(cosPhi,2) ;
-    Cnew[4][5] =  -cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[5][5] + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[1][5]*sinTheta*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][4]*cosTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][1]*sinTheta*pow(cosPhi,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][3]*cosTheta*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][3]*pow(cosTheta,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[0][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[3][5]*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][1]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][3]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[1][4]*sinPsi*sinTheta*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[2][5]*cosTheta*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][4]*sinPsi*sinTheta*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][5]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[4][5]*cosTheta*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinTheta*cosPhi*C[5][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][2]*cosTheta*sinPsi*sinTheta*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][3]*sinPsi*sinTheta*sinTheta*pow(cosPhi,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[1][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*pow(cosPhi,2) - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][3]*pow(cosTheta,2)*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][3]*cosTheta*sinPsi*sinTheta*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][4]*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[4][5]*pow(cosTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*pow(cosPhi,2)*C[3][5]*cosPsi*sinTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][1]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[1][4]*cosPsi*sinTheta*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[2][5]*cosPsi*sinTheta*cosTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][4]*cosPsi*sinTheta*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[4][5]*cosPsi*sinTheta*cosTheta - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*(-1)*sinTheta*cosPhi*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][2]*cosPsi*sinTheta*cosTheta*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][3]*cosPsi*sinTheta*sinTheta*pow(cosPhi,2) - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinTheta*pow(cosPhi,2) - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][3]*cosPsi*sinTheta*pow(cosTheta,2) - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][3]*cosPsi*sinTheta*cosTheta*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinTheta*sinPhi - sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*pow(cosTheta,2) - sinTheta*pow(cosPhi,2)*C[0][0]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinTheta*pow(cosPhi,2)*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta - sinTheta*pow(cosPhi,2)*C[0][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinTheta*pow(cosPhi,2)*C[4][4]*cosPsi*sinTheta*sinPsi*sinTheta - sinTheta*cosPhi*C[0][2]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*sinTheta - sinTheta*cosPhi*C[0][2]*cosPsi*sinTheta*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - sinTheta*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi - sinTheta*cosPhi*C[0][3]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*sinTheta*cosPhi*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinTheta*cosPhi*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + 2*(-1)*sinTheta*cosPhi*C[2][4]*cosPsi*sinTheta*cosTheta*sinPsi*sinTheta - sinTheta*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta*sinTheta*sinPhi - sinTheta*cosPhi*C[3][5]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi - sinTheta*cosPhi*C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*sinTheta - sinTheta*cosPhi*C[4][4]*cosPsi*sinTheta*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinTheta*cosPhi*C[4][5]*cosPsi*sinTheta*sinPsi*sinTheta*sinTheta*sinPhi + C[2][2]*cosPsi*sinTheta*pow(cosTheta,2)*sinPsi*sinTheta + 2*C[2][3]*cosPsi*sinTheta*cosTheta*sinPsi*sinTheta*sinTheta*sinPhi + C[2][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*pow(cosTheta,2)*sinPsi*sinTheta + C[2][4]*cosPsi*sinTheta*pow(cosTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + C[2][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*sinTheta*sinTheta*sinPhi + C[2][5]*cosPsi*sinTheta*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + C[3][3]*cosPsi*sinTheta*sinPsi*sinTheta*sinTheta*pow(cosPhi,2) + C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta*sinTheta*pow(cosPhi,2) + C[3][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*pow(cosPhi,2) + 2*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*pow(cosTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosTheta*sinPsi*sinTheta*sinTheta*sinPhi + C[4][5]*cosPsi*sinTheta*cosTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*sinPhi + C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinTheta*pow(cosPhi,2) ;
-    Cnew[5][5] =  -cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][1] + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][3]*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][5]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[3][3]*sinPsi*pow(sinTheta,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[3][4]*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta - cosPsi*cosTheta*sinPhi-sinPsi*pow(cosPhi,2)*C[5][5]*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][3]*cosPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[1][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[0][1]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][2]*cosPsi*sinTheta*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[1][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][3]*cosPsi*sinTheta*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][4]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][3]*cosPsi*sinTheta*sinPsi*pow(sinTheta,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[2][5]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[3][5]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*sinPsi*pow(sinTheta,2) + 2*(-1)*cosPsi*cosTheta*sinPhi-sinPsi*cosPhi*C[4][5]*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[3][3]*cosPsi*pow(sinTheta,2) + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[3][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta - sinPsi*cosTheta*sinPhi+cosPsi*pow(cosPhi,2)*C[5][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2) + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[0][3]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[0][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][3]*cosPsi*pow(sinTheta,2)*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[2][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[3][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[4][5]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*sinTheta + 2*(-1)*sinPsi*cosTheta*sinPhi+cosPsi*cosPhi*C[4][5]*cosPsi*pow(sinTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi + C[0][0]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + 2*C[0][2]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 2*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + 2*C[0][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) + C[2][2]*cosPsi*pow(sinTheta,2)*sinPsi*pow(sinTheta,2) + 2*C[2][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*pow(sinTheta,2) + 2*C[2][4]*cosPsi*pow(sinTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*pow(cosPhi,2)*sinPsi*pow(sinTheta,2) + 2*C[4][4]*cosPsi*cosTheta*cosPhi-sinPsi*sinPhi*cosPsi*sinTheta*sinPsi*cosTheta*cosPhi-cosPsi*sinPhi*sinPsi*sinTheta + C[4][4]*cosPsi*pow(sinTheta,2)*sinPsi*cosTheta*cosPhi-cosPsi*pow(cosPhi,2) ;
-}
-
-template void createRotatedPythonBasedStiff<Sacado::Fad::DFad<double> >
-(
-const Sacado::Fad::DFad<double> C[][6],
-const double alpha[],
-Sacado::Fad::DFad<double>  Cnew[][6]
-);
-
-
-// Explicit template instantiation for double
-template void createRotatedPythonBasedStiff<double>
-(
-const double C[][6],
-const double alpha[],
-double Cnew[][6]
-);
-
-
-
-
 
 
 

@@ -54,7 +54,6 @@
 // Questions?
 // Christian Willberg   christian.willberg@dlr.de
 #include "Peridigm_EnergyReleaseDamageModel.hpp"
-#include "Peridigm_EnergyReleaseDamageModelWithPlasticity.hpp"
 #include "Peridigm_EnergyReleaseDamageCorrepondenceModel.hpp"
 using namespace std;
 
@@ -75,8 +74,6 @@ PeridigmNS::DamageModelFactory::create(const Teuchos::ParameterList& damageModel
     damageModel = Teuchos::rcp( new EnergyReleaseDamageModel(damageModelParams) );
   else if(damageModelName == "Initial Damage")
     damageModel = Teuchos::rcp( new InitialDamageModel(damageModelParams) );
-  else if(damageModelName == "Critical Energy with Plasticity")
-    damageModel = Teuchos::rcp( new EnergyReleaseDamageModelWithPlasticity(damageModelParams) );  
   else if(damageModelName == "Time Dependent Critical Stretch")
     damageModel = Teuchos::rcp( new UserDefinedTimeDependentCriticalStretchDamageModel(damageModelParams) );  
   else if(damageModelName == "Critical Energy Correspondence")
@@ -84,7 +81,7 @@ PeridigmNS::DamageModelFactory::create(const Teuchos::ParameterList& damageModel
   else {
     string invalidDamageModel("\n**** Unrecognized damage model type: ");
     invalidDamageModel += damageModelName;
-    invalidDamageModel += ", must be \"Critical Stretch\", \"Time Dependent Critical Stretch\", \"Interface Aware\", \"Critical Energy\", \"Critical Energy Correspondence\", \"Critical Energy with Plasticity\", or \"Initial Damage\".\n";
+    invalidDamageModel += ", must be \"Critical Stretch\", \"Time Dependent Critical Stretch\", \"Interface Aware\", \"Critical Energy\", \"Critical Energy Correspondence\", or \"Initial Damage\".\n";
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, invalidDamageModel);
   }
 

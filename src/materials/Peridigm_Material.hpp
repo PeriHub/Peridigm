@@ -219,6 +219,21 @@ namespace PeridigmNS {
         const double BM,
         const double SM,
         PeridigmNS::DataManager& dataManager) const;
+		 //! Evaluate the node-level (state-based) velocity gradient
+    virtual void 
+    computeNodeLevelVelocityGradient(const double dt,
+                                     const int numOwnedPoints,
+                                     const int* ownedIDs,
+                                     const int* neighborhoodList,
+                                     PeridigmNS::DataManager& dataManager) const {};
+
+    //! Evaluate the bond-level (mixed state-based / bond-based) velocity gradient
+    virtual void
+    computeBondVelocityGradient(const double dt,
+                                const int numOwnedPoints,
+                                const int* ownedIDs,
+                                const int* neighborhoodList,
+                                PeridigmNS::DataManager& dataManager) const {};
     
   protected:
 

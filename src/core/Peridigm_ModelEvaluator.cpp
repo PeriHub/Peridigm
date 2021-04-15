@@ -41,7 +41,8 @@
 // John A. Mitchell      jamitch@sandia.gov
 // Michael L. Parks      mlparks@sandia.gov
 // Stewart A. Silling    sasilli@sandia.gov
-//
+// Adapted by C. Willberg 
+// Christian Willberg    christian.willberg@dlr.de
 // ************************************************************************
 //@HEADER
 
@@ -84,14 +85,7 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset) const
   const double dt = workset->timeStep;
   std::vector<PeridigmNS::Block>::iterator blockIt;
 
-   // ---- Evaluate Precompute ----
-  //PeridigmNS::ModelEvaluator::updateDilatation(workset);
-  //PeridigmNS::ModelEvaluator::updatePlasticParameter(workset);  
-  //PeridigmNS::ModelEvaluator::updateCauchyStress(workset);  
-  
-  //PeridigmNS::DataManagerSynchronizer::self().synchronizeDataAfterPrecompute(workset->blocks);
-  
-  //PeridigmNS::ModelEvaluator::evalDamageModel(workset);
+  // ---- Evaluate Precompute ----
 
   for(blockIt = workset->blocks->begin() ; blockIt != workset->blocks->end() ; blockIt++){
 
@@ -112,6 +106,8 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset) const
   // ---- Synchronize data computed in precompute ----
  // PeridigmNS::DataManagerSynchronizer::self().synchronizeDataAfterPrecompute(workset->blocks);
 
+ // PeridigmNS::DataManagerSynchronizer::self().synchronizeDataAfterPrecompute(workset->blocks);
+
   // ---- Evaluate Internal Force ----
 
   for(blockIt = workset->blocks->begin() ; blockIt != workset->blocks->end() ; blockIt++){
@@ -123,7 +119,7 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset) const
     Teuchos::RCP<PeridigmNS::DataManager> dataManager = blockIt->getDataManager();
     Teuchos::RCP<const PeridigmNS::Material> materialModel = blockIt->getMaterialModel();
 
-    materialModel->computeForce(dt, 
+    materialModel->computeForce(dt,
                                 numOwnedPoints,
                                 ownedIDs,
                                 neighborhoodList,
@@ -142,7 +138,7 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset) const
     workset->contactManager->evaluateContactForce(dt);
 }
 
-void 
+void
 PeridigmNS::ModelEvaluator::evalJacobian(Teuchos::RCP<Workset> workset) const
 {
   const double dt = workset->timeStep;
@@ -161,13 +157,63 @@ PeridigmNS::ModelEvaluator::evalJacobian(Teuchos::RCP<Workset> workset) const
     Teuchos::RCP<PeridigmNS::DataManager> dataManager = blockIt->getDataManager();
     Teuchos::RCP<const PeridigmNS::Material> materialModel = blockIt->getMaterialModel();
 
-    materialModel->computeJacobian(dt, 
+    materialModel->computeJacobian(dt,
                                    numOwnedPoints,
                                    ownedIDs,
                                    neighborhoodList,
                                    *dataManager,
                                    jacobian,
                                    jacobianType);
+  }
+}
+
+void 
+PeridigmNS::ModelEvaluator::computeVelocityGradient(Teuchos::RCP<Workset> workset) const
+{
+  const double dt = workset->timeStep;
+  std::vector<PeridigmNS::Block>::iterator blockIt;
+
+  // ---- Compute the Velocity Gradient for Hypoelastic Model ----
+
+  for(blockIt = workset->blocks->begin() ; blockIt != workset->blocks->end() ; blockIt++){
+
+    Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData = blockIt->getNeighborhoodData();
+    const int numOwnedPoints = neighborhoodData->NumOwnedPoints();
+    const int* ownedIDs = neighborhoodData->OwnedIDs();
+    const int* neighborhoodList = neighborhoodData->NeighborhoodList();
+    Teuchos::RCP<PeridigmNS::DataManager> dataManager = blockIt->getDataManager();
+    Teuchos::RCP<const PeridigmNS::Material> materialModel = blockIt->getMaterialModel();
+
+    materialModel->computeNodeLevelVelocityGradient(dt, 
+                                                    numOwnedPoints,
+                                                    ownedIDs,
+                                                    neighborhoodList,
+                                                    *dataManager);
+  }
+}
+
+void 
+PeridigmNS::ModelEvaluator::computeBondVelocityGradient(Teuchos::RCP<Workset> workset) const
+{
+  const double dt = workset->timeStep;
+  std::vector<PeridigmNS::Block>::iterator blockIt;
+
+  // ---- Compute the Velocity Gradient for Hypoelastic Model ----
+
+  for(blockIt = workset->blocks->begin() ; blockIt != workset->blocks->end() ; blockIt++){
+
+    Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData = blockIt->getNeighborhoodData();
+    const int numOwnedPoints = neighborhoodData->NumOwnedPoints();
+    const int* ownedIDs = neighborhoodData->OwnedIDs();
+    const int* neighborhoodList = neighborhoodData->NeighborhoodList();
+    Teuchos::RCP<PeridigmNS::DataManager> dataManager = blockIt->getDataManager();
+    Teuchos::RCP<const PeridigmNS::Material> materialModel = blockIt->getMaterialModel();
+
+ //   materialModel->computeBondVelocityGradient(dt, 
+ //                                              numOwnedPoints,
+ //                                              ownedIDs,
+ //                                              neighborhoodList,
+ //                                              *dataManager);
   }
 }
 void 

@@ -98,10 +98,6 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
         
     if (params.isParameter("Plane Stress"))
         m_planeStress = params.get<bool>("Plane Stress");
-    m_incremental = true;
-    if (params.isParameter("Incremental")){
-        m_incremental = params.get<bool>("Incremental");
-    }
     m_hencky = true;
     if (params.isParameter("Hencky Strain")){
         m_hencky = params.get<bool>("Hencky Strain");
@@ -267,21 +263,15 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   }
   nonLin = false;
   lin = true;
-  avg = false;
+
   if (params.isParameter("Elastic Correspondence")){
      
       nonLin = true;
       lin = false;
-      avg = false;
+
     }
 
-  if (params.isParameter("Non linear")){
-     nonLin = params.get<bool>("Non linear");
-        if (nonLin == true){
-            m_incremental = true;
-            lin = false;
-        }
-        }
+
 
 
   //TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticCorrespondence material model.\n");
@@ -410,7 +400,7 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&coordinatesNP1);
   dataManager.getData(m_shapeTensorInverseFieldId, PeridigmField::STEP_NONE)->ExtractView(&shapeTensorInverse);
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&deformationGradient);
-  
+  dataManager.getData(m_unrotatedRateOfDeformationFieldId, PeridigmField::STEP_NONE)->PutScalar(0.0);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
   dataManager.getData(m_bondDamageDiffFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageDiff);
@@ -451,7 +441,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
 
   dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_partialStressFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
-
+  dataManager.getData(m_unrotatedRateOfDeformationFieldId, PeridigmField::STEP_NONE)->PutScalar(0.0);
   double *horizon, *volume, *modelCoordinates, *coordinates, *coordinatesNP1, *shapeTensorInverse, *deformationGradient, *bondDamage, *bondDamageNP1, *bondDamageDiff, *pointAngles, *detachedNodes;
   //double *deformationGradientNonInc;
 
@@ -476,7 +466,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
 
    // vier szenarien
    int shapeTensorReturnCode = 0;
-   if (lin == true){
+  // if (lin == true){
     
     
     shapeTensorReturnCode = 
@@ -496,7 +486,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                                                 detachedNodes);
 
     
-   }
+   //}
 
   string shapeTensorErrorMessage =
     "**** Error:  CorrespondenceMaterial::computeForce() failed to compute shape tensor.\n";
@@ -520,7 +510,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
       
       int rotationTensorReturnCode = 0;
 
-     rotationTensorReturnCode = CORRESPONDENCE::computeUnrotatedRateOfDeformationAndRotationTensor(volume,
+      rotationTensorReturnCode = CORRESPONDENCE::computeUnrotatedRateOfDeformationAndRotationTensor(volume,
                                                                                                    horizon,
                                                                                                    modelCoordinates, 
                                                                                                    velocities, 
@@ -535,7 +525,8 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                                                                    numOwnedPoints, 
                                                                                                    dt,
                                                                                                    bondDamageNP1,
-                                                                                                   m_plane);
+                                                                                                   m_plane,
+                                                                                                   detachedNodes);
 
       string rotationTensorErrorMessage =
         "**** Error:  CorrespondenceMaterial::computeForce() failed to compute rotation tensor.\n";
@@ -550,19 +541,9 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
       TEUCHOS_TEST_FOR_EXCEPT_MSG(rotationTensorReturnCode == 1, rotationTensorErrorMessage);
       TEUCHOS_TEST_FOR_EXCEPT_MSG(rotationTensorReturnCode == 2, rotationTensorErrorMessage2);
       TEUCHOS_TEST_FOR_EXCEPT_MSG(rotationTensorReturnCode == 3, rotationTensorErrorMessage3);
- 
-      //CORRESPONDENCE::setValuesForDetachedNodes(deformationGradient,
-      //                                          leftStretchTensorNP1,
-      //                                          rotationTensorNP1,
-      //                                          unrotatedRateOfDeformation,
-      //                                          shapeTensorInverse,
-      //                                          detachedNodes,
-      //                                          numOwnedPoints);
-      //                                          
-        dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)=dataManager.getData(m_unrotatedRateOfDeformationFieldId, PeridigmField::STEP_NONE);
                                     
      }  
-
+    
   // Evaluate the Cauchy stress using the routine implemented in the derived class (specific correspondence material model)
   // The general idea is to compute the stress based on:
   //   1) The unrotated rate-of-deformation tensor

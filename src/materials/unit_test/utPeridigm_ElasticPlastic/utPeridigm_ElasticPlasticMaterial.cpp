@@ -179,9 +179,7 @@ void runPureShear(std::string output_file_name,  TemporalField<double> edpTempor
 			Field<double> edpNField = edpTemporalField.getField(Field_ENUM::STEP_N);
 			Field<double> edpNP1Field = edpTemporalField.getField(Field_ENUM::STEP_NP1);
 			double *edpN = edpNField.get();
-            double *eipN = edpNField.get();
 			double *edpNP1 = edpNP1Field.get();
-            double *eipNP1 = edpNP1Field.get();
 			Field<double> lambdaNField = lambdaTemporalField.getField(Field_ENUM::STEP_N);
 			Field<double> lambdaNP1Field = lambdaTemporalField.getField(Field_ENUM::STEP_NP1);
 			double *lambdaN = lambdaNField.get();
@@ -196,38 +194,13 @@ void runPureShear(std::string output_file_name,  TemporalField<double> edpTempor
 			}
 
 			// Dummy arguments for planar case
-			bool m_planeStrain=false, m_planeStress=false, m_pressureSensitive=false;
-	        double thickness = 0.0, yieldPsiDP = 0.0, yieldBetaDP = 0.0;
+			bool isPlanarProblem = false;
+	        double thickness = 0.0;
 
 			/*
 			 * Do not compute dilatation -- just set it to zero
 			 */
-			computeInternalForceIsotropicElasticPlastic(
-                x,
-                y,
-                m,
-                vol,
-                theta,
-                bondState,
-                edpN,
-                edpNP1,
-                eipN,
-                eipNP1,
-                lambdaN,
-                lambdaNP1,
-                f,
-                neigh,
-                numPoints,
-                K,
-                MU,
-                DELTA,
-                Y,
-                m_planeStrain,
-                m_planeStress,
-                m_pressureSensitive,
-                thickness,
-                yieldPsiDP,
-                yieldBetaDP);
+			computeInternalForceIsotropicElasticPlastic(x,y,m,vol,theta,bondState,edpN,edpNP1,lambdaN,lambdaNP1,f,neigh,numPoints,K,MU,DELTA,Y,isPlanarProblem,thickness);
 
 
 			/*

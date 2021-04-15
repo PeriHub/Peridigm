@@ -12,6 +12,7 @@
             "program": "/home/jt/bin/Peridigm",
             "args": [
                 "Att893E.tmp.yaml"
+                //"plate_0.xml"
             ],
             "stopAtEntry": true,
             "cwd": "/mnt/c/Users/hess_ja/Desktop/PythonProjects/peridigmModelWriter/",

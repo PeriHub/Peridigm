@@ -70,14 +70,10 @@ PeridigmNS::ElasticLinearCorrespondenceMaterial::ElasticLinearCorrespondenceMate
     }
   if (m_planeStrain==true)m_type=1;
   if (m_planeStress==true)m_type=2;
-  m_incremental = true;
+  m_incremental = false;
     if (params.isParameter("Incremental")){
         m_incremental = params.get<bool>("Incremental");
     }
-      if (params.isParameter("Non linear")){
-
-        m_incremental = true;
-      }
   m_hencky = false;
   if (params.isParameter("Hencky Strain")){
       m_hencky = params.get<bool>("Hencky Strain");
@@ -204,60 +200,7 @@ PeridigmNS::ElasticLinearCorrespondenceMaterial::ElasticLinearCorrespondenceMate
   m_fieldIds.push_back(m_modelAnglesId);
   m_fieldIds.push_back(m_deformationGradientFieldId);
   m_fieldIds.push_back(m_cauchyStressFieldId);
-  //if (params.isParameter("Stabilizaton Type")){
-  //    if (params.get<string>("Stabilizaton Type")=="Sub Horizon"){
-  //        m_stabilizationType = 4;
-  //        m_deformationGradientFieldId2 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient_Two");
-  //        m_deformationGradientFieldId3 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient_Three");
-  //        m_deformationGradientFieldId4 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient_Four");
-  //        if (m_incremental == true){
-  //          m_cauchyStressFieldId2 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Cauchy_Stress_Two");
-  //          m_cauchyStressFieldId3 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Cauchy_Stress_Three");
-  //          m_cauchyStressFieldId4 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Cauchy_Stress_Four");
-  //        }
-  //        else 
-  //          {
-  //          m_cauchyStressFieldId2 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Cauchy_Stress_Two");
-  //          m_cauchyStressFieldId3 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Cauchy_Stress_Three");
-  //          m_cauchyStressFieldId4 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Cauchy_Stress_Four");
-  //          }
-  //        m_fieldIds.push_back(m_deformationGradientFieldId2);
-  //        m_fieldIds.push_back(m_deformationGradientFieldId3);
-  //        m_fieldIds.push_back(m_deformationGradientFieldId4);
-  //        m_fieldIds.push_back(m_cauchyStressFieldId2);
-  //        m_fieldIds.push_back(m_cauchyStressFieldId3);
-  //        m_fieldIds.push_back(m_cauchyStressFieldId4);
-  //        if (m_plane == false){
-  //          m_deformationGradientFieldId5 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient_Five");
-  //          m_deformationGradientFieldId6 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient_Six");
-  //          m_deformationGradientFieldId7 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient_Seven");
-  //          m_deformationGradientFieldId8 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient_Eight");
-  //          if (m_incremental == true){
-  //              m_cauchyStressFieldId5 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Cauchy_Stress_Five");
-  //              m_cauchyStressFieldId6 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Cauchy_Stress_Six");
-  //              m_cauchyStressFieldId7 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Cauchy_Stress_Seven");
-  //              m_cauchyStressFieldId8 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Cauchy_Stress_Eight");
-  //          }
-  //          else 
-  //          {
-  //              m_cauchyStressFieldId5 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Cauchy_Stress_Five");
-  //              m_cauchyStressFieldId6 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Cauchy_Stress_Six");
-  //              m_cauchyStressFieldId7 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Cauchy_Stress_Seven");
-  //              m_cauchyStressFieldId8 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Cauchy_Stress_Eight");
-  //              
-  //          }
-  //          
-  //          m_fieldIds.push_back(m_deformationGradientFieldId5);
-  //          m_fieldIds.push_back(m_deformationGradientFieldId6);
-  //          m_fieldIds.push_back(m_deformationGradientFieldId7);
-  //          m_fieldIds.push_back(m_deformationGradientFieldId8);
-  //          m_fieldIds.push_back(m_cauchyStressFieldId5);
-  //          m_fieldIds.push_back(m_cauchyStressFieldId6);
-  //          m_fieldIds.push_back(m_cauchyStressFieldId7);
-  //          m_fieldIds.push_back(m_cauchyStressFieldId8);
-  //        }
-  //    }
-  //}
+ 
 
 
 }
@@ -310,5 +253,10 @@ PeridigmNS::ElasticLinearCorrespondenceMaterial::computeCauchyStress(const doubl
                                             dt,
                                             incremental,
                                             m_hencky);
+                                            
+    if (m_incremental == true){
+        std::cout<<"please choose elastic correspondence. incremental not implemented yet for anisotropic material"<<std::endl;
+    }                                        
+                                            
                                            
 }

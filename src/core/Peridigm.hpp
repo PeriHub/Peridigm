@@ -165,7 +165,7 @@ namespace PeridigmNS {
     bool hasTangentStiffnessMatrix(){
       bool hasTangent = false;
       if(!tangent.is_null()){
-	hasTangent = true;
+        hasTangent = true;
       }
       return hasTangent;
     }
@@ -226,7 +226,7 @@ namespace PeridigmNS {
       PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
 
       if(!fieldManager.hasField(fieldName)){
-	return false;
+        return false;
       }
 
       int fieldId = fieldManager.getFieldId(fieldName);
@@ -276,7 +276,7 @@ namespace PeridigmNS {
     //! Main routine to drive problem solution for quasistatics
     void executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterList> solverParams);
 
-   //! Main routine to drive problem solution for diffusion
+    //! Main routine to drive problem solution for diffusion
     void executeImplicitDiffusion(Teuchos::RCP<Teuchos::ParameterList> solverParams);
 
     //! Main routine to drive problem solution for quasistatics using NOX
@@ -327,6 +327,7 @@ namespace PeridigmNS {
     Teuchos::RCP<const Epetra_BlockMap> getThreeDimensionalMap() { return threeDimensionalMap; }
     Teuchos::RCP<const Epetra_BlockMap> getBondMap() { return bondMap; }
     Teuchos::RCP<const Epetra_BlockMap> getOneDimensionalOverlapMap() { return oneDimensionalOverlapMap; }
+    Teuchos::RCP<const Epetra_BlockMap> getThreeDimensionalOverlapMap() { return threeDimensionalOverlapMap; }
     //@}
 
     //! @name Accessors for main solver-level vectors
@@ -350,6 +351,12 @@ namespace PeridigmNS {
     Teuchos::RCP<Epetra_Vector> getTemperature() { return temperature; }
     Teuchos::RCP<Epetra_Vector> getDeltaTemperature() { return deltaTemperature; }
     Teuchos::RCP<Epetra_Vector> getConcentration() { return concentration; }
+    Teuchos::RCP<Epetra_Vector> getDamage() { return damage; }
+    Teuchos::RCP<Epetra_Vector> getJacobianDeterminant() { return jacobianDeterminant; }
+    Teuchos::RCP<Epetra_Vector> getWeightedVolume() { return weightedVolume; }
+    Teuchos::RCP<Epetra_Vector> getVelocityGradientX() { return velocityGradientX; }
+    Teuchos::RCP<Epetra_Vector> getVelocityGradientY() { return velocityGradientY; }
+    Teuchos::RCP<Epetra_Vector> getVelocityGradientZ() { return velocityGradientZ; }
     //@}
 
     //! Accessor for global neighborhood data
@@ -405,6 +412,7 @@ namespace PeridigmNS {
     Teuchos::RCP<const Epetra_BlockMap> unknownsMap;
     Teuchos::RCP<const Epetra_BlockMap> bondMap;
     Teuchos::RCP<const Epetra_BlockMap> oneDimensionalOverlapMap;
+    Teuchos::RCP<const Epetra_BlockMap> threeDimensionalOverlapMap;
 
     //! Global current time
     double currentTime;
@@ -490,7 +498,7 @@ namespace PeridigmNS {
     //! Global vector for current position
     Teuchos::RCP<Epetra_Vector> y;
 
-		//! Global vector for solid mechanics current position and analogous quantities
+    //! Global vector for solid mechanics current position and analogous quantities
     Teuchos::RCP<Epetra_Vector> unknownsY;
 
     //! Global vector for velocity
@@ -514,7 +522,6 @@ namespace PeridigmNS {
     Teuchos::RCP<Epetra_Vector> deltaTemperature;
     //! Global vector for damage model data
     Teuchos::RCP<Epetra_Vector> damageModelVal;
-
     
     //! 3 Global vector for Piola stress * inverse of ShapeTensor
     Teuchos::RCP<Epetra_Vector> piolaStressTimesInvShapeTensorX;
@@ -580,10 +587,10 @@ namespace PeridigmNS {
     //! Global vector for cell density
     Teuchos::RCP<Epetra_Vector> density;
 
-		//! Global vector for cell fluid density
+    //! Global vector for cell fluid density
     Teuchos::RCP<Epetra_Vector> fluidDensity;
 
-		//! Glocal vector for cell fluid compressibility
+    //! Glocal vector for cell fluid compressibility
     Teuchos::RCP<Epetra_Vector> fluidCompressibility;
 
     //! Global vector for fluid pressure displacement analogue
@@ -600,6 +607,22 @@ namespace PeridigmNS {
 
     //! Global vector for fluid flow
     Teuchos::RCP<Epetra_Vector> fluidFlow;
+
+    //! Global vector for damage
+    Teuchos::RCP<Epetra_Vector> damage;
+
+    //! Global vector for jacobian determinant
+    Teuchos::RCP<Epetra_Vector> jacobianDeterminant;
+
+    //! Global vector for weighted volume
+    Teuchos::RCP<Epetra_Vector> weightedVolume;
+
+    //! Global vector for velocity gradient
+    Teuchos::RCP<Epetra_Vector> velocityGradientX;
+    Teuchos::RCP<Epetra_Vector> velocityGradientY;
+    Teuchos::RCP<Epetra_Vector> velocityGradientZ;
+
+    bool analysisHasBondAssociatedHypoelasticModel;
 
     //! Type of tangent to evaluate
     PeridigmNS::Material::JacobianType jacobianType;
@@ -661,12 +684,19 @@ namespace PeridigmNS {
     int contactForceDensityFieldId;
     int externalForceDensityFieldId;
     int damageModelFieldId;
-//    int deviatoricPlasticExtensionFieldId;
+//    int netDamage;
     int plasticModelFieldId;
     int piolaStressTimesInvShapeTensorXId;
     int piolaStressTimesInvShapeTensorYId;
     int piolaStressTimesInvShapeTensorZId;
     int partialVolumeFieldId;
+    int damageFieldId;
+    int jacobianDeterminantFieldId;
+    int weightedVolumeFieldId;
+    int velocityGradientXFieldId;
+    int velocityGradientYFieldId;
+    int velocityGradientZFieldId;
+
     // multiphyics information
     int fluidPressureYFieldId;
     int fluidPressureUFieldId;
@@ -688,7 +718,7 @@ namespace PeridigmNS {
     void writeRestart(Teuchos::RCP<Teuchos::ParameterList> solverParams);
 
     // Read the restart files
-    void readRestart();
+    void readRestart(Teuchos::RCP<Teuchos::ParameterList> solverParams);
   };
 }
 

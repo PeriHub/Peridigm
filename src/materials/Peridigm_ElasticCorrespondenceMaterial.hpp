@@ -55,7 +55,7 @@ namespace PeridigmNS {
   class ElasticCorrespondenceMaterial : public CorrespondenceMaterial{
   public:
 
-	//! Constructor.
+    //! Constructor.
     ElasticCorrespondenceMaterial(const Teuchos::ParameterList & params);
 
     //! Destructor.
@@ -76,10 +76,13 @@ namespace PeridigmNS {
 
   protected:
 
-    // field spec ids for all relevant data
+    bool m_applyThermalStrains;
+    double m_alpha;
+
+    int m_temperatureFieldId;
+    int m_deltaTemperatureFieldId;
     int m_unrotatedRateOfDeformationFieldId;
     int m_unrotatedCauchyStressFieldId;
-
   };
 }
 

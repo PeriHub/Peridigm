@@ -65,11 +65,11 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::EnergyReleaseDamageCorreponde
 m_applyThermalStrains(false),
 m_modelCoordinatesFieldId(-1),
 m_coordinatesFieldId(-1),
-m_weightedVolumeFieldId(-1),
-m_dilatationFieldId(-1),
 m_damageFieldId(-1),
 m_bondDamageFieldId(-1),
-//m_deltaTemperatureFieldId(-1),
+m_deltaTemperatureFieldId(-1),
+m_dilatationFieldId(-1),
+m_weightedVolumeFieldId(-1),
 m_horizonFieldId(-1),
 m_piolaStressTimesInvShapeTensorXId(-1),
 m_piolaStressTimesInvShapeTensorYId(-1),
@@ -101,6 +101,8 @@ m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
     m_planeStrain=false;
     m_planeStress=false;
     detachedNodesCheck = false;
+    
+    
     if (params.isParameter("Detached Nodes Check"))
         detachedNodesCheck = params.get<bool>("Detached Nodes Check");
     if (params.isParameter("Plane Strain"))
@@ -112,7 +114,10 @@ m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
     m_onlyTension = false;
     if(params.isParameter("Only Tension")){
         m_onlyTension = params.get<bool>("Only Tension");
-
+    m_criticalEnergyInterBlock = m_criticalEnergyTension;
+    if (params.isParameter("Interblock damage energy"))
+        m_criticalEnergyInterBlock = params.get<double>("Interblock damage energy");
+    
     }
 
   //************************************
@@ -148,6 +153,8 @@ m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
     }
 
     PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
+    blockIdFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Block_Id");
+    
     m_modelCoordinatesFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::VECTOR, PeridigmField::CONSTANT,"Model_Coordinates");
     m_coordinatesFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Coordinates");
     m_volumeFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume");
@@ -164,7 +171,7 @@ m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
     m_deformationGradientFieldId        = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient");
     m_hourglassStiffId                  = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Hourglass_Stiffness");
  
-    
+    m_fieldIds.push_back(blockIdFieldId);
     m_fieldIds.push_back(m_volumeFieldId);
     m_fieldIds.push_back(m_modelCoordinatesFieldId);
     m_fieldIds.push_back(m_coordinatesFieldId);
@@ -179,8 +186,8 @@ m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
     m_fieldIds.push_back(m_piolaStressTimesInvShapeTensorYId);
     m_fieldIds.push_back(m_piolaStressTimesInvShapeTensorZId);
     m_fieldIds.push_back(m_forceDensityFieldId);
+    m_fieldIds.push_back(m_hourglassStiffId);
     m_fieldIds.push_back(m_deformationGradientFieldId);
-    m_fieldIds.push_back(m_hourglassStiffId);									 
 
 }
 
@@ -229,12 +236,12 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
         const int* neighborhoodList,
         PeridigmNS::DataManager& dataManager) const {
 
-    double *x, *y, *damage, *bondDamageNP1, *horizon, *vol, *detachedNodes;
+    double *x, *y, *damage, *bondDamageNP1, *horizon, *vol, *detachedNodes, *blockNumber;
     
     
     double criticalEnergyTension(-1.0);
     // for temperature dependencies easy to extent
-    //double *deltaTemperature = NULL;
+    double *deltaTemperature = NULL;
     double *tempStressX, *tempStressY, *tempStressZ;
     dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
 
@@ -245,7 +252,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
 
     dataManager.getData(m_horizonFieldId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
     dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
-
+    dataManager.getData(blockIdFieldId, PeridigmField::STEP_NONE)->ExtractView(&blockNumber);
 
     
     dataManager.getData(m_piolaStressTimesInvShapeTensorXId, PeridigmField::STEP_NP1)->ExtractView(&tempStressX);
@@ -261,8 +268,8 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     double* hStiff = &hourglassStiffVector[0];
     double* TS = &TSvector[0];
     ///////////////////////////////////////////////////////
+    dataManager.getData(m_hourglassStiffId, PeridigmField::STEP_NONE)->ExtractView(&hourglassStiff);
     dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&defGrad);
-	dataManager.getData(m_hourglassStiffId, PeridigmField::STEP_NONE)->ExtractView(&hourglassStiff);																								
     //std::cout<< "heredam"<<std::endl;
     // Set the bond damage to the previous value --> needed for iteration in implicit time integration
     *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)) = *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N));
@@ -353,7 +360,8 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
             normEtaSq = etaX*etaX+etaY*etaY+etaZ*etaZ;
 
             bool Tension = true;
-            
+            criticalEnergyTension = m_criticalEnergyTension;
+            if (blockNumber[neighborID] != blockNumber[ownedIDs[iID]])criticalEnergyTension = m_criticalEnergyInterBlock;
             if (m_onlyTension == true && dEta<0) Tension = false;
             if (Tension == true){
                 if (normEtaSq>0){

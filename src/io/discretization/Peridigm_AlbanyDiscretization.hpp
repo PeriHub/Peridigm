@@ -64,15 +64,15 @@ namespace PeridigmNS {
     //! Constructor
     AlbanyDiscretization(const MPI_Comm& mpiComm,
                          const Teuchos::RCP<Teuchos::ParameterList>& params,
-			 int numGlobalIds,
-			 const int* globalIds,
-			 const double* refCoord,
-			 const double* volume,
-			 const int* blockId,
-			 const int numNodeIds = 0,
-			 int * nodeGlobalIds = 0,
-			 const double* nodeCoord = 0,
-			 const int* nodeblockId = 0);
+                         int numGlobalIds,
+                         const int* globalIds,
+                         const double* refCoord,
+                         const double* volume,
+                         const int* blockId,
+                         const int numNodeIds = 0,
+                         int * nodeGlobalIds = 0,
+                         const double* nodeCoord = 0,
+                         const int* nodeblockId = 0);
 
     //! Destructor
     virtual ~AlbanyDiscretization();
@@ -88,9 +88,8 @@ namespace PeridigmNS {
 
     //! Get initial positions
     virtual Teuchos::RCP<Epetra_Vector> getInitialX() const;
-    //! PLACEHOLDER for get the point angles; not yet supported for Albany; please use text file discretization
-    virtual Teuchos::RCP<Epetra_Vector> getPointAngle() const;
-        //! Get the horizon value for each point.
+
+    //! Get the horizon value for each point.
     virtual Teuchos::RCP<Epetra_Vector> getHorizon() const;
 
     //! Get cell volumes
@@ -170,9 +169,7 @@ namespace PeridigmNS {
 
     //! Vector containing initial positions
     Teuchos::RCP<Epetra_Vector> initialX;
-    
-    //! Vector containing point angles --> not yet supported for Albany; please use text file discretization
-    Teuchos::RCP<Epetra_Vector> pointAngle;
+
     //! Vector containing horizons
     Teuchos::RCP<Epetra_Vector> horizonForEachPoint;
 

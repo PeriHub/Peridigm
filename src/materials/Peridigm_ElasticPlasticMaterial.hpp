@@ -49,7 +49,7 @@
 #define PERIDIGM_ELASTICPLASTICMATERIAL_HPP_
 
 #include "Peridigm_Material.hpp"
-#include "Peridigm_InfluenceFunction.hpp"
+
 namespace PeridigmNS {
 
   class ElasticPlasticMaterial : public Material {
@@ -69,16 +69,16 @@ namespace PeridigmNS {
 
     //! Returns the bulk modulus of the material.
     virtual double BulkModulus() const { return m_bulkModulus; }
-	        
+
     //! Returns the shear modulus of the material.
     virtual double ShearModulus() const { return m_shearModulus; }
 
     //! Returns a vector of field IDs corresponding to the variables associated with the material.
     virtual std::vector<int> FieldIds() const { return m_fieldIds; }
 
-	  //! Returns the requested material property
-		//! A dummy method here.
-		virtual double lookupMaterialProperty(const std::string keyname) const {return 0.0;}
+    //! Returns the requested material property
+    //! A dummy method here.
+    virtual double lookupMaterialProperty(const std::string keyname) const {return 0.0;}
 
     //! Initialized data containers and computes weighted volume.
     virtual void
@@ -91,9 +91,9 @@ namespace PeridigmNS {
     //! Evaluate the internal force.
     virtual void
     computeForce(const double dt,
-		 const int numOwnedPoints,
-		 const int* ownedIDs,
-		 const int* neighborhoodList,
+                 const int numOwnedPoints,
+                 const int* ownedIDs,
+                 const int* neighborhoodList,
                  PeridigmNS::DataManager& dataManager) const;
 
     //! Evaluate the jacobian.
@@ -115,18 +115,6 @@ namespace PeridigmNS {
                                             PeridigmNS::DataManager& dataManager,
                                             PeridigmNS::SerialMatrix& jacobian,
                                             PeridigmNS::Material::JacobianType jacobianType = PeridigmNS::Material::FULL_MATRIX) const;
-    virtual void
-    computeDeviatoricStateNorm(const double dt,
-                   const int numOwnedPoints,
-                   const int* ownedIDs,
-                   const int* neighborhoodList,
-                   PeridigmNS::DataManager& dataManager) const;
-	    //! Returns a vector of field IDs that need to be synchronized across block boundaries and MPI boundaries after precompute().
-    virtual std::vector<int> FieldIdsForSynchronizationAfterPrecompute() const {
-      std::vector<int> fieldIds;
-      fieldIds.push_back(m_damageModelFieldId);
-      return fieldIds;
-    }
 
   protected:
 
@@ -137,17 +125,12 @@ namespace PeridigmNS {
     double m_density;
     double m_yieldStress;
     double m_thickness;
-    double m_yieldBetaDP;
-    double m_yieldPsiDP;
     bool m_disablePlasticity;
     bool m_applyAutomaticDifferentiationJacobian;
-    bool m_planeStrain;
-    bool m_planeStress;
-    bool m_pressureSensitive;
+    bool m_isPlanarProblem;
 
     // field ids for all relevant data
     std::vector<int> m_fieldIds;
-    PeridigmNS::InfluenceFunction::functionPointer m_OMEGA;
     int m_volumeFieldId;
     int m_damageFieldId;
     int m_weightedVolumeFieldId;
@@ -158,9 +141,6 @@ namespace PeridigmNS {
     int m_bondDamageFieldId;
     int m_deviatoricPlasticExtensionFieldId;
     int m_lambdaFieldId;
-    int m_damagePlasticModelFieldId;
-    int m_isotropicPlasticExtensionFieldId;
-    int m_damageModelFieldId;
   };
 }
 
