@@ -22,9 +22,9 @@
         {
             "label": "removeRestartFolder",
             "type": "shell",
-            //"command": "rm -Rf ~/peridigmJobs/waviness/constantWaviness/meshResolution80/restart-000002/"
+            "command": "rm -Rf ~/peridigmJobs/waviness/constantWaviness/meshResolution80/restart-000002/"
             //"command": "rm -Rf ~/peridigmJobs/plate_0/restart-000002/"
-            "command": "rm -Rf /mnt/c/Users/hess_ja/Desktop/PythonProjects/peridigmModelWriter/restart-000002/"
+            //"command": "rm -Rf /mnt/c/Users/hess_ja/Desktop/PythonProjects/peridigmModelWriter/restart-000002/"
         },
         {
             "label": "RemoveAndBuild",

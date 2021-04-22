@@ -70,7 +70,6 @@ PeridigmNS::Compute_Deformation_Gradient::Compute_Deformation_Gradient(Teuchos::
   m_shapeTensorInverseFId  = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Shape_Tensor_Inverse");
   m_deformationGradientFId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient");
   m_bondDamageFieldId      = fieldManager.getFieldId(PeridigmField::BOND,    PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage");
-  m_bondDamageDiffFieldId      = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage_Diff");
 
     
   m_fieldIds.push_back(m_volumeFId);
@@ -80,7 +79,6 @@ PeridigmNS::Compute_Deformation_Gradient::Compute_Deformation_Gradient(Teuchos::
   m_fieldIds.push_back(m_shapeTensorInverseFId);
   m_fieldIds.push_back(m_deformationGradientFId);
   m_fieldIds.push_back(m_bondDamageFieldId);
-  m_fieldIds.push_back(m_bondDamageDiffFieldId);
 
 }
 
@@ -100,7 +98,7 @@ int PeridigmNS::Compute_Deformation_Gradient::compute( Teuchos::RCP< std::vector
     int* const neighborhoodList = neighborhoodData->NeighborhoodList();
     Teuchos::RCP<PeridigmNS::DataManager> dataManager = blockIt->getDataManager();
     
-    double *volume, *horizon, *modelCoordinates, *coordinates, *coordinatesNP1, *shapeTensorInverse, *deformationGradient, *bondDamage, *bondDamageNP1, *bondDamageDiff, *detachedNodes;
+    double *volume, *horizon, *modelCoordinates, *coordinates, *coordinatesNP1, *shapeTensorInverse, *deformationGradient, *bondDamage, *bondDamageNP1, *detachedNodes;
     dataManager->getData(m_volumeFId, PeridigmField::STEP_NONE)->ExtractView(&volume);
     dataManager->getData(m_horizonFId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
     dataManager->getData(m_modelCoordinatesFId, PeridigmField::STEP_NONE)->ExtractView(&modelCoordinates);
@@ -110,7 +108,6 @@ int PeridigmNS::Compute_Deformation_Gradient::compute( Teuchos::RCP< std::vector
     dataManager->getData(m_deformationGradientFId, PeridigmField::STEP_NONE)->ExtractView(&deformationGradient);
     dataManager->getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamage);
     dataManager->getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
-    dataManager->getData(m_bondDamageDiffFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageDiff);
     dataManager->getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->ExtractView(&detachedNodes);
 
     bool m_type = false;
@@ -126,7 +123,6 @@ int PeridigmNS::Compute_Deformation_Gradient::compute( Teuchos::RCP< std::vector
                                                                                                   deformationGradient,
                                                                                                   bondDamage,
                                                                                                   bondDamageNP1,
-                                                                                                  bondDamageDiff,
                                                                                                   neighborhoodList,
                                                                                                   numOwnedPoints,
                                                                                                   m_type,

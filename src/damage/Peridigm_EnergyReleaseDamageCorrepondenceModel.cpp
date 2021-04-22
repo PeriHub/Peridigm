@@ -67,6 +67,7 @@ m_modelCoordinatesFieldId(-1),
 m_coordinatesFieldId(-1),
 m_damageFieldId(-1),
 m_bondDamageFieldId(-1),
+m_bondDamageDiffFieldId(-1),
 m_deltaTemperatureFieldId(-1),
 m_dilatationFieldId(-1),
 m_weightedVolumeFieldId(-1),
@@ -112,14 +113,11 @@ m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
     m_plane = false;
    
     m_onlyTension = false;
-    if(params.isParameter("Only Tension")){
+    if(params.isParameter("Only Tension"))
         m_onlyTension = params.get<bool>("Only Tension");
     m_criticalEnergyInterBlock = m_criticalEnergyTension;
     if (params.isParameter("Interblock damage energy"))
         m_criticalEnergyInterBlock = params.get<double>("Interblock damage energy");
-    
-    }
-
   //************************************
   // wie komme ich an den Namen??
   //************************************
@@ -162,6 +160,7 @@ m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
     m_dilatationFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Dilatation");
     m_damageFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Damage");
     m_bondDamageFieldId = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage");
+    m_bondDamageDiffFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage_Diff");
     m_horizonFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Horizon");
     m_piolaStressTimesInvShapeTensorXId   = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "PiolaStressTimesInvShapeTensorX");
     m_piolaStressTimesInvShapeTensorYId   = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "PiolaStressTimesInvShapeTensorY");
@@ -181,6 +180,7 @@ m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
     m_fieldIds.push_back(m_damageFieldId);
     m_fieldIds.push_back(m_detachedNodesFieldId);
     m_fieldIds.push_back(m_bondDamageFieldId);
+    m_fieldIds.push_back(m_bondDamageDiffFieldId);
     m_fieldIds.push_back(m_horizonFieldId);
     m_fieldIds.push_back(m_piolaStressTimesInvShapeTensorXId);
     m_fieldIds.push_back(m_piolaStressTimesInvShapeTensorYId);
@@ -236,7 +236,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
         const int* neighborhoodList,
         PeridigmNS::DataManager& dataManager) const {
 
-    double *x, *y, *damage, *bondDamageNP1, *horizon, *vol, *detachedNodes, *blockNumber;
+    double *x, *y, *damage, *bondDamage, *bondDamageNP1, *bondDamageDiff, *horizon, *vol, *detachedNodes, *blockNumber;
     
     
     double criticalEnergyTension(-1.0);
@@ -251,7 +251,9 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&vol);
 
     dataManager.getData(m_horizonFieldId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
+    dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamage);
     dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
+    dataManager.getData(m_bondDamageDiffFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageDiff);
     dataManager.getData(blockIdFieldId, PeridigmField::STEP_NONE)->ExtractView(&blockNumber);
 
     
@@ -328,7 +330,8 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
         nodeCurrentX[0] = y[nodeId*3];
         nodeCurrentX[1] = y[nodeId*3+1];
         nodeCurrentX[2] = y[nodeId*3+2];
-        
+
+        double bondCheck(0.0);
         for (iNID = 0; iNID < numNeighbors; ++iNID) {
             
             
@@ -443,14 +446,16 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                 if (trialDamage > bondDamageNP1[bondIndex]) {
                     if (trialDamage>1)trialDamage = 1;
                     bondDamageNP1[bondIndex] = trialDamage;
-
+                    bondCheck++;
                 }
             }
+            bondDamageDiff[nodeId] = bondCheck;
+
             bondIndex += 1;
 
-            }
-
         }
+
+    }
     //  Update the element damage (percent of bonds broken)
     if (detachedNodesCheck == true){
         int check = 1;  //set check = 1 to start the loop

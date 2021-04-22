@@ -11,11 +11,13 @@
             "request": "launch",
             "program": "/home/jt/bin/Peridigm",
             "args": [
-                "Att893E.tmp.yaml"
+                //"Att893E.tmp.yaml"
+                "Test_Run2.xml"
                 //"plate_0.xml"
             ],
             "stopAtEntry": true,
-            "cwd": "/mnt/c/Users/hess_ja/Desktop/PythonProjects/peridigmModelWriter/",
+            //"cwd": "/mnt/c/Users/hess_ja/Desktop/PythonProjects/peridigmModelWriter/",
+            "cwd": "/home/jt/peridigmJobs/waviness/constantWaviness/meshResolution80/",
             //"cwd": "/home/jt/peridigmJobs/plate_0/",
             "environment": [],
             "externalConsole": false,

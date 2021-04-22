@@ -64,7 +64,6 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     m_horizonFieldId(-1), m_volumeFieldId(-1),
     m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_velocitiesFieldId(-1), 
     m_hourglassForceDensityFieldId(-1), m_forceDensityFieldId(-1), m_bondDamageFieldId(-1),
-    m_bondDamageDiffFieldId(-1),
     m_deformationGradientFieldId(-1),
     m_shapeTensorInverseFieldId(-1),
     m_leftStretchTensorFieldId(-1),
@@ -288,7 +287,6 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_forceDensityFieldId               = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Force_Density");
   m_hourglassForceDensityFieldId      = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Hourglass_Force_Density");
   m_bondDamageFieldId                 = fieldManager.getFieldId(PeridigmField::BOND,    PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage");
-  m_bondDamageDiffFieldId             = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage_Diff");
   m_deformationGradientFieldId        = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient");
   m_leftStretchTensorFieldId          = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Left_Stretch_Tensor");
   m_rotationTensorFieldId             = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Rotation_Tensor");
@@ -311,7 +309,6 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_fieldIds.push_back(m_hourglassForceDensityFieldId);
   m_fieldIds.push_back(m_forceDensityFieldId);
   m_fieldIds.push_back(m_bondDamageFieldId);
-  m_fieldIds.push_back(m_bondDamageDiffFieldId);
   m_fieldIds.push_back(m_deformationGradientFieldId);
   
   m_fieldIds.push_back(m_leftStretchTensorFieldId);
@@ -389,7 +386,6 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   double *deformationGradient;
   double *bondDamage;
   double *bondDamageNP1;
-  double *bondDamageDiff;
 
 
   dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&volume);
@@ -403,7 +399,6 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   dataManager.getData(m_unrotatedRateOfDeformationFieldId, PeridigmField::STEP_NONE)->PutScalar(0.0);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
-  dataManager.getData(m_bondDamageDiffFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageDiff);
 
  int shapeTensorReturnCode = 0;
   shapeTensorReturnCode = 
@@ -416,7 +411,6 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
                                                                                    deformationGradient,
                                                                                    bondDamage,
                                                                                    bondDamageNP1,
-                                                                                   bondDamageDiff,
                                                                                    neighborhoodList,
                                                                                    numOwnedPoints,
                                                                                    m_plane,
@@ -442,7 +436,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_partialStressFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_unrotatedRateOfDeformationFieldId, PeridigmField::STEP_NONE)->PutScalar(0.0);
-  double *horizon, *volume, *modelCoordinates, *coordinates, *coordinatesNP1, *shapeTensorInverse, *deformationGradient, *bondDamage, *bondDamageNP1, *bondDamageDiff, *pointAngles, *detachedNodes;
+  double *horizon, *volume, *modelCoordinates, *coordinates, *coordinatesNP1, *shapeTensorInverse, *deformationGradient, *bondDamage, *bondDamageNP1, *pointAngles, *detachedNodes;
   //double *deformationGradientNonInc;
 
   dataManager.getData(m_horizonFieldId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
@@ -456,7 +450,6 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
 
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
-  dataManager.getData(m_bondDamageDiffFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageDiff);
   
   dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->ExtractView(&detachedNodes);
   // Compute the inverse of the shape tensor and the approximate deformation gradient
@@ -479,7 +472,6 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                                                 deformationGradient,
                                                                                 bondDamage,
                                                                                 bondDamageNP1,
-                                                                                bondDamageDiff,
                                                                                 neighborhoodList,
                                                                                 numOwnedPoints,
                                                                                 m_plane,
@@ -773,11 +765,10 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
     tempDataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_N)->ExtractView(&coordinates);
     tempDataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&coordinatesNP1);
     dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->ExtractView(&detachedNodes);
-    double *horizon, *bondDamage, *bondDamageNP1, *bondDamageDiff;
+    double *horizon, *bondDamage, *bondDamageNP1;
     tempDataManager.getData(m_horizonFieldId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
     tempDataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamage);
     tempDataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
-    tempDataManager.getData(m_bondDamageDiffFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageDiff);
  
     // Create arrays of Fad objects for the current coordinates, dilatation, and force density
     // Modify the existing vector of Fad objects for the current coordinates
@@ -828,7 +819,6 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
                                                                                        &deformationGradient_AD[0],
                                                                                        bondDamage,
                                                                                        bondDamageNP1,
-                                                                                       bondDamageDiff,
                                                                                        &tempNeighborhoodList[0],
                                                                                        tempNumOwnedPoints,
                                                                                        m_plane,

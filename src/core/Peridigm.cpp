@@ -1942,46 +1942,9 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
     modelEvaluator->evalDamageModel(workset);
 
-    //********************************
-  detachedNodesList->PutScalar(0.0);
-  netDamageField->PutScalar(0.0);
-  for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){      
-    if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
-          scalarScratch->PutScalar(0.0); 
-          blockIt->exportData(scalarScratch, detachedNodesFieldId, adaptiveExportStep, Add);
-          detachedNodesList->Update(1.0, *scalarScratch, 1.0);
-                     
-         
-          scalarScratch->PutScalar(0.0); 
-          blockIt->exportData(scalarScratch, netDamageFieldId, adaptiveExportStep, Add);
-          
-          netDamageField->Update(1.0, *scalarScratch, 1.0);
-      }
-  }
- //
-  for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){      
-    if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
-      if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
-          blockIt->importData(detachedNodesList, detachedNodesFieldId, adaptiveImportStep, Insert);
-          //blockIt->importData(*netDamageField, netDamageFieldId, adaptiveImportStep, Insert);
-      }
-    }
-  }
-
-
-
-    modelEvaluator->evalModel(workset);
-    PeridigmNS::Timer::self().stopTimer("Internal Force");
-
-    // Copy force from the data manager to the mothership vector
-    PeridigmNS::Timer::self().startTimer("Gather/Scatter");
-    force->PutScalar(0.0);
     bool allBondDiffLow = true;
-    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-      scratch->PutScalar(0.0);
-      blockIt->exportData(scratch, forceDensityFieldId, adaptiveExportStep, Add);
-      force->Update(1.0, *scratch, 1.0);
-      
+    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){   
+        
       if(adaptDt)
       {
         scalarScratch->PutScalar(0.0);
@@ -2001,12 +1964,52 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       }
     }
     lowNumOfBondDetached = allBondDiffLow;
-    
+
     MpiBoolGather(&highNumOfBondDetached, true);
     MPI_Bcast(&highNumOfBondDetached, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
-
+  
     MpiBoolGather(&lowNumOfBondDetached, false);
     MPI_Bcast(&lowNumOfBondDetached, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+  
+      //********************************
+    detachedNodesList->PutScalar(0.0);
+    netDamageField->PutScalar(0.0);
+    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){    
+      if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
+            scalarScratch->PutScalar(0.0);
+            blockIt->exportData(scalarScratch, detachedNodesFieldId, adaptiveExportStep, Add);
+            detachedNodesList->Update(1.0, *scalarScratch, 1.0);
+                    
+        
+            scalarScratch->PutScalar(0.0);
+            blockIt->exportData(scalarScratch, netDamageFieldId, adaptiveExportStep, Add);
+          
+            netDamageField->Update(1.0, *scalarScratch, 1.0);
+        }
+    }
+    //
+    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){    
+    if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
+      if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
+          blockIt->importData(detachedNodesList, detachedNodesFieldId, adaptiveImportStep, Insert);
+          //blockIt->importData(*netDamageField, netDamageFieldId, adaptiveImportStep, Insert);
+      }
+    }
+  }
+ 
+ 
+ 
+    modelEvaluator->evalModel(workset);
+    PeridigmNS::Timer::self().stopTimer("Internal Force");
+ 
+    // Copy force from the data manager to the mothership vector
+    PeridigmNS::Timer::self().startTimer("Gather/Scatter");
+    force->PutScalar(0.0);
+    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+      scratch->PutScalar(0.0);
+      blockIt->exportData(scratch, forceDensityFieldId, adaptiveExportStep, Add);
+      force->Update(1.0, *scratch, 1.0);
+    }
 
     if(analysisHasBondAssociatedHypoelasticModel){
       damage->PutScalar(0.0);

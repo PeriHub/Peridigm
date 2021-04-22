@@ -186,7 +186,6 @@ namespace PeridigmNS {
     int m_hourglassForceDensityFieldId;
     int m_forceDensityFieldId;
     int m_bondDamageFieldId;
-    int m_bondDamageDiffFieldId;
     int m_deformationGradientFieldId;
     int m_shapeTensorInverseFieldId;
     int m_cauchyStressFieldId;
