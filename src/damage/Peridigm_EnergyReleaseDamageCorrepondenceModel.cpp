@@ -280,7 +280,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     
     ////////////////////////////////////////////////////
     double trialDamage(0.0);
-    int neighborhoodListIndex(0), bondIndex(0);
+    int neighborhoodListIndex(0), bondIndex(0), bondCheck(0);
     int nodeId, numNeighbors, neighborID, iID, iNID;
     double totalDamage;
     double nodeInitialX[3], nodeCurrentX[3];
@@ -319,10 +319,11 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     // DAMAGE ANALYSIS
     //---------------------------
     bondIndex = 0;
-
     for (iID = 0; iID < numOwnedPoints; ++iID, defGrad+=9, hourglassStiff+=9) {
         numNeighbors = neighborhoodList[neighborhoodListIndex++];
         
+        bondCheck = 0;
+
         nodeId = ownedIDs[iID];
         nodeInitialX[0] = x[nodeId*3];
         nodeInitialX[1] = x[nodeId*3+1];
@@ -331,7 +332,6 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
         nodeCurrentX[1] = y[nodeId*3+1];
         nodeCurrentX[2] = y[nodeId*3+2];
 
-        double bondCheck(0.0);
         for (iNID = 0; iNID < numNeighbors; ++iNID) {
             
             
@@ -445,15 +445,30 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
 
                 if (trialDamage > bondDamageNP1[bondIndex]) {
                     if (trialDamage>1)trialDamage = 1;
+                    //std::cout<<" bondDamageNP1[bondIndex]: "<<bondDamageNP1[bondIndex]<<" bondIndex: "<<bondIndex<< " bondCheck: "<<bondCheck<< " nodeId: " << nodeId << " bondEnergy: " << bondEnergy <<std::endl;
                     bondDamageNP1[bondIndex] = trialDamage;
                     bondCheck++;
+                if(nodeId==904){
+                    std::cout<<" bondDamageNP1[bondIndex]: "<<bondDamageNP1[bondIndex]<<" bondIndex: "<<bondIndex<< " bondCheck: "<<bondCheck<< " nodeId: " << nodeId << " bondEnergy: " << bondEnergy <<std::endl;
+                }
+                    
                 }
             }
             bondDamageDiff[nodeId] = bondCheck;
 
+            //if(bondCheck>4){
+            //    if(nodeId==904){
+            //        std::cout<<" bondDamageNP1[bondIndex]: "<<bondDamageNP1[bondIndex]<<" bondIndex: "<<bondIndex<< " nodeId: " << nodeId << std::endl;
+            //    }
+            //    break;
+            //    }
+
             bondIndex += 1;
 
         }
+
+        //if(bondCheck>4)
+                //break;
 
     }
     //  Update the element damage (percent of bonds broken)
