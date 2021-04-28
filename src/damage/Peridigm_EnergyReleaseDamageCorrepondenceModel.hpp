@@ -125,6 +125,7 @@ namespace PeridigmNS {
     bool m_applyThermalStrains;
     bool m_planeStrain;
     bool m_planeStress;
+    int m_bondDiffSt;
 
     // field ids for all relevant data
     std::vector<int> m_fieldIds;

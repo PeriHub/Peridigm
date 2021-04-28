@@ -118,6 +118,8 @@ m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
     m_criticalEnergyInterBlock = m_criticalEnergyTension;
     if (params.isParameter("Interblock damage energy"))
         m_criticalEnergyInterBlock = params.get<double>("Interblock damage energy");
+    if (params.isParameter("Stable Bond Difference"))
+        m_bondDiffSt  = params.get<int>("Stable Bond Difference");
   //************************************
   // wie komme ich an den Namen??
   //************************************
@@ -256,6 +258,20 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     dataManager.getData(m_bondDamageDiffFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageDiff);
     dataManager.getData(blockIdFieldId, PeridigmField::STEP_NONE)->ExtractView(&blockNumber);
 
+    int iID, nodeId;
+    //bool rerun;
+    //rerun = false;
+    //for (iID = 0; iID < numOwnedPoints; ++iID){
+    //    nodeId = ownedIDs[iID];
+    //    if (bondDamageDiff[nodeId]>m_bondDiffSt)
+    //    {
+    //        rerun = true;  
+    //        cout << "rerun2: " << bondDamageDiff[nodeId] << " nodeId: " << nodeId << endl;
+    //        bondDamageDiff[nodeId] = 0;
+    //        break;
+    //    }
+    //}
+
     
     dataManager.getData(m_piolaStressTimesInvShapeTensorXId, PeridigmField::STEP_NP1)->ExtractView(&tempStressX);
     dataManager.getData(m_piolaStressTimesInvShapeTensorYId, PeridigmField::STEP_NP1)->ExtractView(&tempStressY);
@@ -274,14 +290,15 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&defGrad);
     //std::cout<< "heredam"<<std::endl;
     // Set the bond damage to the previous value --> needed for iteration in implicit time integration
+    //if(!rerun)
     *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)) = *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N));
-     double *forceDensity;
+    double *forceDensity;
     dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&forceDensity);
     
     ////////////////////////////////////////////////////
     double trialDamage(0.0);
     int neighborhoodListIndex(0), bondIndex(0), bondCheck(0);
-    int nodeId, numNeighbors, neighborID, iID, iNID;
+    int numNeighbors, neighborID, iNID;
     double totalDamage;
     double nodeInitialX[3], nodeCurrentX[3];
     double omegaP1, omegaP2;
@@ -445,30 +462,22 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
 
                 if (trialDamage > bondDamageNP1[bondIndex]) {
                     if (trialDamage>1)trialDamage = 1;
-                    //std::cout<<" bondDamageNP1[bondIndex]: "<<bondDamageNP1[bondIndex]<<" bondIndex: "<<bondIndex<< " bondCheck: "<<bondCheck<< " nodeId: " << nodeId << " bondEnergy: " << bondEnergy <<std::endl;
                     bondDamageNP1[bondIndex] = trialDamage;
                     bondCheck++;
-                if(nodeId==904){
-                    std::cout<<" bondDamageNP1[bondIndex]: "<<bondDamageNP1[bondIndex]<<" bondIndex: "<<bondIndex<< " bondCheck: "<<bondCheck<< " nodeId: " << nodeId << " bondEnergy: " << bondEnergy <<std::endl;
-                }
                     
                 }
             }
             bondDamageDiff[nodeId] = bondCheck;
 
-            //if(bondCheck>4){
-            //    if(nodeId==904){
-            //        std::cout<<" bondDamageNP1[bondIndex]: "<<bondDamageNP1[bondIndex]<<" bondIndex: "<<bondIndex<< " nodeId: " << nodeId << std::endl;
-            //    }
-            //    break;
-            //    }
+            if(bondCheck>m_bondDiffSt)
+                break;
 
             bondIndex += 1;
 
         }
 
-        //if(bondCheck>4)
-                //break;
+        if(bondCheck>m_bondDiffSt)
+            break;
 
     }
     //  Update the element damage (percent of bonds broken)
@@ -505,6 +514,8 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
         damage[nodeId] = totalDamage/volume;
 
     }
+    
+    *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)) = *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1));
 }
 
 int PeridigmNS::EnergyReleaseDamageCorrepondenceModel::checkDetachedNodes(

@@ -1825,154 +1825,154 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     
     //modelEvaluator->updatePlasticParameter(workset);
 
-    lowNumOfBondDetached=false;
+    //lowNumOfBondDetached=false;
     //while(!lowNumOfBondDetached){
-      modelEvaluator->updateCauchyStress(workset);
+    modelEvaluator->updateCauchyStress(workset);
 
-      // map damage model information back in global data manager
-      // set values to zero to avoid data accumulation within the global mothership vector
+    // map damage model information back in global data manager
+    // set values to zero to avoid data accumulation within the global mothership vector
 
-      damageModelVal->PutScalar(0.0);
+    damageModelVal->PutScalar(0.0);
 
-      piolaStressTimesInvShapeTensorX->PutScalar(0.0);
-      piolaStressTimesInvShapeTensorY->PutScalar(0.0);
-      piolaStressTimesInvShapeTensorZ->PutScalar(0.0);
-      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-          if (blockIt->getMaterialModel()->Name() == "Elastic" or blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
-              scratch->PutScalar(0.0);         
-              blockIt->exportData(scratch, damageModelFieldId, adaptiveExportStep, Add);
-              damageModelVal->Update(1.0, *scratch, 1.0);
-              }
-          //if (blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
-          //    scratch->PutScalar(0.0);
-          //    blockIt->exportData(scratch, plasticModelFieldId, adaptiveExportStep, Add);
-          //    plasticModelVal->Update(1.0, *scratch, 1.0);
-          //}
-          if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
-              scratch->PutScalar(0.0);
-              blockIt->exportData(scratch, piolaStressTimesInvShapeTensorXId, adaptiveExportStep, Add);
-              piolaStressTimesInvShapeTensorX->Update(1.0, *scratch, 1.0);
-              scratch->PutScalar(0.0);
-              blockIt->exportData(scratch, piolaStressTimesInvShapeTensorYId, adaptiveExportStep, Add);
-              piolaStressTimesInvShapeTensorY->Update(1.0, *scratch, 1.0);
-              scratch->PutScalar(0.0);
-              blockIt->exportData(scratch, piolaStressTimesInvShapeTensorZId, adaptiveExportStep, Add);
-              piolaStressTimesInvShapeTensorZ->Update(1.0, *scratch, 1.0);
-          }
-      }
+    piolaStressTimesInvShapeTensorX->PutScalar(0.0);
+    piolaStressTimesInvShapeTensorY->PutScalar(0.0);
+    piolaStressTimesInvShapeTensorZ->PutScalar(0.0);
+    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        if (blockIt->getMaterialModel()->Name() == "Elastic" or blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
+            scratch->PutScalar(0.0);         
+            blockIt->exportData(scratch, damageModelFieldId, adaptiveExportStep, Add);
+            damageModelVal->Update(1.0, *scratch, 1.0);
+            }
+        //if (blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
+        //    scratch->PutScalar(0.0);
+        //    blockIt->exportData(scratch, plasticModelFieldId, adaptiveExportStep, Add);
+        //    plasticModelVal->Update(1.0, *scratch, 1.0);
+        //}
+        if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
+            scratch->PutScalar(0.0);
+            blockIt->exportData(scratch, piolaStressTimesInvShapeTensorXId, adaptiveExportStep, Add);
+            piolaStressTimesInvShapeTensorX->Update(1.0, *scratch, 1.0);
+            scratch->PutScalar(0.0);
+            blockIt->exportData(scratch, piolaStressTimesInvShapeTensorYId, adaptiveExportStep, Add);
+            piolaStressTimesInvShapeTensorY->Update(1.0, *scratch, 1.0);
+            scratch->PutScalar(0.0);
+            blockIt->exportData(scratch, piolaStressTimesInvShapeTensorZId, adaptiveExportStep, Add);
+            piolaStressTimesInvShapeTensorZ->Update(1.0, *scratch, 1.0);
+        }
+    }
 
-      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-          if (blockIt->getMaterialModel()->Name() == "Elastic" or blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
-              blockIt->importData(damageModelVal, damageModelFieldId, adaptiveImportStep, Insert);
-          }
-          //if (blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
-          //    blockIt->importData(plasticModelVal, plasticModelFieldId, adaptiveImportStep, Insert);
-          //}
-          if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
-              blockIt->importData(piolaStressTimesInvShapeTensorX, piolaStressTimesInvShapeTensorXId, adaptiveImportStep, Insert);
-              blockIt->importData(piolaStressTimesInvShapeTensorY, piolaStressTimesInvShapeTensorYId, adaptiveImportStep, Insert);
-              blockIt->importData(piolaStressTimesInvShapeTensorZ, piolaStressTimesInvShapeTensorZId, adaptiveImportStep, Insert);
-          }
-      }
+    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        if (blockIt->getMaterialModel()->Name() == "Elastic" or blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
+            blockIt->importData(damageModelVal, damageModelFieldId, adaptiveImportStep, Insert);
+        }
+        //if (blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
+        //    blockIt->importData(plasticModelVal, plasticModelFieldId, adaptiveImportStep, Insert);
+        //}
+        if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
+            blockIt->importData(piolaStressTimesInvShapeTensorX, piolaStressTimesInvShapeTensorXId, adaptiveImportStep, Insert);
+            blockIt->importData(piolaStressTimesInvShapeTensorY, piolaStressTimesInvShapeTensorYId, adaptiveImportStep, Insert);
+            blockIt->importData(piolaStressTimesInvShapeTensorZ, piolaStressTimesInvShapeTensorZId, adaptiveImportStep, Insert);
+        }
+    }
 
-      if(analysisHasBondAssociatedHypoelasticModel){
-        PeridigmNS::Timer::self().startTimer("Internal Force");
-        modelEvaluator->computeVelocityGradient(workset);
-        PeridigmNS::Timer::self().stopTimer("Internal Force");
-      
-        // Copy data from mothership vectors to overlap vectors in data manager
-        PeridigmNS::Timer::self().startTimer("Gather/Scatter");
-        jacobianDeterminant->PutScalar(0.0);
-        for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-          scalarScratch->PutScalar(0.0);
-          blockIt->exportData(scalarScratch, jacobianDeterminantFieldId, PeridigmField::STEP_NP1, Add);
-          jacobianDeterminant->Update(1.0, *scalarScratch, 1.0);
-        }
-        weightedVolume->PutScalar(0.0);
-        for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-          scalarScratch->PutScalar(0.0);
-          blockIt->exportData(scalarScratch, weightedVolumeFieldId, PeridigmField::STEP_NONE, Add);
-          weightedVolume->Update(1.0, *scalarScratch, 1.0);
-        }
-        for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-          blockIt->importData(weightedVolume, weightedVolumeFieldId, PeridigmField::STEP_NONE, Insert);
-        }
-        velocityGradientX->PutScalar(0.0);
-        for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-          scratch->PutScalar(0.0);
-          blockIt->exportData(scratch, velocityGradientXFieldId, PeridigmField::STEP_NONE, Add);
-          velocityGradientX->Update(1.0, *scratch, 1.0);
-        }
-        for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-          blockIt->importData(velocityGradientX, velocityGradientXFieldId, PeridigmField::STEP_NONE, Insert);
-        }
-        velocityGradientY->PutScalar(0.0);
-        for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-          scratch->PutScalar(0.0);
-          blockIt->exportData(scratch, velocityGradientYFieldId, PeridigmField::STEP_NONE, Add);
-          velocityGradientY->Update(1.0, *scratch, 1.0);
-        }
-        for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-          blockIt->importData(velocityGradientY, velocityGradientYFieldId, PeridigmField::STEP_NONE, Insert);
-        }
-        velocityGradientZ->PutScalar(0.0);
-        for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-          scratch->PutScalar(0.0);
-          blockIt->exportData(scratch, velocityGradientZFieldId, PeridigmField::STEP_NONE, Add);
-          velocityGradientZ->Update(1.0, *scratch, 1.0);
-        }
-        for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-          blockIt->importData(velocityGradientZ, velocityGradientZFieldId, PeridigmField::STEP_NONE, Insert);
-        }
-        PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
-
-        // Compute bond-level velocity gradient
-        PeridigmNS::Timer::self().startTimer("Internal Force");
-        modelEvaluator->computeBondVelocityGradient(workset);
-        PeridigmNS::Timer::self().stopTimer("Internal Force");
-      }
-      // Load the data manager with data from disk, if requested
-      if(analysisHasDataLoader){
-        PeridigmNS::Timer::self().startTimer("Data Loader");
-        dataLoader->loadData(timeCurrent, blocks);
-        PeridigmNS::Timer::self().stopTimer("Data Loader");
-      }
-
-      // Update forces based on new positions
+    if(analysisHasBondAssociatedHypoelasticModel){
       PeridigmNS::Timer::self().startTimer("Internal Force");
-      //********************************
-
-      modelEvaluator->evalDamageModel(workset);
-
-      if(true)
-      {
-        for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
-        
-          scalarScratch->PutScalar(0.0);
-          bondDamageDiffField->PutScalar(0.0); 
-          blockIt->exportData(scalarScratch, bondDamageDiffFieldId, adaptiveExportStep, Add);
-          bondDamageDiffField->Update(1.0, *scalarScratch, 1.0);
-        }
-
-        bool allBondDiffLow = true;
-        for(int i=0 ; i<bondDamageDiffField->MyLength() ; ++i){
-          //if ((*bondDamageDiffField)[i]>1) cout << "bondDamageDiffField: " << (*bondDamageDiffField)[i] << " i: " << i << endl;
-          if ((*bondDamageDiffField)[i]>=bondDiffMax) highNumOfBondDetached = true;
-          if ((*bondDamageDiffField)[i]>bondDiffSt)
-          {
-            allBondDiffLow = false;  
-            //cout << "rerun: " << (*bondDamageDiffField)[i] << " i: " << i << endl;
-            //break;
-          }
-        }
-        lowNumOfBondDetached = allBondDiffLow;
-
-        MpiBoolGather(&highNumOfBondDetached, true);
-        MPI_Bcast(&highNumOfBondDetached, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
-  
-        MpiBoolGather(&lowNumOfBondDetached, false);
-        MPI_Bcast(&lowNumOfBondDetached, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+      modelEvaluator->computeVelocityGradient(workset);
+      PeridigmNS::Timer::self().stopTimer("Internal Force");
+    
+      // Copy data from mothership vectors to overlap vectors in data manager
+      PeridigmNS::Timer::self().startTimer("Gather/Scatter");
+      jacobianDeterminant->PutScalar(0.0);
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        scalarScratch->PutScalar(0.0);
+        blockIt->exportData(scalarScratch, jacobianDeterminantFieldId, PeridigmField::STEP_NP1, Add);
+        jacobianDeterminant->Update(1.0, *scalarScratch, 1.0);
       }
+      weightedVolume->PutScalar(0.0);
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        scalarScratch->PutScalar(0.0);
+        blockIt->exportData(scalarScratch, weightedVolumeFieldId, PeridigmField::STEP_NONE, Add);
+        weightedVolume->Update(1.0, *scalarScratch, 1.0);
+      }
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        blockIt->importData(weightedVolume, weightedVolumeFieldId, PeridigmField::STEP_NONE, Insert);
+      }
+      velocityGradientX->PutScalar(0.0);
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        scratch->PutScalar(0.0);
+        blockIt->exportData(scratch, velocityGradientXFieldId, PeridigmField::STEP_NONE, Add);
+        velocityGradientX->Update(1.0, *scratch, 1.0);
+      }
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        blockIt->importData(velocityGradientX, velocityGradientXFieldId, PeridigmField::STEP_NONE, Insert);
+      }
+      velocityGradientY->PutScalar(0.0);
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        scratch->PutScalar(0.0);
+        blockIt->exportData(scratch, velocityGradientYFieldId, PeridigmField::STEP_NONE, Add);
+        velocityGradientY->Update(1.0, *scratch, 1.0);
+      }
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        blockIt->importData(velocityGradientY, velocityGradientYFieldId, PeridigmField::STEP_NONE, Insert);
+      }
+      velocityGradientZ->PutScalar(0.0);
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        scratch->PutScalar(0.0);
+        blockIt->exportData(scratch, velocityGradientZFieldId, PeridigmField::STEP_NONE, Add);
+        velocityGradientZ->Update(1.0, *scratch, 1.0);
+      }
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        blockIt->importData(velocityGradientZ, velocityGradientZFieldId, PeridigmField::STEP_NONE, Insert);
+      }
+      PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
+
+      // Compute bond-level velocity gradient
+      PeridigmNS::Timer::self().startTimer("Internal Force");
+      modelEvaluator->computeBondVelocityGradient(workset);
+      PeridigmNS::Timer::self().stopTimer("Internal Force");
+    }
+    // Load the data manager with data from disk, if requested
+    if(analysisHasDataLoader){
+      PeridigmNS::Timer::self().startTimer("Data Loader");
+      dataLoader->loadData(timeCurrent, blocks);
+      PeridigmNS::Timer::self().stopTimer("Data Loader");
+    }
+
+    // Update forces based on new positions
+    PeridigmNS::Timer::self().startTimer("Internal Force");
+    //********************************
+
+    modelEvaluator->evalDamageModel(workset);
+
+    if(adaptDt)
+    {
+      bondDamageDiffField->PutScalar(0.0); 
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+      
+        scalarScratch->PutScalar(0.0);
+        blockIt->exportData(scalarScratch, bondDamageDiffFieldId, adaptiveExportStep, Add);
+        bondDamageDiffField->Update(1.0, *scalarScratch, 1.0);
+      }
+
+      bool allBondDiffLow = true;
+      for(int i=0 ; i<bondDamageDiffField->MyLength() ; ++i){
+        //if ((*bondDamageDiffField)[i]>0) cout << "bondDamageDiffField: " << (*bondDamageDiffField)[i] << " i: " << i << endl;
+        if ((*bondDamageDiffField)[i]>=bondDiffMax) highNumOfBondDetached = true;
+        if ((*bondDamageDiffField)[i]>bondDiffSt)
+        {
+          allBondDiffLow = false;  
+          cout << "rerun: " << (*bondDamageDiffField)[i] << " i: " << i << endl;
+          break;
+        }
+      }
+      lowNumOfBondDetached = allBondDiffLow;
+
+      MpiBoolGather(&highNumOfBondDetached, true);
+      MPI_Bcast(&highNumOfBondDetached, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+
+      MpiBoolGather(&lowNumOfBondDetached, false);
+      MPI_Bcast(&lowNumOfBondDetached, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+    }
 
     //}
   
