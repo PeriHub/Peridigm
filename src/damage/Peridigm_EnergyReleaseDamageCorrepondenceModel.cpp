@@ -515,7 +515,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
 
     }
     
-    *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)) = *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1));
+    //*(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)) = *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1));
 }
 
 int PeridigmNS::EnergyReleaseDamageCorrepondenceModel::checkDetachedNodes(

@@ -1346,8 +1346,11 @@ void PeridigmNS::Peridigm::execute(Teuchos::RCP<Teuchos::ParameterList> solverPa
 void PeridigmNS::Peridigm::executeSolvers() {
   for(unsigned int i=0 ; i<solverParameters.size() ; ++i){
     execute(solverParameters[i]);
+    bool restart = false;
     if(peridigmParams->isParameter("Restart")){
-      writeRestart(solverParameters[i]);
+      Teuchos::RCP<Teuchos::ParameterList> restartParams = sublist(peridigmParams, "Restart", true);
+      restart = restartParams->get<bool>("Restart");
+      if(restart) writeRestart(solverParameters[i]);
     }
   }
 }
@@ -1618,7 +1621,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
     if (highNumOfBondDetached && adaptDt) //adaptive Timestep
     {
-      if( dt2>=dtMin)
+      if( dt*dtReduceFactor>=dtMin)
       {
         stepType = 1;
       }
@@ -1631,7 +1634,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       stepTimeChanged=step;
 
     }
-    else if (lowNumOfBondDetached && adaptDt && dt*1.2 <= dtMax && step-stepTimeChanged>stableStepDiff) //adaptive Timestep
+    else if (lowNumOfBondDetached && adaptDt && dt*dtRaiseFactor <= dtMax && step-stepTimeChanged>stableStepDiff) //adaptive Timestep
     {
       stepType = 2;
       
@@ -1961,7 +1964,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         if ((*bondDamageDiffField)[i]>bondDiffSt)
         {
           allBondDiffLow = false;  
-          cout << "rerun: " << (*bondDamageDiffField)[i] << " i: " << i << endl;
+          //cout << "rerun: " << (*bondDamageDiffField)[i] << " i: " << i << endl;
           break;
         }
       }
@@ -1975,6 +1978,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     }
 
     //}
+
+    if (highNumOfBondDetached && dt*dtReduceFactor>=dtMin) continue;
   
       //********************************
     detachedNodesList->PutScalar(0.0);
@@ -2025,8 +2030,6 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       }
     }
     PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
-
-    if (highNumOfBondDetached && dt2>=dtMin) continue;
 
     // Check for NaNs in force evaluation
     // We'd like to know now because a NaN will likely cause a difficult-to-unravel crash downstream.
