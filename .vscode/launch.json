@@ -14,16 +14,16 @@
                 //"Att893E.tmp.yaml"
                 //"Test_Run2.xml"
                 //"plate_0.xml"
-                //"coreTest.yaml"
-                "NooruMohamedTest.xml"
+                "coreTest.yaml"
+                //"NooruMohamedTest.xml"
             ],
             "stopAtEntry": true,
             //"cwd": "/mnt/c/Users/hess_ja/Desktop/PythonProjects/peridigmModelWriter/",
             //"cwd": "/home/jt/peridigmJobs/waviness/constantWaviness/meshResolution80/",
             //"cwd": "/home/jt/peridigmJobs/plate_0/",
             //"cwd": "/home/jt/peridigmJobs/doe_2_601/",
-            //"cwd": "/home/jt/peridigmJobs/modelCreation/",
-            "cwd": "/home/jt/peridigmJobs/staticSolver/",
+            "cwd": "/home/jt/peridigmJobs/modelCreation/",
+            //"cwd": "/home/jt/peridigmJobs/staticSolver/",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",

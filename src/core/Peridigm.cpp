@@ -1720,7 +1720,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
     currentTime = timeCurrent;
 
-    std::cout << step << "/" << nsteps << " time: " << timeCurrent<< std::endl;
+    //std::cout << step << "/" << nsteps << " time: " << timeCurrent<< std::endl;
 
     // TODO this should not be here
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
@@ -2295,6 +2295,172 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
     modelEvaluator->evalModel(workset);
     PeridigmNS::Timer::self().stopTimer("Internal Force");
 
+    
+      
+
+    // Copy data from mothership vectors to overlap vectors in data manager
+    PeridigmNS::Timer::self().startTimer("Gather/Scatter");
+    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+      blockIt->importData(u, displacementFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(y, coordinatesFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(v, velocityFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(deltaTemperature, deltaTemperatureFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(temperature, temperatureFieldId, PeridigmField::STEP_NP1, Insert);
+      blockIt->importData(concentration, concentrationFieldId, PeridigmField::STEP_NP1, Insert);
+      if(analysisHasBondAssociatedHypoelasticModel){
+        blockIt->importData(damage, damageFieldId, PeridigmField::STEP_N, Insert); // Note that damage lags one step in the model evaluation
+        blockIt->importData(jacobianDeterminant, jacobianDeterminantFieldId, PeridigmField::STEP_N, Insert); // Note that J lags one step in the model evaluation
+      }
+    }
+    PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
+    // set value to zero
+    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+      if (blockIt->getMaterialModel()->Name() == "Elastic" or blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
+        damageModelVal->PutScalar(0.0); 
+        blockIt->importData(damageModelVal, damageModelFieldId, PeridigmField::STEP_NP1, Insert);
+      }
+    if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
+      piolaStressTimesInvShapeTensorX->PutScalar(0.0); 
+      blockIt->importData(piolaStressTimesInvShapeTensorX, piolaStressTimesInvShapeTensorXId, PeridigmField::STEP_NP1, Insert);
+      piolaStressTimesInvShapeTensorY->PutScalar(0.0); 
+      blockIt->importData(piolaStressTimesInvShapeTensorY, piolaStressTimesInvShapeTensorYId, PeridigmField::STEP_NP1, Insert);
+      piolaStressTimesInvShapeTensorZ->PutScalar(0.0); 
+      blockIt->importData(piolaStressTimesInvShapeTensorZ, piolaStressTimesInvShapeTensorZId, PeridigmField::STEP_NP1, Insert);
+    }
+    }
+    // hier muss noch ein check rein, der die Sachen nur fuer die Schadensmodelle durchfuehrt
+
+    modelEvaluator->updateCauchyStress(workset);
+
+    // map damage model information back in global data manager
+    // set values to zero to avoid data accumulation within the global mothership vector
+
+    damageModelVal->PutScalar(0.0);
+
+    piolaStressTimesInvShapeTensorX->PutScalar(0.0);
+    piolaStressTimesInvShapeTensorY->PutScalar(0.0);
+    piolaStressTimesInvShapeTensorZ->PutScalar(0.0);
+    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        if (blockIt->getMaterialModel()->Name() == "Elastic" or blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
+            scratch->PutScalar(0.0);         
+            blockIt->exportData(scratch, damageModelFieldId, PeridigmField::STEP_NP1, Add);
+            damageModelVal->Update(1.0, *scratch, 1.0);
+            }
+        //if (blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
+        //    scratch->PutScalar(0.0);
+        //    blockIt->exportData(scratch, plasticModelFieldId, PeridigmField::STEP_NP1, Add);
+        //    plasticModelVal->Update(1.0, *scratch, 1.0);
+        //}
+        if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
+            scratch->PutScalar(0.0);
+            blockIt->exportData(scratch, piolaStressTimesInvShapeTensorXId, PeridigmField::STEP_NP1, Add);
+            piolaStressTimesInvShapeTensorX->Update(1.0, *scratch, 1.0);
+            scratch->PutScalar(0.0);
+            blockIt->exportData(scratch, piolaStressTimesInvShapeTensorYId, PeridigmField::STEP_NP1, Add);
+            piolaStressTimesInvShapeTensorY->Update(1.0, *scratch, 1.0);
+            scratch->PutScalar(0.0);
+            blockIt->exportData(scratch, piolaStressTimesInvShapeTensorZId, PeridigmField::STEP_NP1, Add);
+            piolaStressTimesInvShapeTensorZ->Update(1.0, *scratch, 1.0);
+        }
+    }
+
+    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        if (blockIt->getMaterialModel()->Name() == "Elastic" or blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
+            blockIt->importData(damageModelVal, damageModelFieldId, PeridigmField::STEP_NP1, Insert);
+        }
+        //if (blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
+        //    blockIt->importData(plasticModelVal, plasticModelFieldId, PeridigmField::STEP_NP1, Insert);
+        //}
+        if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
+            blockIt->importData(piolaStressTimesInvShapeTensorX, piolaStressTimesInvShapeTensorXId, PeridigmField::STEP_NP1, Insert);
+            blockIt->importData(piolaStressTimesInvShapeTensorY, piolaStressTimesInvShapeTensorYId, PeridigmField::STEP_NP1, Insert);
+            blockIt->importData(piolaStressTimesInvShapeTensorZ, piolaStressTimesInvShapeTensorZId, PeridigmField::STEP_NP1, Insert);
+        }
+    }
+
+    if(analysisHasBondAssociatedHypoelasticModel){
+      PeridigmNS::Timer::self().startTimer("Internal Force");
+      modelEvaluator->computeVelocityGradient(workset);
+      PeridigmNS::Timer::self().stopTimer("Internal Force");
+    
+      // Copy data from mothership vectors to overlap vectors in data manager
+      PeridigmNS::Timer::self().startTimer("Gather/Scatter");
+      jacobianDeterminant->PutScalar(0.0);
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        scalarScratch->PutScalar(0.0);
+        blockIt->exportData(scalarScratch, jacobianDeterminantFieldId, PeridigmField::STEP_NP1, Add);
+        jacobianDeterminant->Update(1.0, *scalarScratch, 1.0);
+      }
+      weightedVolume->PutScalar(0.0);
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        scalarScratch->PutScalar(0.0);
+        blockIt->exportData(scalarScratch, weightedVolumeFieldId, PeridigmField::STEP_NONE, Add);
+        weightedVolume->Update(1.0, *scalarScratch, 1.0);
+      }
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        blockIt->importData(weightedVolume, weightedVolumeFieldId, PeridigmField::STEP_NONE, Insert);
+      }
+      velocityGradientX->PutScalar(0.0);
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        scratch->PutScalar(0.0);
+        blockIt->exportData(scratch, velocityGradientXFieldId, PeridigmField::STEP_NONE, Add);
+        velocityGradientX->Update(1.0, *scratch, 1.0);
+      }
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        blockIt->importData(velocityGradientX, velocityGradientXFieldId, PeridigmField::STEP_NONE, Insert);
+      }
+      velocityGradientY->PutScalar(0.0);
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        scratch->PutScalar(0.0);
+        blockIt->exportData(scratch, velocityGradientYFieldId, PeridigmField::STEP_NONE, Add);
+        velocityGradientY->Update(1.0, *scratch, 1.0);
+      }
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        blockIt->importData(velocityGradientY, velocityGradientYFieldId, PeridigmField::STEP_NONE, Insert);
+      }
+      velocityGradientZ->PutScalar(0.0);
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        scratch->PutScalar(0.0);
+        blockIt->exportData(scratch, velocityGradientZFieldId, PeridigmField::STEP_NONE, Add);
+        velocityGradientZ->Update(1.0, *scratch, 1.0);
+      }
+      for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+        blockIt->importData(velocityGradientZ, velocityGradientZFieldId, PeridigmField::STEP_NONE, Insert);
+      }
+      PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
+
+      // Compute bond-level velocity gradient
+      PeridigmNS::Timer::self().startTimer("Internal Force");
+      modelEvaluator->computeBondVelocityGradient(workset);
+      PeridigmNS::Timer::self().stopTimer("Internal Force");
+    }
+    // Load the data manager with data from disk, if requested
+    //if(analysisHasDataLoader){
+      //PeridigmNS::Timer::self().startTimer("Data Loader");
+      //dataLoader->loadData(timeCurrent, blocks);
+      //PeridigmNS::Timer::self().stopTimer("Data Loader");
+    //}
+
+    // Update forces based on new positions
+    PeridigmNS::Timer::self().startTimer("Internal Force");
+    //********************************
+
+    modelEvaluator->evalDamageModel(workset);
+
+    modelEvaluator->evalModel(workset);
+    PeridigmNS::Timer::self().stopTimer("Internal Force");
+
+    // Copy force from the data manager to the mothership vector
+    PeridigmNS::Timer::self().startTimer("Gather/Scatter");
+    force->PutScalar(0.0);
+    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
+      scratch->PutScalar(0.0);
+      blockIt->exportData(scratch, forceDensityFieldId, PeridigmField::STEP_NP1, Add);
+      force->Update(1.0, *scratch, 1.0);
+    }
+
+
+
     if(analysisHasMultiphysics){
       PeridigmNS::Timer::self().startTimer("Gather/Scatter");
       unknownsForce->PutScalar(0.0);
@@ -2568,6 +2734,15 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
   Teuchos::RCP<Teuchos::ParameterList> noxQuasiStaticParams = sublist(solverParams, "NOXQuasiStatic", true);
   bool noxVerbose = noxQuasiStaticParams->get("Verbose", false);
   int maxIterations = noxQuasiStaticParams->get("Max Solver Iterations", 50);
+  bool failedQS = false;
+
+  // Switch to Explicit
+  Teuchos::RCP< Teuchos::ParameterList > verletSolverParams;
+  bool switchToExplicit = false;
+  if( noxQuasiStaticParams->isSublist("Switch to Verlet") ){
+      switchToExplicit = true;
+      verletSolverParams = sublist(noxQuasiStaticParams, "Switch to Verlet", true);
+  }
 
   // Determine tolerance, either "Relative Tolerance" or "Absolute Tolerance"
   // If none is provided, default to relative tolerance of 1.0e-6
@@ -2602,9 +2777,10 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
   // Create list of time steps
   // Case 1:  User provided initial time, final time, and number of load steps
   vector<double> timeSteps;
+  double timeFinal;
   if( solverParams->isParameter("Final Time") && noxQuasiStaticParams->isParameter("Number of Load Steps") ){
     double timeInitial = solverParams->get("Initial Time", 0.0);
-    double timeFinal = solverParams->get<double>("Final Time");
+    timeFinal = solverParams->get<double>("Final Time");
     int numLoadSteps = noxQuasiStaticParams->get<int>("Number of Load Steps");
     timeSteps.push_back(timeInitial);
     for(int i=0 ; i<numLoadSteps ; ++i)
@@ -2930,8 +3106,15 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
 
       solverIteration += 1;
     }
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(noxSolverStatus != NOX::StatusTest::Converged, "\n****Error:  NOX solver failed to solve system.\n");
 
+    if(solverIteration > maxIterations){
+      failedQS = true;
+      break;
+    }
+
+    if(!failedQS)
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(noxSolverStatus != NOX::StatusTest::Converged, "\n****Error:  NOX solver failed to solve system.\n");
+    
     // Get the Epetra_Vector with the final solution from the solver
     const Epetra_Vector& finalSolution = 
       dynamic_cast<const NOX::Epetra::Vector&>(solver->getSolutionGroup().getX()).getEpetraVector();
@@ -3011,6 +3194,48 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++)
         blockIt->updateState();
   }
+
+  if(switchToExplicit && failedQS){
+    if(peridigmComm->MyPID() == 0){
+      cout << "\nWarning: Number of Quasi-Static solver convergence failures was more than the maximum allowable number of failures.";
+      cout << "\nSwitching to explicit time-stepping for the rest of simulation." << endl;
+    }
+    Teuchos::RCP<Teuchos::ParameterList> explicitSolverParams = Teuchos::rcp(new Teuchos::ParameterList);
+    Teuchos::ParameterList& verletParams = explicitSolverParams->sublist("Verlet");
+    if(verletSolverParams->isParameter("Fixed dt")){
+      double userDefinedTimeStep = verletSolverParams->get<double>("Fixed dt");
+      verletParams.set("Fixed dt", userDefinedTimeStep);
+    }
+    else{
+      double safetyFactor = 1.0;
+      if(verletSolverParams->isParameter("Safety Factor"))
+        safetyFactor = verletSolverParams->get<double>("Safety Factor");
+      verletParams.set("Safety Factor", safetyFactor);
+    }
+    copyParameters<double>(verletSolverParams,"Numerical Damping", verletParams);
+    copyParameters<double>(verletSolverParams,"Safety Factor", verletParams);
+    copyParameters<bool>(verletSolverParams,"Adaptive Time Stepping", verletParams);
+    copyParameters<int>(verletSolverParams,"Stable Step Difference", verletParams);
+    copyParameters<int>(verletSolverParams,"Maximum Bond Difference", verletParams);
+    copyParameters<int>(verletSolverParams,"Stable Bond Difference", verletParams);
+    
+    explicitSolverParams->set("Initial Time", timePrevious);
+    explicitSolverParams->set("Final Time", timeFinal);
+
+    if(verletSolverParams->isParameter("Output Frequency")){
+      int output_frequency = verletSolverParams->get<int>("Output Frequency");
+      outputManager->changeOutputFrequency(output_frequency);
+    }
+
+    // Restore the values to the converged ones from previous step
+    for(int i=0 ; i<y->MyLength() ; ++i){
+      yPtr[i] = xPtr[i] + uPtr[i];
+      vPtr[i] = (*initialGuess)[i];
+    }
+
+    executeExplicit(explicitSolverParams);
+  }
+
   // if(peridigmComm->MyPID() == 0)
   //   cout << endl;
 }
@@ -3043,7 +3268,7 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
 
   bool solverVerbose = solverParams->get("Verbose", false);
   Teuchos::RCP<Teuchos::ParameterList> quasiStaticParams = sublist(solverParams, "QuasiStatic", true);
-  int maxSolverIterations = quasiStaticParams->get("Maximum Solver Iterations", 10);
+  int maxSolverIterations = quasiStaticParams->get("Max Solver Iterations", 10);
   double dampedNewtonDiagonalScaleFactor = quasiStaticParams->get("Damped Newton Diagonal Scale Factor", 1.0001);
   double dampedNewtonDiagonalShiftFactor = quasiStaticParams->get("Damped Newton Diagonal Shift Factor", 0.00001);
 
@@ -3589,7 +3814,7 @@ void PeridigmNS::Peridigm::executeImplicitDiffusion(Teuchos::RCP<Teuchos::Parame
   Teuchos::RCP<Epetra_Vector> lhs = Teuchos::rcp(new Epetra_Vector(tangent->Map()));
   Teuchos::RCP<Epetra_Vector> reaction = Teuchos::rcp(new Epetra_Vector(fluxDivergence->Map()));;
 
-  bool solverVerbose = solverParams->get("Verbose", false);
+  //bool solverVerbose = solverParams->get("Verbose", false);
   Teuchos::RCP<Teuchos::ParameterList> implicitSolverParams = sublist(solverParams, "ImplicitDiffusion", true);
   int maxSolverIterations = implicitSolverParams->get("Maximum Solver Iterations", 10);
 
@@ -5189,5 +5414,13 @@ void PeridigmNS::Peridigm::readRestart(Teuchos::RCP<Teuchos::ParameterList> solv
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
       std::string blockName = blockIt->getName();
       blockIt->readBlockfromDisk(blockName,restartFiles["path"].c_str());
+    }
+}
+
+template <typename ScalarT>
+void PeridigmNS::Peridigm::copyParameters(Teuchos::RCP<Teuchos::ParameterList> ParamInput, string parameterName, Teuchos::ParameterList& ParamOutput){
+  if(ParamInput->isParameter(parameterName)){
+      ScalarT value = ParamInput->get<ScalarT>(parameterName);
+      ParamOutput.set(parameterName, value);
     }
 }
