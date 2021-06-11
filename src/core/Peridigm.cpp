@@ -2709,13 +2709,14 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
   }
 
   // Pointers into mothership vectors
-  double *xPtr, *uPtr, *yPtr, *vPtr, *deltaUPtr;
+  double *xPtr, *uPtr, *yPtr, *vPtr, *v_previousPtr, *deltaUPtr;
   double *unknownsUPtr, *unknownsYPtr, *unknownsVPtr, *unknownsDeltaUPtr;
   double *fluidPressureUPtr, *fluidPressureDeltaUPtr, *fluidPressureYPtr, *fluidPressureVPtr;
   x->ExtractView( &xPtr );
   u->ExtractView( &uPtr );
   y->ExtractView( &yPtr );
   v->ExtractView( &vPtr );
+  v_previous->ExtractView( &v_previousPtr );
   deltaU->ExtractView( &deltaUPtr );
   if(analysisHasMultiphysics){
     fluidPressureU->ExtractView( &fluidPressureUPtr );
@@ -2859,6 +2860,10 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
       for(int i=0 ; i<initialGuess->MyLength() ; ++i)
         (*initialGuess)[i] = (*v)[i]*timeIncrement;
     }
+    
+    for(int i=0 ; i<v->MyLength() ; ++i){
+          v_previousPtr[i] = vPtr[i];
+        }
 
     v->PutScalar(0.0); 
     if(analysisHasMultiphysics){
@@ -3229,8 +3234,9 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
 
     // Restore the values to the converged ones from previous step
     for(int i=0 ; i<y->MyLength() ; ++i){
+      uPtr[i] -= deltaUPtr[i];
       yPtr[i] = xPtr[i] + uPtr[i];
-      vPtr[i] = (*initialGuess)[i];
+      vPtr[i] = v_previousPtr[i];
     }
 
     executeExplicit(explicitSolverParams);
