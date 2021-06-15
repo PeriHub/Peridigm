@@ -3217,9 +3217,10 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
         safetyFactor = verletSolverParams->get<double>("Safety Factor");
       verletParams.set("Safety Factor", safetyFactor);
     }
+    
     copyParameters<double>(verletSolverParams,"Numerical Damping", verletParams);
     copyParameters<double>(verletSolverParams,"Safety Factor", verletParams);
-    copyParameters<bool>(verletSolverParams,"Adaptive Time Stepping", verletParams);
+    copyParameters<bool>(verletSolverParams,"Adapt dt", verletParams);
     copyParameters<int>(verletSolverParams,"Stable Step Difference", verletParams);
     copyParameters<int>(verletSolverParams,"Maximum Bond Difference", verletParams);
     copyParameters<int>(verletSolverParams,"Stable Bond Difference", verletParams);
@@ -5423,10 +5424,10 @@ void PeridigmNS::Peridigm::readRestart(Teuchos::RCP<Teuchos::ParameterList> solv
     }
 }
 
-template <typename ScalarT>
+template <class T>
 void PeridigmNS::Peridigm::copyParameters(Teuchos::RCP<Teuchos::ParameterList> ParamInput, string parameterName, Teuchos::ParameterList& ParamOutput){
   if(ParamInput->isParameter(parameterName)){
-      ScalarT value = ParamInput->get<ScalarT>(parameterName);
+      T value = ParamInput->get<T>(parameterName);
       ParamOutput.set(parameterName, value);
     }
 }

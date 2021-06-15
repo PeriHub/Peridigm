@@ -721,7 +721,7 @@ namespace PeridigmNS {
     void readRestart(Teuchos::RCP<Teuchos::ParameterList> solverParams);
 
     // Copy parameters
-    template<typename ScalarT>
+    template<class T>
     void copyParameters(Teuchos::RCP<Teuchos::ParameterList> ParamInput, string parameterName, Teuchos::ParameterList& ParamOutput);
   };
 }
