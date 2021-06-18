@@ -34,3 +34,15 @@ target_link_libraries(utPeridigm_MultiphysicsElasticMaterial
   ${Trilinos_LIBRARIES}
 )
 add_test (utPeridigm_MultiphysicsElasticMaterial python ${CMAKE_BINARY_DIR}/scripts/run_unit_test.py ./utPeridigm_MultiphysicsElasticMaterial)
+
+
+add_executable(ut_correspondence ./ut_correspondence.cxx)
+target_link_libraries(ut_correspondence
+  ${Peridigm_LIBRARY}
+  ${PdMaterialUtilitiesLib}
+  PdField
+  QuickGrid
+  ${REQUIRED_LIBS}
+  ${Trilinos_LIBRARIES}
+)
+add_test (ut_correspondence python ${CMAKE_BINARY_DIR}/scripts/run_unit_test.py ./ut_correspondence)
