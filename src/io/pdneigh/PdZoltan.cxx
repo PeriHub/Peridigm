@@ -678,10 +678,10 @@ void zoltanQuery_unPackPointsMultiFunction
       // coordinates
       for(size_t d=0;d<dimension;d++){
         newXPtr[d] = xPtr[d];
-                newAPtr[d] = aPtr[d];
+        newAPtr[d] = aPtr[d];
             }
       newXPtr+=dimension;
-            newAPtr+=dimension;
+      newAPtr+=dimension;
 
       // volume
       *newVPtr = *vPtr;
@@ -701,7 +701,7 @@ void zoltanQuery_unPackPointsMultiFunction
 
     }
     xPtr+=dimension;
-
+    aPtr+=dimension;
   }
 
   // Allocate neigbhorhood list
@@ -761,7 +761,7 @@ void zoltanQuery_unPackPointsMultiFunction
     // 2) decrement number of bytes
     tmp += numBytes;
     newVPtr++;
-        totalNumBytes -= numBytes;
+    totalNumBytes -= numBytes;
     // angle
     numBytes = dimension*sizeof(double);
     memcpy((void*)newAPtr,(void*)tmp,numBytes);
@@ -810,7 +810,7 @@ void zoltanQuery_unPackPointsMultiFunction
   gridData->myX = newX;
   gridData->cellVolume = newV;
   gridData->myAngle = newA;
-    gridData->neighborhood = newNeighborhood.get_shared_ptr();
+  gridData->neighborhood = newNeighborhood.get_shared_ptr();
   gridData->neighborhoodPtr = newNeighborhoodPtr;
   gridData->exportFlag = newGridData.exportFlag;
 //  std::cout << "zoltanQuery_unPackPointsMultiFunction: Finish" << std::endl;
