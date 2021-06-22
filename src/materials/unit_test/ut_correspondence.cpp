@@ -72,7 +72,6 @@ TEUCHOS_UNIT_TEST(correspondence, MatMul) {
     {2646, 2772, 2898, 3024, 3150, 3276}};
         
     double Ctest[6][6];
-    double Ctranstest[6][6];
     int n, m, x;
     x=1;
 
@@ -85,14 +84,21 @@ TEUCHOS_UNIT_TEST(correspondence, MatMul) {
         }
 
     CORRESPONDENCE::MatMul<double>(6,A,B,Ctest,false);
-    CORRESPONDENCE::MatMul<double>(6,A,B,Ctranstest,true);
     
     for (n=0; n<6; n++)
         for (m=0; m<6; m++)
         {
             TEST_FLOATING_EQUALITY(Ctest[n][m],C[n][m],0);
-            TEST_FLOATING_EQUALITY(Ctranstest[n][m],Ctrans[n][m],0);
         }
+    
+    CORRESPONDENCE::MatMul<double>(6,A,B,Ctest,true);
+
+    for (n=0; n<6; n++)
+        for (m=0; m<6; m++)
+        {
+            TEST_FLOATING_EQUALITY(Ctest[n][m],Ctrans[n][m],0);
+        }
+    
 }
 
 TEUCHOS_UNIT_TEST(correspondence, Invert3by3Matrix) {
@@ -161,6 +167,38 @@ TEUCHOS_UNIT_TEST(correspondence, Invert2by2Matrix) {
     }
 }
 
+TEUCHOS_UNIT_TEST(correspondence, TransposeMatrix) {
+
+    std::vector<double> AVector(9);
+    double* A = &AVector[0];
+    std::vector<double> CVector(9);
+    double* C = &CVector[0];
+    std::vector<double> CtestVector(9);
+    double* Ctest = &CtestVector[0];
+    int n;
+
+    for (n=0; n<9; n++)
+    {
+        *(A+n)=n+1;
+    }
+    
+    *(C)=1;
+    *(C+1)=4;
+    *(C+2)=7;
+    *(C+3)=2;
+    *(C+4)=5;
+    *(C+5)=8;
+    *(C+6)=3;
+    *(C+7)=6;
+    *(C+8)=9;
+
+    CORRESPONDENCE::TransposeMatrix(A,Ctest);
+    for (n=0; n<9; n++)
+    {
+        TEST_FLOATING_EQUALITY(*(Ctest+n),*(C+n),0);
+    }
+}
+
 TEUCHOS_UNIT_TEST(correspondence, MatrixMultiply3x3) {
 
     double A[3][3];
@@ -186,6 +224,126 @@ TEUCHOS_UNIT_TEST(correspondence, MatrixMultiply3x3) {
         {
             TEST_FLOATING_EQUALITY(Ctest[n][m],C[n][m],0);
         }
+}
+
+TEUCHOS_UNIT_TEST(correspondence, MatrixMultiply) {
+
+    std::vector<double> AVector(9);
+    double* A = &AVector[0];
+    std::vector<double> BVector(9);
+    double* B = &BVector[0];
+    std::vector<double> CVector(9);
+    double* C = &CVector[0];
+    std::vector<double> CTransAVector(9);
+    double* CTransA = &CTransAVector[0];
+    std::vector<double> CTransBVector(9);
+    double* CTransB = &CTransBVector[0];
+    std::vector<double> CTransABVector(9);
+    double* CTransAB = &CTransABVector[0];
+    std::vector<double> CtestVector(9);
+    double* Ctest = &CtestVector[0];
+    int n;
+
+    for (n=0; n<9; n++)
+    {
+        *(A+n)=n+1;
+        *(B+n)=n+1;
+    }
+    
+    *(C)=-60;
+    *(C+1)=-72;
+    *(C+2)=-84;
+    *(C+3)=-132;
+    *(C+4)=-162;
+    *(C+5)=-192;
+    *(C+6)=-204;
+    *(C+7)=-252;
+    *(C+8)=-300;
+    
+    *(CTransA)=-132;
+    *(CTransA+1)=-156;
+    *(CTransA+2)=-180;
+    *(CTransA+3)=-156;
+    *(CTransA+4)=-186;
+    *(CTransA+5)=-216;
+    *(CTransA+6)=-180;
+    *(CTransA+7)=-216;
+    *(CTransA+8)=-252;
+    
+    *(CTransB)=-28;
+    *(CTransB+1)=-64;
+    *(CTransB+2)=-100;
+    *(CTransB+3)=-64;
+    *(CTransB+4)=-154;
+    *(CTransB+5)=-244;
+    *(CTransB+6)=-100;
+    *(CTransB+7)=-244;
+    *(CTransB+8)=-388;
+    
+    *(CTransAB)=-60;
+    *(CTransAB+1)=-132;
+    *(CTransAB+2)=-204;
+    *(CTransAB+3)=-72;
+    *(CTransAB+4)=-162;
+    *(CTransAB+5)=-252;
+    *(CTransAB+6)=-84;
+    *(CTransAB+7)=-192;
+    *(CTransAB+8)=-300;
+
+    CORRESPONDENCE::MatrixMultiply(false,false,-2.0,A,B,Ctest);
+
+    for (n=0; n<9; n++)
+    {
+        TEST_FLOATING_EQUALITY(*(Ctest+n),*(C+n),0);
+    }
+    
+    CORRESPONDENCE::MatrixMultiply(true,false,-2.0,A,B,Ctest);
+
+    for (n=0; n<9; n++)
+    {
+        TEST_FLOATING_EQUALITY(*(Ctest+n),*(CTransA+n),0);
+    }
+    
+    CORRESPONDENCE::MatrixMultiply(false,true,-2.0,A,B,Ctest);
+
+    for (n=0; n<9; n++)
+    {
+        TEST_FLOATING_EQUALITY(*(Ctest+n),*(CTransB+n),0);
+    }
+    
+    CORRESPONDENCE::MatrixMultiply(true,true,-2.0,A,B,Ctest);
+
+    for (n=0; n<9; n++)
+    {
+        TEST_FLOATING_EQUALITY(*(Ctest+n),*(CTransAB+n),0);
+    }
+}
+
+TEUCHOS_UNIT_TEST(correspondence, EigenVec2D) {
+
+    std::vector<double> AVector(9);
+    double* A = &AVector[0];
+    std::vector<double> CVector(9);
+    double* C = &CVector[0];
+    std::vector<double> CtestVector(9);
+    double* Ctest = &CtestVector[0];
+    int n;
+
+    *(A)=1;
+    *(A+1)=2;
+    *(A+3)=2;
+    *(A+4)=1;
+    
+    *(C)=-1;
+    *(C+1)=1;
+    *(C+3)=1;
+    *(C+4)=1;
+
+    CORRESPONDENCE::EigenVec2D(A,Ctest);
+    for (n=0; n<4; n++)
+    {
+        TEST_FLOATING_EQUALITY(*(Ctest+n),*(C+n),0);
+    }
 }
 
 int main

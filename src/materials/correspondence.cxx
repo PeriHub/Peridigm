@@ -70,10 +70,10 @@ void MatMul
  bool transpose
 )
 {
-  // This function computes result = alpha * a * b
-  // where alpha is a scalar and a and b are 3x3 matrices
-  // The arguments transA and transB denote whether or not
-  // to use the transpose of a and b, respectively.
+  // This function computes result =  a * b
+  // where a and b are 6x6 matrices
+  // The argument transpose denote whether or not
+  // to use the transpose of a.
 
   // The default ordering is row-major:
   //
