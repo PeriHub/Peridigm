@@ -2,4 +2,4 @@ job:
   tags:
     - wsl
   script:
-    - docker run hello-world
+    - echo "hello world12"
