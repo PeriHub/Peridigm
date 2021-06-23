@@ -1,0 +1,5 @@
+job:
+  tags:
+    - wsl
+  script:
+    - echo "hello world"
