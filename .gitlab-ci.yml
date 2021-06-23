@@ -8,4 +8,8 @@ job:
     - cd /usr/local/src/peridigmVsBuild/src/materials/unit_test
     - /usr/local/bin/cmake/bin/ctest -T Test
     - xsltproc /usr/local/src/peridigmSource/scripts/CTest2JUnit.xsl Testing/`head -n 1 < Testing/TAG`/Test.xml > JUnitTestResults.xml
+  artifacts:
+    when: always
+    reports:
+      junit: JUnitTestResults.xml
 
