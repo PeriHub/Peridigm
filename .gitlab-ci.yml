@@ -2,4 +2,4 @@ job:
   tags:
     - wsl
   script:
-    - echo "hello world1"
+    - echo "hello world12"
