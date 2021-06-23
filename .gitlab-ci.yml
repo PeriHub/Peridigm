@@ -2,4 +2,5 @@ job:
   tags:
     - wsl
   script:
-    - echo "hello world12"
+    - cd /usr/local/src/peridigmVsBuild
+    - make test
