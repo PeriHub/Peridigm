@@ -11,5 +11,5 @@ job:
   artifacts:
     when: always
     reports:
-      junit: JUnitTestResults.xml
+      junit: /usr/local/src/peridigmVsBuild/src/materials/unit_test/JUnitTestResults.xml
 
