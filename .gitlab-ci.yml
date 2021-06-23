@@ -2,5 +2,10 @@ job:
   tags:
     - wsl
   script:
-    - cd /usr/local/src/peridigmVsBuild
-    - make test
+    - cd /usr/local/src/peridigmVsBuild/src/materials/unit_test
+    - ctest -T Test
+    - cd Testing
+    - $TIMESTAMP=$(head -n 1 TAG)
+    - echo $TIMESTAMP
+    - cd $TIMESTAMP
+
