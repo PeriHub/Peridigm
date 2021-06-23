@@ -2,12 +2,9 @@ job:
   tags:
     - wsl
   before_script:
-    - apt update && apt install -y g++ git cmake 
+    - apt install cmake 
   script:
     - cd /usr/local/src/peridigmVsBuild/src/materials/unit_test
     - ctest -T Test
-    - cd Testing
-    - $TIMESTAMP=$(head -n 1 TAG)
-    - echo $TIMESTAMP
-    - cd $TIMESTAMP
+    - xsltproc /usr/local/src/peridigmSource/scripts/CTest2JUnit.xsl Testing/`head -n 1 < Testing/TAG`/Test.xml > JUnitTestResults.xml
 
