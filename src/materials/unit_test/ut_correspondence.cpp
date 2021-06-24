@@ -319,33 +319,6 @@ TEUCHOS_UNIT_TEST(correspondence, MatrixMultiply) {
     }
 }
 
-TEUCHOS_UNIT_TEST(correspondence, EigenVec2D) {
-
-    std::vector<double> AVector(9);
-    double* A = &AVector[0];
-    std::vector<double> CVector(9);
-    double* C = &CVector[0];
-    std::vector<double> CtestVector(9);
-    double* Ctest = &CtestVector[0];
-    int n;
-
-    *(A)=1;
-    *(A+1)=2;
-    *(A+3)=2;
-    *(A+4)=1;
-    
-    *(C)=-1;
-    *(C+1)=1;
-    *(C+3)=1;
-    *(C+4)=1;
-
-    CORRESPONDENCE::EigenVec2D(A,Ctest);
-    for (n=0; n<4; n++)
-    {
-        TEST_FLOATING_EQUALITY(*(Ctest+n),*(C+n),0);
-    }
-}
-
 int main
 (int argc, char* argv[])
 {
