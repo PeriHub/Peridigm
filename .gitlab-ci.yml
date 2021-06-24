@@ -10,6 +10,7 @@ job:
     - /usr/local/bin/cmake/bin/ctest -T Test
     - xsltproc /usr/local/src/peridigmSource/scripts/CTest2JUnit.xsl Testing/`head -n 1 < Testing/TAG`/Test.xml > JUnitTestResults.xml
     #- cp /usr/local/src/peridigmVsBuild/src/materials/unit_test/JUnitTestResults.xml JUnitTestResults.xml
+    - echo $CI_PROJECT_DIR
   artifacts:
     when: always
     reports:
