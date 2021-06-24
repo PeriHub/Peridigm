@@ -4,7 +4,7 @@ build:
   stage: build
   before_script:
     - # add cmake
-    - 'export PATH=$PATH:/usr/local/bin/cmake/bin'
+    - "export PATH=$PATH:/usr/local/bin/cmake/bin"
   script:
     - echo "building..."
     - mkdir build
