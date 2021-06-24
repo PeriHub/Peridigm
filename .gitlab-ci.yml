@@ -9,7 +9,7 @@ build:
     - echo "building..."
     - mkdir build
     - cd build
-    - test -s ~/.alias && . ~/.alias || true
+    - 'test -s ~/.alias && . ~/.alias || true'
     - # add default lib paths
     - 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib'
     - 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib64'
