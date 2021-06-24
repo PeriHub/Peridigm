@@ -32,7 +32,7 @@ test:
     #- sudo apt-get install --yes cmake
   script:
     - echo "testing..."
-    - cd $CI_PROJECT_DIR/build/src/materials/unit_test
+    - cd $CI_PROJECT_DIR/build
     - /usr/local/bin/cmake/bin/ctest -T Test
     - xsltproc $CI_PROJECT_DIR/scripts/CTest2JUnit.xsl Testing/`head -n 1 < Testing/TAG`/Test.xml > JUnitTestResults.xml
     #- cp /usr/local/src/peridigmVsBuild/src/materials/unit_test/JUnitTestResults.xml JUnitTestResults.xml
@@ -40,5 +40,5 @@ test:
   artifacts:
     when: always
     reports:
-      junit: build/src/materials/unit_test/JUnitTestResults.xml
+      junit: build/JUnitTestResults.xml
 
