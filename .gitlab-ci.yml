@@ -4,7 +4,7 @@ build:
   stage: build
   before_script:
     - # add cmake
-    - echo $PATH
+    - #echo $PATH
   script:
     - echo "building..."
     - mkdir build
