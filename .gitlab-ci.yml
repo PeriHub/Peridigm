@@ -3,8 +3,8 @@ build:
     - wsl
   stage: build
   before_script:
-    - # add cmake
-    - #echo $PATH
+    #- add cmake
+    #- echo $PATH
   script:
     - echo "building..."
     - mkdir build
