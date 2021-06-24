@@ -7,9 +7,7 @@ build:
     #- sudo apt-get install --yes cmake
   script:
     - echo "building..."
-    - ls
     - mkdir build
-    - ls
     - cd build
     - test -s ~/.alias && . ~/.alias || true
     - # add default lib paths
