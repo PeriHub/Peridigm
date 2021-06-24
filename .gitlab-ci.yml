@@ -7,10 +7,13 @@ build:
     #- sudo apt-get install --yes cmake
   script:
     - echo "building..."
+    - ls
     - mkdir build
+    - ls
     - cd build
-    - cmake ..
-    - cmake --build .
+    - /usr/local/bin/cmake/bin/cmake ..
+    - /usr/local/bin/cmake/bin/cmake --build .
+    - ls
 
 test:
   tags:
