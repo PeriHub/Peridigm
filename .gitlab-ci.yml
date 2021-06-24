@@ -18,6 +18,10 @@ build:
       -D CMAKE_CXX_FLAGS:STRING="-O2 -Wall -std=c++11 -pedantic -Wno-long-long -ftrapv -Wno-deprecated"
     - cmake --build .
     - ls
+  artifacts:
+    paths:
+        - build
+    expire_in: 30 mins
 
 test:
   tags:
