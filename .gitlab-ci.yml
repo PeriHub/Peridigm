@@ -6,7 +6,7 @@ build:
     #- sudo apt-get update --yes
     #- sudo apt-get install --yes cmake
     - # add boost
-    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/boost/lib
+    - 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/boost/lib'
   script:
     - echo "building..."
     - mkdir build
