@@ -13,5 +13,5 @@ job:
   artifacts:
     when: always
     reports:
-      junit: ./JUnitTestResults.xml
+      junit: /*JUnitTestResults.xml
 
