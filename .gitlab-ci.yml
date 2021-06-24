@@ -11,6 +11,28 @@ build:
     - mkdir build
     - ls
     - cd build
+    - test -s ~/.alias && . ~/.alias || true
+    - # add default lib paths
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib64
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib64
+    - # add cmake
+    - export PATH=$PATH:/usr/local/bin/cmake/bin
+    - # add openMPI
+    - export PATH=$PATH:/usr/local/lib/openmpi/bin
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/openmpi/lib64
+    - # add boost
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/boost/lib
+    - # add hdf5
+    - export PATH=$PATH:/usr/local/bin/hdf5/bin
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/bin/hdf5/lib
+    - # add netcdf
+    - export PATH=$PATH:/usr/local/bin/netcdf/bin
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/bin/netcdf/lib64
+    - # add trilinos
+    - export PATH=$PATH:/usr/local/bin/trilinos/bin
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/bin/trilinos/lib
     - /usr/local/bin/cmake/bin/cmake ..
     - /usr/local/bin/cmake/bin/cmake --build .
     - ls
