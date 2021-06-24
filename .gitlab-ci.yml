@@ -12,9 +12,6 @@ build:
     - 'test -s ~/.alias && . ~/.alias || true'
     - # add default lib paths
     - 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib'
-    - /usr/local/bin/cmake/bin/cmake ..
-    - /usr/local/bin/cmake/bin/cmake --build .
-    - ls
 
 test:
   tags:
