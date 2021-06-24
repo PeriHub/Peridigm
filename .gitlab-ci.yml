@@ -9,6 +9,7 @@ build:
     - echo "building..."
     - mkdir build
     - cd build
+    - echo $CI_PROJECT_DIR
     - cmake \
       -D CMAKE_BUILD_TYPE:STRING=Release \
       -D Trilinos_DIR:PATH=/usr/local/bin/trilinos/lib/cmake/Trilinos/ \
@@ -16,7 +17,7 @@ build:
       -D CMAKE_CXX_COMPILER:STRING=/usr/local/lib/openmpi/bin/mpicxx \
       -D BOOST_ROOT=/usr/local/lib/boost/ \
       -D CMAKE_CXX_FLAGS:STRING="-O2 -Wall -std=c++11 -pedantic -Wno-long-long -ftrapv -Wno-deprecated" \
-      ..
+      $CI_PROJECT_DIR
     - cmake --build .
     - ls
 
