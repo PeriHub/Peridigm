@@ -10,13 +10,13 @@ build:
     - mkdir build
     - cd build
     - echo $CI_PROJECT_DIR
-    #- cmake .. -D CMAKE_BUILD_TYPE:STRING=Release
-    #  -D Trilinos_DIR:PATH=/usr/local/bin/trilinos/lib/cmake/Trilinos/
-    #  -D CMAKE_C_COMPILER:STRING=/usr/local/lib/openmpi/bin/mpicc
-    #  -D CMAKE_CXX_COMPILER:STRING=/usr/local/lib/openmpi/bin/mpicxx
-    #  -D BOOST_ROOT=/usr/local/lib/boost/
-    #  -D CMAKE_CXX_FLAGS:STRING="-O2 -Wall -std=c++11 -pedantic -Wno-long-long -ftrapv -Wno-deprecated"
-    #- cmake --build .
+    - cmake .. -D CMAKE_BUILD_TYPE:STRING=Release
+      -D Trilinos_DIR:PATH=/usr/local/bin/trilinos/lib/cmake/Trilinos/
+      -D CMAKE_C_COMPILER:STRING=/usr/local/lib/openmpi/bin/mpicc
+      -D CMAKE_CXX_COMPILER:STRING=/usr/local/lib/openmpi/bin/mpicxx
+      -D BOOST_ROOT=/usr/local/lib/boost/
+      -D CMAKE_CXX_FLAGS:STRING="-O2 -Wall -std=c++11 -pedantic -Wno-long-long -ftrapv -Wno-deprecated"
+    - cmake --build .
     - ls
   artifacts:
     paths:
@@ -43,6 +43,7 @@ convert:
   script:
     - ls
     - cd $CI_PROJECT_DIR/build/src/materials/unit_test
+    - ls
     - xsltproc $CI_PROJECT_DIR/scripts/CTest2JUnit.xsl Testing/`head -n 1 < Testing/TAG`/Test.xml > JUnitTestResults.xml
     - echo $CI_PROJECT_DIR
   artifacts:
