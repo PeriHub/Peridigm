@@ -315,7 +315,7 @@ TEUCHOS_UNIT_TEST(correspondence, MatrixMultiply) {
 
     for (n=0; n<9; n++)
     {
-        TEST_FLOATING_EQUALITY(*(Ctest+n),*(CTransAB+n),0);
+        TEST_FLOATING_EQUALITY(*(Ctest+n),1,0);
     }
 }
 
