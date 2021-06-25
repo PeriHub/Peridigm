@@ -39,12 +39,11 @@ test:
 convert:
   tags:
     - wsl
-  stage: convert
+  stage: test
   script:
     - ls
     - cd $CI_PROJECT_DIR/build
     - xsltproc $CI_PROJECT_DIR/scripts/CTest2JUnit.xsl Testing/`head -n 1 < Testing/TAG`/Test.xml > JUnitTestResults.xml
-    #- cp /usr/local/src/peridigmVsBuild/src/materials/unit_test/JUnitTestResults.xml JUnitTestResults.xml
     - echo $CI_PROJECT_DIR
   artifacts:
     when: always
