@@ -20,19 +20,29 @@ build:
     - ls
   artifacts:
     paths:
-        - build
+      - build
     expire_in: 30 mins
 
 test:
   tags:
     - wsl
   stage: test
-  before_script:
+  script:
     - echo "testing..."
     - cd $CI_PROJECT_DIR/build
     - ctest -T Test
+  artifacts:
+    paths:
+      - build/Testing
+    expire_in: 30 mins
+
+convert:
+  tags:
+    - wsl
+  stage: convert
   script:
     - ls
+    - cd $CI_PROJECT_DIR/build
     - xsltproc $CI_PROJECT_DIR/scripts/CTest2JUnit.xsl Testing/`head -n 1 < Testing/TAG`/Test.xml > JUnitTestResults.xml
     #- cp /usr/local/src/peridigmVsBuild/src/materials/unit_test/JUnitTestResults.xml JUnitTestResults.xml
     - echo $CI_PROJECT_DIR
