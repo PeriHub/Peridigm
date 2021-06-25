@@ -128,22 +128,22 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     forceDensityFieldId(-1),
     contactForceDensityFieldId(-1),
     externalForceDensityFieldId(-1),
-    partialVolumeFieldId(-1),
-    fluidPressureYFieldId(-1),
-    fluidPressureUFieldId(-1),
-    fluidPressureVFieldId(-1),
-    fluidFlowDensityFieldId(-1),
     damageModelFieldId(-1),
-    detachedNodesFieldId(-1),
-    bondDamageDiffFieldId(-1),
-    numMultiphysDoFs(0),
-    analysisHasBondAssociatedHypoelasticModel(false),
+    partialVolumeFieldId(-1),
     damageFieldId(-1),
     jacobianDeterminantFieldId(-1),
     weightedVolumeFieldId(-1),
     velocityGradientXFieldId(-1),
     velocityGradientYFieldId(-1),
-    velocityGradientZFieldId(-1)
+    velocityGradientZFieldId(-1),
+    fluidPressureYFieldId(-1),
+    fluidPressureUFieldId(-1),
+    fluidPressureVFieldId(-1),
+    fluidFlowDensityFieldId(-1),
+    detachedNodesFieldId(-1),
+    bondDamageDiffFieldId(-1),
+    numMultiphysDoFs(0),
+    analysisHasBondAssociatedHypoelasticModel(false)
 {
 #ifdef HAVE_MPI
   peridigmComm = Teuchos::rcp(new Epetra_MpiComm(comm));
@@ -3372,8 +3372,8 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
   bool solverFailedToConverge = false;
   bool adaptiveLoadStepping = false;
   bool switchToExplicit = false;
-  int maxSolverFailureInOneStep;
-  int maxTotalSolverFailure;
+  int maxSolverFailureInOneStep = 10;
+  int maxTotalSolverFailure = 100;
   bool reduceAllSteps = false;
   bool adaptiveOutputFrequency = false;
   Teuchos::RCP< Teuchos::ParameterList > adaptiveQSparams;

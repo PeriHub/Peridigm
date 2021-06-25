@@ -140,7 +140,7 @@ PeridigmNS::UserDefinedTimeDependentCriticalStretchDamageModel::initialize(const
                                                    PeridigmNS::DataManager& dataManager) const
 {
 
-  double *damage, *bondDamage, *step;
+  double *damage, *bondDamage;//, *step;
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
   //dataManager.getData(m_stepFieldId, PeridigmField::STEP_NP1)->ExtractView(&step);
@@ -166,7 +166,7 @@ PeridigmNS::UserDefinedTimeDependentCriticalStretchDamageModel::computeDamage(co
                                                       const int* neighborhoodList,
                                                       PeridigmNS::DataManager& dataManager) const 
 {
-  double *x, *y, *damage, *bondDamageN, *bondDamageNP1, *deltaTemperature, *step;
+  double *x, *y, *damage, *bondDamageN, *bondDamageNP1, *deltaTemperature;//, *step;
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
   dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&y);
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);

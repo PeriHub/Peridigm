@@ -73,8 +73,8 @@ const double alpha,
 const double dt
 )
 {
-  const ScalarT* deltaTempN = deltaTemperatureN;
-  const ScalarT* deltaTempNP1 = deltaTemperatureNP1;
+  //const ScalarT* deltaTempN = deltaTemperatureN;
+  //const ScalarT* deltaTempNP1 = deltaTemperatureNP1;
 
   // Hooke's law
   const ScalarT* rateOfDef = unrotatedRateOfDeformation;
@@ -748,7 +748,7 @@ bool hencky
   ScalarT logStrain[9];
   ScalarT C[6][6];
   ScalarT rotationMat[3][3], rotationMatX[3][3], rotationMatY[3][3], rotationMatZ[3][3], temp[3][3];
-  double alpha[3];
+  //double alpha[3];
   int defGradLogReturnCode(0);
 
   // 0 -> xx,  1 -> xy, 2 -> xz
@@ -762,9 +762,9 @@ bool hencky
             // Schadensmodell muss angepasst werden
             // Referenzkonfiguration muss angepasst werden
             // volle C Matrix muss hier rein
-      alpha[0] = angles[3*iID  ];
-      alpha[1] = angles[3*iID+1];
-      alpha[2] = angles[3*iID+2];
+      //alpha[0] = angles[3*iID  ];
+      //alpha[1] = angles[3*iID+1];
+      //alpha[2] = angles[3*iID+2];
       //CORRESPONDENCE::createRotatedPythonBasedStiff(Cstiff,alpha,C); 
       //if (type != 0){
       //  // rotation mathematical positive sense (downwards from x-axis)
@@ -813,7 +813,7 @@ bool hencky
           strain[3] = 0.5 * ( *(defGrad+1)* *(defGrad)   + *(defGrad+4)* *(defGrad+3) );
           strain[4] = 0.5 * ( *(defGrad+1)* *(defGrad+1) + *(defGrad+4)* *(defGrad+4) - 1.0 );
 
-        if(hencky && *(defGrad)!=1 | *(defGrad+1)!=0 | *(defGrad+3)!=0 | *(defGrad+4)!=1)
+        if(hencky && (*(defGrad)!=1 | *(defGrad+1)!=0 | *(defGrad+3)!=0 | *(defGrad+4)!=1))
         {
           defGradLogReturnCode = CORRESPONDENCE::computeLogStrain(defGrad,logStrain);
 

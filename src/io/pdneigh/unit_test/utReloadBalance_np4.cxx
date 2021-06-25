@@ -145,7 +145,7 @@ TEUCHOS_UNIT_TEST(ReloadBalance_np4, AssertOriginalMesh) {
 		TEST_ASSERT(25==decomp.sizeNeighborhoodList);
 		int myIds[] = {0,1,4,5};
 		set<int> ids(myIds,myIds+numPoints);
-		set<int>::iterator i=ids.begin();
+		//set<int>::iterator i=ids.begin();
 		set<int>::iterator iEnd=ids.end();
 		int *gIds = decomp.myGlobalIDs.get();
 		for(size_t p=0;p<numPoints;p++,gIds++){
@@ -159,7 +159,7 @@ TEUCHOS_UNIT_TEST(ReloadBalance_np4, AssertOriginalMesh) {
 		TEST_ASSERT(25==decomp.sizeNeighborhoodList);
 		int myIds[] = {2,3,6,7};
 		set<int> ids(myIds,myIds+numPoints);
-		set<int>::iterator i=ids.begin();
+		//set<int>::iterator i=ids.begin();
 		set<int>::iterator iEnd=ids.end();
 		int *gIds = decomp.myGlobalIDs.get();
 		for(size_t p=0;p<numPoints;p++,gIds++){
@@ -173,7 +173,7 @@ TEUCHOS_UNIT_TEST(ReloadBalance_np4, AssertOriginalMesh) {
 		TEST_ASSERT(25==decomp.sizeNeighborhoodList);
 		int myIds[] = {8,9,12,13};
 		set<int> ids(myIds,myIds+numPoints);
-		set<int>::iterator i=ids.begin();
+		//set<int>::iterator i=ids.begin();
 		set<int>::iterator iEnd=ids.end();
 		int *gIds = decomp.myGlobalIDs.get();
 		for(size_t p=0;p<numPoints;p++,gIds++){
@@ -187,7 +187,7 @@ TEUCHOS_UNIT_TEST(ReloadBalance_np4, AssertOriginalMesh) {
 		TEST_ASSERT(25==decomp.sizeNeighborhoodList);
 		int myIds[] = {10,11,14,15};
 		set<int> ids(myIds,myIds+numPoints);
-		set<int>::iterator i=ids.begin();
+		//set<int>::iterator i=ids.begin();
 		set<int>::iterator iEnd=ids.end();
 		int *gIds = decomp.myGlobalIDs.get();
 		for(size_t p=0;p<numPoints;p++,gIds++){
@@ -302,7 +302,7 @@ TEUCHOS_UNIT_TEST(ReloadBalance_np4, MoveCoordinatesAndReLoadBalance) {
 		neighMap[5] = set<int>(n5,n5+8);
 
 		set<int> ids(myIds,myIds+numPoints);
-		set<int>::iterator i=ids.begin();
+		//set<int>::iterator i=ids.begin();
 		set<int>::iterator iEnd=ids.end();
 		int *gIds = decomp.myGlobalIDs.get();
 		int *neigh = list.get_neighborhood().get();
@@ -312,7 +312,7 @@ TEUCHOS_UNIT_TEST(ReloadBalance_np4, MoveCoordinatesAndReLoadBalance) {
 			size_t numNeigh = *neigh; neigh++;
 //			cout << "myRank, gIds, localId, numNeigh = " << myRank << ", " << *gIds << ", " << p << ", " << numNeigh << endl;
 			TEST_ASSERT(gIdNeigh.size() == numNeigh);
-			set<int>::iterator neighIter=gIdNeigh.begin();
+			//set<int>::iterator neighIter=gIdNeigh.begin();
 			set<int>::iterator neighEnd=gIdNeigh.end();
 			for(size_t n=0;n<numNeigh;n++,neigh++){
 				TEST_ASSERT(neighEnd!=gIdNeigh.find(*neigh));
@@ -337,7 +337,7 @@ TEUCHOS_UNIT_TEST(ReloadBalance_np4, MoveCoordinatesAndReLoadBalance) {
 		neighMap[7] = set<int>(n7,n7+5);
 
 		set<int> ids(myIds,myIds+numPoints);
-		set<int>::iterator i=ids.begin();
+		//set<int>::iterator i=ids.begin();
 		set<int>::iterator iEnd=ids.end();
 		int *gIds = decomp.myGlobalIDs.get();
 		int *neigh = list.get_neighborhood().get();
@@ -348,7 +348,7 @@ TEUCHOS_UNIT_TEST(ReloadBalance_np4, MoveCoordinatesAndReLoadBalance) {
 //			cout << "myRank, gIds, localId, numNeigh = " << myRank << ", " << *gIds << ", " << p << ", " << numNeigh << endl;
 
 			TEST_ASSERT((int)gIdNeigh.size() == numNeigh);
-			set<int>::iterator neighIter=gIdNeigh.begin();
+			//set<int>::iterator neighIter=gIdNeigh.begin();
 			set<int>::iterator neighEnd=gIdNeigh.end();
 			for(int n=0;n<numNeigh;n++,neigh++){
 				TEST_ASSERT(neighEnd!=gIdNeigh.find(*neigh));
@@ -374,7 +374,7 @@ TEUCHOS_UNIT_TEST(ReloadBalance_np4, MoveCoordinatesAndReLoadBalance) {
 		neighMap[13] = set<int>(n13,n13+5);
 
 		set<int> ids(myIds,myIds+numPoints);
-		set<int>::iterator i=ids.begin();
+		//set<int>::iterator i=ids.begin();
 		set<int>::iterator iEnd=ids.end();
 		int *gIds = decomp.myGlobalIDs.get();
 		int *neigh = list.get_neighborhood().get();
@@ -383,7 +383,7 @@ TEUCHOS_UNIT_TEST(ReloadBalance_np4, MoveCoordinatesAndReLoadBalance) {
 			set<int>& gIdNeigh = neighMap[*gIds];
 			int numNeigh = *neigh; neigh++;
 			TEST_ASSERT((int)gIdNeigh.size() == numNeigh);
-			set<int>::iterator neighIter=gIdNeigh.begin();
+			//set<int>::iterator neighIter=gIdNeigh.begin();
 			set<int>::iterator neighEnd=gIdNeigh.end();
 			for(int n=0;n<numNeigh;n++,neigh++){
 				TEST_ASSERT(neighEnd!=gIdNeigh.find(*neigh));
@@ -409,7 +409,7 @@ TEUCHOS_UNIT_TEST(ReloadBalance_np4, MoveCoordinatesAndReLoadBalance) {
 		neighMap[14] = set<int>(n14,n14+5);
 		neighMap[0] = set<int>(n0,n0+3);
 		set<int> ids(myIds,myIds+numPoints);
-		set<int>::iterator i=ids.begin();
+		//set<int>::iterator i=ids.begin();
 		set<int>::iterator iEnd=ids.end();
 		int *gIds = decomp.myGlobalIDs.get();
 		int *neigh = list.get_neighborhood().get();
@@ -418,7 +418,7 @@ TEUCHOS_UNIT_TEST(ReloadBalance_np4, MoveCoordinatesAndReLoadBalance) {
 			set<int>& gIdNeigh = neighMap[*gIds];
 			int numNeigh = *neigh; neigh++;
 			TEST_ASSERT((int)gIdNeigh.size() == numNeigh);
-			set<int>::iterator neighIter=gIdNeigh.begin();
+			//set<int>::iterator neighIter=gIdNeigh.begin();
 			set<int>::iterator neighEnd=gIdNeigh.end();
 			for(int n=0;n<numNeigh;n++,neigh++){
 				TEST_ASSERT(neighEnd!=gIdNeigh.find(*neigh));

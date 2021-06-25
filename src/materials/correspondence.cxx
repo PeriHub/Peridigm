@@ -539,7 +539,6 @@ double* detachedNodes
   for(int iID=0 ; iID<numPoints ; ++iID, delta++, modelCoord+=3, coord+=3, coordNP1+=3,
         shapeTensorInv+=9, defGrad+=9){
   
-    double bondCheck(0.0), bondCheckNP1(0.0);
     *(shapeTensor)   = 0.0 ; *(shapeTensor+1) = 0.0 ; *(shapeTensor+2) = 0.0 ;
     *(shapeTensor+3) = 0.0 ; *(shapeTensor+4) = 0.0 ; *(shapeTensor+5) = 0.0 ;
     *(shapeTensor+6) = 0.0 ; *(shapeTensor+7) = 0.0 ; *(shapeTensor+8) = 0.0 ;
@@ -1063,8 +1062,8 @@ void computeForcesAndStresses
   ScalarT* defGradInv = &defGradInvVector[0];
   ScalarT* piolaStress = &piolaStressVector[0];
   ScalarT* hourglassStiffVal = &hourglassStiffVector[0];
-  ScalarT* tempStress = &tempStressVector[0];
-  ScalarT* tempDefGrad = &tempDefGradVector[0];
+  //ScalarT* tempStress = &tempStressVector[0];
+  //ScalarT* tempDefGrad = &tempDefGradVector[0];
   ScalarT  One = 1.0;
 
 
@@ -1952,7 +1951,7 @@ int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
   const double* flyingPointFlg = flyingPointFlag;
   const double *bondDamagePtr = bondDamage;
 
-  ScalarT deformedBondX, deformedBondY, deformedBondZ, deformedBondLength, deformedBondLengthSq;
+  ScalarT deformedBondX, deformedBondY, deformedBondZ, deformedBondLength;//, deformedBondLengthSq;
   ScalarT velStateX, velStateY, velStateZ;
   double neighborVolume, omega, temp;
 
@@ -2096,7 +2095,7 @@ int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
   const double* flyingPointFlg = flyingPointFlag;
   const double *bondDamagePtr = bondDamage;
 
-  ScalarT deformedBondX, deformedBondY, deformedBondZ, deformedBondLength, deformedBondLengthSq;
+  ScalarT deformedBondX, deformedBondY, deformedBondZ, deformedBondLength;//, deformedBondLengthSq;
   ScalarT velStateX, velStateY, velStateZ;
   double neighborVolume, omega, temp;
 
@@ -2876,7 +2875,7 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor(
   std::string inversionErrorMessage = 
     "**** Error:  computeShapeTensorInverseAndApproximateVelocityGradient: Non-invertible matrix\n";
 
-  int neighborIndex, numNeighbors;
+  int numNeighbors;//neighborIndex, 
   const int *neighborListPtr = neighborhoodList;
   for(int iID=0 ; iID<numPoints ; ++iID, flyingPointFlg++){
 
@@ -2905,7 +2904,7 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor(
           unrotRateOfDefYX++, unrotRateOfDefYY++, unrotRateOfDefYZ++,
           unrotRateOfDefZX++, unrotRateOfDefZY++, unrotRateOfDefZZ++){
 
-        neighborIndex = *neighborListPtr;
+        //neighborIndex = *neighborListPtr;
 
         // Store in a tensor form 
         *(eulerianVelGrad+0) = *velGradXX; *(eulerianVelGrad+1) = *velGradXY; *(eulerianVelGrad+2) = *velGradXZ;

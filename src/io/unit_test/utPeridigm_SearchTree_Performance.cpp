@@ -608,11 +608,12 @@ int main
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
 
+  int systemReturn;
   int returnCode = -1;
   if(numProcs == 1){
 
     // Generate the test meshes
-    system("cd input_files ; python CreateTestMeshes.py");
+    systemReturn = system("cd input_files ; python CreateTestMeshes.py");
 
     // Run the tests
     returnCode = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);

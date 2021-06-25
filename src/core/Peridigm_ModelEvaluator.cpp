@@ -195,7 +195,7 @@ PeridigmNS::ModelEvaluator::computeVelocityGradient(Teuchos::RCP<Workset> workse
 void 
 PeridigmNS::ModelEvaluator::computeBondVelocityGradient(Teuchos::RCP<Workset> workset) const
 {
-  const double dt = workset->timeStep;
+  //const double dt = workset->timeStep;
   std::vector<PeridigmNS::Block>::iterator blockIt;
 
   // ---- Compute the Velocity Gradient for Hypoelastic Model ----
@@ -203,9 +203,9 @@ PeridigmNS::ModelEvaluator::computeBondVelocityGradient(Teuchos::RCP<Workset> wo
   for(blockIt = workset->blocks->begin() ; blockIt != workset->blocks->end() ; blockIt++){
 
     Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData = blockIt->getNeighborhoodData();
-    const int numOwnedPoints = neighborhoodData->NumOwnedPoints();
-    const int* ownedIDs = neighborhoodData->OwnedIDs();
-    const int* neighborhoodList = neighborhoodData->NeighborhoodList();
+    //const int numOwnedPoints = neighborhoodData->NumOwnedPoints();
+    //const int* ownedIDs = neighborhoodData->OwnedIDs();
+    //const int* neighborhoodList = neighborhoodData->NeighborhoodList();
     Teuchos::RCP<PeridigmNS::DataManager> dataManager = blockIt->getDataManager();
     Teuchos::RCP<const PeridigmNS::Material> materialModel = blockIt->getMaterialModel();
 

@@ -1006,7 +1006,7 @@ PeridigmNS::CorrespondenceMaterial::computeJacobianFiniteDifference(const double
 
     // Create a temporary vector for storing force and/or flux divergence.
     Teuchos::RCP<Epetra_Vector> forceVector, tempForceVector, fluxDivergenceVector, tempFluxDivergenceVector;
-    double *tempForce, *tempFluxDivergence;
+    double *tempForce;//, *tempFluxDivergence;
     if (solveForDisplacement) {
       forceVector = tempDataManager.getData(forceDensityFId, PeridigmField::STEP_NP1);
       tempForceVector = Teuchos::rcp(new Epetra_Vector(*forceVector));

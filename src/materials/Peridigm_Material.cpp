@@ -107,7 +107,7 @@ void PeridigmNS::Material::computeFiniteDifferenceJacobian(const double dt,
   bool solveForTemperature = dofManager.temperatureTreatedAsUnknown();
   int numDof = dofManager.totalNumberOfDegreesOfFreedom();
   int numDisplacementDof = dofManager.numberOfDisplacementDegreesOfFreedom();
-  int numTemperatureDof = dofManager.numberOfTemperatureDegreesOfFreedom();
+  //int numTemperatureDof = dofManager.numberOfTemperatureDegreesOfFreedom();
   int displacementDofOffset = dofManager.displacementDofOffset();
   int temperatureDofOffset = dofManager.temperatureDofOffset();
 
@@ -585,7 +585,7 @@ PeridigmNS::Material::computeDeviatoricStateNorm(
     
     *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)) = *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N));
     dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
-    double m_alpha = 0.0; // to be adapted for temperature
+    //double m_alpha = 0.0; // to be adapted for temperature
     double *deltaTemperature = NULL; 
     double alpha;
     const double *deltaT = deltaTemperature;

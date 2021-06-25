@@ -169,7 +169,7 @@ PeridigmNS::DiffusionMaterial::computeFluxDivergence(const double dt,
   int neighborhoodListIndex(0);
   int numNeighbors, neighborID, iID, iNID, bondListIndex;
   double nodeInitialPosition[3], initialDistance, quadWeight;
-  double kernel, nodeTemperature, temperatureDifference, nodeFluxDivergence, neighborFluxDivergence;
+  double kernel, nodeTemperature, temperatureDifference, nodeFluxDivergence;//, neighborFluxDivergence;
 
   const double pi = value_of_pi();
 

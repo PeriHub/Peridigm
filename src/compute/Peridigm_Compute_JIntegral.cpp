@@ -130,44 +130,44 @@ int PeridigmNS::Compute_JIntegral::compute( Teuchos::RCP< std::vector<PeridigmNS
 
   // Compute the velocity gradient
   int neighborhoodListIndex = 0;
-  int bondListIndex = 0;
+  //int bondListIndex = 0;
   for(int iID=0 ; iID<numOwnedPoints ; ++iID){
-    double nodeModelCoord[3];
-    nodeModelCoord[0] = modelCoord[iID*3];
-    nodeModelCoord[1] = modelCoord[iID*3+1];
-    nodeModelCoord[2] = modelCoord[iID*3+2];
-    double nodeCoord[3];
-    nodeCoord[0] = coord[iID*3];
-    nodeCoord[1] = coord[iID*3+1];
-    nodeCoord[2] = coord[iID*3+2];
-    double nodeVelocityStepN[3];
-    nodeVelocityStepN[0] = velocityStepN[iID*3];
-    nodeVelocityStepN[1] = velocityStepN[iID*3+1];
-    nodeVelocityStepN[2] = velocityStepN[iID*3+2];
-    double nodeVelocityStepNP1[3];
-    nodeVelocityStepNP1[0] = velocityStepNP1[iID*3];
-    nodeVelocityStepNP1[1] = velocityStepNP1[iID*3+1];
-    nodeVelocityStepNP1[2] = velocityStepNP1[iID*3+2];
+    //double nodeModelCoord[3];
+    //nodeModelCoord[0] = modelCoord[iID*3];
+    //nodeModelCoord[1] = modelCoord[iID*3+1];
+    //nodeModelCoord[2] = modelCoord[iID*3+2];
+    //double nodeCoord[3];
+    //nodeCoord[0] = coord[iID*3];
+    //nodeCoord[1] = coord[iID*3+1];
+    //nodeCoord[2] = coord[iID*3+2];
+    //double nodeVelocityStepN[3];
+    //nodeVelocityStepN[0] = velocityStepN[iID*3];
+    //nodeVelocityStepN[1] = velocityStepN[iID*3+1];
+    //nodeVelocityStepN[2] = velocityStepN[iID*3+2];
+    //double nodeVelocityStepNP1[3];
+    //nodeVelocityStepNP1[0] = velocityStepNP1[iID*3];
+    //nodeVelocityStepNP1[1] = velocityStepNP1[iID*3+1];
+    //nodeVelocityStepNP1[2] = velocityStepNP1[iID*3+2];
     double* nodeVelocityGradient = &velocityGradient[iID*9];
     int numNeighbors = neighborhoodList[neighborhoodListIndex++];
     for(int iNID=0 ; iNID<numNeighbors ; ++iNID){
-      int neighborID = neighborhoodList[neighborhoodListIndex++];
-      double neighborModelCoord[3];
-      neighborModelCoord[0] = modelCoord[neighborID*3];
-      neighborModelCoord[1] = modelCoord[neighborID*3+1];
-      neighborModelCoord[2] = modelCoord[neighborID*3+2];
-      double neighborCoord[3];
-      neighborCoord[0] = coord[neighborID*3];
-      neighborCoord[1] = coord[neighborID*3+1];
-      neighborCoord[2] = coord[neighborID*3+2];
-      double neighborVelocityStepN[3];
-      neighborVelocityStepN[0] = velocityStepN[neighborID*3];
-      neighborVelocityStepN[1] = velocityStepN[neighborID*3+1];
-      neighborVelocityStepN[2] = velocityStepN[neighborID*3+2];
-      double neighborVelocityStepNP1[3];
-      neighborVelocityStepNP1[0] = velocityStepNP1[neighborID*3];
-      neighborVelocityStepNP1[1] = velocityStepNP1[neighborID*3+1];
-      neighborVelocityStepNP1[2] = velocityStepNP1[neighborID*3+2];
+      //int neighborID = neighborhoodList[neighborhoodListIndex++];
+      //double neighborModelCoord[3];
+      //neighborModelCoord[0] = modelCoord[neighborID*3];
+      //neighborModelCoord[1] = modelCoord[neighborID*3+1];
+      //neighborModelCoord[2] = modelCoord[neighborID*3+2];
+      //double neighborCoord[3];
+      //neighborCoord[0] = coord[neighborID*3];
+      //neighborCoord[1] = coord[neighborID*3+1];
+      //neighborCoord[2] = coord[neighborID*3+2];
+      //double neighborVelocityStepN[3];
+      //neighborVelocityStepN[0] = velocityStepN[neighborID*3];
+      //neighborVelocityStepN[1] = velocityStepN[neighborID*3+1];
+      //neighborVelocityStepN[2] = velocityStepN[neighborID*3+2];
+      //double neighborVelocityStepNP1[3];
+      //neighborVelocityStepNP1[0] = velocityStepNP1[neighborID*3];
+      //neighborVelocityStepNP1[1] = velocityStepNP1[neighborID*3+1];
+      //neighborVelocityStepNP1[2] = velocityStepNP1[neighborID*3+2];
 
       // COMPUTE AND STORE THE VELOCITY GRADIENT
       // delta t is stored in m_dt, which unfortunately must be passed in through the input deck for now

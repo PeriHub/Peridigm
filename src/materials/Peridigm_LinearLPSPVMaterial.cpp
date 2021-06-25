@@ -321,7 +321,7 @@ PeridigmNS::LinearLPSPVMaterial::computeForce(const double dt,
   }
 
   const double *xSelf, *ySelf, *xNeighbor, *yNeighbor;
-  double u[3], uNeighbor[3], dotProduct, zeta[3], neighborWeight, volSelf, matVec[3], dyadicProduct[3][3];
+  double u[3], uNeighbor[3], zeta[3], neighborWeight, volSelf, matVec[3], dyadicProduct[3][3];//dotProduct, 
   int numNeighbors, neighborId, neighborhoodListIndex(0), bondIndex(0);
 
   for(int i_pt=0; i_pt<numOwnedPoints; i_pt++){

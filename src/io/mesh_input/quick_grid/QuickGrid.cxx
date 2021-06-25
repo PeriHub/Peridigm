@@ -146,9 +146,10 @@ void print_meta_data(const QuickGridData& gridData, const std::string& label) {
       << "; neigh ptr : " << *ptr << "; num neigh : " << num_neigh << "\n\t";
 
     for(int p=0;p<num_neigh;p++,neigh++){
-      if(0 == p%10 && 0 != p)
+      if(0 == p%10 && 0 != p){
         s << "\n\t";
         s << *neigh << ", ";
+      }
     }
     s << "\n";
   }
@@ -973,7 +974,7 @@ AxisSymmetricWedgeData AxisSymmetric2DCylinderMeshGenerator::create_wedge_data(Q
       }
     }
   }
-  std::set<int>::iterator master_start = owned_masters.begin();
+  //std::set<int>::iterator master_start = owned_masters.begin();
   std::set<int>::const_iterator end=owned_masters.end();
   size_t num_owned_slaves(0);
   size_t num_master = owned_masters.size();
