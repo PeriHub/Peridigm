@@ -39,10 +39,10 @@ test_job:
   dependencies:
     - build_job
 
-convert_job:
+deploy_job:
   tags:
     - wsl
-  stage: test
+  stage: deploy
   script:
     - ls
     - cd $CI_PROJECT_DIR/build/src/materials/unit_test
