@@ -33,7 +33,7 @@ test:
     - ctest -T Test
   artifacts:
     paths:
-      - build/Testing
+      - build/src/materials/unit_test/Testing
     expire_in: 30 mins
 
 convert:
