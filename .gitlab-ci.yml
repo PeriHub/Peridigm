@@ -29,13 +29,13 @@ test_job:
   stage: test
   script:
     - echo "testing..."
-    - cd $CI_PROJECT_DIR/build/src/materials/unit_test
+    - cd $CI_PROJECT_DIR/build
     - ctest -T Test
   allow_failure: true
   artifacts:
     when: always
     paths:
-      - build/src/materials/unit_test/Testing
+      - build/Testing
     expire_in: 30 mins
   dependencies:
     - build_job
@@ -46,14 +46,14 @@ deploy_job:
   stage: deploy
   script:
     - ls
-    - cd $CI_PROJECT_DIR/build/src/materials/unit_test
+    - cd $CI_PROJECT_DIR/build/
     - ls
     - xsltproc $CI_PROJECT_DIR/scripts/CTest2JUnit.xsl Testing/`head -n 1 < Testing/TAG`/Test.xml > JUnitTestResults.xml
     - echo $CI_PROJECT_DIR
   artifacts:
     when: always
     reports:
-      junit: build/src/materials/unit_test/JUnitTestResults.xml
+      junit: build/JUnitTestResults.xml
   dependencies:
     - test_job
 
