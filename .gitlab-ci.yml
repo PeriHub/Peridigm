@@ -31,6 +31,7 @@ test_job:
     - echo "testing..."
     - cd $CI_PROJECT_DIR/build/src/materials/unit_test
     - ctest -T Test
+  allow_failure: true
   artifacts:
     when: always
     paths:
