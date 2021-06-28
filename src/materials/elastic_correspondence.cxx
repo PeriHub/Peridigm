@@ -813,7 +813,7 @@ bool hencky
           strain[3] = 0.5 * ( *(defGrad+1)* *(defGrad)   + *(defGrad+4)* *(defGrad+3) );
           strain[4] = 0.5 * ( *(defGrad+1)* *(defGrad+1) + *(defGrad+4)* *(defGrad+4) - 1.0 );
 
-        if(hencky && (*(defGrad)!=1 | *(defGrad+1)!=0 | *(defGrad+3)!=0 | *(defGrad+4)!=1))
+        if(hencky && (*(defGrad)!=1 || *(defGrad+1)!=0 || *(defGrad+3)!=0 || *(defGrad+4)!=1))
         {
           defGradLogReturnCode = CORRESPONDENCE::computeLogStrain(defGrad,logStrain);
 
