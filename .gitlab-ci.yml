@@ -1,4 +1,4 @@
-build:
+build_job:
   tags:
     - wsl
   stage: build
@@ -23,7 +23,7 @@ build:
       - build
     expire_in: 30 mins
 
-test:
+test_job:
   tags:
     - wsl
   stage: test
@@ -36,8 +36,10 @@ test:
     paths:
       - build/src/materials/unit_test/Testing
     expire_in: 30 mins
+  dependencies:
+    - build_job
 
-convert:
+convert_job:
   tags:
     - wsl
   stage: test
@@ -51,4 +53,6 @@ convert:
     when: always
     reports:
       junit: build/src/materials/unit_test/JUnitTestResults.xml
+  dependencies:
+    - test_job
 
