@@ -2,9 +2,6 @@ build_job:
   tags:
     - wsl
   stage: build
-  before_script:
-    #- add cmake
-    - echo $PATH
   script:
     - echo "building..."
     - mkdir build
