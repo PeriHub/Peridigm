@@ -32,6 +32,7 @@ test:
     - cd $CI_PROJECT_DIR/build/src/materials/unit_test
     - ctest -T Test
   artifacts:
+    when: always
     paths:
       - build/src/materials/unit_test/Testing
     expire_in: 30 mins
