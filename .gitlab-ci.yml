@@ -17,7 +17,6 @@ build_job:
       -D BOOST_ROOT=/usr/local/lib/boost/
       -D CMAKE_CXX_FLAGS:STRING="-O2 -Wall -std=c++11 -pedantic -Wno-long-long -ftrapv -Wno-deprecated"
     - cmake --build . -j 10
-    - ls
   artifacts:
     paths:
       - build
@@ -45,11 +44,9 @@ deploy_job:
     - wsl
   stage: deploy
   script:
-    - ls
+    - echo "deploying..."
     - cd $CI_PROJECT_DIR/build/
-    - ls
     - xsltproc $CI_PROJECT_DIR/scripts/CTest2JUnit.xsl Testing/`head -n 1 < Testing/TAG`/Test.xml > JUnitTestResults.xml
-    - echo $CI_PROJECT_DIR
   artifacts:
     when: always
     reports:
