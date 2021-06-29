@@ -61,7 +61,8 @@
 using namespace std;
 
 PeridigmNS::EnergyReleaseDamageCorrepondenceModel::EnergyReleaseDamageCorrepondenceModel(const Teuchos::ParameterList& params)
-: DamageModel(params), 
+: DamageModel(params),
+m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
 m_applyThermalStrains(false),
 m_modelCoordinatesFieldId(-1),
 m_coordinatesFieldId(-1),
@@ -78,8 +79,7 @@ m_piolaStressTimesInvShapeTensorYId(-1),
 m_piolaStressTimesInvShapeTensorZId(-1),
 m_forceDensityFieldId(-1),
 m_deformationGradientFieldId(-1),
-m_hourglassStiffId(-1),
-m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
+m_hourglassStiffId(-1) {
 
     
     if (params.isParameter("Critical Energy")) {

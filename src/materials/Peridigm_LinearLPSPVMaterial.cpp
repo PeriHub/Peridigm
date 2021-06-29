@@ -63,10 +63,11 @@ PeridigmNS::LinearLPSPVMaterial::LinearLPSPVMaterial(const Teuchos::ParameterLis
   : Material(params), m_pid(-1), m_verbose(false),
     m_bulkModulus(0.0), m_shearModulus(0.0), m_density(0.0), m_horizon(0.0), m_useImprovedQuadrature(false),
     m_omega(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
-    m_useAnalyticWeightedVolume(false), m_analyticWeightedVolume(0.0), m_usePartialVolume(false),
+    m_useAnalyticWeightedVolume(false), m_analyticWeightedVolume(0.0),
     m_volumeFieldId(-1), m_damageFieldId(-1), m_weightedVolumeFieldId(-1), m_dilatationFieldId(-1), m_modelCoordinatesFieldId(-1),
-    m_coordinatesFieldId(-1), m_forceDensityFieldId(-1), m_bondDamageFieldId(-1),
-    m_selfVolumeFieldId(-1), m_neighborVolumeFieldId(-1), m_quadratureWeightsFieldId(-1)
+    m_coordinatesFieldId(-1), m_forceDensityFieldId(-1), m_influenceFunctionFieldId(-1), m_bondDamageFieldId(-1),
+    m_quadratureWeightsFieldId(-1), m_usePartialVolume(false),
+    m_selfVolumeFieldId(-1), m_neighborVolumeFieldId(-1)
 {
   m_bulkModulus = calculateBulkModulus(params);
   m_shearModulus = calculateShearModulus(params);

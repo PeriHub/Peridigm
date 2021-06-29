@@ -615,8 +615,11 @@ int main
     // Generate the test meshes
     systemReturn = system("cd input_files ; python CreateTestMeshes.py");
 
-    // Run the tests
-    returnCode = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+    if(systemReturn!=-1)
+    {
+      // Run the tests
+      returnCode = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+    }
   }
   else{
     std::cerr << "Unit test runtime ERROR: utPeridigm_State only makes sense on 1 processor." << std::endl;

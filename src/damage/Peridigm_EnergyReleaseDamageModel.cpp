@@ -70,7 +70,11 @@ using namespace std;
 
 PeridigmNS::EnergyReleaseDamageModel::EnergyReleaseDamageModel(const Teuchos::ParameterList& params)
 : DamageModel(params), 
+m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
 m_applyThermalStrains(false),
+m_planeStrain(false),
+m_planeStress(false),
+m_onlyTension(false),
 m_modelCoordinatesFieldId(-1),
 m_coordinatesFieldId(-1),
 m_damageFieldId(-1),
@@ -80,12 +84,8 @@ m_dilatationFieldId(-1),
 m_weightedVolumeFieldId(-1),
 m_horizonFieldId(-1),
 m_damageModelFieldId(-1),
-m_planeStrain(false),
-m_planeStress(false),
-m_onlyTension(false),
-m_rot(false),
-m_Thickness(-1),
-m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
+m_Thickness(-1), 
+m_rot(false) {
 	m_rot = false;
     if (params.isParameter("Rot Sym")) {
 		m_rot = true;	

@@ -67,10 +67,11 @@ PeridigmNS::ElasticMaterial::ElasticMaterial(const Teuchos::ParameterList& param
     m_applyAutomaticDifferentiationJacobian(true),
     m_applyThermalStrains(false),
     m_computePartialStress(false),
+    m_planeStress(false), m_planeStrain(false), 
     m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
     m_volumeFieldId(-1), m_damageFieldId(-1), m_weightedVolumeFieldId(-1), m_dilatationFieldId(-1), m_modelCoordinatesFieldId(-1),
     m_coordinatesFieldId(-1), m_forceDensityFieldId(-1), m_partialStressFieldId(-1), m_bondDamageFieldId(-1),
-    m_deltaTemperatureFieldId(-1), m_planeStrain(false), m_planeStress(false), m_damageModelFieldId(-1)
+    m_deltaTemperatureFieldId(-1), m_damageModelFieldId(-1)
 {
   //! \todo Add meaningful asserts on material properties.
   m_bulkModulus = calculateBulkModulus(params);

@@ -621,7 +621,7 @@ double* detachedNodes
         
         if(*(shapeTensor) == 0 or inversionReturnCode > 0){
            
-           //returnCode = inversionReturnCode;
+          returnCode = inversionReturnCode;
                 *(shapeTensorInv)   = 0.0 ; *(shapeTensorInv+1) = 0.0 ; *(shapeTensorInv+2) = 0.0 ;
                 *(shapeTensorInv+3) = 0.0 ; *(shapeTensorInv+4) = 0.0 ; *(shapeTensorInv+5) = 0.0 ;
                 *(shapeTensorInv+6) = 0.0 ; *(shapeTensorInv+7) = 0.0 ; *(shapeTensorInv+8) = 0.0 ;

@@ -159,8 +159,8 @@ namespace PeridigmNS {
     int m_damageModelFieldId;
     int m_type;
     double m_Thickness;
-	bool m_rot;
-	double maxRad;
+	  bool m_rot;
+	  double maxRad;
   };
 
 }

@@ -55,9 +55,9 @@ using namespace std;
 
 PeridigmNS::ElasticLinearCorrespondenceMaterial::ElasticLinearCorrespondenceMaterial(const Teuchos::ParameterList& params)
   : CorrespondenceMaterial(params),
-    m_cauchyStressFieldId(-1),
+    m_modelAnglesId(-1),
     m_deformationGradientFieldId(-1),
-    m_modelAnglesId(-1)
+    m_cauchyStressFieldId(-1)
 {
   bool m_planeStrain = false, m_planeStress = false;
   m_type = 0;

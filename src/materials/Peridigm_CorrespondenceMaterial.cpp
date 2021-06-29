@@ -66,10 +66,10 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     m_hourglassForceDensityFieldId(-1), m_forceDensityFieldId(-1), m_bondDamageFieldId(-1),
     m_deformationGradientFieldId(-1),
     m_shapeTensorInverseFieldId(-1),
+    m_cauchyStressFieldId(-1),
     m_leftStretchTensorFieldId(-1),
     m_rotationTensorFieldId(-1), 
-    m_unrotatedCauchyStressFieldId(-1),
-    m_cauchyStressFieldId(-1), 
+    m_unrotatedCauchyStressFieldId(-1), 
     m_unrotatedRateOfDeformationFieldId(-1),
     m_partialStressFieldId(-1),
     m_hourglassStiffId(-1)
@@ -874,7 +874,7 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
       for(int col=0 ; col<numDof ; ++col){
 	value = force_AD[row].dx(col) ; //--> I think this must be it, because forces are already provided
     //value = force_AD[row].dx(col) * volume[row/3]; // given by peridigm org
-	TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite(value), "**** NaN detected in correspondence::computeAutomaticDifferentiationJacobian().\n");
+	TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite(value), "**** NaN detected in correspondence::computeAutomaticDifferentiationJacobian(). shapeTensorReturnCode: " << shapeTensorReturnCode << " \n");
         scratchMatrix(row, col) = value;
       }
     }
