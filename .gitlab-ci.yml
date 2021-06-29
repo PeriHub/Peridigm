@@ -26,7 +26,8 @@ test_job:
   script:
     - echo "testing..."
     - cd $CI_PROJECT_DIR/build
-    - ctest -T Test
+    - /usr/local/bin/cmake/bin/ctest -T Test
+    - ls
   allow_failure: true
   artifacts:
     when: always

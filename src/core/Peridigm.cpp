@@ -112,6 +112,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     analysisHasMultiphysics(false),
     computeIntersections(false),
     constructInterfaces(false),
+    analysisHasBondAssociatedHypoelasticModel(false),
     blockIdFieldId(-1),
     horizonFieldId(-1),
     volumeFieldId(-1),
@@ -142,8 +143,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     fluidFlowDensityFieldId(-1),
     detachedNodesFieldId(-1),
     bondDamageDiffFieldId(-1),
-    numMultiphysDoFs(0),
-    analysisHasBondAssociatedHypoelasticModel(false)
+    numMultiphysDoFs(0)
 {
 #ifdef HAVE_MPI
   peridigmComm = Teuchos::rcp(new Epetra_MpiComm(comm));
