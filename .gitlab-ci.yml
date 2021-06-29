@@ -50,4 +50,3 @@ deploy_job:
       junit: build/JUnitTestResults.xml
   dependencies:
     - test_job
-
