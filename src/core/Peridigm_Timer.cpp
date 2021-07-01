@@ -72,7 +72,7 @@ void PeridigmNS::Timer::printTimingData(ostream &out){
       {
         for(int j=0; j<n+1; j++)
           out << "  ";
-          out.width(nameLength + 4); 
+        out.width(nameLength + 4); 
         if(n==0)
           out << left << names[i];
         else

@@ -504,6 +504,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
       
       int rotationTensorReturnCode = 0;
 
+      PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Compute Force:Compute unrotated Rate of Deformation and Rotation Tensor");
       rotationTensorReturnCode = CORRESPONDENCE::computeUnrotatedRateOfDeformationAndRotationTensor(volume,
                                                                                                    horizon,
                                                                                                    modelCoordinates, 
@@ -521,6 +522,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                                                                    bondDamageNP1,
                                                                                                    m_plane,
                                                                                                    detachedNodes);
+      PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Internal Force:Compute Force:Compute unrotated Rate of Deformation and Rotation Tensor");
 
       string rotationTensorErrorMessage =
         "**** Error:  CorrespondenceMaterial::computeForce() failed to compute rotation tensor.\n";
@@ -552,8 +554,9 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   
   // multiple Cauchy stresses will be provided over the datamanager --> Peridigm_ElasticLinearCorrespondence
 
-                
+  PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Compute Force:Compute CauchyStress");
   computeCauchyStress(dt, numOwnedPoints, dataManager);
+  PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Internal Force:Compute Force:Compute CauchyStress");
 
   // rotate back to the Eulerian frame
   double *unrotatedCauchyStressNP1, *cauchyStressNP1;
@@ -598,7 +601,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
  dataManager.getData(m_hourglassStiffId, PeridigmField::STEP_NONE)->ExtractView(&hourglassStiff);
 
 
-
+ PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Compute Force:Compute Forces and Stresses");
  CORRESPONDENCE::computeForcesAndStresses(
                                        numOwnedPoints,
                                        neighborhoodList,
@@ -623,6 +626,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                        m_plane,
                                        m_tension,
                                        detachedNodes);
+ PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Internal Force:Compute Force:Compute Forces and Stresses");
                                           
  //     std::cout<<numOwnedPoints<< " "<< *(deformationGradient)<<" "<<*(partialStress)<<std::endl;
     

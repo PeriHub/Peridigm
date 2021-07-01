@@ -19,7 +19,7 @@ build_job:
   artifacts:
     paths:
       - build
-    expire_in: 30 mins
+    expire_in: 1 day
 
 test_job:
   tags:
@@ -38,7 +38,7 @@ test_job:
     when: always
     paths:
       - build/Testing
-    expire_in: 30 mins
+    expire_in: 1 day
   dependencies:
     - build_job
 
