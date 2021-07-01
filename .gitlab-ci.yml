@@ -27,6 +27,8 @@ test_job:
     - echo "testing..."
     - cd $CI_PROJECT_DIR/build
     - ctest -T Test
+  script:
+    - echo "testing finished"
   allow_failure: true
   artifacts:
     when: always
