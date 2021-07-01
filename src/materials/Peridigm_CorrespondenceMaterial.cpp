@@ -47,6 +47,7 @@
 
 #include "Peridigm_CorrespondenceMaterial.hpp"
 #include "Peridigm_Field.hpp"
+#include "Peridigm_Timer.hpp"
 #include "elastic.h"
 #include "correspondence.h"
 #include "Peridigm_DegreesOfFreedomManager.hpp"
@@ -461,7 +462,8 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
    int shapeTensorReturnCode = 0;
   // if (lin == true){
     
-    
+  
+  PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Compute Force:Compute Shape Tensor Inverse and approximate Deformation Gradient");
     shapeTensorReturnCode = 
         CORRESPONDENCE::computeShapeTensorInverseAndApproximateDeformationGradient(volume,
                                                                                 horizon,
@@ -476,8 +478,8 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                                                 numOwnedPoints,
                                                                                 m_plane,
                                                                                 detachedNodes);
+  PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Internal Force:Compute Force:Compute Shape Tensor Inverse and approximate Deformation Gradient");
 
-    
    //}
 
   string shapeTensorErrorMessage =

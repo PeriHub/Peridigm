@@ -47,6 +47,7 @@
 //@HEADER
 
 #include "Peridigm_ModelEvaluator.hpp"
+#include "Peridigm_Timer.hpp"
 
 PeridigmNS::ModelEvaluator::ModelEvaluator(){
 }
@@ -86,7 +87,8 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset) const
   std::vector<PeridigmNS::Block>::iterator blockIt;
 
   // ---- Evaluate Precompute ----
-
+  
+  PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Precompute");
   for(blockIt = workset->blocks->begin() ; blockIt != workset->blocks->end() ; blockIt++){
 
     Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData = blockIt->getNeighborhoodData();
@@ -102,6 +104,7 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset) const
                               neighborhoodList,
                               *dataManager);
   }
+  PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Precompute");
 
   // ---- Synchronize data computed in precompute ----
  // PeridigmNS::DataManagerSynchronizer::self().synchronizeDataAfterPrecompute(workset->blocks);
@@ -110,6 +113,7 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset) const
 
   // ---- Evaluate Internal Force ----
 
+  PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force");
   for(blockIt = workset->blocks->begin() ; blockIt != workset->blocks->end() ; blockIt++){
 
     Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData = blockIt->getNeighborhoodData();
@@ -119,23 +123,30 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset) const
     Teuchos::RCP<PeridigmNS::DataManager> dataManager = blockIt->getDataManager();
     Teuchos::RCP<const PeridigmNS::Material> materialModel = blockIt->getMaterialModel();
 
+    PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Compute Force");
     materialModel->computeForce(dt,
                                 numOwnedPoints,
                                 ownedIDs,
                                 neighborhoodList,
                                 *dataManager);
-
+    PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Internal Force:Compute Force");
+    
+    PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Flux Divergence");
     materialModel->computeFluxDivergence(dt,
                                          numOwnedPoints,
                                          ownedIDs,
                                          neighborhoodList,
                                          *dataManager);
+    PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Internal Force:Flux Divergence");
   }
+  PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Internal Force");
 
   // ---- Evaluate Contact ----
 
+  PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Contact");
   if(!workset->contactManager.is_null())
     workset->contactManager->evaluateContactForce(dt);
+  PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Contact");
 }
 
 void

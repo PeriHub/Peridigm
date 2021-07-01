@@ -333,7 +333,7 @@ int numPoints
 );
 
 template<typename ScalarT>
-int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
+void computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
 (
 const double* volume,
 const ScalarT* jacobianDeterminantN,
@@ -351,7 +351,7 @@ double dt
 );
 
 template<typename ScalarT>
-int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
+void computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
 (
 const double* volume,
 const ScalarT* jacobianDeterminantN,

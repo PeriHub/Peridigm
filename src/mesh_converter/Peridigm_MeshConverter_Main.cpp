@@ -379,7 +379,8 @@ int main(int argc, char *argv[]) {
   int *elem_map = &elem_map_vec[0];
   int elem_map_index = 0;
   for(blockIt = blocks->begin(); blockIt != blocks->end() ; blockIt++) {
-    for(int i=0; i<blockIt->second.size() ; ++i){
+    int abbreviated_second_size = blockIt->second.size() & INT_MAX;
+    for(int i=0; i<abbreviated_second_size; ++i){
       elem_map[elem_map_index++] = blockIt->second[i] + 1;
     }
   }

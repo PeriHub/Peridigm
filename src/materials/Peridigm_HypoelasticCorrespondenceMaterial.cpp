@@ -948,23 +948,22 @@ void PeridigmNS::HypoelasticCorrespondenceMaterial::computeNodeLevelVelocityGrad
                                         neighborhoodList,
                                         numOwnedPoints);
 
-  int shapeTensorReturnCode = 
-    CORRESPONDENCE::computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient(volume,
-                                                                                    jacobianDeterminantN,
-                                                                                    jacobianDeterminantNP1,
-                                                                                    horizon,
-                                                                                    coordinates,
-                                                                                    velocities,
-                                                                                    shapeTensorInverse,
-                                                                                    velocityGradient,
-                                                                                    velocityGradientX,
-                                                                                    velocityGradientY,
-                                                                                    velocityGradientZ,
-                                                                                    flyingPointFlag,
-                                                                                    bondDamage,
-                                                                                    neighborhoodList,
-                                                                                    numOwnedPoints,
-                                                                                    dt);
+  CORRESPONDENCE::computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient(volume,
+                                                                                  jacobianDeterminantN,
+                                                                                  jacobianDeterminantNP1,
+                                                                                  horizon,
+                                                                                  coordinates,
+                                                                                  velocities,
+                                                                                  shapeTensorInverse,
+                                                                                  velocityGradient,
+                                                                                  velocityGradientX,
+                                                                                  velocityGradientY,
+                                                                                  velocityGradientZ,
+                                                                                  flyingPointFlag,
+                                                                                  bondDamage,
+                                                                                  neighborhoodList,
+                                                                                  numOwnedPoints,
+                                                                                  dt);
 
   // Compute the current undamaged weighted volume
   CORRESPONDENCE::computeUndamagedWeightedVolume(volume,

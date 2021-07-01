@@ -23,7 +23,7 @@ test_job:
   tags:
     - wsl
   stage: test
-  script:
+  before_script:
     - echo "testing..."
     - cd $CI_PROJECT_DIR/build
     - ctest -T Test

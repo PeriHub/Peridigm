@@ -85,6 +85,12 @@ public:
   //! Prints out a table of timing data.
   void printTimingData(std::ostream &out);
 
+  //! Prints out a table of timing data.
+  int CountString( const std::string & str, const std::string & obj );
+
+  //! Define if subtimer should be printed.
+  bool verbose = false;
+
 private:
 
   //! Private constructor

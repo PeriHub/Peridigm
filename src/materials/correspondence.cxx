@@ -621,7 +621,7 @@ double* detachedNodes
         
         if(*(shapeTensor) == 0 or inversionReturnCode > 0){
            
-          returnCode = inversionReturnCode;
+          //returnCode = inversionReturnCode;
                 *(shapeTensorInv)   = 0.0 ; *(shapeTensorInv+1) = 0.0 ; *(shapeTensorInv+2) = 0.0 ;
                 *(shapeTensorInv+3) = 0.0 ; *(shapeTensorInv+4) = 0.0 ; *(shapeTensorInv+5) = 0.0 ;
                 *(shapeTensorInv+6) = 0.0 ; *(shapeTensorInv+7) = 0.0 ; *(shapeTensorInv+8) = 0.0 ;
@@ -1920,7 +1920,7 @@ void computeWeightedVolume
 
 //This function computes the node-level velocity gradient
 template<typename ScalarT>
-int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
+void computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
 (
     const double* volume,
     const ScalarT* jacobianDeterminantN,
@@ -1937,7 +1937,7 @@ int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
     double dt
 )
 {
-  int returnCode = 0;
+  //int returnCode = 0;
 
   const double* delta = horizon;
   const ScalarT* coord = coordinates;
@@ -2030,7 +2030,7 @@ int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
       
       inversionReturnCode = Invert3by3Matrix(shapeTensor, shapeTensorDeterminant, shapeTensorInv);
       if(inversionReturnCode > 0){
-        returnCode = inversionReturnCode;
+        //returnCode = inversionReturnCode;
         std::cout << inversionErrorMessage;
         MPI_Abort(MPI_COMM_WORLD, 1);
       }
@@ -2053,12 +2053,12 @@ int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
     }
   }
 
-  return returnCode;
+  //return returnCode;
 }
 
 //This function computes the node-level velocity gradient
 template<typename ScalarT>
-int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
+void computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
 (
     const double* volume,
     const ScalarT* jacobianDeterminantN,
@@ -2078,7 +2078,7 @@ int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
     double dt
 )
 {
-  int returnCode = 0;
+  //int returnCode = 0;
 
   const double* delta = horizon;
   const ScalarT* coord = coordinates;
@@ -2174,7 +2174,7 @@ int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
       
       inversionReturnCode = Invert3by3Matrix(shapeTensor, shapeTensorDeterminant, shapeTensorInv);
       if(inversionReturnCode > 0){
-        returnCode = inversionReturnCode;
+        //returnCode = inversionReturnCode;
         std::cout << inversionErrorMessage;
         MPI_Abort(MPI_COMM_WORLD, 1);
       }
@@ -2201,7 +2201,7 @@ int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
     }
   }
 
-  return returnCode;
+  //return returnCode;
 }
 
 //This function computes bond-level velocity gradient
@@ -3701,7 +3701,7 @@ template void computeWeightedVolume<double>
     int numPoints
 );
 
-template int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient<double>
+template void computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient<double>
 (
     const double* volume,
     const double* jacobianDeterminantN,
@@ -3718,7 +3718,7 @@ template int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient<do
     double dt
 );
 
-template int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient<double>
+template void computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient<double>
 (
     const double* volume,
     const double* jacobianDeterminantN,

@@ -64,12 +64,35 @@ void PeridigmNS::Timer::printTimingData(ostream &out){
   else if(nProc == 1){
     out << "Wallclock Time (seconds):" << endl;
     out.precision(2);
-    for(unsigned int i=0 ; i<names.size() ; ++i){
-      out << "  ";
-      out.width(nameLength + 2); out << left << names[i];
-      out.width(indent); out << right << minTimes[i];
-      out << endl;
+    size_t i = names.size() - 1;
+    for(auto it = names.rbegin(); it != names.rend(); it++, --i){
+      std::size_t index = names[i].find_last_of(":");
+      int n = CountString( ":", names[i] );
+      if(n==0 || PeridigmNS::Timer::verbose)
+      {
+        for(int j=0; j<n+1; j++)
+          out << "  ";
+          out.width(nameLength + 4); 
+        if(n==0)
+          out << left << names[i];
+        else
+          out << left << names[i].substr(index+1);
+        out.width(indent - (2*n)); out << right << minTimes[i];
+        out << endl;
+      }
     }
     out << endl;
   }
+}
+
+int PeridigmNS::Timer::CountString( const std::string & str, 
+           const std::string & obj ) {
+    int n = 0;
+    std::string ::size_type pos = 0;
+    while( (pos = obj.find( str, pos )) 
+                 != std::string::npos ) {
+        n++;
+        pos += str.size();
+    }
+    return n;
 }

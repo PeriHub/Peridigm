@@ -22,7 +22,7 @@
                 "-D CMAKE_C_COMPILER:STRING=/usr/local/lib/openmpi/bin/mpicc",
                 "-D CMAKE_CXX_COMPILER:STRING=/usr/local/lib/openmpi/bin/mpicxx",
                 "-D BOOST_ROOT=/usr/local/lib/boost/",
-                "-D CMAKE_CXX_FLAGS:STRING=\"-O2 -Wall -std=c++11 -pedantic -Wno-long-long -ftrapv -Wno-deprecated-declarations\""
+                "-D CMAKE_CXX_FLAGS:STRING=\"-O2 -Wall -std=c++11 -pedantic -Wno-long-long -ftrapv -Wno-deprecated\""
             ],
             "configurationProvider": "ms-vscode.cmake-tools"
         }
