@@ -1,7 +1,9 @@
 build_job:
   tags:
     - wsl
-  stage: build
+  stage: build  
+  only:
+    - tags
   script:
     - echo "building..."
     - mkdir build
@@ -23,6 +25,8 @@ test_job:
   tags:
     - wsl
   stage: test
+  only:
+    - tags
   before_script:
     - echo "testing..."
     - cd $CI_PROJECT_DIR/build
@@ -42,6 +46,8 @@ deploy_job:
   tags:
     - wsl
   stage: deploy
+  only:
+    - tags
   script:
     - echo "deploying..."
     - cd $CI_PROJECT_DIR/build/
