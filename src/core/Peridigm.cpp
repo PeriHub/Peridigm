@@ -3207,8 +3207,6 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
     if(peridigmComm->MyPID() == 0){
       cout << "\nWarning: Number of Quasi-Static solver convergence failures was more than the maximum allowable number of failures.";
       cout << "\nSwitching to explicit time-stepping for the rest of simulation." << endl;
-      PeridigmNS::Timer::self().stopTimer("Total");
-      PeridigmNS::Timer::self().printTimingData(cout);
     }
     Teuchos::RCP<Teuchos::ParameterList> explicitSolverParams = Teuchos::rcp(new Teuchos::ParameterList);
     Teuchos::ParameterList& verletParams = explicitSolverParams->sublist("Verlet");
@@ -3244,6 +3242,9 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
       yPtr[i] = xPtr[i] + uPtr[i];
       vPtr[i] = v_previousPtr[i];
     }
+
+    PeridigmNS::Timer::self().stopTimer("Total");
+    PeridigmNS::Timer::self().printTimingData(cout);
 
     executeExplicit(explicitSolverParams);
   }
