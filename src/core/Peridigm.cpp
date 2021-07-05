@@ -1557,7 +1557,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
   // Evaluate internal force and contact force in initial configuration for use in first timestep
   PeridigmNS::Timer::self().startTimer("Internal Force");
-  modelEvaluator->evalModel(workset);
+  modelEvaluator->evalModel(workset, true);
   PeridigmNS::Timer::self().stopTimer("Internal Force");
 
   // Copy force from the data manager to the mothership vector
@@ -1833,7 +1833,9 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
     //lowNumOfBondDetached=false;
     //while(!lowNumOfBondDetached){
+    PeridigmNS::Timer::self().startTimer("Update Cauchy Stress");
     modelEvaluator->updateCauchyStress(workset);
+    PeridigmNS::Timer::self().stopTimer("Update Cauchy Stress");
 
     // map damage model information back in global data manager
     // set values to zero to avoid data accumulation within the global mothership vector
@@ -1944,11 +1946,20 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       PeridigmNS::Timer::self().stopTimer("Data Loader");
     }
 
+    PeridigmNS::Timer::self().startTimer("Evaluate Damage Model");
+    modelEvaluator->evalDamageModel(workset);
+    PeridigmNS::Timer::self().stopTimer("Evaluate Damage Model");
+    
+    bool damageExist = false;
+    bool allNodeDamage = true;
+    for(int i=0 ; i<a->MyLength() ; ++i){
+      if ((*netDamageField)[i/3]!=0) damageExist = true;
+      else allNodeDamage = false;
+    }
+
     // Update forces based on new positions
     PeridigmNS::Timer::self().startTimer("Internal Force");
     //********************************
-
-    modelEvaluator->evalDamageModel(workset);
 
     if(adaptDt)
     {
@@ -2012,7 +2023,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
  
  
  
-    modelEvaluator->evalModel(workset);
+    modelEvaluator->evalModel(workset, damageExist);
     PeridigmNS::Timer::self().stopTimer("Internal Force");
  
     // Copy force from the data manager to the mothership vector
@@ -2055,14 +2066,14 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
     // fill the acceleration vector
     (*a) = (*force);
-    bool damageExist = false;
-    bool allNodeDamage = true;
+    // bool damageExist = false;
+    // bool allNodeDamage = true;
     for(int i=0 ; i<a->MyLength() ; ++i){
       (*a)[i] += (*externalForce)[i];
       (*a)[i] /= (*density)[i/3];
       if ((*detachedNodesList)[i/3]!=0) (*a)[i] = 0;
-      if ((*netDamageField)[i/3]!=0) damageExist = true;
-      else allNodeDamage = false;
+      // if ((*netDamageField)[i/3]!=0) damageExist = true;
+      // else allNodeDamage = false;
     }
 
     // V^{n+1}   = V^{n+1/2} + (dt/2)*A^{n+1}
@@ -2295,7 +2306,7 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
   if(fillF){
     // Update forces based on new positions
     PeridigmNS::Timer::self().startTimer("Internal Force");
-    modelEvaluator->evalModel(workset);
+    modelEvaluator->evalModel(workset, true);
     PeridigmNS::Timer::self().stopTimer("Internal Force");
 
     
@@ -2450,7 +2461,7 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
 
     modelEvaluator->evalDamageModel(workset);
 
-    modelEvaluator->evalModel(workset);
+    modelEvaluator->evalModel(workset, true);
     PeridigmNS::Timer::self().stopTimer("Internal Force");
 
     // Copy force from the data manager to the mothership vector
@@ -2583,7 +2594,7 @@ void PeridigmNS::Peridigm::computeInternalForce()
   }
 
   // Call the model evaluator
-  modelEvaluator->evalModel(workset);
+  modelEvaluator->evalModel(workset, true);
 
   // Copy force from the data manager to the mothership vector
   force->PutScalar(0.0);
@@ -3115,7 +3126,7 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
       solverIteration += 1;
     }
 
-    if(solverIteration > maxIterations || step==3){
+    if(solverIteration > maxIterations){
       failedQS = true;
       break;
     }
@@ -4561,7 +4572,7 @@ void PeridigmNS::Peridigm::executeImplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
     // Update forces based on new positions
     PeridigmNS::Timer::self().startTimer("Internal Force");
-    modelEvaluator->evalModel(workset);
+    modelEvaluator->evalModel(workset, true);
     PeridigmNS::Timer::self().stopTimer("Internal Force");
 
     // Copy force from the data manager to the mothership vector
@@ -4709,7 +4720,7 @@ void PeridigmNS::Peridigm::executeImplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
       // Update forces based on new positions
       PeridigmNS::Timer::self().startTimer("Internal Force");
-      modelEvaluator->evalModel(workset);
+      modelEvaluator->evalModel(workset, true);
       PeridigmNS::Timer::self().stopTimer("Internal Force");
 
       // Copy force from the data manager to the mothership vector
@@ -4983,7 +4994,7 @@ double PeridigmNS::Peridigm::computeQuasiStaticResidual(Teuchos::RCP<Epetra_Vect
   PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
 
   PeridigmNS::Timer::self().startTimer("Internal Force");
-  modelEvaluator->evalModel(workset);
+  modelEvaluator->evalModel(workset, true);
   PeridigmNS::Timer::self().stopTimer("Internal Force");
 
   // Copy force from the data manager to the mothership vector

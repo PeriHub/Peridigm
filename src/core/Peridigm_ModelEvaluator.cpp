@@ -72,16 +72,18 @@ PeridigmNS::ModelEvaluator::evalDamageModel(Teuchos::RCP<Workset> workset) const
       const int* neighborhoodList = neighborhoodData->NeighborhoodList();
       Teuchos::RCP<PeridigmNS::DataManager> dataManager = blockIt->getDataManager();
       
+      PeridigmNS::Timer::self().startTimer("Evaluate Damage Model:Compute Damage");
       damageModel->computeDamage(dt, 
                                  numOwnedPoints,
                                  ownedIDs,
                                  neighborhoodList,
                                  *dataManager);
+      PeridigmNS::Timer::self().stopTimer("Evaluate Damage Model:Compute Damage");
     }
   }
 }
 void
-PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset) const
+PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset, bool damageExist) const
 {
   const double dt = workset->timeStep;
   std::vector<PeridigmNS::Block>::iterator blockIt;
@@ -123,13 +125,15 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset) const
     Teuchos::RCP<PeridigmNS::DataManager> dataManager = blockIt->getDataManager();
     Teuchos::RCP<const PeridigmNS::Material> materialModel = blockIt->getMaterialModel();
 
-    PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Compute Force");
-    materialModel->computeForce(dt,
-                                numOwnedPoints,
-                                ownedIDs,
-                                neighborhoodList,
-                                *dataManager);
-    PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Internal Force:Compute Force");
+    if(damageExist){
+      PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Compute Force");
+      materialModel->computeForce(dt,
+                                  numOwnedPoints,
+                                  ownedIDs,
+                                  neighborhoodList,
+                                  *dataManager);
+      PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Internal Force:Compute Force");
+    }
     
     PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Flux Divergence");
     materialModel->computeFluxDivergence(dt,
@@ -281,11 +285,13 @@ PeridigmNS::ModelEvaluator::updateCauchyStress(Teuchos::RCP<Workset> workset) co
         
        // if (damageModel->Name() == "Critical Energy Correspondence"){
             if (materialModel->Name() == "Linear Elastic Correspondence"||materialModel->Name() == "Elastic Correspondence"){
+                PeridigmNS::Timer::self().startTimer("Update Cauchy Stress:Compute Force");
                 materialModel->computeForce(dt, 
                                 numOwnedPoints,
                                 ownedIDs,
                                 neighborhoodList,
                                 *dataManager);
+                PeridigmNS::Timer::self().stopTimer("Update Cauchy Stress:Compute Force");
                                 
             }
         //}
