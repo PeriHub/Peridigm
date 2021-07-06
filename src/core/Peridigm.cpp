@@ -2305,9 +2305,9 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
 
   if(fillF){
     // Update forces based on new positions
-    PeridigmNS::Timer::self().startTimer("Internal Force");
-    modelEvaluator->evalModel(workset, true);
-    PeridigmNS::Timer::self().stopTimer("Internal Force");
+    // PeridigmNS::Timer::self().startTimer("Internal Force");
+    // modelEvaluator->evalModel(workset, true);
+    // PeridigmNS::Timer::self().stopTimer("Internal Force");
 
     
       
