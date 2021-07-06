@@ -2461,7 +2461,14 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
 
     modelEvaluator->evalDamageModel(workset);
 
-    modelEvaluator->evalModel(workset, true);
+    bool damageExist = false;
+    //bool allNodeDamage = true;
+    for(int i=0 ; i<a->MyLength() ; ++i){
+      if ((*netDamageField)[i/3]!=0) damageExist = true;
+      //else allNodeDamage = false;
+    }
+
+    modelEvaluator->evalModel(workset, damageExist);
     PeridigmNS::Timer::self().stopTimer("Internal Force");
 
     // Copy force from the data manager to the mothership vector
