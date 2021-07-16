@@ -55,7 +55,7 @@
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
-#include <boost/math/special_functions/fpclassify.hpp>
+//#include <boost/math/special_functions/fpclassify.hpp>
 using namespace std;
 
 PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::ParameterList& params)
@@ -829,6 +829,11 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
                                                                                        tempNumOwnedPoints,
                                                                                        m_plane,
                                                                                        detachedNodes);
+
+    string shapeTensorInverseErrorMessage = "**** Error:  CorrespondenceMaterial::computeShapeTensorInverseAndApproximateDeformationGradient() failed to inverse shape tensor.\n";
+
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(shapeTensorReturnCode == 1, shapeTensorInverseErrorMessage);
+
     double *cauchyStress;
     double *cauchyStressNP1;
 
@@ -880,7 +885,7 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
       for(int col=0 ; col<numDof ; ++col){
 	value = force_AD[row].dx(col) ; //--> I think this must be it, because forces are already provided
     //value = force_AD[row].dx(col) * volume[row/3]; // given by peridigm org
-	TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite(value), "**** NaN detected in correspondence::computeAutomaticDifferentiationJacobian(). shapeTensorReturnCode: " << shapeTensorReturnCode << " \n");
+	//TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite(value), "**** NaN detected in correspondence::computeAutomaticDifferentiationJacobian(). shapeTensorReturnCode: " << shapeTensorReturnCode << " \n");
         scratchMatrix(row, col) = value;
       }
     }

@@ -1,9 +1,9 @@
-# 
+#
 # CMakeLists.txt file for Peridigm
 #
 
 Cmake_minimum_required (VERSION 2.8.12)
-add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)
+                          
 
 enable_testing ()
 project(Peridigm)
@@ -16,47 +16,47 @@ mark_as_advanced (CLEAR CMAKE_CXX_COMPILER)
 
 mark_as_advanced (CLEAR CMAKE_CXX_FLAGS)
 if (NOT CMAKE_CXX_FLAGS)
-  set (CMAKE_CXX_FLAGS "-DMPICH_IGNORE_CXX_SEEK" CACHE STRING "Flags used by the compiler during all build types." FORCE)
+set (CMAKE_CXX_FLAGS "-DMPICH_IGNORE_CXX_SEEK" CACHE STRING "Flags used by the compiler during all build types." FORCE)
 endif (NOT CMAKE_CXX_FLAGS)
 
 #
-# Boost configuration
-# Questions?  See http://www.cmake.org/cmake/help/cmake2.6docs.html#module:FindBoost
+# Blas and Lapack Libraries
+                                        
 #
-#
-find_package (Boost 1.37.0 COMPONENTS unit_test_framework system filesystem thread regex)
-if (Boost_FOUND)
-  message ("\nBoost installation:")
-  message ("   Version: ${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION}")
-  message ("   Include Directory: ${Boost_INCLUDE_DIRS}")
-  message ("   Library Directory: ${Boost_LIBRARY_DIRS}")
-  message ("   The following libraries are included in Boost_LIBRARIES:")
-  foreach (lib ${Boost_LIBRARIES})
-    message ("      ${lib}")
-  endforeach (lib)
-else ()
-  message ("\nBoost NOT FOUND!  (Try defining BOOST_ROOT)\n")
-endif ()
+find_library(Blas_LIBRARY
+  NAMES blas
+  PATHS ${BLAS_LIBRARY_DIRS}
+)
+find_library(Lapack_LIBRARY
+  NAMES lapack
+  PATHS ${LAPACK_LIBRARY_DIRS}
+)
+set(BlasLapack_Libraries ${blas} ${lapack})
+            
+        
+    
+                              
+  
 
 #
-# Blas and Lapack Libraries  
-#
-find_library(Blas_LIBRARY  
-   NAMES blas  
-   PATHS ${BLAS_LIBRARY_DIRS}  
-)  
-find_library(Lapack_LIBRARY  
-   NAMES lapack  
-   PATHS ${LAPACK_LIBRARY_DIRS}  
-)  
-set(BlasLapack_Libraries ${blas} ${lapack})  
+              
 
-#
+              
+        
+                
+  
+              
+        
+                
+  
+                      
+
+
 # DAKOTA configuration
 #
-option (USE_DAKOTA 
-   "Enable tests and functionality that depend on a DAKOTA installation." 
-   OFF
+option (USE_DAKOTA
+  "Enable tests and functionality that depend on a DAKOTA installation."
+  OFF
 )
 
 #
@@ -70,8 +70,8 @@ MESSAGE("   Trilinos_DIR = ${Trilinos_DIR}")
 MESSAGE("   Trilinos_VERSION = ${Trilinos_VERSION}")
 MESSAGE("   Trilinos_PACKAGE_LIST = ${Trilinos_PACKAGE_LIST}")
 MESSAGE("   Trilinos_TPL_LIST = ${Trilinos_TPL_LIST}")
-MESSAGE("   Trilinos_TPL_INCLUDE_DIRS = ${Trilinos_TPL_INCLUDE_DIRS}")
-MESSAGE("   Trilinos_TPL_LIBRARIES = ${Trilinos_TPL_LIBRARIES}")
+#MESSAGE("   Trilinos_TPL_INCLUDE_DIRS = ${Trilinos_TPL_INCLUDE_DIRS}")
+#MESSAGE("   Trilinos_TPL_LIBRARIES = ${Trilinos_TPL_LIBRARIES}")
 MESSAGE("   Trilinos_TPL_LIBRARY_DIRS = ${Trilinos_TPL_LIBRARY_DIRS}")
 MESSAGE("   Trilinos_BUILD_SHARED_LIBS = ${Trilinos_BUILD_SHARED_LIBS}")
 MESSAGE("   Trilinos_CXX_COMPILER_FLAGS = ${Trilinos_CXX_COMPILER_FLAGS}")
@@ -83,7 +83,7 @@ SET(Trilinos_BINARY_PATH ${Trilinos_LIBRARY_DIRS}/../bin)
 LIST(REMOVE_ITEM Trilinos_LIBRARIES "pytrilinos")
 #
 # verbose output
-MESSAGE("   Trilinos_LIBRARIES = ${Trilinos_LIBRARIES}")
+#MESSAGE("   Trilinos_LIBRARIES = ${Trilinos_LIBRARIES}")
 MESSAGE("   Trilinos_INCLUDE_DIRS = ${Trilinos_INCLUDE_DIRS}")
 MESSAGE("   Trilinos_LIBRARY_DIRS = ${Trilinos_LIBRARY_DIRS}")
 MESSAGE("")
@@ -91,149 +91,168 @@ MESSAGE("")
 # Check for netcdf
 LIST(FIND Trilinos_TPL_LIST Netcdf Netcdf_Package_Index)
 IF(Netcdf_Package_Index LESS 0)
-  MESSAGE("FATAL_ERROR \n\nError:  Netcdf NOT found.  Netcdf is a REQUIRED Trilinos TPL.\n\n")
+MESSAGE("FATAL_ERROR \n\nError:  Netcdf NOT found.  Netcdf is a REQUIRED Trilinos TPL.\n\n")
 ENDIF()
 
-# Check for netcdf
+# Check for yaml
 LIST(FIND Trilinos_TPL_LIST yaml-cpp yaml-cpp_Package_Index)
 IF(yaml-cpp_Package_Index GREATER -1)
-    MESSAGE("-- Trilinos was compiled with TPL_ENABLE_yaml-cpp.\n\n   Will compile Peridigm to support YAML input files.\n\n")
-    ADD_DEFINITIONS(-DUSE_YAML)
-    SET(HAVE_YAML TRUE)
+  MESSAGE("-- Trilinos was compiled with TPL_ENABLE_yaml-cpp.\n\n   Will compile Peridigm to support YAML input files.\n\n")
+  ADD_DEFINITIONS(-DUSE_YAML)
+  SET(HAVE_YAML TRUE)
 ENDIF()
 
 #
 # Enable performance testing
 #
 IF(PERFORMANCE_TEST_MACHINE)
-  MESSAGE("-- Performance testing is enabled, machine = ${PERFORMANCE_TEST_MACHINE}.\n")
+MESSAGE("-- Performance testing is enabled, machine = ${PERFORMANCE_TEST_MACHINE}.\n")
 ELSE()
-  MESSAGE("-- Performance testing is NOT enabled.\n")
+MESSAGE("-- Performance testing is NOT enabled.\n")
 ENDIF()
 
 # Setup paths for SEACAS tools needed to run some of the tests
 IF (ALBANY_SEACAS)
-  find_program(
-       SEACAS_EPU
-       NAMES epu
-       PATHS ${Trilinos_BIN_DIRS} ENV PATH
-  )
-  find_program(
-       SEACAS_EXODIFF
-       NAMES exodiff
-       PATHS ${Trilinos_BIN_DIRS} ENV PATH
-  )
-  find_program(
-       SEACAS_ALGEBRA
-       NAMES algebra
-       PATHS ${Trilinos_BIN_DIRS} ENV PATH
-  )
+find_program(
+      SEACAS_EPU
+      NAMES epu
+      PATHS ${Trilinos_BIN_DIRS} ENV PATH
+)
+find_program(
+      SEACAS_EXODIFF
+      NAMES exodiff
+      PATHS ${Trilinos_BIN_DIRS} ENV PATH
+)
+find_program(
+      SEACAS_ALGEBRA
+      NAMES algebra
+      PATHS ${Trilinos_BIN_DIRS} ENV PATH
+)
 ENDIF()
 
 #
 # Optional dependency on Laboratory for Computational Mechanics (LCM)
 #
 IF(USE_LCM)
-  SET(CMAKE_PREFIX_PATH ${ALBANY_DIR} ${CMAKE_PREFIX_PATH})
-  find_package(Albany REQUIRED)
-  MESSAGE("Found Albany!  Here are the details: ")
-  MESSAGE("   Albany_DIR = ${Albany_DIR}")
-  MESSAGE("   Albany_LIBRARIES = ${Albany_LIBRARIES}")
-  MESSAGE("   Albany_INCLUDE_DIRS = ${Albany_INCLUDE_DIRS}")
-  MESSAGE("   Albany_LIBRARY_DIRS = ${Albany_LIBRARY_DIRS}")
-  MESSAGE("End of Albany details\n")
-  MESSAGE("-- LCM is enabled, compiling with -DPERIDIGM_LCM")
-  MESSAGE("")
-  ADD_DEFINITIONS(-DPERIDIGM_LCM)
-  SET(PERIDIGM_LCM TRUE)
-  include_directories(${Albany_INCLUDE_DIRS})
-  link_directories(${Albany_LIBRARY_DIRS})
-  set(LCM_LIBRARY ${Albany_LIBRARIES})
+SET(CMAKE_PREFIX_PATH ${ALBANY_DIR} ${CMAKE_PREFIX_PATH})
+find_package(Albany REQUIRED)
+MESSAGE("Found Albany!  Here are the details: ")
+MESSAGE("   Albany_DIR = ${Albany_DIR}")
+MESSAGE("   Albany_LIBRARIES = ${Albany_LIBRARIES}")
+MESSAGE("   Albany_INCLUDE_DIRS = ${Albany_INCLUDE_DIRS}")
+MESSAGE("   Albany_LIBRARY_DIRS = ${Albany_LIBRARY_DIRS}")
+MESSAGE("End of Albany details\n")
+MESSAGE("-- LCM is enabled, compiling with -DPERIDIGM_LCM")
+MESSAGE("")
+ADD_DEFINITIONS(-DPERIDIGM_LCM)
+SET(PERIDIGM_LCM TRUE)
+include_directories(${Albany_INCLUDE_DIRS})
+link_directories(${Albany_LIBRARY_DIRS})
+set(LCM_LIBRARY ${Albany_LIBRARIES})
 ELSE()
-  MESSAGE("-- LCM is NOT enabled.\n")
-  SET(PERIDIGM_LCM FALSE)
-  SET(LCM_LIBRARY)
+MESSAGE("-- LCM is NOT enabled.\n")
+SET(PERIDIGM_LCM FALSE)
+SET(LCM_LIBRARY)
 ENDIF()
 
 #
-# Enable KOKKOS kernels
-#
-# TODO: Add some checking that KOKKOS_Core, etc is enabeled in Trilinos
-IF(USE_KOKKOS)
-  MESSAGE("-- KOKKOS is enabled, compiling with -DPERIDIGM_KOKKOS.\n")
-  ADD_DEFINITIONS(-DPERIDIGM_KOKKOS)
-  SET(PERIDIGM_KOKKOS TRUE)
-ELSE()
-  MESSAGE("-- KOKKOS is NOT enabled.\n")
-  SET(PERIDIGM_KOKKOS FALSE)
-ENDIF()
+            
 
-#
+                                    
+      
+                                  
+                
+              
+  
+                  
+            
+    
+
+
 # Enable CJL development features
 #
 IF(USE_CJL)
-  MESSAGE("-- CJL is enabled, compiling with -DPERIDIGM_CJL.\n")
-  ADD_DEFINITIONS(-DPERIDIGM_CJL)
-  SET(PERIDIGM_CJL TRUE)
+MESSAGE("-- CJL is enabled, compiling with -DPERIDIGM_CJL.\n")
+ADD_DEFINITIONS(-DPERIDIGM_CJL)
+SET(PERIDIGM_CJL TRUE)
 ELSE()
-  MESSAGE("-- CJL is NOT enabled.\n")
-  SET(PERIDIGM_CJL FALSE)
-  SET(CJL_LIBRARY)
+MESSAGE("-- CJL is NOT enabled.\n")
+SET(PERIDIGM_CJL FALSE)
+SET(CJL_LIBRARY)
 ENDIF()
 
 #
 # Enable Sandia internal development
 #
 IF(USE_SANDIA_INTERNAL)
-  MESSAGE("-- SANDIA_INTERNAL is enabled, compiling with -DPERIDIGM_SANDIA_INTERNAL.\n")
-  ADD_DEFINITIONS(-DPERIDIGM_SANDIA_INTERNAL)
-  SET(PERIDIGM_SANDIA_INTERNAL TRUE)
+MESSAGE("-- SANDIA_INTERNAL is enabled, compiling with -DPERIDIGM_SANDIA_INTERNAL.\n")
+ADD_DEFINITIONS(-DPERIDIGM_SANDIA_INTERNAL)
+SET(PERIDIGM_SANDIA_INTERNAL TRUE)
 ELSE()
-  MESSAGE("-- SANDIA_INTERNAL is NOT enabled.\n")
-  SET(PERIDIGM_SANDIA_INTERNAL FALSE)
-  SET(SANDIA_INTERNAL_LIBRARY)
+MESSAGE("-- SANDIA_INTERNAL is NOT enabled.\n")
+SET(PERIDIGM_SANDIA_INTERNAL FALSE)
+SET(SANDIA_INTERNAL_LIBRARY)
 ENDIF()
 
 #
 # Enable partial volume calculations
 #
 IF(USE_PV)
-  MESSAGE("-- PV is enabled, compiling with -DPERIDIGM_PV.\n")
-  ADD_DEFINITIONS(-DPERIDIGM_PV)
-  SET(PERIDIGM_PV TRUE)
+MESSAGE("-- PV is enabled, compiling with -DPERIDIGM_PV.\n")
+ADD_DEFINITIONS(-DPERIDIGM_PV)
+SET(PERIDIGM_PV TRUE)
 ELSE()
-  MESSAGE("-- PV is NOT enabled.\n")
-  SET(PERIDIGM_PV FALSE)
-  SET(PV_LIBRARY)
+MESSAGE("-- PV is NOT enabled.\n")
+SET(PERIDIGM_PV FALSE)
+        
 ENDIF()
 
 # Optional Installation helpers
 # Note that some of this functionality depends on CMAKE > 2.8.8
 SET(INSTALL_PERIDIGM FALSE)
-IF(ENABLE_INSTALL) 
-  IF(${CMAKE_VERSION} VERSION_GREATER 2.8.8 OR ${CMAKE_VERSION} VERSION_EQUAL 2.8.8)
-    SET(INSTALL_PERIDIGM TRUE)
-    MESSAGE("")
-    MESSAGE("Installation files for Peridigm will be created")
-    MESSAGE("-- install location = ${CMAKE_INSTALL_PREFIX}")
-    MESSAGE("")
-  ELSE()
-    MESSAGE("")
-    MESSAGE("Installation has been requested, but cannot continue")
-    MESSAGE("-- Please upgrade CMAKE to version >= 2.8.8")
-    MESSAGE("")
-  ENDIF()
+IF(ENABLE_INSTALL)
+IF(${CMAKE_VERSION} VERSION_GREATER 2.8.8 OR ${CMAKE_VERSION} VERSION_EQUAL 2.8.8)
+  SET(INSTALL_PERIDIGM TRUE)
+  MESSAGE("")
+  MESSAGE("Installation files for Peridigm will be created")
+  MESSAGE("-- install location = ${CMAKE_INSTALL_PREFIX}")
+  MESSAGE("")
+ELSE()
+  MESSAGE("")
+  MESSAGE("Installation has been requested, but cannot continue")
+  MESSAGE("-- Please upgrade CMAKE to version >= 2.8.8")
+  MESSAGE("")
 ENDIF()
+ENDIF()
+
+# Optional functionality for improved quadrature
+if(USE_IMPROVED_QUADRATURE)
+if(IMPROVED_QUADRATURE_DIR)
+  message("-- Compiling with improved quadrature:")
+  message("       IMPROVED_QUADRATURE_DIR: ${IMPROVED_QUADRATURE_DIR}\n")
+  add_definitions(-DPERIDIGM_IMPROVED_QUADRATURE)
+  set(PERIDIGM_IMPROVED_QUADRATURE TRUE)
+  set(IMPROVED_QUADRATURE_SOURCES ${IMPROVED_QUADRATURE_DIR}/scalarDiffusionQuad/nonloc.cpp ${IMPROVED_QUADRATURE_DIR}/bondBasedQuad/nonloc.cpp)
+  find_package(GSL REQUIRED)
+  set(IMPROVED_QUADRATURE_LIBS ${GSL_LIBRARIES})
+  set(IMPROVED_QUADRATURE_INCLUDE_DIRS ${IMPROVED_QUADRATURE_DIR} ${GSL_INCLUDE_DIRS})
+else()
+  message(FATAL_ERROR "\n**** Error:  Expected IMPROVED_QUADRATURE_DIR.\n")
+  set(IMPROVED_QUADRATURE_SOURCES )
+  set(IMPROVED_QUADRATURE_INCLUDE_DIRS )
+  set(IMPROVED_QUADRATURE_LIBS )
+endif()
+endif()
 
 IF(INSTALL_PERIDIGM)
-  set(INCLUDE_INSTALL_DIR include)
-  set(LIB_INSTALL_DIR lib)
-  include(CMakePackageConfigHelpers)
+set(INCLUDE_INSTALL_DIR include)
+set(LIB_INSTALL_DIR lib)
+include(CMakePackageConfigHelpers)
 ENDIF()
 
-# For some unit tests, we want to link only to specfic libraries
-set(Epetra_LIBRARY epetra)
-set(Zoltan_LIBRARY zoltan)
+                              
+            
+            
 
 # other required libraries
 set(MESH_INPUT_LIBS QuickGrid)
@@ -243,10 +262,10 @@ set(PdMaterialUtilitiesLib PdMaterialUtilities)
 
 # include for all directories
 # Collection of include and lib directories
-set(INCLUDE_DIRS 
-${Trilinos_INCLUDE_DIRS} 
+set(INCLUDE_DIRS
+${Trilinos_INCLUDE_DIRS}
 ${Trilinos_TPL_INCLUDE_DIRS}
-${Boost_INCLUDE_DIRS} 
+${IMPROVED_QUADRATURE_INCLUDE_DIRS}
 ${CMAKE_SOURCE_DIR}
 ${CMAKE_SOURCE_DIR}/src
 ${CMAKE_SOURCE_DIR}/src/core
@@ -294,23 +313,23 @@ ${API_DIR}
 ${QUICK_GRID_DIR}
 ${PDNEIGH_DIR}
 ${UTILITIES_DIR}
-${PARSER_DIR}
+      
 ${BOND_VOL_QUICK_GRID}
 )
 
-# link directories 
-set(LIB_DIRS 
-  ${Boost_LIBRARY_DIRS})
-link_directories(${LIB_DIRS})
+          
+      
+          
+              
 
 set (REQUIRED_LIBS
-  ${BlasLapack_Libraries}
-  ${Trilinos_TPL_LIBRARIES}
+${BlasLapack_Libraries}
+${Trilinos_TPL_LIBRARIES}
 )
 
 set (UT_REQUIRED_LIBS
-  ${BlasLapack_Libraries}  
-  ${Boost_LIBRARIES}
+${BlasLapack_Libraries}
+        
 )
 
 add_subdirectory (src)
@@ -322,13 +341,13 @@ add_subdirectory (test/performance)
 # Can exclude files with flag -e <filename>
 string (COMPARE EQUAL ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} buildInSource)
 if (NOT ${buildInSource})
-   set(UT_DIRS ${UT_DIRS}  -d examples)
-   set(UT_DIRS ${UT_DIRS}  -d test/regression)
-   set(UT_DIRS ${UT_DIRS}  -d test/verification)
-   set(UT_DIRS ${UT_DIRS}  -d test/performance)
-   execute_process(COMMAND python ${CMAKE_SOURCE_DIR}/scripts/mirror.py -s ${CMAKE_SOURCE_DIR} -b ${CMAKE_BINARY_DIR} ${UT_DIRS} )
-   set(SCRIPT_DIRS ${SCRIPT_DIRS}  -d scripts)
-   execute_process(COMMAND python ${CMAKE_SOURCE_DIR}/scripts/mirror.py -s ${CMAKE_SOURCE_DIR} -b ${CMAKE_BINARY_DIR} ${SCRIPT_DIRS} )
+  set(UT_DIRS ${UT_DIRS}  -d examples)
+  set(UT_DIRS ${UT_DIRS}  -d test/regression)
+  set(UT_DIRS ${UT_DIRS}  -d test/verification)
+  set(UT_DIRS ${UT_DIRS}  -d test/performance)
+  execute_process(COMMAND python ${CMAKE_SOURCE_DIR}/scripts/mirror.py -s ${CMAKE_SOURCE_DIR} -b ${CMAKE_BINARY_DIR} ${UT_DIRS} )
+  set(SCRIPT_DIRS ${SCRIPT_DIRS}  -d scripts)
+  execute_process(COMMAND python ${CMAKE_SOURCE_DIR}/scripts/mirror.py -s ${CMAKE_SOURCE_DIR} -b ${CMAKE_BINARY_DIR} ${SCRIPT_DIRS} )
 endif (NOT ${buildInSource})
 # Set symbolic link to needed seacas tools in scripts dir
 execute_process(COMMAND ln -sf ${Trilinos_BINARY_PATH}/exodiff ${CMAKE_BINARY_DIR}/scripts)

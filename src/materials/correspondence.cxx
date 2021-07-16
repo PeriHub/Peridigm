@@ -52,7 +52,7 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <math.h>
 #include <functional>
-#include <boost/math/constants/constants.hpp>
+//#include <boost/math/constants/constants.hpp>
 #include <cmath> 
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
@@ -1358,7 +1358,8 @@ const double* bondDamage
   // placeholder for inclusion of bond damage
   //double bondDamage = 0.0;
 
-  const double pi = boost::math::constants::pi<double>();
+  //const double pi = boost::math::constants::pi<double>();
+  const double pi = M_PI;
   double firstPartOfConstant = 18.0*hourglassCoefficient*bulkModulus/pi;
   double constant;
 
@@ -1472,7 +1473,8 @@ const double* bondDamage
   // placeholder for inclusion of bond damage
   //double bondDamage = 0.0;
 
-  const double pi = boost::math::constants::pi<double>();
+  //const double pi = boost::math::constants::pi<double>();
+  const double pi = M_PI;
   double firstPartOfConstant = 18.0*hourglassCoefficient*bulkModulus/pi;
   double constant;
   double omega0 = 0.0;
