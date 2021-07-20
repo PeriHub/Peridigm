@@ -160,6 +160,7 @@ namespace PeridigmNS {
     bool m_incremental;
     double m_criticalEnergyInterBlock;
     int blockIdFieldId;
+    int block[8];
   };
 
 }
