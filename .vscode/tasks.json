@@ -29,7 +29,7 @@
         {
             "label": "RemoveAndBuild",
             "dependsOn": [
-                "removeRestartFolder",
+                //"removeRestartFolder",
                 "C/C++: g++ build active file"
             ]
         }
