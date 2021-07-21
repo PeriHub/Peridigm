@@ -56,12 +56,13 @@
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
-#include <boost/math/special_functions/fpclassify.hpp>
+//#include <boost/math/special_functions/fpclassify.hpp>
 
 using namespace std;
 
 PeridigmNS::EnergyReleaseDamageCorrepondenceModel::EnergyReleaseDamageCorrepondenceModel(const Teuchos::ParameterList& params)
-: DamageModel(params), 
+: DamageModel(params),
+m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
 m_applyThermalStrains(false),
 m_modelCoordinatesFieldId(-1),
 m_coordinatesFieldId(-1),
@@ -72,14 +73,13 @@ m_deltaTemperatureFieldId(-1),
 m_dilatationFieldId(-1),
 m_weightedVolumeFieldId(-1),
 m_horizonFieldId(-1),
+m_detachedNodesFieldId(-1),
 m_piolaStressTimesInvShapeTensorXId(-1),
 m_piolaStressTimesInvShapeTensorYId(-1),
 m_piolaStressTimesInvShapeTensorZId(-1),
-m_detachedNodesFieldId(-1),
 m_forceDensityFieldId(-1),
 m_deformationGradientFieldId(-1),
-m_hourglassStiffId(-1),
-m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
+m_hourglassStiffId(-1){
 
     
     if (params.isParameter("Critical Energy")) {
@@ -255,7 +255,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     
     double criticalEnergyTension(-1.0);
     // for temperature dependencies easy to extent
-    double *deltaTemperature = NULL;
+    //double *deltaTemperature = NULL;
     double *tempStressX, *tempStressY, *tempStressZ;
     dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
 
