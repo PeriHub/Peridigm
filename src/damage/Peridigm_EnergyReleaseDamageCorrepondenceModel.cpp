@@ -56,13 +56,12 @@
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
-//#include <boost/math/special_functions/fpclassify.hpp>
+#include <boost/math/special_functions/fpclassify.hpp>
 
 using namespace std;
 
 PeridigmNS::EnergyReleaseDamageCorrepondenceModel::EnergyReleaseDamageCorrepondenceModel(const Teuchos::ParameterList& params)
-: DamageModel(params),
-m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
+: DamageModel(params), 
 m_applyThermalStrains(false),
 m_modelCoordinatesFieldId(-1),
 m_coordinatesFieldId(-1),
@@ -73,13 +72,14 @@ m_deltaTemperatureFieldId(-1),
 m_dilatationFieldId(-1),
 m_weightedVolumeFieldId(-1),
 m_horizonFieldId(-1),
-m_detachedNodesFieldId(-1),
 m_piolaStressTimesInvShapeTensorXId(-1),
 m_piolaStressTimesInvShapeTensorYId(-1),
 m_piolaStressTimesInvShapeTensorZId(-1),
+m_detachedNodesFieldId(-1),
 m_forceDensityFieldId(-1),
 m_deformationGradientFieldId(-1),
-m_hourglassStiffId(-1) {
+m_hourglassStiffId(-1),
+m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
 
     
     if (params.isParameter("Critical Energy")) {
@@ -116,8 +116,20 @@ m_hourglassStiffId(-1) {
     if(params.isParameter("Only Tension"))
         m_onlyTension = params.get<bool>("Only Tension");
     m_criticalEnergyInterBlock = m_criticalEnergyTension;
-    if (params.isParameter("Interblock damage energy"))
+    if (params.isParameter("Interblock damage energy")){
         m_criticalEnergyInterBlock = params.get<double>("Interblock damage energy");
+        
+        for (int iID = 0; iID < 8; ++iID){ block[iID] = 0;}
+        if (params.isParameter("Block_12")) {block[0] = params.get<int>("Block_12");}
+        if (params.isParameter("Block_21")) {block[1] = params.get<int>("Block_21");}
+        if (params.isParameter("Block_34")) {block[2] = params.get<int>("Block_34");}
+        if (params.isParameter("Block_43")) {block[3] = params.get<int>("Block_43");}
+        if (params.isParameter("Block_56")) {block[4] = params.get<int>("Block_56");}
+        if (params.isParameter("Block_65")) {block[5] = params.get<int>("Block_65");}
+        if (params.isParameter("Block_78")) {block[6] = params.get<int>("Block_78");}
+        if (params.isParameter("Block_87")) {block[7] = params.get<int>("Block_87");}
+        
+    }
     if (params.isParameter("Stable Bond Difference"))
         m_bondDiffSt  = params.get<int>("Stable Bond Difference");
   //************************************
@@ -243,7 +255,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     
     double criticalEnergyTension(-1.0);
     // for temperature dependencies easy to extent
-    //double *deltaTemperature = NULL;
+    double *deltaTemperature = NULL;
     double *tempStressX, *tempStressY, *tempStressZ;
     dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
 
@@ -379,12 +391,19 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
 
             normEtaSq = etaX*etaX+etaY*etaY+etaZ*etaZ;
 
-            bool Tension = true;
-            criticalEnergyTension = m_criticalEnergyTension;
-            if (blockNumber[neighborID] != blockNumber[ownedIDs[iID]])criticalEnergyTension = m_criticalEnergyInterBlock;
-            if (m_onlyTension == true && dEta<0) Tension = false;
-            if (Tension == true){
+            bool modelActive = true;
+            // if this option is active bond break only if they are streched
+            if (m_onlyTension == true && dEta<0) modelActive = false;
+            if (modelActive == true){
                 if (normEtaSq>0){
+                    criticalEnergyTension = m_criticalEnergyTension;
+                    if (blockNumber[neighborID] != blockNumber[ownedIDs[iID]]){
+                        for (int biID = 0; biID < 8; ++biID){
+                            if (block[biID] == 0) break;
+                            if (blockNumber[neighborID]==block[biID])criticalEnergyTension = m_criticalEnergyInterBlock;
+                        }
+                    }
+                    
                     omegaP1 = MATERIAL_EVALUATION::scalarInfluenceFunction(dX, horizon[nodeId]); 
                     omegaP2 = MATERIAL_EVALUATION::scalarInfluenceFunction(-dX, horizon[neighborID]); 
                     // average Force has to be taken
