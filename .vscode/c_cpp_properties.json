@@ -16,7 +16,7 @@
             "cppStandard": "gnu++14",
             "intelliSenseMode": "gcc-x64",
             "compilerArgs": [
-                "-D CMAKE_BUILD_TYPE:STRING=Release",
+                "-D CMAKE_BUILD_TYPE:STRING=Debug",
                 "-D Trilinos_DIR:PATH=/usr/local/bin/trilinos/lib/cmake/Trilinos/",
                 "-D CMAKE_C_COMPILER:STRING=/usr/local/lib/openmpi-4.1.1/bin/mpicc",
                 "-D CMAKE_CXX_COMPILER:STRING=/usr/local/lib/openmpi-4.1.1/bin/mpicxx",

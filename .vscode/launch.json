@@ -16,7 +16,8 @@
                 //"plate_0.xml"
                 // "coreTest.yaml"
                 //"NooruMohamedTest.xml"
-                "GIICmodel.xml"
+                // "GIICmodel.xml"
+                "peelModel.yaml"
             ],
             "stopAtEntry": true,
             //"cwd": "/mnt/c/Users/hess_ja/Desktop/PythonProjects/peridigmModelWriter/",
@@ -25,7 +26,8 @@
             //"cwd": "/home/jt/peridigmJobs/doe_2_601/",
             // "cwd": "/home/jt/peridigmJobs/modelCreation/",
             //"cwd": "/home/jt/peridigmJobs/staticSolver/",
-            "cwd": "/home/jt/peridigmJobs/GIICmodel/",
+            // "cwd": "/home/jt/peridigmJobs/GIICmodel/",
+            "cwd": "/home/jt/peridigmJobs/peelModel/",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
@@ -36,7 +38,7 @@
                     "ignoreFailures": true
                 }
             ],
-            // "preLaunchTask": "RemoveAndBuild",
+            //"preLaunchTask": "RemoveAndBuild",
             "miDebuggerPath": "/usr/bin/gdb"
         },
 
