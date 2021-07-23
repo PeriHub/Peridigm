@@ -72,7 +72,7 @@ namespace PeridigmNS {
     virtual ~OutputManager_ExodusII();
 
     //! Write data to disk
-    virtual void write(Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks, double);
+    virtual void write(Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks, double, bool);
 
     //! Multiply output frequency, for the sake of reducing load-step size in Adaptive Quasi-static
     virtual void multiplyOutputFrequency(double);
@@ -120,6 +120,9 @@ namespace PeridigmNS {
     
     //! Index of last plot dump step to Exodus file
     int lastOutputStep;
+
+    //! Flag indicating if Output should be written after damage initiation
+    bool writeAfterDamage;
 
     //! Flag indicating if this is the first call to initializeExodusDatabase
     bool initializeExodusDatabaseCalled;

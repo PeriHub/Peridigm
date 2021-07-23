@@ -2098,7 +2098,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     if(analysisHasDataLoader){
       dataLoader->loadData(timeCurrent, blocks);
     }
-    outputManager->write(blocks, timeCurrent);
+    outputManager->write(blocks, timeCurrent, damageExist);
     PeridigmNS::Timer::self().stopTimer("Output");
 
     // swap state N and state NP1
