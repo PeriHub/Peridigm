@@ -248,10 +248,10 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
         const int numOwnedPoints,
         const int* ownedIDs,
         const int* neighborhoodList,
-        PeridigmNS::DataManager& dataManager) const {
+        PeridigmNS::DataManager& dataManager,
+        int blockInterfaceId = -1) const {
 
     double *x, *y, *damage, *bondDamage, *bondDamageNP1, *bondDamageDiff, *horizon, *vol, *detachedNodes, *blockNumber;
-    
     
     double criticalEnergyTension(-1.0);
     // for temperature dependencies easy to extent
@@ -397,12 +397,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
             if (modelActive == true){
                 if (normEtaSq>0){
                     criticalEnergyTension = m_criticalEnergyTension;
-                    if (blockNumber[neighborID] != blockNumber[ownedIDs[iID]]){
-                        for (int biID = 0; biID < 8; ++biID){
-                            if (block[biID] == 0) break;
-                            if (blockNumber[neighborID]==block[biID])criticalEnergyTension = m_criticalEnergyInterBlock;
-                        }
-                    }
+                    if (blockNumber[neighborID]==blockInterfaceId)criticalEnergyTension = m_criticalEnergyInterBlock;
                     
                     omegaP1 = MATERIAL_EVALUATION::scalarInfluenceFunction(dX, horizon[nodeId]); 
                     omegaP2 = MATERIAL_EVALUATION::scalarInfluenceFunction(-dX, horizon[neighborID]); 

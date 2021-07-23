@@ -142,7 +142,8 @@ PeridigmNS::JohnsonCookDamageModel::computeDamage(const double dt,
                                                   const int numOwnedPoints,
                                                   const int* ownedIDs,
                                                   const int* neighborhoodList,
-                                                  PeridigmNS::DataManager& dataManager) const
+                                                  PeridigmNS::DataManager& dataManager,
+                                                  int blockInterfaceId = -1) const
 {
   //NOTE: this fixes the inter-processor and inter-block double counting problem
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
