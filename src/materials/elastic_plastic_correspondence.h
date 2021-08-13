@@ -55,6 +55,7 @@ void updateElasticPerfectlyPlasticCauchyStress
     const ScalarT* unrotatedRateOfDeformation, 
     const ScalarT* cauchyStressN, 
     ScalarT* cauchyStressNP1, 
+     ScalarT* cauchyStressElasticNP1,
     ScalarT* vonMisesStress,
     const ScalarT* equivalentPlasticStrainN,
     ScalarT* equivalentPlasticStrainNP1,
@@ -70,7 +71,8 @@ void updateElasticPerfectlyPlasticCauchyStress
 (
     const ScalarT* unrotatedRateOfDeformation, 
     const ScalarT* cauchyStressN, 
-    ScalarT* cauchyStressNP1, 
+    ScalarT* cauchyStressNP1,
+    ScalarT* cauchyStressElasticNP1,
     ScalarT* vonMisesStress,
     const ScalarT* equivalentPlasticStrainN,
     ScalarT* equivalentPlasticStrainNP1,

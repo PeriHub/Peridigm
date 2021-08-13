@@ -196,6 +196,7 @@ namespace PeridigmNS {
     int m_piolaStressTimesInvShapeTensorYId;
     int m_piolaStressTimesInvShapeTensorZId;
     int m_unrotatedRateOfDeformationFieldId;
+    int m_unrotatedCauchyStressElasticFieldId;
     int m_detachedNodesFieldId;
     int m_partialStressFieldId;
     int m_hourglassStiffId;
@@ -206,6 +207,7 @@ namespace PeridigmNS {
     bool m_hencky;
     int m_deformationGradientNonIncFieldId;
     bool m_tension;
+    bool m_plast;
   };
 }
 

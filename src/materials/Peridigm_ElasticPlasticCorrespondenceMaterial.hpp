@@ -90,6 +90,7 @@ namespace PeridigmNS {
     int m_unrotatedCauchyStressFieldId;
     int m_vonMisesStressFieldId;
     int m_equivalentPlasticStrainFieldId;
+    int m_unrotatedCauchyStressElasticFieldId;
   };
 }
 

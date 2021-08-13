@@ -56,7 +56,7 @@ using namespace std;
 PeridigmNS::ElasticPlasticCorrespondenceMaterial::ElasticPlasticCorrespondenceMaterial(const Teuchos::ParameterList& params)
   : CorrespondenceMaterial(params),
     m_yieldStress(0.0),
-    m_unrotatedRateOfDeformationFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_vonMisesStressFieldId(-1), m_equivalentPlasticStrainFieldId(-1)
+    m_unrotatedRateOfDeformationFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_unrotatedCauchyStressElasticFieldId(-1), m_vonMisesStressFieldId(-1), m_equivalentPlasticStrainFieldId(-1)
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the selected correspondence material model.\n");
 
@@ -65,11 +65,13 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::ElasticPlasticCorrespondenceMa
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   m_unrotatedRateOfDeformationFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Rate_Of_Deformation");
   m_unrotatedCauchyStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Unrotated_Cauchy_Stress");
+  m_unrotatedCauchyStressElasticFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Elastic_Cauchy_Stress");
   m_vonMisesStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Von_Mises_Stress");
   m_equivalentPlasticStrainFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Equivalent_Plastic_Strain");
 
   m_fieldIds.push_back(m_unrotatedRateOfDeformationFieldId);
   m_fieldIds.push_back(m_unrotatedCauchyStressFieldId);
+  m_fieldIds.push_back(m_unrotatedCauchyStressElasticFieldId);
   m_fieldIds.push_back(m_vonMisesStressFieldId);
   m_fieldIds.push_back(m_equivalentPlasticStrainFieldId);
 }
@@ -107,6 +109,9 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::computeCauchyStress(const doub
 
   double *unrotatedCauchyStressNP1;
   dataManager.getData(m_unrotatedCauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&unrotatedCauchyStressNP1);
+  
+  double *cauchyStressElastic;
+  dataManager.getData(m_unrotatedCauchyStressElasticFieldId, PeridigmField::STEP_NONE)->ExtractView(&cauchyStressElastic);
 
   double *unrotatedRateOfDeformation;
   dataManager.getData(m_unrotatedRateOfDeformationFieldId, PeridigmField::STEP_NONE)->ExtractView(&unrotatedRateOfDeformation);
@@ -115,10 +120,12 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::computeCauchyStress(const doub
   dataManager.getData(m_vonMisesStressFieldId, PeridigmField::STEP_NONE)->ExtractView(&vonMisesStress);
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_NP1)->ExtractView(&equivalentPlasticStrainNP1);
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_N)->ExtractView(&equivalentPlasticStrainN);
+  
 
   CORRESPONDENCE::updateElasticPerfectlyPlasticCauchyStress(unrotatedRateOfDeformation, 
                                                             unrotatedCauchyStressN, 
                                                             unrotatedCauchyStressNP1, 
+                                                            cauchyStressElastic,
                                                             vonMisesStress,
                                                             equivalentPlasticStrainN, 
                                                             equivalentPlasticStrainNP1, 

@@ -62,6 +62,7 @@ PeridigmNS::ElasticPlasticHypoelasticCorrespondenceMaterial::ElasticPlasticHypoe
     m_equivalentPlasticStrainFieldId(-1),
     m_stressTriaxialityFieldId(-1),
     m_flyingPointFlagFieldId(-1),
+    m_unrotatedCauchyStressElasticFieldId(-1),
     m_bondLevelUnrotatedRateOfDeformationXXFieldId(-1),
     m_bondLevelUnrotatedRateOfDeformationXYFieldId(-1),
     m_bondLevelUnrotatedRateOfDeformationXZFieldId(-1),
@@ -94,6 +95,8 @@ PeridigmNS::ElasticPlasticHypoelasticCorrespondenceMaterial::ElasticPlasticHypoe
   m_equivalentPlasticStrainFieldId    = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Equivalent_Plastic_Strain");
   m_stressTriaxialityFieldId          = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Stress_Triaxiality");
   m_flyingPointFlagFieldId            = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Flying_Point_Flag");
+  m_unrotatedCauchyStressElasticFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Elastic_Cauchy_Stress");
+
 
   m_fieldIds.push_back(m_unrotatedRateOfDeformationFieldId);
   m_fieldIds.push_back(m_unrotatedCauchyStressFieldId);
@@ -101,6 +104,7 @@ PeridigmNS::ElasticPlasticHypoelasticCorrespondenceMaterial::ElasticPlasticHypoe
   m_fieldIds.push_back(m_equivalentPlasticStrainFieldId);
   m_fieldIds.push_back(m_stressTriaxialityFieldId);
   m_fieldIds.push_back(m_flyingPointFlagFieldId);
+  m_fieldIds.push_back(m_unrotatedCauchyStressElasticFieldId);
 
   m_bondLevelUnrotatedRateOfDeformationXXFieldId = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Unrotated_Rate_Of_Deformation_XX");
   m_bondLevelUnrotatedRateOfDeformationXYFieldId = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Unrotated_Rate_Of_Deformation_XY");
@@ -202,10 +206,12 @@ PeridigmNS::ElasticPlasticHypoelasticCorrespondenceMaterial::computeCauchyStress
   double *stressTriaxiality, *flyingPointFlag;
   dataManager.getData(m_stressTriaxialityFieldId, PeridigmField::STEP_NONE)->ExtractView(&stressTriaxiality);
   dataManager.getData(m_flyingPointFlagFieldId, PeridigmField::STEP_N)->ExtractView(&flyingPointFlag);
-
+  double *cauchyStressElastic;
+  dataManager.getData(m_unrotatedCauchyStressElasticFieldId, PeridigmField::STEP_NONE)->ExtractView(&cauchyStressElastic);
   CORRESPONDENCE::updateElasticPerfectlyPlasticCauchyStress(unrotatedRateOfDeformation, 
                                                             unrotatedCauchyStressN, 
                                                             unrotatedCauchyStressNP1,
+                                                            cauchyStressElastic,
                                                             vonMisesStress,
                                                             equivalentPlasticStrainN, 
                                                             equivalentPlasticStrainNP1, 

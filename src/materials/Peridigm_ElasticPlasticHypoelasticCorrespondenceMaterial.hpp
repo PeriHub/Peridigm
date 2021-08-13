@@ -93,7 +93,7 @@ namespace PeridigmNS {
     int m_equivalentPlasticStrainFieldId;
     int m_stressTriaxialityFieldId;
     int m_flyingPointFlagFieldId;
-    
+    int m_unrotatedCauchyStressElasticFieldId;
     int m_bondLevelUnrotatedRateOfDeformationXXFieldId;
     int m_bondLevelUnrotatedRateOfDeformationXYFieldId;
     int m_bondLevelUnrotatedRateOfDeformationXZFieldId;

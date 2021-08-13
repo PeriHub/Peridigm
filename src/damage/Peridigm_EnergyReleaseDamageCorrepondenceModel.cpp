@@ -93,9 +93,9 @@ m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
     }else{
         degradationFactor = 1; 
     }
-    m_incremental = true;
-    if (params.isParameter("Incremental")){
-       m_incremental = params.get<bool>("Incremental");
+    m_incremental = false;
+    if (params.isParameter("Plastic")){
+       m_incremental = params.get<bool>("Plastic");
     }
     m_criticalEnergyTension = params.get<double>("Critical Energy");
     m_hourglassCoefficient = params.get<double>("Hourglass Coefficient");
@@ -183,6 +183,7 @@ m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
     m_forceDensityFieldId               = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Force_Density");
     m_deformationGradientFieldId        = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient");
     m_hourglassStiffId                  = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Hourglass_Stiffness");
+    m_bondEnergyFieldId = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage");
  
     m_fieldIds.push_back(blockIdFieldId);
     m_fieldIds.push_back(m_volumeFieldId);
@@ -202,6 +203,8 @@ m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
     m_fieldIds.push_back(m_forceDensityFieldId);
     m_fieldIds.push_back(m_hourglassStiffId);
     m_fieldIds.push_back(m_deformationGradientFieldId);
+    m_fieldIds.push_back(m_bondEnergyFieldId);
+    
 
 }
 
@@ -250,7 +253,8 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
         const int* neighborhoodList,
         PeridigmNS::DataManager& dataManager) const {
 
-    double *x, *y, *damage, *bondDamage, *bondDamageNP1, *bondDamageDiff, *horizon, *vol, *detachedNodes, *blockNumber;
+    double *x, *y, *yN, *damage, *bondDamage, *bondDamageNP1, *bondDamageDiff, *horizon, *vol, *detachedNodes, *blockNumber;
+    double *bondEnergy, *bondEnergyNP1;
     
     
     double criticalEnergyTension(-1.0);
@@ -262,6 +266,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
 
     dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&y);
+    if (m_incremental)dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_N)->ExtractView(&yN);
     dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&vol);
 
     dataManager.getData(m_horizonFieldId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
@@ -269,6 +274,8 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
     dataManager.getData(m_bondDamageDiffFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageDiff);
     dataManager.getData(blockIdFieldId, PeridigmField::STEP_NONE)->ExtractView(&blockNumber);
+    dataManager.getData(m_bondEnergyFieldId, PeridigmField::STEP_N)->ExtractView(&bondEnergyN);
+    dataManager.getData(m_bondEnergyFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondEnergyNp1);
 
     int iID, nodeId;
     //bool rerun;
@@ -312,7 +319,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     int neighborhoodListIndex(0), bondIndex(0), bondCheck(0);
     int numNeighbors, neighborID, iNID;
     double totalDamage;
-    double nodeInitialX[3], nodeCurrentX[3];
+    double nodeInitialX[3], nodeCurrentX[3], nodeCurrentXN[3];
     double omegaP1, omegaP2;
     double critIso;
     
@@ -360,7 +367,11 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
         nodeCurrentX[0] = y[nodeId*3];
         nodeCurrentX[1] = y[nodeId*3+1];
         nodeCurrentX[2] = y[nodeId*3+2];
-
+        if (m_incremental){
+            nodeCurrentXN[0] = yN[nodeId*3];
+            nodeCurrentXN[1] = yN[nodeId*3+1];
+            nodeCurrentXN[2] = yN[nodeId*3+2];
+        }
         for (iNID = 0; iNID < numNeighbors; ++iNID) {
             
             
@@ -377,8 +388,8 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
             etaX  = (Y_dx-X_dx);
             etaY  = (Y_dy-X_dy);
             etaZ  = (Y_dz-X_dz);
-            
-                         
+
+
             //double uNx = y[neighborID*3]   - x[neighborID*3];
             //double uNy = y[neighborID*3+1] - x[neighborID*3+1];
             //double uNz = y[neighborID*3+2] - x[neighborID*3+2];
@@ -441,8 +452,13 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                     
                     //factorN = (Y_dx*TXN + Y_dy*TYN + Y_dz*TZN)/dYSq;
                     //TPXN = factorN*Y_dx; TPYN = factorN*Y_dy; TPZN = factorN*Y_dz;
-                    
-                    bondEnergy = 0.5*temp*(abs(TPX*etaX)+abs(TPXN*etaX)+abs(TPY*etaY)+abs(TPYN*etaY)+abs(TPZ*etaZ)+abs(TPZN*etaZ)) ;
+                    if (m_incremental){
+                        //projection on bond, but energy only with incremental change
+                        etaX  = Y_dx-(yN[neighborID*3]   - nodeCurrentXN[0]);
+                        etaY  = Y_dy-(yN[neighborID*3+1] - nodeCurrentXN[1]);
+                        etaZ  = Y_dz-(yN[neighborID*3+2] - nodeCurrentXN[2]);
+                    }
+                    bondEnergyNP1[bondIndex] = bondEnergyN[bondIndex] + 0.5*temp*(abs(TPX*etaX)+abs(TPXN*etaX)+abs(TPY*etaY)+abs(TPYN*etaY)+abs(TPZ*etaZ)+abs(TPZN*etaZ)) ;
                     //if (iID == 1) std::cout<<bondEnergy<<std::endl;
                 }
                 else

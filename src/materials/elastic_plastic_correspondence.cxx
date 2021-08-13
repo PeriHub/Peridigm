@@ -59,6 +59,7 @@ void updateElasticPerfectlyPlasticCauchyStress
     const ScalarT* unrotatedRateOfDeformation, 
     const ScalarT* cauchyStressN, 
     ScalarT* cauchyStressNP1, 
+    ScalarT* cauchyStressElasticNP1,
     ScalarT* vonMisesStress,
     const ScalarT* equivalentPlasticStrainN,
     ScalarT* equivalentPlasticStrainNP1,
@@ -126,6 +127,7 @@ void updateElasticPerfectlyPlasticCauchyStress
       // Compute the ``trial'' von Mises stress
       for(int i = 0; i < 9; i++){
           deviatoricStressNP1[i] = *(stressNP1+i);
+          *(stressElasticNP1+i) = deviatoricStressNP1[i];
       }
       deviatoricStressNP1[0] -= sphericalStressNP1;
       deviatoricStressNP1[4] -= sphericalStressNP1;
@@ -244,6 +246,7 @@ void updateElasticPerfectlyPlasticCauchyStress
     const ScalarT* unrotatedRateOfDeformation, 
     const ScalarT* cauchyStressN, 
     ScalarT* cauchyStressNP1, 
+    ScalarT* cauchyStressElasticNP1,
     ScalarT* vonMisesStress,
     const ScalarT* equivalentPlasticStrainN,
     ScalarT* equivalentPlasticStrainNP1,
@@ -260,7 +263,7 @@ void updateElasticPerfectlyPlasticCauchyStress
   const ScalarT* rateOfDef = unrotatedRateOfDeformation;
   const ScalarT* stressN = cauchyStressN;
   ScalarT* stressNP1 = cauchyStressNP1;
-
+  ScalarT* stressElasticNP1 = cauchyStressElasticNP1;
   ScalarT* vmStress = vonMisesStress;
 
   const ScalarT* eqpsN = equivalentPlasticStrainN;
@@ -286,7 +289,7 @@ void updateElasticPerfectlyPlasticCauchyStress
   ScalarT tempScalar;
   ScalarT yieldFunction;
 
-  for(int iID=0 ; iID<numPoints ; ++iID, rateOfDef+=9, stressN+=9, stressNP1+=9, 
+  for(int iID=0 ; iID<numPoints ; ++iID, rateOfDef+=9, stressN+=9, stressNP1+=9, stressElasticNP1+=9, 
       ++vmStress, ++eqpsN, ++eqpsNP1, ++triaxiality, ++flyingPointFlg){
 
     // if the node is not flying, update the values. Otherwise, just skip
@@ -319,6 +322,7 @@ void updateElasticPerfectlyPlasticCauchyStress
       // Compute the ``trial'' von Mises stress
       for(int i = 0; i < 9; i++){
         deviatoricStressNP1[i] = *(stressNP1+i);
+        *(stressElasticNP1+i) = deviatoricStressNP1[i];
       }
       deviatoricStressNP1[0] -= sphericalStressNP1;
       deviatoricStressNP1[4] -= sphericalStressNP1;
@@ -735,6 +739,7 @@ template void updateElasticPerfectlyPlasticCauchyStress<double>
     const double* cauchyStressN, 
     double* cauchyStressNP1, 
     double* vonMisesStress,
+    double* cauchyStressElasticNP1,
     const double* equivalentPlasticStrainN,
     double* equivalentPlasticStrainNP1,
     const int numPoints, 
@@ -749,6 +754,7 @@ template void updateElasticPerfectlyPlasticCauchyStress<double>
     const double* unrotatedRateOfDeformation, 
     const double* cauchyStressN, 
     double* cauchyStressNP1, 
+    double* cauchyStressElasticNP1,
     double* vonMisesStress,
     const double* equivalentPlasticStrainN,
     double* equivalentPlasticStrainNP1,
@@ -808,7 +814,8 @@ template void updateElasticPerfectlyPlasticCauchyStress<Sacado::Fad::DFad<double
 (
     const Sacado::Fad::DFad<double>* unrotatedRateOfDeformation, 
     const Sacado::Fad::DFad<double>* cauchyStressN, 
-    Sacado::Fad::DFad<double>* cauchyStressNP1, 
+    Sacado::Fad::DFad<double>* cauchyStressNP1,
+    Sacado::Fad::DFad<double>* cauchyStressElasticNP1,
     Sacado::Fad::DFad<double>* vonMisesStress,
     const Sacado::Fad::DFad<double>* equivalentPlasticStrainN,
     Sacado::Fad::DFad<double>* equivalentPlasticStrainNP1,

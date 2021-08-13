@@ -153,6 +153,7 @@ namespace PeridigmNS {
     int m_shapeStatusId;
     int m_shapeTensorInverseFieldId;
     int m_cauchyStressFieldId;
+    int m_bondEnergyFieldId;
     bool m_onlyTension;
     double m_Thickness;
     double m_hourglassCoefficient;

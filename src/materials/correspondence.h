@@ -125,11 +125,9 @@ int computeShapeTensorInverseAndApproximateDeformationGradient
 const double* volume,
 const double* horizon,
 const double* modelCoordinates,
-const ScalarT* coordinates,
 const ScalarT* coordinatesNP1,
 ScalarT* shapeTensorInverse,
 ScalarT* deformationGradient,
-const double* bondDamage,
 const double* bondDamageNP1,
 const int* neighborhoodList,
 int numPoints,
@@ -287,6 +285,7 @@ const double* modelCoordinates,
 const ScalarT* coordinatesNP1,
 const ScalarT* deformationGradient,
 const ScalarT* cauchyStressNP1,
+const ScalarT* cauchyStressElastic,
 const ScalarT* shapeTensorInverse,
 const double* bondDamage,
 const ScalarT C[][6],
@@ -574,6 +573,23 @@ const double* flyingPointFlag,
 const double* bondDamage,
 const int* neighborhoodList,
 int numPoints
+);
+
+template<typename ScalarT>
+void getLinearUnrotatedRateOfDeformation
+(
+const double* volume,
+const double* horizon,
+const double* modelCoordinates,
+const ScalarT* velocities,
+ScalarT* deformationGradient,
+const ScalarT* shapeTensorInverse,
+ScalarT* unrotatedRateOfDeformation,
+const int* neighborhoodList,
+int numPoints,
+const double* bondDamage,
+const bool type,
+double* detachedNodes
 );
 }
 

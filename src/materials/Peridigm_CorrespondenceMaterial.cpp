@@ -47,7 +47,6 @@
 
 #include "Peridigm_CorrespondenceMaterial.hpp"
 #include "Peridigm_Field.hpp"
-#include "Peridigm_Timer.hpp"
 #include "elastic.h"
 #include "correspondence.h"
 #include "Peridigm_DegreesOfFreedomManager.hpp"
@@ -55,7 +54,7 @@
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
-//#include <boost/math/special_functions/fpclassify.hpp>
+#include <boost/math/special_functions/fpclassify.hpp>
 using namespace std;
 
 PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::ParameterList& params)
@@ -67,13 +66,14 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     m_hourglassForceDensityFieldId(-1), m_forceDensityFieldId(-1), m_bondDamageFieldId(-1),
     m_deformationGradientFieldId(-1),
     m_shapeTensorInverseFieldId(-1),
-    m_cauchyStressFieldId(-1),
     m_leftStretchTensorFieldId(-1),
     m_rotationTensorFieldId(-1), 
-    m_unrotatedCauchyStressFieldId(-1), 
+    m_unrotatedCauchyStressFieldId(-1),
+    m_cauchyStressFieldId(-1), 
     m_unrotatedRateOfDeformationFieldId(-1),
     m_partialStressFieldId(-1),
-    m_hourglassStiffId(-1)
+    m_hourglassStiffId(-1),
+    m_unrotatedCauchyStressElasticFieldId(-1)
     
 {
      
@@ -85,31 +85,36 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_stabilizationType = 3;
 
   m_plane = false;
-
-  //************************************
-  // wie komme ich an den Namen??
-  //************************************
-  //if (params.isParameter("Linear Elastic Correspondence")){
-    nonLin = false;
+  nonLin = false;
+  m_hencky = false;
+  m_plast = false;
+  if (params.isParameter("Non linear")){
+      nonLin = params.get<bool>("Non linear");
+  }
   
-    bool m_planeStrain = false, m_planeStress = false;
-    if (params.isParameter("Plane Strain"))
-        m_planeStrain = params.get<bool>("Plane Strain");
-        
-    if (params.isParameter("Plane Stress"))
-        m_planeStress = params.get<bool>("Plane Stress");
-    m_hencky = true;
-    if (params.isParameter("Hencky Strain")){
-        m_hencky = params.get<bool>("Hencky Strain");
-    }
-    if (m_planeStrain==true){
-        m_plane=true;
-        
-    }
-    if (m_planeStress==true){
-        m_plane=true;
-       
-    }
+  if (params.isParameter("Linear Elastic Correspondence")){
+    nonLin = false;
+  }
+  bool m_planeStrain = false, m_planeStress = false;
+  if (params.isParameter("Plane Strain"))
+      m_planeStrain = params.get<bool>("Plane Strain");
+      
+  if (params.isParameter("Plane Stress"))
+      m_planeStress = params.get<bool>("Plane Stress");
+
+  if (params.isParameter("Hencky Strain")){
+      m_hencky = params.get<bool>("Hencky Strain");
+  }
+  if (m_planeStrain==true){
+      m_plane=true;
+      
+  }
+  if (m_planeStress==true){
+      m_plane=true;
+     
+  }
+
+  if (params.isParameter("Yield Stress")) m_plast = true;
   m_tension = true;
   if (params.isParameter("Tension pressure separation for damage model")){
       m_tension = params.get<bool>("Tension pressure separation for damage model");
@@ -199,36 +204,35 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
         
         }
         else{
-            m_bulkModulus = calculateBulkModulus(params);
-            m_shearModulus = calculateShearModulus(params);
-        
-            C11 = (4*m_shearModulus*(3*m_bulkModulus + m_shearModulus))/(3*m_bulkModulus + 4*m_shearModulus);
-            C44 = m_shearModulus;
-            C55 = m_shearModulus;
-            C66 = m_shearModulus;
-            C12 = (2*(3*m_bulkModulus - 2*m_shearModulus)*m_shearModulus)/(3*m_bulkModulus + 4*m_shearModulus);
-            C13 = C12;
-            C14 = 0.0;
-            C15 = 0.0;
-            C16 = 0.0;
-            C22 = C11;
-            C33 = C11;
-            C23 = C12;
-            C24 = 0.0;
-            C25 = 0.0;
-            C26 = 0.0;
-            C34 = 0.0;
-            C35 = 0.0;
-            C36 = 0.0;
-            C45 = 0.0;
-            C46 = 0.0;
-            C56 = 0.0;
+           m_bulkModulus = calculateBulkModulus(params);
+           m_shearModulus = calculateShearModulus(params);
+           //iso = true;
+           C11 = 2*m_shearModulus + (m_bulkModulus - 2*m_shearModulus/3.0);
+           C44 = m_shearModulus;
+           C55 = m_shearModulus;
+           C66 = m_shearModulus;
+           C12 = m_bulkModulus - 2*m_shearModulus/3.0;
+           C13 = C12;
+           C14 = 0.0;
+           C15 = 0.0;
+           C16 = 0.0;
+           C22 = C11;
+           C33 = C11;
+           C23 = C12;
+           C24 = 0.0;
+           C25 = 0.0;
+           C26 = 0.0;
+           C34 = 0.0;
+           C35 = 0.0;
+           C36 = 0.0;
+           C45 = 0.0;
+           C46 = 0.0;
+           C56 = 0.0;
         }
         // Equation (8) Dipasquale, D., Sarego, G., Zaccariotto, M., Galvanetto, U., A discussion on failure criteria
           // for ordinary state-based Peridynamics, Engineering Fracture Mechanics (2017), doi: https://doi.org/10.1016/
           // j.engfracmech.2017.10.011
-        if (m_planeStrain==true)m_plane=true;
-        if (m_planeStress==true)m_plane=true;
+
         // have to be done after rotation if angles exist
         if (m_plane==false){
          C[0][0] = C11;C[0][1] = C12;C[0][2]= C13; C[0][3] = C14; C[0][4] = C15; C[0][5]= C16;
@@ -239,16 +243,17 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
          C[5][0] = C16;C[5][1] = C26;C[5][2]= C36; C[5][3] = C46; C[5][4] = C56; C[5][5]= C66;
         }
         // tbd in future
-        if (m_planeStress==true && iso == true){
-            //only transversal isotropic in the moment --> definition of iso missing
-         C[0][0] = C11-C13*C13/C22;C[0][1] = C12-C13*C23/C22;C[0][2] = 0.0; C[0][3] = 0.0; C[0][4] = 0.0; C[0][5] = 0.0;
-         C[1][0] = C12-C13*C23/C22;C[1][1] = C22-C13*C23/C22;C[1][2] = 0.0; C[1][3] = 0.0; C[1][4] = 0.0; C[1][5] = 0.0;
-         C[2][0] = 0.0;            C[2][1] = 0.0;            C[2][2] = 0.0; C[2][3] = 0.0; C[2][4] = 0.0; C[2][5] = 0.0;
-         C[3][0] = 0.0;            C[3][1] = 0.0;            C[3][2] = 0.0; C[3][3] = 0.0; C[3][4] = 0.0; C[3][5] = 0.0;
-         C[4][0] = 0.0;            C[4][1] = 0.0;            C[4][2] = 0.0; C[4][3] = 0.0; C[4][4] = 0.0; C[4][5] = 0.0;
-         C[5][0] = 0.0;            C[5][1] = 0.0;            C[5][2] = 0.0; C[5][3] = 0.0; C[5][4] = 0.0; C[5][5] = C66;
-        }
+ //      if (m_planeStress==true && iso == true){
+ //          //only transversal isotropic in the moment --> definition of iso missing
+ //       C[0][0] = C11-C13*C13/C22;C[0][1] = C12-C13*C23/C22;C[0][2] = 0.0; C[0][3] = 0.0; C[0][4] = 0.0; C[0][5] = 0.0;
+ //       C[1][0] = C12-C13*C23/C22;C[1][1] = C22-C13*C23/C22;C[1][2] = 0.0; C[1][3] = 0.0; C[1][4] = 0.0; C[1][5] = 0.0;
+ //       C[2][0] = 0.0;            C[2][1] = 0.0;            C[2][2] = 0.0; C[2][3] = 0.0; C[2][4] = 0.0; C[2][5] = 0.0;
+ //       C[3][0] = 0.0;            C[3][1] = 0.0;            C[3][2] = 0.0; C[3][3] = 0.0; C[3][4] = 0.0; C[3][5] = 0.0;
+ //       C[4][0] = 0.0;            C[4][1] = 0.0;            C[4][2] = 0.0; C[4][3] = 0.0; C[4][4] = 0.0; C[4][5] = 0.0;
+ //       C[5][0] = 0.0;            C[5][1] = 0.0;            C[5][2] = 0.0; C[5][3] = 0.0; C[5][4] = 0.0; C[5][5] = C66;
+ //      }
         // not correct for plane stress!!!
+        iso = false;
         if (m_plane==true && iso == false){
          C[0][0] = C11;C[0][1] = C12;C[0][2] = 0.0;C[0][3] = 0.0;C[0][4] = 0.0;C[0][5] = C16;
          C[1][0] = C12;C[1][1] = C22;C[1][2] = 0.0;C[1][3] = 0.0;C[1][4] = 0.0;C[1][5] = C26;
@@ -261,16 +266,8 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
         
     }
   }
-  nonLin = false;
-  lin = true;
 
-  if (params.isParameter("Elastic Correspondence")){
-     
-      nonLin = true;
-      lin = false;
-
-    }
-
+  
 
 
 
@@ -289,18 +286,24 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_hourglassForceDensityFieldId      = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Hourglass_Force_Density");
   m_bondDamageFieldId                 = fieldManager.getFieldId(PeridigmField::BOND,    PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage");
   m_deformationGradientFieldId        = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient");
+  
+  //if (nonLin==false)
+  //   m_deformationGradientFieldIdTemp        = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient_Temp");
+  
   m_leftStretchTensorFieldId          = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Left_Stretch_Tensor");
   m_rotationTensorFieldId             = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Rotation_Tensor");
   m_shapeTensorInverseFieldId         = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Shape_Tensor_Inverse");
   m_unrotatedCauchyStressFieldId      = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Unrotated_Cauchy_Stress");
+  m_unrotatedRateOfDeformationFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Rate_Of_Deformation");
+  m_unrotatedCauchyStressElasticFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Elastic_Cauchy_Stress");
   m_cauchyStressFieldId               = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Cauchy_Stress");
   m_piolaStressTimesInvShapeTensorXId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "PiolaStressTimesInvShapeTensorX");
   m_piolaStressTimesInvShapeTensorYId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "PiolaStressTimesInvShapeTensorY");
   m_piolaStressTimesInvShapeTensorZId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "PiolaStressTimesInvShapeTensorZ");
-  m_unrotatedRateOfDeformationFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Rate_Of_Deformation");
   m_partialStressFieldId              = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Partial_Stress");
   m_detachedNodesFieldId              = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Detached_Nodes");
   m_hourglassStiffId                  = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Hourglass_Stiffness");
+  
   
   m_fieldIds.push_back(m_horizonFieldId);
   m_fieldIds.push_back(m_volumeFieldId);
@@ -311,12 +314,15 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_fieldIds.push_back(m_forceDensityFieldId);
   m_fieldIds.push_back(m_bondDamageFieldId);
   m_fieldIds.push_back(m_deformationGradientFieldId);
+  //if (nonLin==false)
+  //  m_fieldIds.push_back(m_deformationGradientFieldIdTemp);
   
   m_fieldIds.push_back(m_leftStretchTensorFieldId);
   m_fieldIds.push_back(m_rotationTensorFieldId);
   m_fieldIds.push_back(m_shapeTensorInverseFieldId);
   m_fieldIds.push_back(m_unrotatedCauchyStressFieldId);
   m_fieldIds.push_back(m_cauchyStressFieldId);
+  m_fieldIds.push_back(m_unrotatedCauchyStressElasticFieldId);
   m_fieldIds.push_back(m_piolaStressTimesInvShapeTensorXId);
   m_fieldIds.push_back(m_piolaStressTimesInvShapeTensorYId);
   m_fieldIds.push_back(m_piolaStressTimesInvShapeTensorZId);
@@ -351,8 +357,7 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
   dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
-  
-  
+  dataManager.getData(m_unrotatedCauchyStressElasticFieldId, PeridigmField::STEP_NONE)->PutScalar(0.0);
   dataManager.getData(m_partialStressFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
   dataManager.getData(m_partialStressFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   
@@ -381,11 +386,9 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   double *volume;
   double *horizon;
   double *modelCoordinates;
-  double *coordinates;
   double *coordinatesNP1;
   double *shapeTensorInverse;
   double *deformationGradient;
-  double *bondDamage;
   double *bondDamageNP1;
 
 
@@ -393,12 +396,10 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   dataManager.getData(m_horizonFieldId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
 
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&modelCoordinates);
-  dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_N)->ExtractView(&coordinates);
   dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&coordinatesNP1);
   dataManager.getData(m_shapeTensorInverseFieldId, PeridigmField::STEP_NONE)->ExtractView(&shapeTensorInverse);
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&deformationGradient);
   dataManager.getData(m_unrotatedRateOfDeformationFieldId, PeridigmField::STEP_NONE)->PutScalar(0.0);
-  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
 
  int shapeTensorReturnCode = 0;
@@ -406,11 +407,9 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
             CORRESPONDENCE::computeShapeTensorInverseAndApproximateDeformationGradient(volume,
                                                                                    horizon,
                                                                                    modelCoordinates,
-                                                                                   coordinates,
                                                                                    coordinatesNP1,
                                                                                    shapeTensorInverse,
                                                                                    deformationGradient,
-                                                                                   bondDamage,
                                                                                    bondDamageNP1,
                                                                                    neighborhoodList,
                                                                                    numOwnedPoints,
@@ -437,14 +436,14 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_partialStressFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_unrotatedRateOfDeformationFieldId, PeridigmField::STEP_NONE)->PutScalar(0.0);
-  double *horizon, *volume, *modelCoordinates, *coordinates, *coordinatesNP1, *shapeTensorInverse, *deformationGradient, *bondDamage, *bondDamageNP1, *pointAngles, *detachedNodes;
+  double *horizon, *volume, *modelCoordinates, *coordinatesN, *coordinatesNP1, *shapeTensorInverse, *deformationGradient, *bondDamage, *bondDamageNP1, *pointAngles, *detachedNodes;
   //double *deformationGradientNonInc;
 
   dataManager.getData(m_horizonFieldId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
   dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&volume);
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&modelCoordinates);
   dataManager.getData(m_modelAnglesId,           PeridigmField::STEP_NONE)->ExtractView(&pointAngles);
-  dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_N)->ExtractView(&coordinates);
+  dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_N)->ExtractView(&coordinatesN);
   dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&coordinatesNP1);
   dataManager.getData(m_shapeTensorInverseFieldId, PeridigmField::STEP_NONE)->ExtractView(&shapeTensorInverse);
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&deformationGradient);
@@ -457,29 +456,33 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   // The approximate deformation gradient will be used by the derived class (specific correspondence material model)
   // to compute the Cauchy stress.
   // The inverse of the shape tensor is stored for later use after the Cauchy stress calculation
-
-   // vier szenarien
+   ///////////////////////////////////////////////////////////////////////////////////////////// 
+   // non linear with rotation has to be updated!!!
+   // non linear with rotation has to be updated!!!
+   // non linear with rotation has to be updated!!!
+   // non linear with rotation has to be updated!!!
+   // non linear with rotation has to be updated!!!
+   /////////////////////////////////////////////////////////////////////////////////////////////
    int shapeTensorReturnCode = 0;
   // if (lin == true){
     
   
-  PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Compute Force:Compute Shape Tensor Inverse and approximate Deformation Gradient");
+ 
     shapeTensorReturnCode = 
         CORRESPONDENCE::computeShapeTensorInverseAndApproximateDeformationGradient(volume,
                                                                                 horizon,
                                                                                 modelCoordinates,
-                                                                                coordinates,
                                                                                 coordinatesNP1,
                                                                                 shapeTensorInverse,
                                                                                 deformationGradient,
-                                                                                bondDamage,
                                                                                 bondDamageNP1,
                                                                                 neighborhoodList,
                                                                                 numOwnedPoints,
                                                                                 m_plane,
                                                                                 detachedNodes);
-  PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Internal Force:Compute Force:Compute Shape Tensor Inverse and approximate Deformation Gradient");
+ 
 
+    
    //}
 
   string shapeTensorErrorMessage =
@@ -489,14 +492,19 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   TEUCHOS_TEST_FOR_EXCEPT_MSG(shapeTensorReturnCode != 0, shapeTensorErrorMessage);
 
   
-  double *velocities, *leftStretchTensorN, *leftStretchTensorNP1, *rotationTensorN, *rotationTensorNP1, *unrotatedRateOfDeformation;
+  double *unrotatedRateOfDeformation;
+  dataManager.getData(m_unrotatedRateOfDeformationFieldId, PeridigmField::STEP_NONE)->ExtractView(&unrotatedRateOfDeformation);
+  
+  double *velocities, *leftStretchTensorN, *leftStretchTensorNP1, *rotationTensorN, *rotationTensorNP1;
+  dataManager.getData(m_velocitiesFieldId, PeridigmField::STEP_NP1)->ExtractView(&velocities);
   if (nonLin==true){  
+      
       dataManager.getData(m_leftStretchTensorFieldId, PeridigmField::STEP_N)->ExtractView(&leftStretchTensorN);
       dataManager.getData(m_leftStretchTensorFieldId, PeridigmField::STEP_NP1)->ExtractView(&leftStretchTensorNP1);
       dataManager.getData(m_rotationTensorFieldId, PeridigmField::STEP_N)->ExtractView(&rotationTensorN);
       dataManager.getData(m_rotationTensorFieldId, PeridigmField::STEP_NP1)->ExtractView(&rotationTensorNP1);
-      dataManager.getData(m_unrotatedRateOfDeformationFieldId, PeridigmField::STEP_NONE)->ExtractView(&unrotatedRateOfDeformation);
-      dataManager.getData(m_velocitiesFieldId, PeridigmField::STEP_NP1)->ExtractView(&velocities);
+
+      
       // Compute left stretch tensor, rotation tensor, and unrotated rate-of-deformation.
       // Performs a polar decomposition via Flanagan & Taylor (1987) algorithm.
       //"A non-ordinary state-based peridynamic method to model solid material deformation and fracture"
@@ -504,7 +512,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
       
       int rotationTensorReturnCode = 0;
 
-      PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Compute Force:Compute unrotated Rate of Deformation and Rotation Tensor");
+   
       rotationTensorReturnCode = CORRESPONDENCE::computeUnrotatedRateOfDeformationAndRotationTensor(volume,
                                                                                                    horizon,
                                                                                                    modelCoordinates, 
@@ -522,7 +530,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                                                                    bondDamageNP1,
                                                                                                    m_plane,
                                                                                                    detachedNodes);
-      PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Internal Force:Compute Force:Compute unrotated Rate of Deformation and Rotation Tensor");
+    
 
       string rotationTensorErrorMessage =
         "**** Error:  CorrespondenceMaterial::computeForce() failed to compute rotation tensor.\n";
@@ -534,12 +542,48 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
       string rotationTensorErrorMessage3 =
         "**** Error:  CorrespondenceMaterial::computeForce() failed to invert temp.\n";
 
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(rotationTensorReturnCode == 1, rotationTensorErrorMessage);
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(rotationTensorReturnCode == 2, rotationTensorErrorMessage2);
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(rotationTensorReturnCode == 3, rotationTensorErrorMessage3);
+      //TEUCHOS_TEST_FOR_EXCEPT_MSG(rotationTensorReturnCode == 1, rotationTensorErrorMessage);
+      //TEUCHOS_TEST_FOR_EXCEPT_MSG(rotationTensorReturnCode == 2, rotationTensorErrorMessage2);
+      //TEUCHOS_TEST_FOR_EXCEPT_MSG(rotationTensorReturnCode == 3, rotationTensorErrorMessage3);
                                     
      }  
-    
+    else{
+        //double *deformationGradientN;
+        //dataManager.getData(m_deformationGradientFieldIdTemp, PeridigmField::STEP_NONE)->ExtractView(&deformationGradientN);
+        // hier muss ein temp feld rein; so ueberschreibe ich das defgradfeld
+       
+        
+        //shapeTensorReturnCode = 
+        //CORRESPONDENCE::computeShapeTensorInverseAndApproximateDeformationGradient(volume,
+        //                                                                        horizon,
+        //                                                                        modelCoordinates,
+        //                                                                        coordinatesN,
+        //                                                                        shapeTensorInverse,
+        //                                                                        deformationGradientN,
+        //                                                                        bondDamage,
+        //                                                                        neighborhoodList,
+        //                                                                        numOwnedPoints,
+        //                                                                        m_plane,
+        //                                                                        detachedNodes);
+
+        //if (m_plast){
+            // needed to create the rate of deformation for the step wise calculation
+            // all rotations are excluded; this speeds up the calculations, but assumes no large rotations
+            CORRESPONDENCE::getLinearUnrotatedRateOfDeformation(volume,
+                                                                horizon,
+                                                                modelCoordinates, 
+                                                                velocities, 
+                                                                deformationGradient,
+                                                                shapeTensorInverse,
+                                                                unrotatedRateOfDeformation,
+                                                                neighborhoodList, 
+                                                                numOwnedPoints, 
+                                                                bondDamageNP1,
+                                                                m_plane,
+                                                                detachedNodes
+                                                                );
+        //}
+    }
   // Evaluate the Cauchy stress using the routine implemented in the derived class (specific correspondence material model)
   // The general idea is to compute the stress based on:
   //   1) The unrotated rate-of-deformation tensor
@@ -554,14 +598,15 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   
   // multiple Cauchy stresses will be provided over the datamanager --> Peridigm_ElasticLinearCorrespondence
 
-  PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Compute Force:Compute CauchyStress");
+ 
   computeCauchyStress(dt, numOwnedPoints, dataManager);
-  PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Internal Force:Compute Force:Compute CauchyStress");
+ 
 
   // rotate back to the Eulerian frame
-  double *unrotatedCauchyStressNP1, *cauchyStressNP1;
+  double *unrotatedCauchyStressNP1, *cauchyStressNP1, *elasticStress;
 
-
+  dataManager.getData(m_unrotatedCauchyStressElasticFieldId, PeridigmField::STEP_NONE)->ExtractView(&elasticStress);
+  
   if (nonLin == true) {
       dataManager.getData(m_unrotatedCauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&unrotatedCauchyStressNP1);
       dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&cauchyStressNP1);
@@ -571,13 +616,27 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                          cauchyStressNP1,
                                          numOwnedPoints);
                                          // Cauchy stress is now updated and in the rotated state. 
+      
+      if (m_plast){
+          CORRESPONDENCE::rotateCauchyStress(rotationTensorNP1,
+                                             elasticStress,
+                                             elasticStress,
+                                             numOwnedPoints);
+      }
+  
   }
   else
   {
-    dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&cauchyStressNP1);
-    
-  }
 
+    dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&cauchyStressNP1);
+    dataManager.getData(m_unrotatedCauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&unrotatedCauchyStressNP1);
+    *(dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)) = *(dataManager.getData(m_unrotatedCauchyStressFieldId, PeridigmField::STEP_NP1)); 
+    }
+    
+
+ // }
+  //std::cout<<*(cauchyStressNP1+1)<<" corr"<<std::endl;
+  //std::cout<<*(cauchyStressNP1+1)<<" corrCau"<<std::endl;
    
   // Proceed with conversion to Piola-Kirchoff and force-vector states.
 //--------------------------------------------------------------------------
@@ -601,7 +660,6 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
  dataManager.getData(m_hourglassStiffId, PeridigmField::STEP_NONE)->ExtractView(&hourglassStiff);
 
 
- PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Compute Force:Compute Forces and Stresses");
  CORRESPONDENCE::computeForcesAndStresses(
                                        numOwnedPoints,
                                        neighborhoodList,
@@ -611,6 +669,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                        coordinatesNP1,
                                        deformationGradient,
                                        cauchyStressNP1,
+                                       elasticStress,
                                        shapeTensorInverse,
                                        bondDamageNP1,
                                        C,
@@ -624,9 +683,8 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                        m_hourglassCoefficient,
                                        m_stabilizationType,
                                        m_plane,
-                                       m_tension,
+                                       m_plast,
                                        detachedNodes);
- PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Internal Force:Compute Force:Compute Forces and Stresses");
                                           
  //     std::cout<<numOwnedPoints<< " "<< *(deformationGradient)<<" "<<*(partialStress)<<std::endl;
     
@@ -636,7 +694,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
       CORRESPONDENCE::computeHourglassForce(volume,
                                             horizon,
                                             modelCoordinates,
-                                            coordinates,
+                                            coordinatesNP1,
                                             deformationGradient,
                                             forceDensity,
                                             neighborhoodList,
@@ -652,7 +710,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
       CORRESPONDENCE::computeCorrespondenceStabilityForce(volume,
                                             horizon,
                                             modelCoordinates,
-                                            coordinates,
+                                            coordinatesNP1,
                                             deformationGradient,
                                             forceDensity,
                                             neighborhoodList,
@@ -768,12 +826,10 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
     tempDataManager.getData(m_modelAnglesId,           PeridigmField::STEP_NONE)->ExtractView(&angles);
     tempDataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&volume);
     tempDataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&modelCoordinates);
-    tempDataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_N)->ExtractView(&coordinates);
     tempDataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&coordinatesNP1);
     dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->ExtractView(&detachedNodes);
-    double *horizon, *bondDamage, *bondDamageNP1;
+    double *horizon, *bondDamageNP1;
     tempDataManager.getData(m_horizonFieldId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
-    tempDataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamage);
     tempDataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
  
     // Create arrays of Fad objects for the current coordinates, dilatation, and force density
@@ -784,7 +840,6 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
     }
     for(int i=0 ; i<numDof ; ++i){
       coordinates_AD[i].diff(i, numDof);
-      coordinates_AD[i].val() = coordinates[i];
       coordinatesNP1_AD[i].diff(i, numDof);
       coordinatesNP1_AD[i].val() = coordinatesNP1[i];
     }
@@ -793,6 +848,7 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
     vector<Sacado::Fad::DFad<double> > deformationGradient_AD;
     vector<Sacado::Fad::DFad<double> > cauchyStress_AD;
     vector<Sacado::Fad::DFad<double> > cauchyStressNP1_AD;
+    vector<Sacado::Fad::DFad<double> > cauchyStressElastic_AD;
     vector<Sacado::Fad::DFad<double> > partialStress_AD;
     vector<Sacado::Fad::DFad<double> > tempStressX_AD;
     vector<Sacado::Fad::DFad<double> > tempStressY_AD;
@@ -804,6 +860,7 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
     deformationGradient_AD.resize(numDof*numDof);
     cauchyStress_AD.resize(numDof*numDof);
     cauchyStressNP1_AD.resize(numDof*numDof);
+    cauchyStressElastic_AD.resize(numDof*numDof);
     tempStressX_AD.resize(numDof*numDof);
     tempStressY_AD.resize(numDof*numDof);
     tempStressZ_AD.resize(numDof*numDof);
@@ -813,32 +870,37 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
         for(int j=0 ; j<6 ; ++j){
             C_AD[i][j].val() = C[i][j];
     }}
-
+   
     int shapeTensorReturnCode = 0;
       shapeTensorReturnCode = 
                 CORRESPONDENCE::computeShapeTensorInverseAndApproximateDeformationGradient(volume,
                                                                                        horizon,
                                                                                        modelCoordinates,
-                                                                                       &coordinates_AD[0],
                                                                                        &coordinatesNP1_AD[0],
                                                                                        &shapeTensorInverse_AD[0],
                                                                                        &deformationGradient_AD[0],
-                                                                                       bondDamage,
                                                                                        bondDamageNP1,
                                                                                        &tempNeighborhoodList[0],
                                                                                        tempNumOwnedPoints,
                                                                                        m_plane,
                                                                                        detachedNodes);
-
-    string shapeTensorInverseErrorMessage = "**** Error:  CorrespondenceMaterial::computeShapeTensorInverseAndApproximateDeformationGradient() failed to inverse shape tensor.\n";
-
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(shapeTensorReturnCode == 1, shapeTensorInverseErrorMessage);
-
-    double *cauchyStress;
-    double *cauchyStressNP1;
-
+    double *cauchyStress, *cauchyStressNP1, *cauchyStressElastic;
     tempDataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_N)->ExtractView(&cauchyStress);
     tempDataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_N)->ExtractView(&cauchyStressNP1);
+    dataManager.getData(m_unrotatedCauchyStressElasticFieldId, PeridigmField::STEP_NONE)->ExtractView(&cauchyStressElastic);
+    
+    
+    
+    for(int i=0 ; i<numDof ; ++i){
+      cauchyStress_AD[i].diff(i, numDof);
+      cauchyStress_AD[i].val() = cauchyStress[i];
+      cauchyStressNP1_AD[i].diff(i, numDof);
+      cauchyStressNP1_AD[i].val() = cauchyStressNP1[i];
+      cauchyStressElastic_AD[i].diff(i, numDof);
+      cauchyStressElastic_AD[i].val() = cauchyStressElastic[i];
+      
+    }
+    
     CORRESPONDENCE::updateElasticCauchyStressSmallDef(&deformationGradient_AD[0], 
                                           &cauchyStress_AD[0],
                                           &cauchyStressNP1_AD[0],
@@ -862,6 +924,7 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
                                         &coordinatesNP1_AD[0],
                                         &deformationGradient_AD[0],
                                         &cauchyStressNP1_AD[0],
+                                        &cauchyStressElastic_AD[0],
                                         &shapeTensorInverse_AD[0],
                                         bondDamageNP1,
                                         &C_AD[0],
@@ -885,7 +948,7 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
       for(int col=0 ; col<numDof ; ++col){
 	value = force_AD[row].dx(col) ; //--> I think this must be it, because forces are already provided
     //value = force_AD[row].dx(col) * volume[row/3]; // given by peridigm org
-	//TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite(value), "**** NaN detected in correspondence::computeAutomaticDifferentiationJacobian(). shapeTensorReturnCode: " << shapeTensorReturnCode << " \n");
+	TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite(value), "**** NaN detected in correspondence::computeAutomaticDifferentiationJacobian().\n");
         scratchMatrix(row, col) = value;
       }
     }
@@ -1017,7 +1080,7 @@ PeridigmNS::CorrespondenceMaterial::computeJacobianFiniteDifference(const double
 
     // Create a temporary vector for storing force and/or flux divergence.
     Teuchos::RCP<Epetra_Vector> forceVector, tempForceVector, fluxDivergenceVector, tempFluxDivergenceVector;
-    double *tempForce;//, *tempFluxDivergence;
+    double *tempForce, *tempFluxDivergence;
     if (solveForDisplacement) {
       forceVector = tempDataManager.getData(forceDensityFId, PeridigmField::STEP_NP1);
       tempForceVector = Teuchos::rcp(new Epetra_Vector(*forceVector));
