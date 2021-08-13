@@ -111,14 +111,26 @@ namespace PeridigmNS {
 
     //! Get if damage is enabled
     bool getDamageEnabled(){
-    if (blockParams.isParameter("Damage Enabled"))
-    {
-      return blockParams.get<bool>("Damage Enabled");
+      if (blockParams.isParameter("Damage Enabled"))
+      {
+        return blockParams.get<bool>("Damage Enabled");
+      }
+      else
+      {
+        return true;
+      }
     }
-    else
-    {
-      return true;
-    }
+
+    //! Get the block interfac id
+    int getBlockInterfaceID(){
+      if (blockParams.isParameter("Interface"))
+      {
+        return blockParams.get<int>("Interface");
+      }
+      else
+      {
+        return -1;
+      }
     }
 
     //! Initialize the material model

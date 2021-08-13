@@ -125,6 +125,9 @@ PeridigmNS::OutputManager_ExodusII::OutputManager_ExodusII(const Teuchos::RCP<Te
   firstOutputStep = params->get<int>("Initial Output Step",1); 
   lastOutputStep = params->get<int>("Final Output Step",std::numeric_limits<int>::max()-1); 
 
+  // Default write after damage
+  writeAfterDamage = params->get<bool>("Write After Damage",false); 
+
   // User-requested fields for output 
   outputVariables = sublist(params, "Output Variables");
 
@@ -174,6 +177,7 @@ Teuchos::ParameterList PeridigmNS::OutputManager_ExodusII::getValidParameterList
   Teuchos::setStringToIntegralParameter<int>("Output Format","BINARY","ASCII or BINARY",Teuchos::tuple<string>("ASCII","BINARY"),&validParameterList);
   setIntParameter("Output Frequency",-1,"Frequency of Output",&validParameterList,intParam);
   validParameterList.set("Parallel Write",true);
+  validParameterList.set("Write After Damage",false);
 
   // Create a vector of valid output variables
   // Do not include bond data, since we can not output it
@@ -207,7 +211,7 @@ Teuchos::ParameterList PeridigmNS::OutputManager_ExodusII::getValidParameterList
 PeridigmNS::OutputManager_ExodusII::~OutputManager_ExodusII() {
 }
 
-void PeridigmNS::OutputManager_ExodusII::write(Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks, double current_time) {
+void PeridigmNS::OutputManager_ExodusII::write(Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks, double current_time, bool damageExist = false) {
 
   if (!iWrite) return;
 
@@ -222,7 +226,7 @@ void PeridigmNS::OutputManager_ExodusII::write(Teuchos::RCP< std::vector<Peridig
 
   // Only write if count is in between first and last dumps and frequency count match. 
   // The +/- 1 is to account for the initialization dumps
-  if((count<(firstOutputStep) || count>(lastOutputStep+1)) || (frequency<=0 || (count-1)%frequency!=0)) return;
+  if((count<(firstOutputStep) || count>(lastOutputStep+1)) || (frequency<=0 || (count-1)%frequency!=0) || (writeAfterDamage && !damageExist)) return;
 
   // increment exodus_count index
   exodusCount = exodusCount + 1;

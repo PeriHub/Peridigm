@@ -1605,9 +1605,10 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   outputManager->write(blocks, timeCurrent);
   PeridigmNS::Timer::self().stopTimer("Output");
 
-  int displayTrigger = nsteps/100;
-  if(displayTrigger == 0)
-    displayTrigger = 1;
+  int displayTrigger = 0;
+  int progress = 0;
+  // if(displayTrigger == 0)
+  //   displayTrigger = 1;
 
   Teuchos::ParameterList damageModelParams;
   if(peridigmParams->isSublist("Damage Models"))
@@ -1739,8 +1740,13 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       }
     }
 
-    if((step-1)%displayTrigger==0)
-      displayProgress("Explicit time integration", (step-1)*100.0/nsteps);
+
+
+    progress=trunc((step-1)*100.0/nsteps);
+    if(progress!=displayTrigger){
+      displayProgress("Explicit time integration", progress);
+      displayTrigger=progress;
+    }
 
     // rebalance, if requested
     PeridigmNS::Timer::self().startTimer("Rebalance");
@@ -2098,7 +2104,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     if(analysisHasDataLoader){
       dataLoader->loadData(timeCurrent, blocks);
     }
-    outputManager->write(blocks, timeCurrent);
+    outputManager->write(blocks, timeCurrent, damageExist);
     PeridigmNS::Timer::self().stopTimer("Output");
 
     // swap state N and state NP1
