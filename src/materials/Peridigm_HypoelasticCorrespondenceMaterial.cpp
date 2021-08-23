@@ -947,7 +947,7 @@ void PeridigmNS::HypoelasticCorrespondenceMaterial::computeNodeLevelVelocityGrad
                                         bondDamage,
                                         neighborhoodList,
                                         numOwnedPoints);
-
+  int shapeTensorReturnCode = 
   CORRESPONDENCE::computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient(volume,
                                                                                   jacobianDeterminantN,
                                                                                   jacobianDeterminantNP1,
