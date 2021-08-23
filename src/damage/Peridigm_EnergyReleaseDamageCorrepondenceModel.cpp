@@ -56,13 +56,12 @@
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
-//#include <boost/math/special_functions/fpclassify.hpp>
+#include <boost/math/special_functions/fpclassify.hpp>
 
 using namespace std;
 
 PeridigmNS::EnergyReleaseDamageCorrepondenceModel::EnergyReleaseDamageCorrepondenceModel(const Teuchos::ParameterList& params)
-: DamageModel(params),
-m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
+: DamageModel(params), 
 m_applyThermalStrains(false),
 m_modelCoordinatesFieldId(-1),
 m_coordinatesFieldId(-1),
@@ -73,13 +72,14 @@ m_deltaTemperatureFieldId(-1),
 m_dilatationFieldId(-1),
 m_weightedVolumeFieldId(-1),
 m_horizonFieldId(-1),
-m_detachedNodesFieldId(-1),
 m_piolaStressTimesInvShapeTensorXId(-1),
 m_piolaStressTimesInvShapeTensorYId(-1),
 m_piolaStressTimesInvShapeTensorZId(-1),
+m_detachedNodesFieldId(-1),
 m_forceDensityFieldId(-1),
 m_deformationGradientFieldId(-1),
-m_hourglassStiffId(-1){
+m_hourglassStiffId(-1),
+m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
 
     
     if (params.isParameter("Critical Energy")) {
@@ -183,7 +183,7 @@ m_hourglassStiffId(-1){
     m_forceDensityFieldId               = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Force_Density");
     m_deformationGradientFieldId        = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient");
     m_hourglassStiffId                  = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Hourglass_Stiffness");
-    m_bondEnergyFieldId = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage");
+    m_bondEnergyFieldId = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Energy");
  
     m_fieldIds.push_back(blockIdFieldId);
     m_fieldIds.push_back(m_volumeFieldId);
@@ -251,15 +251,15 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
         const int numOwnedPoints,
         const int* ownedIDs,
         const int* neighborhoodList,
-        PeridigmNS::DataManager& dataManager,
-        int blockInterfaceId = -1) const {
+        PeridigmNS::DataManager& dataManager) const {
 
     double *x, *y, *yN, *damage, *bondDamage, *bondDamageNP1, *bondDamageDiff, *horizon, *vol, *detachedNodes, *blockNumber;
-    double *bondEnergy, *bondEnergyNP1;
+    double *bondEnergyN, *bondEnergyNP1;
+    
     
     double criticalEnergyTension(-1.0);
     // for temperature dependencies easy to extent
-    //double *deltaTemperature = NULL;
+    double *deltaTemperature = NULL;
     double *tempStressX, *tempStressY, *tempStressZ;
     dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
 
@@ -275,7 +275,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     dataManager.getData(m_bondDamageDiffFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageDiff);
     dataManager.getData(blockIdFieldId, PeridigmField::STEP_NONE)->ExtractView(&blockNumber);
     dataManager.getData(m_bondEnergyFieldId, PeridigmField::STEP_N)->ExtractView(&bondEnergyN);
-    dataManager.getData(m_bondEnergyFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondEnergyNp1);
+    dataManager.getData(m_bondEnergyFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondEnergyNP1);
 
     int iID, nodeId;
     //bool rerun;
@@ -311,6 +311,12 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     // Set the bond damage to the previous value --> needed for iteration in implicit time integration
     //if(!rerun)
     *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)) = *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N));
+    if (m_incremental){
+        *(dataManager.getData(m_bondEnergyFieldId, PeridigmField::STEP_NP1)) = *(dataManager.getData(m_bondEnergyFieldId, PeridigmField::STEP_N));
+    }
+    else{
+        dataManager.getData(m_bondEnergyFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
+    }
     double *forceDensity;
     dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&forceDensity);
     
@@ -335,7 +341,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     double X_dx, X_dy, X_dz;
     // displacement vector state and abolute value
     double etaX, etaY, etaZ, dEta, normEtaSq;
-    double bondEnergy;
+
     double dX, dY;//, dYSq;
 
     //---------------------------
@@ -408,14 +414,18 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
             if (modelActive == true){
                 if (normEtaSq>0){
                     criticalEnergyTension = m_criticalEnergyTension;
-                    if (blockNumber[neighborID]==blockInterfaceId)criticalEnergyTension = m_criticalEnergyInterBlock;
+                    if (blockNumber[neighborID] != blockNumber[ownedIDs[iID]]){
+                        for (int biID = 0; biID < 8; ++biID){
+                            if (block[biID] == 0) break;
+                            if (blockNumber[neighborID]==block[biID])criticalEnergyTension = m_criticalEnergyInterBlock;
+                        }
+                    }
                     
                     omegaP1 = MATERIAL_EVALUATION::scalarInfluenceFunction(dX, horizon[nodeId]); 
                     omegaP2 = MATERIAL_EVALUATION::scalarInfluenceFunction(-dX, horizon[neighborID]); 
                     // average Force has to be taken
                     // if not the case where 
                     if (m_plane == true) X_dz = 0;
-                    double temp = 0.5*(1-bondDamageNP1[bondIndex]);
                     
                     double FxsiX = *(defGrad)   * X_dx + *(defGrad+1) * X_dy + *(defGrad+2) * X_dz;
                     double FxsiY = *(defGrad+3) * X_dx + *(defGrad+4) * X_dy + *(defGrad+5) * X_dz;
@@ -453,19 +463,20 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                         etaY  = Y_dy-(yN[neighborID*3+1] - nodeCurrentXN[1]);
                         etaZ  = Y_dz-(yN[neighborID*3+2] - nodeCurrentXN[2]);
                     }
-                    bondEnergyNP1[bondIndex] = bondEnergyN[bondIndex] + 0.5*temp*(abs(TPX*etaX)+abs(TPXN*etaX)+abs(TPY*etaY)+abs(TPYN*etaY)+abs(TPZ*etaZ)+abs(TPZN*etaZ)) ;
+
+                    bondEnergyNP1[bondIndex] = bondEnergyN[bondIndex] + 0.5*(1-bondDamageNP1[bondIndex])*(labs(TPX*etaX)+labs(TPXN*etaX)+labs(TPY*etaY)+labs(TPYN*etaY)+labs(TPZ*etaZ)+labs(TPZN*etaZ));
                     //if (iID == 1) std::cout<<bondEnergy<<std::endl;
                 }
                 else
                 {
-                    bondEnergy = 0;
+                    bondEnergyNP1[bondIndex] = 0;
                 }
                 //bondEnergy = 0.5*(sqrt(TX*TX)+sqrt(TXN*TXN))*sqrt((uNx-ux)*(uNx-ux)) + 0.5*(sqrt(TY*TY)+sqrt(TYN*TYN))*sqrt((uNy-uy)*(uNy-uy)) + 0.5*(sqrt(TZ*TZ)+sqrt(TZN*TZN))*sqrt((uNz-uz)*(uNz-uz));
                 
 
                 double avgHorizon = 0.5*(horizon[nodeId]+horizon[neighborID]);
-                if (bondEnergy<0){
-                    std::cout<<TPX<<" "<< TPXN<<" BE "<<bondEnergy<<std::endl;
+                if (bondEnergyNP1[bondIndex]<0){
+                    std::cout<<TPX<<" "<< labs(TPXN)<<" BE "<<bondEnergyNP1[bondIndex]<<" BD  "<< (1-bondDamageNP1[bondIndex])<<std::endl;
                 }
                 ////////////////////////////////////////////////////////////////
                 //--> to check, depth is not included yet. How to handle??
@@ -479,7 +490,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                    quadhorizon =  3 /( avgHorizon * avgHorizon * avgHorizon * m_Thickness );
                 }
                 //quadhorizon =  4 /( m_pi * avgHorizon * avgHorizon * avgHorizon * avgHorizon ); 
-                critIso = bondEnergy/(criticalEnergyTension*quadhorizon);
+                critIso = bondEnergyNP1[bondIndex]/(criticalEnergyTension*quadhorizon);
                 //critIso = 0;
                 
                 //critIso = bondEnergy/(criticalEnergyTension*quadhorizon);
