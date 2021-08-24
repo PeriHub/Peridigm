@@ -1605,10 +1605,9 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   outputManager->write(blocks, timeCurrent);
   PeridigmNS::Timer::self().stopTimer("Output");
 
-  int displayTrigger = 0;
-  int progress = 0;
-  // if(displayTrigger == 0)
-  //   displayTrigger = 1;
+  int displayTrigger = nsteps/100;
+  if(displayTrigger == 0)
+    displayTrigger = 1;
 
   Teuchos::ParameterList damageModelParams;
   if(peridigmParams->isSublist("Damage Models"))
@@ -1740,13 +1739,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       }
     }
 
-
-
-    progress=trunc((step-1)*100.0/nsteps);
-    if(progress!=displayTrigger){
-      displayProgress("Explicit time integration", progress);
-      displayTrigger=progress;
-    }
+    if((step-1)%displayTrigger==0)
+      displayProgress("Explicit time integration", (step-1)*100.0/nsteps);
 
     // rebalance, if requested
     PeridigmNS::Timer::self().startTimer("Rebalance");
@@ -1822,7 +1816,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     //    plasticModelVal->PutScalar(0.0);
     //    blockIt->importData(plasticModelVal, plasticModelFieldId, adaptiveImportStep, Insert);
     //  }
-	  if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
+	  if (blockIt->getMaterialModel()->Name().find("Correspondence")){
 	  	piolaStressTimesInvShapeTensorX->PutScalar(0.0); 
 	  	blockIt->importData(piolaStressTimesInvShapeTensorX, piolaStressTimesInvShapeTensorXId, adaptiveImportStep, Insert);
 	  	piolaStressTimesInvShapeTensorY->PutScalar(0.0); 
@@ -1862,7 +1856,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         //    blockIt->exportData(scratch, plasticModelFieldId, adaptiveExportStep, Add);
         //    plasticModelVal->Update(1.0, *scratch, 1.0);
         //}
-        if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
+        if (blockIt->getMaterialModel()->Name().find("Correspondence")){
             scratch->PutScalar(0.0);
             blockIt->exportData(scratch, piolaStressTimesInvShapeTensorXId, adaptiveExportStep, Add);
             piolaStressTimesInvShapeTensorX->Update(1.0, *scratch, 1.0);
@@ -1882,7 +1876,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         //if (blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
         //    blockIt->importData(plasticModelVal, plasticModelFieldId, adaptiveImportStep, Insert);
         //}
-        if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
+        if (blockIt->getMaterialModel()->Name().find("Correspondence")){
             blockIt->importData(piolaStressTimesInvShapeTensorX, piolaStressTimesInvShapeTensorXId, adaptiveImportStep, Insert);
             blockIt->importData(piolaStressTimesInvShapeTensorY, piolaStressTimesInvShapeTensorYId, adaptiveImportStep, Insert);
             blockIt->importData(piolaStressTimesInvShapeTensorZ, piolaStressTimesInvShapeTensorZId, adaptiveImportStep, Insert);
@@ -2005,7 +1999,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     detachedNodesList->PutScalar(0.0);
     netDamageField->PutScalar(0.0);
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){    
-      if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
+      if (blockIt->getMaterialModel()->Name().find("Correspondence")){
             scalarScratch->PutScalar(0.0);
             blockIt->exportData(scalarScratch, detachedNodesFieldId, adaptiveExportStep, Add);
             detachedNodesList->Update(1.0, *scalarScratch, 1.0);
@@ -2019,11 +2013,11 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     }
     //
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){    
-    if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
-      if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
+    if (blockIt->getMaterialModel()->Name().find("Correspondence")){
+      
           blockIt->importData(detachedNodesList, detachedNodesFieldId, adaptiveImportStep, Insert);
           //blockIt->importData(*netDamageField, netDamageFieldId, adaptiveImportStep, Insert);
-      }
+      
     }
   }
  
@@ -2104,7 +2098,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     if(analysisHasDataLoader){
       dataLoader->loadData(timeCurrent, blocks);
     }
-    outputManager->write(blocks, timeCurrent, damageExist);
+    outputManager->write(blocks, timeCurrent);
     PeridigmNS::Timer::self().stopTimer("Output");
 
     // swap state N and state NP1
@@ -2339,7 +2333,7 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
         damageModelVal->PutScalar(0.0); 
         blockIt->importData(damageModelVal, damageModelFieldId, PeridigmField::STEP_NP1, Insert);
       }
-    if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
+    if (blockIt->getMaterialModel()->Name().find("Correspondence")){
       piolaStressTimesInvShapeTensorX->PutScalar(0.0); 
       blockIt->importData(piolaStressTimesInvShapeTensorX, piolaStressTimesInvShapeTensorXId, PeridigmField::STEP_NP1, Insert);
       piolaStressTimesInvShapeTensorY->PutScalar(0.0); 
@@ -2371,7 +2365,7 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
         //    blockIt->exportData(scratch, plasticModelFieldId, PeridigmField::STEP_NP1, Add);
         //    plasticModelVal->Update(1.0, *scratch, 1.0);
         //}
-        if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
+        if (blockIt->getMaterialModel()->Name().find("Correspondence")){
             scratch->PutScalar(0.0);
             blockIt->exportData(scratch, piolaStressTimesInvShapeTensorXId, PeridigmField::STEP_NP1, Add);
             piolaStressTimesInvShapeTensorX->Update(1.0, *scratch, 1.0);
@@ -2391,7 +2385,7 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
         //if (blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
         //    blockIt->importData(plasticModelVal, plasticModelFieldId, PeridigmField::STEP_NP1, Insert);
         //}
-        if (blockIt->getMaterialModel()->Name() == "Linear Elastic Correspondence"||blockIt->getMaterialModel()->Name() == "Elastic Correspondence"){
+        if (blockIt->getMaterialModel()->Name().find("Correspondence")){
             blockIt->importData(piolaStressTimesInvShapeTensorX, piolaStressTimesInvShapeTensorXId, PeridigmField::STEP_NP1, Insert);
             blockIt->importData(piolaStressTimesInvShapeTensorY, piolaStressTimesInvShapeTensorYId, PeridigmField::STEP_NP1, Insert);
             blockIt->importData(piolaStressTimesInvShapeTensorZ, piolaStressTimesInvShapeTensorZId, PeridigmField::STEP_NP1, Insert);

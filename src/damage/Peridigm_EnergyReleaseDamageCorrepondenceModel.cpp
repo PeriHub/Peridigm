@@ -304,6 +304,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     vector<double> TSvector(3), hourglassStiffVector(9);
     double* hStiff = &hourglassStiffVector[0];
     double* TS = &TSvector[0];
+    double hourglassScaling;
     ///////////////////////////////////////////////////////
     dataManager.getData(m_hourglassStiffId, PeridigmField::STEP_NONE)->ExtractView(&hourglassStiff);
     dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&defGrad);
@@ -313,9 +314,11 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)) = *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N));
     if (m_incremental){
         *(dataManager.getData(m_bondEnergyFieldId, PeridigmField::STEP_NP1)) = *(dataManager.getData(m_bondEnergyFieldId, PeridigmField::STEP_N));
+        hourglassScaling = 0.0;
     }
     else{
         dataManager.getData(m_bondEnergyFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
+        hourglassScaling = m_hourglassCoefficient;
     }
     double *forceDensity;
     dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&forceDensity);
@@ -462,6 +465,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                         etaX  = Y_dx-(yN[neighborID*3]   - nodeCurrentXN[0]);
                         etaY  = Y_dy-(yN[neighborID*3+1] - nodeCurrentXN[1]);
                         etaZ  = Y_dz-(yN[neighborID*3+2] - nodeCurrentXN[2]);
+                        // entlastung bedenken; ueber vorzeichenwechsel arbeiten; wenn Ynd1 groesser ist als Yn dann ist negativ der trigger und vice versa; grundanahme, dass schritte klein sind
                     }
 
                     bondEnergyNP1[bondIndex] = bondEnergyN[bondIndex] + 0.5*(1-bondDamageNP1[bondIndex])*(labs(TPX*etaX)+labs(TPXN*etaX)+labs(TPY*etaY)+labs(TPYN*etaY)+labs(TPZ*etaZ)+labs(TPZN*etaZ));
