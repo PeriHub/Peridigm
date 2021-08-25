@@ -329,9 +329,11 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     int numNeighbors, neighborID, iNID;
     double totalDamage;
     double nodeInitialX[3], nodeCurrentX[3], nodeCurrentXN[3];
+    nodeCurrentXN[0] = 0.0;
+    nodeCurrentXN[1] = 0.0;
+    nodeCurrentXN[2] = 0.0;
     double omegaP1, omegaP2;
     double critIso;
-    
     double quadhorizon;
     // bond force density state
     double TX, TY, TZ, TXN, TYN, TZN;
@@ -439,13 +441,13 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                     CORRESPONDENCE::computeCorrespondenceStabilityWanEtAlShort(FxsiX,FxsiY,FxsiZ,Y_dx,Y_dy,Y_dz,hStiff,TS);
                // std::cout<< TS[0]<<" dam"<< TS[1]<<std::endl;
                     // volumes, or volume relation to include? should be inside via the shape tensor, which is included in tempStress
-                    TX  =   omegaP1 * ( tempStressX[3*nodeId]     * X_dx + tempStressX[3*nodeId+1]     * X_dy + tempStressX[3*nodeId+2]     * X_dz + m_hourglassCoefficient*TS[0]);
-                    TY  =   omegaP1 * ( tempStressY[3*nodeId]     * X_dx + tempStressY[3*nodeId+1]     * X_dy + tempStressY[3*nodeId+2]     * X_dz + m_hourglassCoefficient*TS[1]);
-                    TZ  =   omegaP1 * ( tempStressZ[3*nodeId]     * X_dx + tempStressZ[3*nodeId+1]     * X_dy + tempStressZ[3*nodeId+2]     * X_dz + m_hourglassCoefficient*TS[2]);
+                    TX  =   omegaP1 * ( tempStressX[3*nodeId]     * X_dx + tempStressX[3*nodeId+1]     * X_dy + tempStressX[3*nodeId+2]     * X_dz + hourglassScaling*TS[0]);
+                    TY  =   omegaP1 * ( tempStressY[3*nodeId]     * X_dx + tempStressY[3*nodeId+1]     * X_dy + tempStressY[3*nodeId+2]     * X_dz + hourglassScaling*TS[1]);
+                    TZ  =   omegaP1 * ( tempStressZ[3*nodeId]     * X_dx + tempStressZ[3*nodeId+1]     * X_dy + tempStressZ[3*nodeId+2]     * X_dz + hourglassScaling*TS[2]);
                     // undeformedBondX, undeformedBondY, undeformedBondZ of bond 1-2 equal to -undeformedBondX, -undeformedBondY, -undeformedBondZ of bond 2-1
-                    TXN =   omegaP2 * ( tempStressX[3*neighborID] * X_dx + tempStressX[3*neighborID+1] * X_dy + tempStressX[3*neighborID+2] * X_dz + m_hourglassCoefficient*TS[0]);
-                    TYN =   omegaP2 * ( tempStressY[3*neighborID] * X_dx + tempStressY[3*neighborID+1] * X_dy + tempStressY[3*neighborID+2] * X_dz + m_hourglassCoefficient*TS[1]);
-                    TZN =   omegaP2 * ( tempStressZ[3*neighborID] * X_dx + tempStressZ[3*neighborID+1] * X_dy + tempStressZ[3*neighborID+2] * X_dz + m_hourglassCoefficient*TS[2]);
+                    TXN =   omegaP2 * ( tempStressX[3*neighborID] * X_dx + tempStressX[3*neighborID+1] * X_dy + tempStressX[3*neighborID+2] * X_dz + hourglassScaling*TS[0]);
+                    TYN =   omegaP2 * ( tempStressY[3*neighborID] * X_dx + tempStressY[3*neighborID+1] * X_dy + tempStressY[3*neighborID+2] * X_dz + hourglassScaling*TS[1]);
+                    TZN =   omegaP2 * ( tempStressZ[3*neighborID] * X_dx + tempStressZ[3*neighborID+1] * X_dy + tempStressZ[3*neighborID+2] * X_dz + hourglassScaling*TS[2]);
                     //std::cout<< "here2"<<std::endl;
                     // orthogonal projection of T and TN to the relative displacement vector Foster et al. "An energy based .."
                     // --> die senkrecht zur Projektion stehenden Anteile entsprechen eventuell den Schubanteilen. D.h. man könnte das Kriterium hier splitten.
@@ -468,7 +470,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                         // entlastung bedenken; ueber vorzeichenwechsel arbeiten; wenn Ynd1 groesser ist als Yn dann ist negativ der trigger und vice versa; grundanahme, dass schritte klein sind
                     }
 
-                    bondEnergyNP1[bondIndex] = bondEnergyN[bondIndex] + 0.5*(1-bondDamageNP1[bondIndex])*(labs(TPX*etaX)+labs(TPXN*etaX)+labs(TPY*etaY)+labs(TPYN*etaY)+labs(TPZ*etaZ)+labs(TPZN*etaZ));
+                    bondEnergyNP1[bondIndex] = bondEnergyN[bondIndex] + 0.5*(1-bondDamageNP1[bondIndex])*(abs(TPX*etaX)+abs(TPXN*etaX)+abs(TPY*etaY)+abs(TPYN*etaY)+abs(TPZ*etaZ)+abs(TPZN*etaZ));
                     //if (iID == 1) std::cout<<bondEnergy<<std::endl;
                 }
                 else
