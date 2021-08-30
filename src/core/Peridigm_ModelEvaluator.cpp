@@ -281,10 +281,8 @@ PeridigmNS::ModelEvaluator::updateCauchyStress(Teuchos::RCP<Workset> workset) co
     Teuchos::RCP<PeridigmNS::DataManager> dataManager = blockIt->getDataManager();
     Teuchos::RCP<const PeridigmNS::Material> materialModel = blockIt->getMaterialModel();
     Teuchos::RCP<const PeridigmNS::DamageModel> damageModel = blockIt->getDamageModel();
-    //if(!damageModel.is_null()){
-        
-       // if (damageModel->Name() == "Critical Energy Correspondence"){
-            if (materialModel->Name().find("Correspondence")){
+
+            if (materialModel->Name().find("Correspondence")!=std::string::npos){
                 PeridigmNS::Timer::self().startTimer("Update Cauchy Stress:Compute Force");
                 materialModel->computeForce(dt, 
                                 numOwnedPoints,
@@ -294,7 +292,6 @@ PeridigmNS::ModelEvaluator::updateCauchyStress(Teuchos::RCP<Workset> workset) co
                 PeridigmNS::Timer::self().stopTimer("Update Cauchy Stress:Compute Force");
                                 
             }
-        //}
-    //}
+
   }
 }

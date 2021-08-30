@@ -83,7 +83,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_density = params.get<double>("Density");
   
   m_stabilizationType = 3;
-
+  m_inc = true;
   m_plane = false;
   nonLin = false;
   m_hencky = false;
@@ -94,6 +94,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   
   if (params.isParameter("Linear Elastic Correspondence")){
     nonLin = false;
+    m_inc = false;
   }
   bool m_planeStrain = false, m_planeStress = false;
   if (params.isParameter("Plane Strain"))
@@ -114,12 +115,8 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
      
   }
 
-  if (params.isParameter("Yield Stress")) m_plast = true;
-  m_tension = true;
-  if (params.isParameter("Tension pressure separation for damage model")){
-      m_tension = params.get<bool>("Tension pressure separation for damage model");
-      
-  }
+  if (params.get<std::string>("Material Model").find("Plastic")!=std::string::npos) m_plast = true;
+
   m_applyAutomaticDifferentiationJacobian = true;
   if(params.isParameter("Apply Automatic Differentiation Jacobian"))
     m_applyAutomaticDifferentiationJacobian = params.get<bool>("Apply Automatic Differentiation Jacobian");
@@ -128,6 +125,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     if (params.get<string>("Stabilizaton Type")=="Bond Based"){
         m_stabilizationType = 1;
         m_hourglassCoefficient = params.get<double>("Hourglass Coefficient");
+        
     }
     if (params.get<string>("Stabilizaton Type")=="State Based"){
         m_stabilizationType = 2;
@@ -139,11 +137,15 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     //    // based on: Shubhankar Roy Chowdhury, Pranesh Roy, Debasish Roy and J N Reddy, 
     //    // "A simple alteration of the peridynamics correspondence principle to eliminate zero-energy deformation"
     //}
+    m_adaptHourGlass  = false;
     if (params.get<string>("Stabilizaton Type")=="Global Stiffness"){
         
         m_stabilizationType = 3;
         m_hourglassCoefficient = params.get<double>("Hourglass Coefficient");
-
+        
+        if (params.get<string>("Stabilizaton Type")=="Adapt Hourglass Stiffness"){
+        m_adaptHourGlass = params.get<double>("Adapt Hourglass Stiffness");
+        }
         double C11 = 0.0, C12 = 0.0, C13 = 0.0, C14 = 0.0, C15 = 0.0, C16 = 0.0;
         double            C22 = 0.0, C23 = 0.0, C24 = 0.0, C25 = 0.0, C26 = 0.0;
         double                       C33 = 0.0, C34 = 0.0, C35 = 0.0, C36 = 0.0;
@@ -566,7 +568,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
         //                                                                        m_plane,
         //                                                                        detachedNodes);
 
-        //if (m_plast){
+        if (m_inc){
             // needed to create the rate of deformation for the step wise calculation
             // all rotations are excluded; this speeds up the calculations, but assumes no large rotations
             CORRESPONDENCE::getLinearUnrotatedRateOfDeformation(volume,
@@ -582,7 +584,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                                 m_plane,
                                                                 detachedNodes
                                                                 );
-        //}
+        }
     }
   // Evaluate the Cauchy stress using the routine implemented in the derived class (specific correspondence material model)
   // The general idea is to compute the stress based on:
@@ -684,6 +686,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                        m_stabilizationType,
                                        m_plane,
                                        m_plast,
+                                       m_adaptHourGlass,
                                        detachedNodes);
                                           
  //     std::cout<<numOwnedPoints<< " "<< *(deformationGradient)<<" "<<*(partialStress)<<std::endl;
@@ -938,7 +941,8 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
                                         m_hourglassCoefficient,
                                         m_stabilizationType,
                                         m_plane,
-                                        m_tension,
+                                        m_plast,
+                                        m_adaptHourGlass,
                                         detachedNodes);
 
     // Load derivative values into scratch matrix
