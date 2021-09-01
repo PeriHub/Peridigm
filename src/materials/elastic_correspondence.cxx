@@ -746,7 +746,7 @@ bool hencky
   ScalarT logStrain[9];
   ScalarT C[6][6];
   ScalarT rotationMat[3][3], rotationMatX[3][3], rotationMatY[3][3], rotationMatZ[3][3], temp[3][3];
-  double alpha[3];
+  // double alpha[3];
   int defGradLogReturnCode(0);
 
   // 0 -> xx,  1 -> xy, 2 -> xz
@@ -760,9 +760,9 @@ bool hencky
             // Schadensmodell muss angepasst werden
             // Referenzkonfiguration muss angepasst werden
             // volle C Matrix muss hier rein
-      alpha[0] = angles[3*iID  ];
-      alpha[1] = angles[3*iID+1];
-      alpha[2] = angles[3*iID+2];
+      // alpha[0] = angles[3*iID  ];
+      // alpha[1] = angles[3*iID+1];
+      // alpha[2] = angles[3*iID+2];
       //CORRESPONDENCE::createRotatedPythonBasedStiff(Cstiff,alpha,C); 
       //if (type != 0){
       //  // rotation mathematical positive sense (downwards from x-axis)

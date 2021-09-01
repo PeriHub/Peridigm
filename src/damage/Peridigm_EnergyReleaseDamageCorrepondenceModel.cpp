@@ -56,7 +56,6 @@
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
-#include <boost/math/special_functions/fpclassify.hpp>
 
 using namespace std;
 
@@ -157,7 +156,7 @@ m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
 //
 //
 
-    m_pi = 3.14159;
+    m_pi = M_PI;
 
     if (params.isParameter("Thermal Expansion Coefficient")) {
         m_alpha = params.get<double>("Thermal Expansion Coefficient");
@@ -251,7 +250,8 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
         const int numOwnedPoints,
         const int* ownedIDs,
         const int* neighborhoodList,
-        PeridigmNS::DataManager& dataManager) const {
+        PeridigmNS::DataManager& dataManager,
+        int blockInterfaceId = -1) const {
 
     double *x, *y, *yN, *damage, *bondDamage, *bondDamageNP1, *bondDamageDiff, *horizon, *vol, *detachedNodes, *blockNumber;
     double *bondEnergyN, *bondEnergyNP1;
@@ -259,7 +259,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     
     double criticalEnergyTension(-1.0);
     // for temperature dependencies easy to extent
-    double *deltaTemperature = NULL;
+    //double *deltaTemperature = NULL;
     double *tempStressX, *tempStressY, *tempStressZ;
     dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
 
@@ -419,12 +419,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
             if (modelActive == true){
                 if (normEtaSq>0){
                     criticalEnergyTension = m_criticalEnergyTension;
-                    if (blockNumber[neighborID] != blockNumber[ownedIDs[iID]]){
-                        for (int biID = 0; biID < 8; ++biID){
-                            if (block[biID] == 0) break;
-                            if (blockNumber[neighborID]==block[biID])criticalEnergyTension = m_criticalEnergyInterBlock;
-                        }
-                    }
+                    if (blockNumber[neighborID]==blockInterfaceId)criticalEnergyTension = m_criticalEnergyInterBlock;
                     
                     omegaP1 = MATERIAL_EVALUATION::scalarInfluenceFunction(dX, horizon[nodeId]); 
                     omegaP2 = MATERIAL_EVALUATION::scalarInfluenceFunction(-dX, horizon[neighborID]); 

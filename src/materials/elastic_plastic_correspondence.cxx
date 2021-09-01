@@ -74,6 +74,7 @@ void updateElasticPerfectlyPlasticCauchyStress
   const ScalarT* rateOfDef = unrotatedRateOfDeformation;
   const ScalarT* stressN = cauchyStressN;
   ScalarT* stressNP1 = cauchyStressNP1;
+  ScalarT* stressElasticNP1 = cauchyStressElasticNP1;
 
   ScalarT* vmStress = vonMisesStress;
 

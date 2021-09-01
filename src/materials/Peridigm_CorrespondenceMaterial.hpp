@@ -170,10 +170,12 @@ namespace PeridigmNS {
     bool   m_planeStress, m_planeStrain;
     bool   m_plane = false;
     bool   nonLin = false;
-	bool   lin = true;
-	bool   avg = false;
+    bool   lin = true;
+    bool   avg = false;
     double m_hourglassCoefficient;
     double scal;
+    bool   m_inc;
+    bool   m_adaptHourGlass;
     PeridigmNS::InfluenceFunction::functionPointer m_OMEGA;
 
     // field spec ids for all relevant data

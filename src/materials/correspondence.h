@@ -300,6 +300,8 @@ const double m_hourglassCoefficient,
 const int m_stabilizationType,
 const bool m_plane,
 const bool m_tension,
+const bool m_plast,
+const bool m_adaptHourGlass,
 double* detachedNodes
     );
 template<typename ScalarT>

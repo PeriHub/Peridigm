@@ -1084,7 +1084,9 @@ template void computeForcesAndStresses<Sacado::Fad::DFad<double> >
     const double m_hourglassCoefficient,
     const int m_stabilizationType,
     const bool m_plane,
-    const bool plast,
+    const bool m_tension,
+    const bool m_plast,
+    const bool m_adaptHourGlass,
     double* detachedNodes
 );
 
@@ -1112,7 +1114,9 @@ template void computeForcesAndStresses<double>
     const double m_hourglassCoefficient,
     const int m_stabilizationType,
     const bool m_plane,
-    const bool plast,
+    const bool m_tension,
+    const bool m_plast,
+    const bool m_adaptHourGlass,
     double* detachedNodes
 );
 
@@ -1142,7 +1146,9 @@ void computeForcesAndStresses
     const double m_hourglassCoefficient,
     const int m_stabilizationType,
     const bool m_plane,
-    const bool plast,
+    const bool m_tension,
+    const bool m_plast,
+    const bool m_adaptHourGlass,
     double* detachedNodes
     )
 {
@@ -1238,7 +1244,7 @@ void computeForcesAndStresses
     // Inner product of Piola stress and the inverse of the shape tensor
     CORRESPONDENCE::MatrixMultiply(false, false, One, piolaStress, shapeTensorInv, temp);
 
-    if (plast){
+    if (m_plast){
         
         for(int i=0; i<9; i++){
             plastStress[i] = *(elasticStress+i) - *(stress+i) ;
@@ -1358,7 +1364,7 @@ void computeForcesAndStresses
     }
 
     if (detachedNodes[iID]==0){
-        if (plast){
+        if (m_plast){
             tempStressX[3*iID  ] = *(tempPlast);
             tempStressX[3*iID+1] = *(tempPlast+1);
             tempStressX[3*iID+2] = *(tempPlast+2);
