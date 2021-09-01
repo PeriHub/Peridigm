@@ -15,9 +15,10 @@
                 //"Test_Run2.xml"
                 //"plate_0.xml"
                 // "coreTest.yaml"
+                // "plast.xml"
                 //"NooruMohamedTest.xml"
-                "GIICmodel.yaml"
-                // "DCBmodel.yaml"
+                // "GIICmodel.yaml"
+                "DCBmodel.yaml"
             ],
             "stopAtEntry": false,
             //"cwd": "/mnt/c/Users/hess_ja/Desktop/PythonProjects/peridigmModelWriter/",
@@ -26,8 +27,9 @@
             //"cwd": "/home/jt/peridigmJobs/doe_2_601/",
             // "cwd": "/home/jt/peridigmJobs/modelCreation/",
             //"cwd": "/home/jt/peridigmJobs/staticSolver/",
-            "cwd": "/home/jt/peridigmJobs/GIICmodel/",
+            // "cwd": "/home/jt/peridigmJobs/GIICmodel/",
             // "cwd": "/home/jt/peridigmJobs/DCBmodel/",
+            "cwd": "/home/jt/peridigmJobs/dcbmodel/",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",

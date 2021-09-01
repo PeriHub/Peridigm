@@ -52,7 +52,6 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <math.h>
 #include <functional>
-#include <boost/math/constants/constants.hpp>
 #include <cmath> 
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
@@ -424,7 +423,7 @@ double* detachedNodes
 
     int neighborIndex, numNeighbors;
     const int *neighborListPtr = neighborhoodList;
-    int returnCode;
+    // int returnCode;
     for(int iID=0 ; iID<numPoints ; ++iID, delta++, modelCoord+=3, vel+=3,
         shapeTensorInv+=9, rateOfDef+=9, defGrad+=9){
 
@@ -674,7 +673,7 @@ double* detachedNodes
   for(int iID=0 ; iID<numPoints ; ++iID, delta++, modelCoord+=3, coord+=3,
         shapeTensorInv+=9, defGrad+=9){
   
-    double bondCheck(0.0), bondCheckNP1(0.0);
+    // double bondCheck(0.0), bondCheckNP1(0.0);
     *(shapeTensor)   = 0.0 ; *(shapeTensor+1) = 0.0 ; *(shapeTensor+2) = 0.0 ;
     *(shapeTensor+3) = 0.0 ; *(shapeTensor+4) = 0.0 ; *(shapeTensor+5) = 0.0 ;
     *(shapeTensor+6) = 0.0 ; *(shapeTensor+7) = 0.0 ; *(shapeTensor+8) = 0.0 ;
@@ -1489,7 +1488,7 @@ const double* bondDamage
   // placeholder for inclusion of bond damage
   //double bondDamage = 0.0;
 
-  const double pi = boost::math::constants::pi<double>();
+  const double pi = M_PI;
   double firstPartOfConstant = 18.0*hourglassCoefficient*bulkModulus/pi;
   double constant;
 
@@ -1603,7 +1602,7 @@ const double* bondDamage
   // placeholder for inclusion of bond damage
   //double bondDamage = 0.0;
 
-  const double pi = boost::math::constants::pi<double>();
+  const double pi = M_PI;
   double firstPartOfConstant = 18.0*hourglassCoefficient*bulkModulus/pi;
   double constant;
   double omega0 = 0.0;
@@ -3006,7 +3005,7 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor(
   std::string inversionErrorMessage = 
     "**** Error:  computeShapeTensorInverseAndApproximateVelocityGradient: Non-invertible matrix\n";
 
-  int neighborIndex, numNeighbors;
+  int numNeighbors; //neighborIndex
   const int *neighborListPtr = neighborhoodList;
   for(int iID=0 ; iID<numPoints ; ++iID, flyingPointFlg++){
 
@@ -3035,7 +3034,7 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor(
           unrotRateOfDefYX++, unrotRateOfDefYY++, unrotRateOfDefYZ++,
           unrotRateOfDefZX++, unrotRateOfDefZY++, unrotRateOfDefZZ++){
 
-        neighborIndex = *neighborListPtr;
+        // neighborIndex = *neighborListPtr;
 
         // Store in a tensor form 
         *(eulerianVelGrad+0) = *velGradXX; *(eulerianVelGrad+1) = *velGradXY; *(eulerianVelGrad+2) = *velGradXZ;
