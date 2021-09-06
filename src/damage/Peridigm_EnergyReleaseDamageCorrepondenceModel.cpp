@@ -56,6 +56,7 @@
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
+#include <boost/math/special_functions/fpclassify.hpp>
 
 using namespace std;
 
@@ -156,7 +157,7 @@ m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
 //
 //
 
-    m_pi = M_PI;
+    m_pi = 3.14159;
 
     if (params.isParameter("Thermal Expansion Coefficient")) {
         m_alpha = params.get<double>("Thermal Expansion Coefficient");
@@ -183,6 +184,8 @@ m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
     m_deformationGradientFieldId        = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient");
     m_hourglassStiffId                  = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Hourglass_Stiffness");
     m_bondEnergyFieldId = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Energy");
+    
+    
  
     m_fieldIds.push_back(blockIdFieldId);
     m_fieldIds.push_back(m_volumeFieldId);
@@ -250,8 +253,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
         const int numOwnedPoints,
         const int* ownedIDs,
         const int* neighborhoodList,
-        PeridigmNS::DataManager& dataManager,
-        int blockInterfaceId = -1) const {
+        PeridigmNS::DataManager& dataManager) const {
 
     double *x, *y, *yN, *damage, *bondDamage, *bondDamageNP1, *bondDamageDiff, *horizon, *vol, *detachedNodes, *blockNumber;
     double *bondEnergyN, *bondEnergyNP1;
@@ -259,7 +261,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     
     double criticalEnergyTension(-1.0);
     // for temperature dependencies easy to extent
-    //double *deltaTemperature = NULL;
+    double *deltaTemperature = NULL;
     double *tempStressX, *tempStressY, *tempStressZ;
     dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
 
@@ -387,6 +389,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
             
             
             neighborID = neighborhoodList[neighborhoodListIndex++];
+            
             if (detachedNodes[nodeId]!=0) continue;
             if (detachedNodes[neighborID]!=0) continue;
             X_dx = x[neighborID*3]   - nodeInitialX[0];
@@ -409,7 +412,15 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
             dX = distance(nodeInitialX[0], nodeInitialX[1], nodeInitialX[2], x[neighborID*3], x[neighborID*3+1], x[neighborID*3+2]);
             dY = distance(nodeCurrentX[0], nodeCurrentX[1], nodeCurrentX[2], y[neighborID*3], y[neighborID*3+1], y[neighborID*3+2]);
             dEta = dY-dX;
-            
+                              if (m_incremental){
+                        //projection on bond, but energy only with incremental change
+                        
+                        etaX  = Y_dx-(yN[neighborID*3]   - nodeCurrentXN[0]);
+                        etaY  = Y_dy-(yN[neighborID*3+1] - nodeCurrentXN[1]);
+                        etaZ  = Y_dz-(yN[neighborID*3+2] - nodeCurrentXN[2]);
+                        // entlastung bedenken; ueber vorzeichenwechsel arbeiten; wenn Ynd1 groesser ist als Yn dann ist negativ der trigger und vice versa; grundanahme, dass schritte klein sind
+                    }
+                    else{bondEnergyN[bondIndex] = 0.0;}
 
             normEtaSq = etaX*etaX+etaY*etaY+etaZ*etaZ;
 
@@ -419,7 +430,12 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
             if (modelActive == true){
                 if (normEtaSq>0){
                     criticalEnergyTension = m_criticalEnergyTension;
-                    if (blockNumber[neighborID]==blockInterfaceId)criticalEnergyTension = m_criticalEnergyInterBlock;
+                    if (blockNumber[neighborID] != blockNumber[ownedIDs[iID]]){
+                        for (int biID = 0; biID < 8; ++biID){
+                            if (block[biID] == 0) break;
+                            if (blockNumber[neighborID]==block[biID])criticalEnergyTension = m_criticalEnergyInterBlock;
+                        }
+                    }
                     
                     omegaP1 = MATERIAL_EVALUATION::scalarInfluenceFunction(dX, horizon[nodeId]); 
                     omegaP2 = MATERIAL_EVALUATION::scalarInfluenceFunction(-dX, horizon[neighborID]); 
@@ -459,14 +475,16 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                     //TPXN = factorN*Y_dx; TPYN = factorN*Y_dy; TPZN = factorN*Y_dz;
                     if (m_incremental){
                         //projection on bond, but energy only with incremental change
+                        
                         etaX  = Y_dx-(yN[neighborID*3]   - nodeCurrentXN[0]);
                         etaY  = Y_dy-(yN[neighborID*3+1] - nodeCurrentXN[1]);
                         etaZ  = Y_dz-(yN[neighborID*3+2] - nodeCurrentXN[2]);
                         // entlastung bedenken; ueber vorzeichenwechsel arbeiten; wenn Ynd1 groesser ist als Yn dann ist negativ der trigger und vice versa; grundanahme, dass schritte klein sind
                     }
-
-                    bondEnergyNP1[bondIndex] = bondEnergyN[bondIndex] + 0.5*(1-bondDamageNP1[bondIndex])*(abs(TPX*etaX)+abs(TPXN*etaX)+abs(TPY*etaY)+abs(TPYN*etaY)+abs(TPZ*etaZ)+abs(TPZN*etaZ));
-                    //if (iID == 1) std::cout<<bondEnergy<<std::endl;
+                    else{bondEnergyN[bondIndex] = 0.0;}
+                    // 0.25 oder 0.5
+                    bondEnergyNP1[bondIndex] = bondEnergyN[bondIndex] + 0.25*(1-bondDamageNP1[bondIndex])*(abs(TPX*etaX)+abs(TPXN*etaX)+abs(TPY*etaY)+abs(TPYN*etaY)+abs(TPZ*etaZ)+abs(TPZN*etaZ));
+                    
                 }
                 else
                 {
@@ -492,6 +510,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                 }
                 //quadhorizon =  4 /( m_pi * avgHorizon * avgHorizon * avgHorizon * avgHorizon ); 
                 critIso = bondEnergyNP1[bondIndex]/(criticalEnergyTension*quadhorizon);
+               // if (bondEnergyNP1[bondIndex] != 0) std::cout<<critIso<<std::endl;
                 //critIso = 0;
                 
                 //critIso = bondEnergy/(criticalEnergyTension*quadhorizon);

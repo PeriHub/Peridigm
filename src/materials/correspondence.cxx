@@ -52,6 +52,7 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <math.h>
 #include <functional>
+#include <boost/math/constants/constants.hpp>
 #include <cmath> 
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
@@ -423,7 +424,7 @@ double* detachedNodes
 
     int neighborIndex, numNeighbors;
     const int *neighborListPtr = neighborhoodList;
-    // int returnCode;
+    int returnCode;
     for(int iID=0 ; iID<numPoints ; ++iID, delta++, modelCoord+=3, vel+=3,
         shapeTensorInv+=9, rateOfDef+=9, defGrad+=9){
 
@@ -673,7 +674,7 @@ double* detachedNodes
   for(int iID=0 ; iID<numPoints ; ++iID, delta++, modelCoord+=3, coord+=3,
         shapeTensorInv+=9, defGrad+=9){
   
-    // double bondCheck(0.0), bondCheckNP1(0.0);
+    double bondCheck(0.0), bondCheckNP1(0.0);
     *(shapeTensor)   = 0.0 ; *(shapeTensor+1) = 0.0 ; *(shapeTensor+2) = 0.0 ;
     *(shapeTensor+3) = 0.0 ; *(shapeTensor+4) = 0.0 ; *(shapeTensor+5) = 0.0 ;
     *(shapeTensor+6) = 0.0 ; *(shapeTensor+7) = 0.0 ; *(shapeTensor+8) = 0.0 ;
@@ -1070,7 +1071,7 @@ template void computeForcesAndStresses<Sacado::Fad::DFad<double> >
     const Sacado::Fad::DFad<double>* coordinatesNP1,
     const Sacado::Fad::DFad<double>* deformationGradient,
     const Sacado::Fad::DFad<double>* cauchyStressNP1,
-    const Sacado::Fad::DFad<double>* cauchyStressElastic,
+    const Sacado::Fad::DFad<double>* cauchyStressPlastic,
     const Sacado::Fad::DFad<double>* shapeTensorInverse,
     const double* bondDamage,
     const Sacado::Fad::DFad<double> C[][6],
@@ -1084,9 +1085,8 @@ template void computeForcesAndStresses<Sacado::Fad::DFad<double> >
     const double m_hourglassCoefficient,
     const int m_stabilizationType,
     const bool m_plane,
-    const bool m_tension,
-    const bool m_plast,
-    const bool m_adaptHourGlass,
+    const bool plast,
+    const bool adaptHourGlass,
     double* detachedNodes
 );
 
@@ -1100,7 +1100,7 @@ template void computeForcesAndStresses<double>
     const double* coordinatesNP1,
     const double* deformationGradient,
     const double* cauchyStressNP1,
-    const double* cauchyStressElastic,
+    const double* cauchyStressPlastic,
     const double* shapeTensorInverse,
     const double* bondDamage,
     const double C[][6],
@@ -1114,9 +1114,8 @@ template void computeForcesAndStresses<double>
     const double m_hourglassCoefficient,
     const int m_stabilizationType,
     const bool m_plane,
-    const bool m_tension,
-    const bool m_plast,
-    const bool m_adaptHourGlass,
+    const bool plast,
+    const bool adaptHourGlass,
     double* detachedNodes
 );
 
@@ -1132,7 +1131,7 @@ void computeForcesAndStresses
     const ScalarT* coordinatesNP1,
     const ScalarT* deformationGradient,
     const ScalarT* cauchyStressNP1,
-    const ScalarT* cauchyStressElastic,
+    const ScalarT* cauchyStressPlastic,
     const ScalarT* shapeTensorInverse,
     const double* bondDamage,
     const ScalarT C[][6],
@@ -1146,9 +1145,8 @@ void computeForcesAndStresses
     const double m_hourglassCoefficient,
     const int m_stabilizationType,
     const bool m_plane,
-    const bool m_tension,
-    const bool m_plast,
-    const bool m_adaptHourGlass,
+    const bool plast,
+    const bool adaptHourGlass,
     double* detachedNodes
     )
 {
@@ -1165,13 +1163,13 @@ void computeForcesAndStresses
   ScalarT* tempStressY = StressY;
   ScalarT* tempStressZ = StressZ;
   ScalarT* hourglassStiff = hourglassStiffValues;
-  
+  double hourglassScale = m_hourglassCoefficient;
   int neighborIndex, numNeighbors;
   const int *neighborListPtr = neighborhoodList;
   const double *modelCoordinatesPtr, *neighborModelCoordinatesPtr;
   ScalarT *partialStressPtr; //*neighborForceDensityPtr
   const ScalarT* stress = cauchyStressNP1;
-  const ScalarT* elasticStress = cauchyStressElastic;
+  const ScalarT* plasticStress = cauchyStressPlastic;
   const ScalarT* shapeTensorInv = shapeTensorInverse;
   const ScalarT* defGrad = deformationGradient;
   const ScalarT *deformedCoordinatesNP1Ptr, *neighborDeformedCoordinatesNP1Ptr;
@@ -1198,13 +1196,13 @@ void computeForcesAndStresses
   int matrixInversionReturnCode(0);
   
   std::vector<ScalarT> piolaStressVector(9), tempVector(9), tempPlastVector(9), defGradInvVector(9), hourglassStiffVector(9), 
-  TSvector(3), plastStressVector(9), scalVector(9);
+  TSvector(3), scalVector(9);
   ScalarT* TS = &TSvector[0];
   ScalarT* temp = &tempVector[0];
   ScalarT* tempPlast = &tempPlastVector[0];
   ScalarT* defGradInv = &defGradInvVector[0];
   ScalarT* piolaStress = &piolaStressVector[0];
-  ScalarT* plastStress = &plastStressVector[0];
+
   ScalarT* hourglassStiffVal = &hourglassStiffVector[0];
   ScalarT* scal = &scalVector[0]; 
   ScalarT  One = 1.0;
@@ -1213,7 +1211,7 @@ void computeForcesAndStresses
     }
 
   for(int iID=0 ; iID<numOwnedPoints ; ++iID, 
-          ++delta, defGrad+=9, stress+=9, elasticStress+=9, shapeTensorInv+=9, hourglassStiff+=9){ //, defGradNonInc+=9
+          ++delta, defGrad+=9, stress+=9, plasticStress+=9, shapeTensorInv+=9, hourglassStiff+=9){ //, defGradNonInc+=9
            
     // first Piola-Kirchhoff stress = J * cauchyStress * defGrad^-T
 
@@ -1244,23 +1242,18 @@ void computeForcesAndStresses
     // Inner product of Piola stress and the inverse of the shape tensor
     CORRESPONDENCE::MatrixMultiply(false, false, One, piolaStress, shapeTensorInv, temp);
 
-    if (m_plast){
+    if (plast){
         
-        for(int i=0; i<9; i++){
-            plastStress[i] = *(elasticStress+i) - *(stress+i) ;
-           // if (plastStress[i]!=0) std::cout<<*(elasticStress+i)<<" "<<*(stress+i)<<std::endl;
-            //if (*(elasticStress+i) != 0) {scal[i] = 1 - plastStress[i]/(*(elasticStress+i));}
-            //else {scal[i]=1;}
-        }
-        
-        CORRESPONDENCE::MatrixMultiply(false, true, jacobianDeterminant, plastStress, defGradInv, piolaStress);
+        CORRESPONDENCE::MatrixMultiply(false, true, jacobianDeterminant, plasticStress, defGradInv, piolaStress);
         CORRESPONDENCE::MatrixMultiply(false, false, One, piolaStress, shapeTensorInv, tempPlast);
-        
-                for(int i=0; i<9; i++){
-     
-          //  if (tempPlast[i]!=0) std::cout<<*(elasticStress+i)<<" "<<*(stress+i)<<" "<< tempPlast[i]<<std::endl;
-            //if (*(elasticStress+i) != 0) {scal[i] = 1 - plastStress[i]/(*(elasticStress+i));}
-            //else {scal[i]=1;}
+        if (adaptHourGlass){// kann wahrscheinlich weg
+            for(int i=0; i<9; i++){
+                if (*(stress+i) != *(plasticStress+i)) {//scal[i] = 1 - *(plasticStress+i)/(*(stress+i));
+                //scal[i] =0;
+                hourglassScale = 0;
+                break;}
+                //else {scal[i]=1;}
+            }
         }
     }
     if (matrixInversionReturnCode != 0){
@@ -1325,9 +1318,9 @@ void computeForcesAndStresses
               
           }
             
-          TX =  (1-bondDamage[bondIndex]) * omega * ( *(temp)   * X_dx + *(temp+1) * X_dy + *(temp+2) * X_dz+ m_hourglassCoefficient*TS[0]);
-          TY =  (1-bondDamage[bondIndex]) * omega * ( *(temp+3) * X_dx + *(temp+4) * X_dy + *(temp+5) * X_dz+ m_hourglassCoefficient*TS[1]);
-          TZ =  (1-bondDamage[bondIndex]) * omega * ( *(temp+6) * X_dx + *(temp+7) * X_dy + *(temp+8) * X_dz+ m_hourglassCoefficient*TS[2]);
+          TX =  (1-bondDamage[bondIndex]) * omega * ( *(temp)   * X_dx + *(temp+1) * X_dy + *(temp+2) * X_dz+ hourglassScale*TS[0]);
+          TY =  (1-bondDamage[bondIndex]) * omega * ( *(temp+3) * X_dx + *(temp+4) * X_dy + *(temp+5) * X_dz+ hourglassScale*TS[1]);
+          TZ =  (1-bondDamage[bondIndex]) * omega * ( *(temp+6) * X_dx + *(temp+7) * X_dy + *(temp+8) * X_dz+ hourglassScale*TS[2]);
           
          
           neighborVol = volume[neighborIndex];
@@ -1364,7 +1357,8 @@ void computeForcesAndStresses
     }
 
     if (detachedNodes[iID]==0){
-        if (m_plast){
+        if (plast){
+            
             tempStressX[3*iID  ] = *(tempPlast);
             tempStressX[3*iID+1] = *(tempPlast+1);
             tempStressX[3*iID+2] = *(tempPlast+2);
@@ -1494,7 +1488,7 @@ const double* bondDamage
   // placeholder for inclusion of bond damage
   //double bondDamage = 0.0;
 
-  const double pi = M_PI;
+  const double pi = boost::math::constants::pi<double>();
   double firstPartOfConstant = 18.0*hourglassCoefficient*bulkModulus/pi;
   double constant;
 
@@ -1608,7 +1602,7 @@ const double* bondDamage
   // placeholder for inclusion of bond damage
   //double bondDamage = 0.0;
 
-  const double pi = M_PI;
+  const double pi = boost::math::constants::pi<double>();
   double firstPartOfConstant = 18.0*hourglassCoefficient*bulkModulus/pi;
   double constant;
   double omega0 = 0.0;
@@ -3011,7 +3005,7 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor(
   std::string inversionErrorMessage = 
     "**** Error:  computeShapeTensorInverseAndApproximateVelocityGradient: Non-invertible matrix\n";
 
-  int numNeighbors; //neighborIndex
+  int neighborIndex, numNeighbors;
   const int *neighborListPtr = neighborhoodList;
   for(int iID=0 ; iID<numPoints ; ++iID, flyingPointFlg++){
 
@@ -3040,7 +3034,7 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor(
           unrotRateOfDefYX++, unrotRateOfDefYY++, unrotRateOfDefYZ++,
           unrotRateOfDefZX++, unrotRateOfDefZY++, unrotRateOfDefZZ++){
 
-        // neighborIndex = *neighborListPtr;
+        neighborIndex = *neighborListPtr;
 
         // Store in a tensor form 
         *(eulerianVelGrad+0) = *velGradXX; *(eulerianVelGrad+1) = *velGradXY; *(eulerianVelGrad+2) = *velGradXZ;

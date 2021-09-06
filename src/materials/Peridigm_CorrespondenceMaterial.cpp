@@ -54,6 +54,7 @@
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
+#include <boost/math/special_functions/fpclassify.hpp>
 using namespace std;
 
 PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::ParameterList& params)
@@ -65,14 +66,14 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     m_hourglassForceDensityFieldId(-1), m_forceDensityFieldId(-1), m_bondDamageFieldId(-1),
     m_deformationGradientFieldId(-1),
     m_shapeTensorInverseFieldId(-1),
-    m_cauchyStressFieldId(-1), 
     m_leftStretchTensorFieldId(-1),
     m_rotationTensorFieldId(-1), 
     m_unrotatedCauchyStressFieldId(-1),
+    m_cauchyStressFieldId(-1), 
     m_unrotatedRateOfDeformationFieldId(-1),
-    m_unrotatedCauchyStressElasticFieldId(-1),
     m_partialStressFieldId(-1),
-    m_hourglassStiffId(-1)
+    m_hourglassStiffId(-1),
+    m_unrotatedCauchyStressPlasticFieldId(-1)
     
 {
      
@@ -114,8 +115,10 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
      
   }
 
-  if (params.get<std::string>("Material Model").find("Plastic")!=std::string::npos) m_plast = true;
-
+  if (params.get<std::string>("Material Model").find("Plastic")!=std::string::npos) {
+      m_plast = true;
+      if (params.isParameter("Accumulated Plastic")) m_plast = params.get<bool>("Accumulated Plastic");
+  }
   m_applyAutomaticDifferentiationJacobian = true;
   if(params.isParameter("Apply Automatic Differentiation Jacobian"))
     m_applyAutomaticDifferentiationJacobian = params.get<bool>("Apply Automatic Differentiation Jacobian");
@@ -143,7 +146,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
         m_hourglassCoefficient = params.get<double>("Hourglass Coefficient");
         
         if (params.get<string>("Stabilizaton Type")=="Adapt Hourglass Stiffness"){
-        m_adaptHourGlass = params.get<double>("Adapt Hourglass Stiffness");
+        m_adaptHourGlass = params.get<bool>("Adapt Hourglass Stiffness");
         }
         double C11 = 0.0, C12 = 0.0, C13 = 0.0, C14 = 0.0, C15 = 0.0, C16 = 0.0;
         double            C22 = 0.0, C23 = 0.0, C24 = 0.0, C25 = 0.0, C26 = 0.0;
@@ -296,7 +299,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_shapeTensorInverseFieldId         = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Shape_Tensor_Inverse");
   m_unrotatedCauchyStressFieldId      = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Unrotated_Cauchy_Stress");
   m_unrotatedRateOfDeformationFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Rate_Of_Deformation");
-  m_unrotatedCauchyStressElasticFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Elastic_Cauchy_Stress");
+  m_unrotatedCauchyStressPlasticFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Plastic_Cauchy_Stress");
   m_cauchyStressFieldId               = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Cauchy_Stress");
   m_piolaStressTimesInvShapeTensorXId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "PiolaStressTimesInvShapeTensorX");
   m_piolaStressTimesInvShapeTensorYId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "PiolaStressTimesInvShapeTensorY");
@@ -323,7 +326,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_fieldIds.push_back(m_shapeTensorInverseFieldId);
   m_fieldIds.push_back(m_unrotatedCauchyStressFieldId);
   m_fieldIds.push_back(m_cauchyStressFieldId);
-  m_fieldIds.push_back(m_unrotatedCauchyStressElasticFieldId);
+  m_fieldIds.push_back(m_unrotatedCauchyStressPlasticFieldId);
   m_fieldIds.push_back(m_piolaStressTimesInvShapeTensorXId);
   m_fieldIds.push_back(m_piolaStressTimesInvShapeTensorYId);
   m_fieldIds.push_back(m_piolaStressTimesInvShapeTensorZId);
@@ -358,7 +361,7 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
   dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
-  dataManager.getData(m_unrotatedCauchyStressElasticFieldId, PeridigmField::STEP_NONE)->PutScalar(0.0);
+  dataManager.getData(m_unrotatedCauchyStressPlasticFieldId, PeridigmField::STEP_NONE)->PutScalar(0.0);
   dataManager.getData(m_partialStressFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
   dataManager.getData(m_partialStressFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   
@@ -604,10 +607,11 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
  
 
   // rotate back to the Eulerian frame
-  double *unrotatedCauchyStressNP1, *cauchyStressNP1, *elasticStress;
+  double *unrotatedCauchyStressNP1, *cauchyStressNP1, *plasticStress;
+if (m_plast){
+  dataManager.getData(m_unrotatedCauchyStressPlasticFieldId, PeridigmField::STEP_NONE)->ExtractView(&plasticStress);
 
-  dataManager.getData(m_unrotatedCauchyStressElasticFieldId, PeridigmField::STEP_NONE)->ExtractView(&elasticStress);
-  
+}
   if (nonLin == true) {
       dataManager.getData(m_unrotatedCauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&unrotatedCauchyStressNP1);
       dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&cauchyStressNP1);
@@ -620,8 +624,8 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
       
       if (m_plast){
           CORRESPONDENCE::rotateCauchyStress(rotationTensorNP1,
-                                             elasticStress,
-                                             elasticStress,
+                                             plasticStress,
+                                             plasticStress,
                                              numOwnedPoints);
       }
   
@@ -670,7 +674,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                        coordinatesNP1,
                                        deformationGradient,
                                        cauchyStressNP1,
-                                       elasticStress,
+                                       plasticStress,
                                        shapeTensorInverse,
                                        bondDamageNP1,
                                        C,
@@ -684,7 +688,6 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                        m_hourglassCoefficient,
                                        m_stabilizationType,
                                        m_plane,
-                                       m_tension,
                                        m_plast,
                                        m_adaptHourGlass,
                                        detachedNodes);
@@ -825,7 +828,7 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
 
     // Extract pointers to the underlying data in the constitutive data array.
 
-    double *modelCoordinates, *volume, *coordinatesNP1, *angles, *detachedNodes; //*coordinates,
+    double *modelCoordinates, *coordinates, *volume, *coordinatesNP1, *angles, *detachedNodes;
     tempDataManager.getData(m_modelAnglesId,           PeridigmField::STEP_NONE)->ExtractView(&angles);
     tempDataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&volume);
     tempDataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&modelCoordinates);
@@ -851,7 +854,7 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
     vector<Sacado::Fad::DFad<double> > deformationGradient_AD;
     vector<Sacado::Fad::DFad<double> > cauchyStress_AD;
     vector<Sacado::Fad::DFad<double> > cauchyStressNP1_AD;
-    vector<Sacado::Fad::DFad<double> > cauchyStressElastic_AD;
+    vector<Sacado::Fad::DFad<double> > cauchyStressPlastic_AD;
     vector<Sacado::Fad::DFad<double> > partialStress_AD;
     vector<Sacado::Fad::DFad<double> > tempStressX_AD;
     vector<Sacado::Fad::DFad<double> > tempStressY_AD;
@@ -863,7 +866,7 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
     deformationGradient_AD.resize(numDof*numDof);
     cauchyStress_AD.resize(numDof*numDof);
     cauchyStressNP1_AD.resize(numDof*numDof);
-    cauchyStressElastic_AD.resize(numDof*numDof);
+    cauchyStressPlastic_AD.resize(numDof*numDof);
     tempStressX_AD.resize(numDof*numDof);
     tempStressY_AD.resize(numDof*numDof);
     tempStressZ_AD.resize(numDof*numDof);
@@ -887,10 +890,10 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
                                                                                        tempNumOwnedPoints,
                                                                                        m_plane,
                                                                                        detachedNodes);
-    double *cauchyStress, *cauchyStressNP1, *cauchyStressElastic;
+    double *cauchyStress, *cauchyStressNP1, *cauchyStressPlastic;
     tempDataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_N)->ExtractView(&cauchyStress);
     tempDataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_N)->ExtractView(&cauchyStressNP1);
-    dataManager.getData(m_unrotatedCauchyStressElasticFieldId, PeridigmField::STEP_NONE)->ExtractView(&cauchyStressElastic);
+    dataManager.getData(m_unrotatedCauchyStressPlasticFieldId, PeridigmField::STEP_NONE)->ExtractView(&cauchyStressPlastic);
     
     
     
@@ -899,8 +902,8 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
       cauchyStress_AD[i].val() = cauchyStress[i];
       cauchyStressNP1_AD[i].diff(i, numDof);
       cauchyStressNP1_AD[i].val() = cauchyStressNP1[i];
-      cauchyStressElastic_AD[i].diff(i, numDof);
-      cauchyStressElastic_AD[i].val() = cauchyStressElastic[i];
+      cauchyStressPlastic_AD[i].diff(i, numDof);
+      cauchyStressPlastic_AD[i].val() = cauchyStressPlastic[i];
       
     }
     
@@ -927,7 +930,7 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
                                         &coordinatesNP1_AD[0],
                                         &deformationGradient_AD[0],
                                         &cauchyStressNP1_AD[0],
-                                        &cauchyStressElastic_AD[0],
+                                        &cauchyStressPlastic_AD[0],
                                         &shapeTensorInverse_AD[0],
                                         bondDamageNP1,
                                         &C_AD[0],
@@ -941,7 +944,6 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
                                         m_hourglassCoefficient,
                                         m_stabilizationType,
                                         m_plane,
-                                        m_tension,
                                         m_plast,
                                         m_adaptHourGlass,
                                         detachedNodes);
@@ -953,7 +955,7 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
       for(int col=0 ; col<numDof ; ++col){
 	value = force_AD[row].dx(col) ; //--> I think this must be it, because forces are already provided
     //value = force_AD[row].dx(col) * volume[row/3]; // given by peridigm org
-	TEUCHOS_TEST_FOR_EXCEPT_MSG(!std::isfinite(value), "**** NaN detected in correspondence::computeAutomaticDifferentiationJacobian().\n");
+	TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite(value), "**** NaN detected in correspondence::computeAutomaticDifferentiationJacobian().\n");
         scratchMatrix(row, col) = value;
       }
     }
@@ -1085,7 +1087,7 @@ PeridigmNS::CorrespondenceMaterial::computeJacobianFiniteDifference(const double
 
     // Create a temporary vector for storing force and/or flux divergence.
     Teuchos::RCP<Epetra_Vector> forceVector, tempForceVector, fluxDivergenceVector, tempFluxDivergenceVector;
-    double *tempForce;//, *tempFluxDivergence;
+    double *tempForce, *tempFluxDivergence;
     if (solveForDisplacement) {
       forceVector = tempDataManager.getData(forceDensityFId, PeridigmField::STEP_NP1);
       tempForceVector = Teuchos::rcp(new Epetra_Vector(*forceVector));

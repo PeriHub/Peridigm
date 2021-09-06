@@ -170,12 +170,10 @@ namespace PeridigmNS {
     bool   m_planeStress, m_planeStrain;
     bool   m_plane = false;
     bool   nonLin = false;
-    bool   lin = true;
-    bool   avg = false;
+	bool   lin = true;
+	bool   avg = false;
     double m_hourglassCoefficient;
     double scal;
-    bool   m_inc;
-    bool   m_adaptHourGlass;
     PeridigmNS::InfluenceFunction::functionPointer m_OMEGA;
 
     // field spec ids for all relevant data
@@ -198,7 +196,7 @@ namespace PeridigmNS {
     int m_piolaStressTimesInvShapeTensorYId;
     int m_piolaStressTimesInvShapeTensorZId;
     int m_unrotatedRateOfDeformationFieldId;
-    int m_unrotatedCauchyStressElasticFieldId;
+    int m_unrotatedCauchyStressPlasticFieldId;
     int m_detachedNodesFieldId;
     int m_partialStressFieldId;
     int m_hourglassStiffId;
@@ -208,8 +206,9 @@ namespace PeridigmNS {
     int m_incremental;
     bool m_hencky;
     int m_deformationGradientNonIncFieldId;
-    bool m_tension;
     bool m_plast;
+    bool m_inc;
+    bool m_adaptHourGlass;
   };
 }
 

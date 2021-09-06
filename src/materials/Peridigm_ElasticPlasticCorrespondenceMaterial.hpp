@@ -84,13 +84,21 @@ namespace PeridigmNS {
     
     // material properties
     double m_yieldStress;
-
+    
+    double C[6][6];
+    int m_type;
+    int m_stabilizationType;
+    int m_modelAnglesId;
+        
+    int m_deformationGradientFieldId;
+    bool m_incremental;
+    bool m_hencky;
     // field spec ids for all relevant data
     int m_unrotatedRateOfDeformationFieldId;
     int m_unrotatedCauchyStressFieldId;
     int m_vonMisesStressFieldId;
     int m_equivalentPlasticStrainFieldId;
-    int m_unrotatedCauchyStressElasticFieldId;
+    int m_unrotatedCauchyStressPlasticFieldId;
   };
 }
 
