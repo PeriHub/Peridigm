@@ -56,12 +56,12 @@
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
-#include <boost/math/special_functions/fpclassify.hpp>
 
 using namespace std;
 
 PeridigmNS::EnergyReleaseDamageCorrepondenceModel::EnergyReleaseDamageCorrepondenceModel(const Teuchos::ParameterList& params)
-: DamageModel(params), 
+: DamageModel(params),
+m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
 m_applyThermalStrains(false),
 m_modelCoordinatesFieldId(-1),
 m_coordinatesFieldId(-1),
@@ -72,14 +72,13 @@ m_deltaTemperatureFieldId(-1),
 m_dilatationFieldId(-1),
 m_weightedVolumeFieldId(-1),
 m_horizonFieldId(-1),
+m_detachedNodesFieldId(-1),
 m_piolaStressTimesInvShapeTensorXId(-1),
 m_piolaStressTimesInvShapeTensorYId(-1),
 m_piolaStressTimesInvShapeTensorZId(-1),
-m_detachedNodesFieldId(-1),
 m_forceDensityFieldId(-1),
 m_deformationGradientFieldId(-1),
-m_hourglassStiffId(-1),
-m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
+m_hourglassStiffId(-1) {
 
     
     if (params.isParameter("Critical Energy")) {
@@ -157,7 +156,7 @@ m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()) {
 //
 //
 
-    m_pi = 3.14159;
+    m_pi = M_PI;
 
     if (params.isParameter("Thermal Expansion Coefficient")) {
         m_alpha = params.get<double>("Thermal Expansion Coefficient");
@@ -253,7 +252,8 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
         const int numOwnedPoints,
         const int* ownedIDs,
         const int* neighborhoodList,
-        PeridigmNS::DataManager& dataManager) const {
+        PeridigmNS::DataManager& dataManager,
+        int blockInterfaceId = -1) const {
 
     double *x, *y, *yN, *damage, *bondDamage, *bondDamageNP1, *bondDamageDiff, *horizon, *vol, *detachedNodes, *blockNumber;
     double *bondEnergyN, *bondEnergyNP1;
@@ -261,7 +261,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     
     double criticalEnergyTension(-1.0);
     // for temperature dependencies easy to extent
-    double *deltaTemperature = NULL;
+    //double *deltaTemperature = NULL;
     double *tempStressX, *tempStressY, *tempStressZ;
     dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
 
@@ -430,12 +430,8 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
             if (modelActive == true){
                 if (normEtaSq>0){
                     criticalEnergyTension = m_criticalEnergyTension;
-                    if (blockNumber[neighborID] != blockNumber[ownedIDs[iID]]){
-                        for (int biID = 0; biID < 8; ++biID){
-                            if (block[biID] == 0) break;
-                            if (blockNumber[neighborID]==block[biID])criticalEnergyTension = m_criticalEnergyInterBlock;
-                        }
-                    }
+                    
+                    if (blockNumber[neighborID]==blockInterfaceId)criticalEnergyTension = m_criticalEnergyInterBlock;
                     
                     omegaP1 = MATERIAL_EVALUATION::scalarInfluenceFunction(dX, horizon[nodeId]); 
                     omegaP2 = MATERIAL_EVALUATION::scalarInfluenceFunction(-dX, horizon[neighborID]); 

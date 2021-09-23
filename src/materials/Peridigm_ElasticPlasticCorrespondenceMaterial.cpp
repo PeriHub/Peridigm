@@ -57,7 +57,7 @@ using namespace std;
 PeridigmNS::ElasticPlasticCorrespondenceMaterial::ElasticPlasticCorrespondenceMaterial(const Teuchos::ParameterList& params)
   : CorrespondenceMaterial(params),
     m_yieldStress(0.0),
-    m_unrotatedRateOfDeformationFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_unrotatedCauchyStressPlasticFieldId(-1), m_vonMisesStressFieldId(-1), m_equivalentPlasticStrainFieldId(-1)
+    m_unrotatedRateOfDeformationFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_vonMisesStressFieldId(-1), m_equivalentPlasticStrainFieldId(-1), m_unrotatedCauchyStressPlasticFieldId(-1)
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the selected correspondence material model.\n");
 
