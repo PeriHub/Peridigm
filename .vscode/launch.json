@@ -19,7 +19,9 @@
                 //"NooruMohamedTest.xml"
                 // "GIICmodel.yaml"
                 // "DCBmodel.yaml"
-                "model.yaml"
+                // "model.yaml"
+                // "isoTension2D.xml"
+                "ThermalExpansionCube.xml"
             ],
             "stopAtEntry": false,
             //"cwd": "/mnt/c/Users/hess_ja/Desktop/PythonProjects/peridigmModelWriter/",
@@ -31,7 +33,9 @@
             // "cwd": "/home/jt/peridigmJobs/GIICmodel/",
             // "cwd": "/home/jt/peridigmJobs/DCBmodel/",
             // "cwd": "/home/jt/peridigmJobs/dcbmodel/",
-            "cwd": "/home/jt/peridigmJobs/dogbone/",
+            // "cwd": "/home/jt/peridigmJobs/dogbone/",
+            // "cwd": "/home/jt/peridigmJobs/isoTension2D/",
+            "cwd": "/usr/local/src/peridigmDev/test/verification/ThermalExpansionCube/",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",

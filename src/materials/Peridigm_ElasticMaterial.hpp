@@ -211,6 +211,7 @@ namespace PeridigmNS {
     int m_forceDensityFieldId;
     int m_partialStressFieldId;
     int m_bondDamageFieldId;
+    int m_temperatureFieldId;
     int m_deltaTemperatureFieldId;
     int m_storedElasticEnergyDensityFieldId;
     int m_damageModelFieldId;

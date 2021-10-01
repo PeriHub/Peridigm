@@ -70,7 +70,7 @@ PeridigmNS::ElasticMaterial::ElasticMaterial(const Teuchos::ParameterList& param
     m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
     m_volumeFieldId(-1), m_damageFieldId(-1), m_weightedVolumeFieldId(-1), m_dilatationFieldId(-1), m_modelCoordinatesFieldId(-1),
     m_coordinatesFieldId(-1), m_forceDensityFieldId(-1), m_partialStressFieldId(-1), m_bondDamageFieldId(-1),
-    m_deltaTemperatureFieldId(-1), m_damageModelFieldId(-1)
+    m_temperatureFieldId(-1), m_deltaTemperatureFieldId(-1), m_damageModelFieldId(-1)
 {
   //! \todo Add meaningful asserts on material properties.
   m_bulkModulus = calculateBulkModulus(params);
@@ -105,6 +105,7 @@ PeridigmNS::ElasticMaterial::ElasticMaterial(const Teuchos::ParameterList& param
   m_damageModelFieldId 			   = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, 	 PeridigmField::TWO_STEP, "Damage_Model_Data");
      
   if(m_applyThermalStrains)
+    m_temperatureFieldId           = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Temperature");
     m_deltaTemperatureFieldId      = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Temperature_Change");
   if(m_computePartialStress)
     m_partialStressFieldId         = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Partial_Stress");
@@ -119,8 +120,10 @@ PeridigmNS::ElasticMaterial::ElasticMaterial(const Teuchos::ParameterList& param
   m_fieldIds.push_back(m_bondDamageFieldId);
   m_fieldIds.push_back(m_horizonFieldId);
   m_fieldIds.push_back(m_damageModelFieldId);
-  if(m_applyThermalStrains)
+  if(m_applyThermalStrains){
     m_fieldIds.push_back(m_deltaTemperatureFieldId);
+    m_fieldIds.push_back(m_temperatureFieldId);
+  }
   if(m_computePartialStress)
     m_fieldIds.push_back(m_partialStressFieldId);
 }
