@@ -502,6 +502,10 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   auxiliaryFieldIds.push_back(piolaStressTimesInvShapeTensorZId);
   auxiliaryFieldIds.push_back(detachedNodesFieldId);
   auxiliaryFieldIds.push_back(bondDamageDiffFieldId);
+  auxiliaryFieldIds.push_back(temperatureFieldId);
+  auxiliaryFieldIds.push_back(deltaTemperatureFieldId);
+  
+  
   if(analysisHasContact)
     auxiliaryFieldIds.push_back(contactForceDensityFieldId);
   if(analysisHasMultiphysics) {
@@ -2343,7 +2347,7 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
     }
     }
     // hier muss noch ein check rein, der die Sachen nur fuer die Schadensmodelle durchfuehrt
-
+    modelEvaluator->updateDilatation(workset);
     modelEvaluator->updateCauchyStress(workset);
 
     // map damage model information back in global data manager

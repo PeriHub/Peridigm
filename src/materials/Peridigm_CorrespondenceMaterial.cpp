@@ -54,6 +54,7 @@
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
+#include <boost/math/special_functions/fpclassify.hpp>
 using namespace std;
 
 PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::ParameterList& params)
@@ -65,14 +66,15 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     m_hourglassForceDensityFieldId(-1), m_forceDensityFieldId(-1), m_bondDamageFieldId(-1),
     m_deformationGradientFieldId(-1),
     m_shapeTensorInverseFieldId(-1),
-    m_cauchyStressFieldId(-1), 
     m_leftStretchTensorFieldId(-1),
     m_rotationTensorFieldId(-1), 
     m_unrotatedCauchyStressFieldId(-1),
+    m_cauchyStressFieldId(-1), 
     m_unrotatedRateOfDeformationFieldId(-1),
-    m_unrotatedCauchyStressPlasticFieldId(-1),
     m_partialStressFieldId(-1),
-    m_hourglassStiffId(-1)
+    m_hourglassStiffId(-1),
+    m_unrotatedCauchyStressPlasticFieldId(-1),
+    m_temperatureFieldId(-1)
     
 {
      
@@ -143,8 +145,8 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
         
         m_stabilizationType = 3;
         m_hourglassCoefficient = params.get<double>("Hourglass Coefficient");
-        
-        if (params.get<string>("Stabilizaton Type")=="Adapt Hourglass Stiffness"){
+        if (params.isParameter("Adapt Hourglass Stiffness"))
+        {
         m_adaptHourGlass = params.get<bool>("Adapt Hourglass Stiffness");
         }
         double C11 = 0.0, C12 = 0.0, C13 = 0.0, C14 = 0.0, C15 = 0.0, C16 = 0.0;
@@ -237,14 +239,14 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
           // j.engfracmech.2017.10.011
 
         // have to be done after rotation if angles exist
-        if (m_plane==false){
+        //if (m_plane==false){
          C[0][0] = C11;C[0][1] = C12;C[0][2]= C13; C[0][3] = C14; C[0][4] = C15; C[0][5]= C16;
          C[1][0] = C12;C[1][1] = C22;C[1][2]= C23; C[1][3] = C24; C[1][4] = C25; C[1][5]= C26;
          C[2][0] = C13;C[2][1] = C23;C[2][2]= C33; C[2][3] = C34; C[2][4] = C35; C[2][5]= C36;
          C[3][0] = C14;C[3][1] = C24;C[3][2]= C34; C[3][3] = C44; C[3][4] = C45; C[3][5]= C46;
          C[4][0] = C15;C[4][1] = C25;C[4][2]= C35; C[4][3] = C45; C[4][4] = C55; C[4][5]= C56;
          C[5][0] = C16;C[5][1] = C26;C[5][2]= C36; C[5][3] = C46; C[5][4] = C56; C[5][5]= C66;
-        }
+        //}
         // tbd in future
  //      if (m_planeStress==true && iso == true){
  //          //only transversal isotropic in the moment --> definition of iso missing
@@ -256,27 +258,39 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
  //       C[5][0] = 0.0;            C[5][1] = 0.0;            C[5][2] = 0.0; C[5][3] = 0.0; C[5][4] = 0.0; C[5][5] = C66;
  //      }
         // not correct for plane stress!!!
-        iso = false;
-        if (m_plane==true && iso == false){
-         C[0][0] = C11;C[0][1] = C12;C[0][2] = 0.0;C[0][3] = 0.0;C[0][4] = 0.0;C[0][5] = C16;
-         C[1][0] = C12;C[1][1] = C22;C[1][2] = 0.0;C[1][3] = 0.0;C[1][4] = 0.0;C[1][5] = C26;
-         C[2][0] = 0.0;C[2][1] = 0.0;C[2][2] = 0.0;C[2][3] = 0.0;C[2][4] = 0.0;C[2][5] = 0.0;
-         C[3][0] = 0.0;C[3][1] = 0.0;C[3][2] = 0.0;C[3][3] = 0.0;C[3][4] = 0.0;C[3][5] = 0.0;
-         C[4][0] = 0.0;C[4][1] = 0.0;C[4][2] = 0.0;C[4][3] = 0.0;C[4][4] = 0.0;C[4][5] = 0.0;
-         C[5][0] = C16;C[5][1] = C26;C[5][2] = 0.0;C[5][3] = 0.0;C[5][4] = 0.0;C[5][5] = C66;
-        
-        }
+        //iso = false;
+        //if (m_plane==true && iso == false){
+        // C[0][0] = C11;C[0][1] = C12;C[0][2] = 0.0;C[0][3] = 0.0;C[0][4] = 0.0;C[0][5] = C16;
+        // C[1][0] = C12;C[1][1] = C22;C[1][2] = 0.0;C[1][3] = 0.0;C[1][4] = 0.0;C[1][5] = C26;
+        // C[2][0] = 0.0;C[2][1] = 0.0;C[2][2] = 0.0;C[2][3] = 0.0;C[2][4] = 0.0;C[2][5] = 0.0;
+        // C[3][0] = 0.0;C[3][1] = 0.0;C[3][2] = 0.0;C[3][3] = 0.0;C[3][4] = 0.0;C[3][5] = 0.0;
+        // C[4][0] = 0.0;C[4][1] = 0.0;C[4][2] = 0.0;C[4][3] = 0.0;C[4][4] = 0.0;C[4][5] = 0.0;
+        // C[5][0] = C16;C[5][1] = C26;C[5][2] = 0.0;C[5][3] = 0.0;C[5][4] = 0.0;C[5][5] = C66;
+        //
+        //}
         
     }
   }
-
+  m_applyThermalStrains = false;
+  if(params.isParameter("Thermal Expansion Coefficient")){
+    m_alpha[0][0] = params.get<double>("Thermal Expansion Coefficient");
+    m_alpha[1][1] = m_alpha[0][0]; m_alpha[2][2] = m_alpha[0][0];
+        
+    if(params.isParameter("Thermal Expansion Coefficient Y"))
+    m_alpha[1][1] = params.get<double>("Thermal Expansion Coefficient Y");
+    
+    if(params.isParameter("Thermal Expansion Coefficient Z"))
+    m_alpha[2][2] = params.get<double>("Thermal Expansion Coefficient Z");
+        
+    m_applyThermalStrains = true;
+  }
   
 
 
 
   //TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticCorrespondence material model.\n");
   TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Apply Shear Correction Factor"), "**** Error:  Shear Correction Factor is not supported for the ElasticCorrespondence material model.\n");
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the ElasticCorrespondence material model.\n");
+  
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   m_horizonFieldId                    = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Horizon");
@@ -289,7 +303,9 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_hourglassForceDensityFieldId      = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Hourglass_Force_Density");
   m_bondDamageFieldId                 = fieldManager.getFieldId(PeridigmField::BOND,    PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage");
   m_deformationGradientFieldId        = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient");
-  
+  if(m_applyThermalStrains){
+    m_temperatureFieldId      = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Temperature");
+  }
   //if (nonLin==false)
   //   m_deformationGradientFieldIdTemp        = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient_Temp");
   
@@ -317,8 +333,6 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_fieldIds.push_back(m_forceDensityFieldId);
   m_fieldIds.push_back(m_bondDamageFieldId);
   m_fieldIds.push_back(m_deformationGradientFieldId);
-  //if (nonLin==false)
-  //  m_fieldIds.push_back(m_deformationGradientFieldIdTemp);
   
   m_fieldIds.push_back(m_leftStretchTensorFieldId);
   m_fieldIds.push_back(m_rotationTensorFieldId);
@@ -334,8 +348,8 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_fieldIds.push_back(m_detachedNodesFieldId);
   m_fieldIds.push_back(m_hourglassStiffId);
   m_fieldIds.push_back(m_modelAnglesId);
-
-  }
+  if(m_applyThermalStrains){m_fieldIds.push_back(m_temperatureFieldId);}
+}
 
 PeridigmNS::CorrespondenceMaterial::~CorrespondenceMaterial()
 {
@@ -827,7 +841,7 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
 
     // Extract pointers to the underlying data in the constitutive data array.
 
-    double *modelCoordinates, *volume, *coordinatesNP1, *angles, *detachedNodes; //*coordinates, 
+    double *modelCoordinates, *volume, *coordinatesNP1, *angles, *detachedNodes;
     tempDataManager.getData(m_modelAnglesId,           PeridigmField::STEP_NONE)->ExtractView(&angles);
     tempDataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&volume);
     tempDataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&modelCoordinates);
@@ -905,17 +919,20 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
       cauchyStressPlastic_AD[i].val() = cauchyStressPlastic[i];
       
     }
-    
-    CORRESPONDENCE::updateElasticCauchyStressSmallDef(&deformationGradient_AD[0], 
-                                          &cauchyStress_AD[0],
-                                          &cauchyStressNP1_AD[0],
-                                          tempNumOwnedPoints,
-                                          &C_AD[0],
-                                          angles,
-                                          m_type,
-                                          dt,
-                                          m_incremental,
-                                          m_hencky);
+    double *temperature;
+    // tbd
+    //CORRESPONDENCE::updateElasticCauchyStressSmallDef(&deformationGradient_AD[0], 
+    //                                      &cauchyStress_AD[0],
+    //                                      &cauchyStressNP1_AD[0],
+    //                                      tempNumOwnedPoints,
+    //                                      &C_AD[0],
+    //                                      angles,
+    //                                      m_type,
+    //                                      dt,
+    //                                      m_alpha,
+    //                                      temperature,
+    //                                      m_applyThermalStrains,
+    //                                      m_hencky);
     
     // define the sacadoFAD force vector
     vector<Sacado::Fad::DFad<double> > force_AD(numDof);
@@ -954,7 +971,7 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
       for(int col=0 ; col<numDof ; ++col){
 	value = force_AD[row].dx(col) ; //--> I think this must be it, because forces are already provided
     //value = force_AD[row].dx(col) * volume[row/3]; // given by peridigm org
-	TEUCHOS_TEST_FOR_EXCEPT_MSG(!std::isfinite(value), "**** NaN detected in correspondence::computeAutomaticDifferentiationJacobian().\n");
+	TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite(value), "**** NaN detected in correspondence::computeAutomaticDifferentiationJacobian().\n");
         scratchMatrix(row, col) = value;
       }
     }
@@ -1086,7 +1103,7 @@ PeridigmNS::CorrespondenceMaterial::computeJacobianFiniteDifference(const double
 
     // Create a temporary vector for storing force and/or flux divergence.
     Teuchos::RCP<Epetra_Vector> forceVector, tempForceVector, fluxDivergenceVector, tempFluxDivergenceVector;
-    double *tempForce;//, *tempFluxDivergence;
+    double *tempForce, *tempFluxDivergence;
     if (solveForDisplacement) {
       forceVector = tempDataManager.getData(forceDensityFId, PeridigmField::STEP_NP1);
       tempForceVector = Teuchos::rcp(new Epetra_Vector(*forceVector));
