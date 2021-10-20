@@ -54,7 +54,6 @@
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
-#include <boost/math/special_functions/fpclassify.hpp>
 using namespace std;
 
 PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::ParameterList& params)
@@ -66,14 +65,14 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     m_hourglassForceDensityFieldId(-1), m_forceDensityFieldId(-1), m_bondDamageFieldId(-1),
     m_deformationGradientFieldId(-1),
     m_shapeTensorInverseFieldId(-1),
+    m_cauchyStressFieldId(-1), 
     m_leftStretchTensorFieldId(-1),
     m_rotationTensorFieldId(-1), 
     m_unrotatedCauchyStressFieldId(-1),
-    m_cauchyStressFieldId(-1), 
     m_unrotatedRateOfDeformationFieldId(-1),
+    m_unrotatedCauchyStressPlasticFieldId(-1),
     m_partialStressFieldId(-1),
     m_hourglassStiffId(-1),
-    m_unrotatedCauchyStressPlasticFieldId(-1),
     m_temperatureFieldId(-1)
     
 {
@@ -156,7 +155,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
         double                                             C55 = 0.0, C56 = 0.0;
         double                                                        C66 = 0.0;
        
-        bool iso = false;
+        // bool iso = false;
         if (params.isParameter("Material Symmetry")){
             if (params.get<string>("Material Symmetry")=="Isotropic"){
                 C11 = params.get<double>("C11");
@@ -180,7 +179,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
                 C45 = 0.0;
                 C46 = 0.0;
                 C56 = 0.0; 
-                iso  = true;
+                // iso  = true;
             }
             if (params.get<string>("Material Symmetry")=="Anisotropic"){
                 C11 = params.get<double>("C11");
@@ -919,7 +918,7 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
       cauchyStressPlastic_AD[i].val() = cauchyStressPlastic[i];
       
     }
-    double *temperature;
+    // double *temperature;
     // tbd
     //CORRESPONDENCE::updateElasticCauchyStressSmallDef(&deformationGradient_AD[0], 
     //                                      &cauchyStress_AD[0],
@@ -971,7 +970,7 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
       for(int col=0 ; col<numDof ; ++col){
 	value = force_AD[row].dx(col) ; //--> I think this must be it, because forces are already provided
     //value = force_AD[row].dx(col) * volume[row/3]; // given by peridigm org
-	TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite(value), "**** NaN detected in correspondence::computeAutomaticDifferentiationJacobian().\n");
+	TEUCHOS_TEST_FOR_EXCEPT_MSG(!std::isfinite(value), "**** NaN detected in correspondence::computeAutomaticDifferentiationJacobian().\n");
         scratchMatrix(row, col) = value;
       }
     }
@@ -1103,7 +1102,7 @@ PeridigmNS::CorrespondenceMaterial::computeJacobianFiniteDifference(const double
 
     // Create a temporary vector for storing force and/or flux divergence.
     Teuchos::RCP<Epetra_Vector> forceVector, tempForceVector, fluxDivergenceVector, tempFluxDivergenceVector;
-    double *tempForce, *tempFluxDivergence;
+    double *tempForce; //, *tempFluxDivergence;
     if (solveForDisplacement) {
       forceVector = tempDataManager.getData(forceDensityFId, PeridigmField::STEP_NP1);
       tempForceVector = Teuchos::rcp(new Epetra_Vector(*forceVector));

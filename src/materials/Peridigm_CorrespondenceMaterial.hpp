@@ -164,14 +164,16 @@ namespace PeridigmNS {
     double m_shearModulus;
     double m_density;
     bool m_applyAutomaticDifferentiationJacobian;
+    bool m_applyThermalStrains;
     double D;
     int    m_stabilizationType;
     double C[6][6];
+    double m_alpha[3][3];
     bool   m_planeStress, m_planeStrain;
     bool   m_plane = false;
     bool   nonLin = false;
-	bool   lin = true;
-	bool   avg = false;
+    bool   lin = true;
+    bool   avg = false;
     double m_hourglassCoefficient;
     double scal;
     PeridigmNS::InfluenceFunction::functionPointer m_OMEGA;
@@ -200,6 +202,7 @@ namespace PeridigmNS {
     int m_detachedNodesFieldId;
     int m_partialStressFieldId;
     int m_hourglassStiffId;
+    int m_temperatureFieldId;
     int m_netdamageFieldId;
     int m_type;
     int m_modelAnglesId;
