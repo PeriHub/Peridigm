@@ -14,5 +14,6 @@ bld/
 [Ll]og/
 [Ll]ogs/
 # Vs
+.vscode/
 .vs/
 out/
