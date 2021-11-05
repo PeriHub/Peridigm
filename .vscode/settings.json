@@ -1,12 +1,11 @@
 {
-    "cmake.buildDirectory": "/usr/local/src/peridigmBuild/",
+    "cmake.buildDirectory": "/home/will_cr/peridigm/build/",
     "cmake.configureSettings": { 
         "CMAKE_BUILD_TYPE":"Debug",
-        "Trilinos_DIR":"/usr/local/bin/trilinos/lib/cmake/Trilinos/",
-        "CMAKE_C_COMPILER":"/usr/local/lib/openmpi-4.1.1/bin/mpicc",
-        "CMAKE_CXX_COMPILER":"/usr/local/lib/openmpi-4.1.1/bin/mpicxx",
+        "Trilinos_DIR":"/usr/local/trilinos/",
+        "CMAKE_CXX_COMPILER":"mpicxx",
         "CMAKE_CXX_FLAGS":"-Og -Wall -std=c++14 -pedantic -Wno-long-long -ftrapv -Wno-deprecated", //Optimize Options https://gcc.gnu.org/onlinedocs/gcc-9.1.0/gcc/Optimize-Options.html#Optimize-Options
-        "CMAKE_INSTALL_PREFIX": "/home/jt"
+        "CMAKE_INSTALL_PREFIX": "/home/will_cr"
     },
     "python.pythonPath": "python",
     "cmake.configureOnOpen": true

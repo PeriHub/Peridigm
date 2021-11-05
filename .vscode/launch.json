@@ -9,33 +9,12 @@
             "name": "Peridigm Debug 1 Proc.",
             "type": "cppdbg",
             "request": "launch",
-            "program": "/usr/local/src/peridigmBuild/src/Peridigm",
+            "program": "/home/will_cr/peridigm/build/src/Peridigm",
             "args": [
-                //"Att893E.tmp.yaml"
-                //"Test_Run2.xml"
-                //"plate_0.xml"
-                // "coreTest.yaml"
-                // "plast.xml"
-                //"NooruMohamedTest.xml"
-                // "GIICmodel.yaml"
-                // "DCBmodel.yaml"
-                // "model.yaml"
-                // "isoTension2D.xml"
-                "ThermalExpansionCube.xml"
+                "dogboneTest.xml"
             ],
             "stopAtEntry": false,
-            //"cwd": "/mnt/c/Users/hess_ja/Desktop/PythonProjects/peridigmModelWriter/",
-            //"cwd": "/home/jt/peridigmJobs/waviness/constantWaviness/meshResolution80/",
-            //"cwd": "/home/jt/peridigmJobs/plate_0/",
-            //"cwd": "/home/jt/peridigmJobs/doe_2_601/",
-            // "cwd": "/home/jt/peridigmJobs/modelCreation/",
-            //"cwd": "/home/jt/peridigmJobs/staticSolver/",
-            // "cwd": "/home/jt/peridigmJobs/GIICmodel/",
-            // "cwd": "/home/jt/peridigmJobs/DCBmodel/",
-            // "cwd": "/home/jt/peridigmJobs/dcbmodel/",
-            // "cwd": "/home/jt/peridigmJobs/dogbone/",
-            // "cwd": "/home/jt/peridigmJobs/isoTension2D/",
-            "cwd": "/usr/local/src/peridigmDev/test/verification/ThermalExpansionCube/",
+            "cwd": "/home/will_cr/peridigm/models/test/",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
@@ -58,22 +37,12 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "/usr/bin/mpirun",
-            "args": ["-np", "4", "Peridigm",
-                //"Att893E.tmp.yaml"
-                //"Test_Run2.xml"
-                // "plate_0.xml"
-                //"coreTest.yaml"
-                //"NooruMohamedTest.xml"
-                "GIICmodel.xml"
+            "args": ["-np", "4", "Peridigm",   
+                "dogboneTest.xml"
             ],
             "stopAtEntry": true,
-            //"cwd": "/mnt/c/Users/hess_ja/Desktop/PythonProjects/peridigmModelWriter/",
-            //"cwd": "/home/jt/peridigmJobs/waviness/constantWaviness/meshResolution80/",
-            //"cwd": "/home/jt/peridigmJobs/plate_0/",
-            //"cwd": "/home/jt/peridigmJobs/doe_2_601/",
-            //"cwd": "/home/jt/peridigmJobs/modelCreation/",
-            //"cwd": "/home/jt/peridigmJobs/staticSolver/",
-            "cwd": "/home/jt/peridigmJobs/GIICmodel/",
+
+            "cwd": "/home/will_cr/peridigm/models/test/",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",

@@ -210,18 +210,18 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
         else{
            m_bulkModulus = calculateBulkModulus(params);
            m_shearModulus = calculateShearModulus(params);
-           //iso = true;
-           C11 = 2*m_shearModulus + (m_bulkModulus - 2*m_shearModulus/3.0);
+           double lam = m_bulkModulus - 2/3*m_shearModulus; 
+           C11 = 2*m_shearModulus + lam;
            C44 = m_shearModulus;
            C55 = m_shearModulus;
            C66 = m_shearModulus;
-           C12 = m_bulkModulus - 2*m_shearModulus/3.0;
+           C12 = C11 - 2*C55;
            C13 = C12;
            C14 = 0.0;
            C15 = 0.0;
            C16 = 0.0;
-           C22 = C11;
-           C33 = C11;
+           C22 = 2*m_shearModulus + lam;
+           C33 = 2*m_shearModulus + lam;
            C23 = C12;
            C24 = 0.0;
            C25 = 0.0;
