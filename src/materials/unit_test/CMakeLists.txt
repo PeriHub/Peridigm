@@ -40,6 +40,7 @@ add_executable(ut_correspondence ./ut_correspondence.cpp)
 target_link_libraries(ut_correspondence
   ${Peridigm_LIBRARY}
   ${PdMaterialUtilitiesLib}
+  PdMathUtilities
   PdField
   QuickGrid
   ${REQUIRED_LIBS}
