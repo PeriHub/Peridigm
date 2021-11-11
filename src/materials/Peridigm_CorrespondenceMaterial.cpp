@@ -49,6 +49,7 @@
 #include "Peridigm_Field.hpp"
 #include "elastic.h"
 #include "correspondence.h"
+#include "matrices.h"
 #include "Peridigm_DegreesOfFreedomManager.hpp"
 #include "elastic_correspondence.h"
 #include <Teuchos_Assert.hpp>
@@ -393,10 +394,10 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   dataManager.getData(m_rotationTensorFieldId, PeridigmField::STEP_NP1)->ExtractView(&rotationTensorNP1);
   dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->ExtractView(&detachedNodes);
   //Initialize the left stretch and rotation tenor to the identity matrix
-  CORRESPONDENCE::setOnesOnDiagonalFullTensor(leftStretchTensorN, numOwnedPoints);
-  CORRESPONDENCE::setOnesOnDiagonalFullTensor(leftStretchTensorNP1, numOwnedPoints);
-  CORRESPONDENCE::setOnesOnDiagonalFullTensor(rotationTensorN, numOwnedPoints);
-  CORRESPONDENCE::setOnesOnDiagonalFullTensor(rotationTensorNP1, numOwnedPoints);
+   MATRICES::setOnesOnDiagonalFullTensor(leftStretchTensorN, numOwnedPoints);
+   MATRICES::setOnesOnDiagonalFullTensor(leftStretchTensorNP1, numOwnedPoints);
+   MATRICES::setOnesOnDiagonalFullTensor(rotationTensorN, numOwnedPoints);
+   MATRICES::setOnesOnDiagonalFullTensor(rotationTensorNP1, numOwnedPoints);
 
   //Initialize the inverse of the shape tensor and the deformation gradient
   double *volume;

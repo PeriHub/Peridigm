@@ -770,8 +770,8 @@ bool hencky
         CORRESPONDENCE::createRotationMatrix(angles[3*iID  ],rotationMatX,0);
         CORRESPONDENCE::createRotationMatrix(angles[3*iID+1],rotationMatY,1);
         CORRESPONDENCE::createRotationMatrix(angles[3*iID+2],rotationMatZ,2);
-        CORRESPONDENCE::MatrixMultiply3x3(rotationMatX, rotationMatY, temp);
-        CORRESPONDENCE::MatrixMultiply3x3(temp, rotationMatZ, rotationMat);
+        MATRICES::MatrixMultiply3x3(rotationMatX, rotationMatY, temp);
+        MATRICES::MatrixMultiply3x3(temp, rotationMatZ, rotationMat);
         CORRESPONDENCE::createRotatedStiff(Cstiff,rotationMat,C);
       //
       //}
@@ -966,9 +966,8 @@ ScalarT Cnew[][6]
     ScalarT Ctemp[6][6];
     bool transpose = true;
     MATRICES::MatMul(6,tm ,C ,Ctemp, transpose);
-    // CORRESPONDENCE::MatMul(6,tm ,C ,Ctemp, transpose);
     transpose = false;
-    CORRESPONDENCE::MatMul(6,Ctemp ,tm ,Cnew, transpose);
+    MATRICES::MatMul(6,Ctemp ,tm ,Cnew, transpose);
 }
 template void createRotatedStiff<Sacado::Fad::DFad<double> >
 (

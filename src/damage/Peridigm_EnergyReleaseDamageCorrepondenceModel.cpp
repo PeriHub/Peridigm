@@ -52,6 +52,7 @@
 #include "Peridigm_Field.hpp"
 #include "material_utilities.h"
 #include "correspondence.h"
+#include "matrices.h"
 #include <thread>
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
@@ -654,11 +655,11 @@ int PeridigmNS::EnergyReleaseDamageCorrepondenceModel::checkDetachedNodes(
       
       if (m_plane==true){
         matrixInversionReturnCode =
-        CORRESPONDENCE::Invert2by2Matrix(checkShapeTensor, determinant, checkShapeTensorInv);
+        MATRICES::Invert2by2Matrix(checkShapeTensor, determinant, checkShapeTensorInv);
         }
       else{
         matrixInversionReturnCode =
-        CORRESPONDENCE::Invert3by3Matrix(checkShapeTensor, determinant, checkShapeTensorInv);
+        MATRICES::Invert3by3Matrix(checkShapeTensor, determinant, checkShapeTensorInv);
         }
       
       if (matrixInversionReturnCode != 0){// to be checked

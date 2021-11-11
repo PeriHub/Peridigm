@@ -51,7 +51,45 @@
 
 
 namespace MATRICES {
-    
+
+//! Invert a single 2-by-2 matrix; returns zero of successful, one if not successful (e.g., singular matrix).
+template<typename ScalarT>
+int Invert2by2Matrix
+(
+const ScalarT* matrix,
+ScalarT& determinant,
+ScalarT* inverse
+);
+
+//! Invert a single 3-by-3 matrix; returns zero of successful, one if not successful (e.g., singular matrix).
+template<typename ScalarT>
+int Invert3by3Matrix
+(
+const ScalarT* matrix,
+ScalarT& determinant,
+ScalarT* inverse
+);
+
+//! Inner product of two 3-by-3 matrices.
+template<typename ScalarT>
+void MatrixMultiply
+(
+bool transA,
+bool transB,
+ScalarT alpha,
+const ScalarT* a,
+const ScalarT* b,
+ScalarT* result
+);
+
+template<typename ScalarT>
+void MatrixMultiply3x3
+(
+const ScalarT A[][3],
+const ScalarT B[][3],
+ScalarT C[][3]
+);
+
 template<typename ScalarT>
 void MatMul
 (
@@ -61,5 +99,20 @@ const ScalarT B[][6],
 ScalarT C[][6],
 bool transpose
 );
+
+template<typename ScalarT>
+void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints);
+
+template<typename ScalarT>
+void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints);
+
+//! Transpose matrix; if both arguments are the same pointer then the matrix is transposed in place.
+template<typename ScalarT>
+void TransposeMatrix
+(
+const ScalarT* matrix,
+ScalarT* transpose
+ );
+
 }
 #endif // MATRICES_H
