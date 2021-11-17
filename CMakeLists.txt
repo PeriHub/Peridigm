@@ -259,7 +259,7 @@ set(MESH_INPUT_LIBS QuickGrid)
 set(PDNEIGH_LIBS PdNeigh)
 set(UTILITIES_LIBS Utilities)
 set(PdMaterialUtilitiesLib PdMaterialUtilities)
-
+set(PdDamageUtilitiesLib PdDamageUtilities)
 # include for all directories
 # Collection of include and lib directories
 set(INCLUDE_DIRS
