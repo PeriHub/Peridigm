@@ -77,6 +77,33 @@ void updateElasticViscoplasticCauchyStress
     const double dt
 );
 
+template<typename ScalarT>
+void updateElasticViscoplasticCauchyStressCode
+(
+    const double* modelCoord,
+    const ScalarT* rateOfDef, 
+    const ScalarT* stressN, 
+    ScalarT* stressNP1, 
+    ScalarT* vmStress,
+    const ScalarT* eqpsN,
+    ScalarT* eqpsNP1,
+    const int numPoints, 
+    const double bulkMod,
+    const double shearMod,
+    const double yieldStress,
+    const double strainHardExp,
+    const double rateHardExp, 
+    const double refStrainRate,
+    const double refStrain0,
+    const double refStrain1,
+    const bool isFlaw,
+    const double flawLocationX,
+    const double flawLocationY,
+    const double flawLocationZ,
+    const double flawSize,
+    const double flawMagnitude,
+    const double dt
+);
 template <typename ScalarT>
 ScalarT ViscoplasticNeedlemanFindRoot
 (

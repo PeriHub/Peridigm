@@ -85,6 +85,12 @@ namespace PeridigmNS {
     // material properties
     double m_yieldStress;
     
+    bool   m_isFlaw;
+    double m_flawLocationX;
+    double m_flawLocationY;
+    double m_flawLocationZ;
+    double m_flawSize;
+    double m_flawMagnitude;
     double C[6][6];
     int m_type;
     int m_stabilizationType;
@@ -94,6 +100,7 @@ namespace PeridigmNS {
     bool m_incremental;
     bool m_hencky;
     // field spec ids for all relevant data
+    int m_modelCoordinatesFieldId;
     int m_unrotatedRateOfDeformationFieldId;
     int m_unrotatedCauchyStressFieldId;
     int m_vonMisesStressFieldId;

@@ -1152,10 +1152,7 @@ void computeForcesAndStresses
     
   const double* delta = horizon;
   const double* modelCoordinates = modelCoor;
-  //const double* neighborModelCoord;
   const ScalarT* coorNP1 = coordinatesNP1;
-  //const ScalarT* neighborCoord;
-  //const ScalarT* neighborCoordNP1;
   ScalarT* forceDensity = force;
   ScalarT* partialStress = partialStressValues;
   ScalarT* tempStressX = StressX;
@@ -1166,7 +1163,7 @@ void computeForcesAndStresses
   int neighborIndex, numNeighbors;
   const int *neighborListPtr = neighborhoodList;
   const double *modelCoordinatesPtr, *neighborModelCoordinatesPtr;
-  ScalarT *partialStressPtr; //*neighborForceDensityPtr
+  ScalarT *partialStressPtr;
   const ScalarT* stress = cauchyStressNP1;
   const ScalarT* plasticStress = cauchyStressPlastic;
   const ScalarT* shapeTensorInv = shapeTensorInverse;
@@ -1246,6 +1243,7 @@ void computeForcesAndStresses
         CORRESPONDENCE::MatrixMultiply(false, true, jacobianDeterminant, plasticStress, defGradInv, piolaStress);
         CORRESPONDENCE::MatrixMultiply(false, false, One, piolaStress, shapeTensorInv, tempPlast);
         if (adaptHourGlass){// kann wahrscheinlich weg
+            hourglassScale = 1;
             for(int i=0; i<9; i++){
                 if (*(stress+i) != *(plasticStress+i)) {//scal[i] = 1 - *(plasticStress+i)/(*(stress+i));
                 //scal[i] =0;

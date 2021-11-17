@@ -56,7 +56,7 @@ using namespace std;
 
 PeridigmNS::ElasticPlasticCorrespondenceMaterial::ElasticPlasticCorrespondenceMaterial(const Teuchos::ParameterList& params)
   : CorrespondenceMaterial(params),
-    m_yieldStress(0.0),
+    m_yieldStress(0.0),m_modelCoordinatesFieldId(-1),
     m_unrotatedRateOfDeformationFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_vonMisesStressFieldId(-1), m_equivalentPlasticStrainFieldId(-1), m_unrotatedCauchyStressPlasticFieldId(-1)
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the selected correspondence material model.\n");
@@ -64,13 +64,15 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::ElasticPlasticCorrespondenceMa
   m_yieldStress = params.get<double>("Yield Stress");
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
+  m_modelCoordinatesFieldId = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::CONSTANT, "Model_Coordinates");
   m_unrotatedRateOfDeformationFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Rate_Of_Deformation");
   m_unrotatedCauchyStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Unrotated_Cauchy_Stress");
   m_unrotatedCauchyStressPlasticFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Plastic_Cauchy_Stress");
   m_vonMisesStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Von_Mises_Stress");
   m_equivalentPlasticStrainFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Equivalent_Plastic_Strain");
-  m_deformationGradientFieldId        = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient");
-
+  m_deformationGradientFieldId        = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Deformation_Gradient");
+  
+  m_fieldIds.push_back(m_modelCoordinatesFieldId);
   m_fieldIds.push_back(m_unrotatedRateOfDeformationFieldId);
   m_fieldIds.push_back(m_unrotatedCauchyStressFieldId);
   m_fieldIds.push_back(m_unrotatedCauchyStressPlasticFieldId);
@@ -92,10 +94,14 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::ElasticPlasticCorrespondenceMa
     }
   if (m_planeStrain==true)m_type=1;
   if (m_planeStress==true)m_type=2;
-  m_incremental = false;
-    if (params.isParameter("Incremental")){
-        m_incremental = params.get<bool>("Incremental");
-    }
+  if(params.isParameter("Enable Flaw")){
+    m_isFlaw = params.get<bool>("Enable Flaw");
+    m_flawLocationX = params.get<double>("Flaw Location X");
+    m_flawLocationY = params.get<double>("Flaw Location Y");
+    m_flawLocationZ = params.get<double>("Flaw Location Z");
+    m_flawSize = params.get<double>("Flaw Size");
+    m_flawMagnitude = params.get<double>("Flaw Magnitude");
+  }
   m_hencky = false;
   if (params.isParameter("Hencky Strain")){
       m_hencky = params.get<bool>("Hencky Strain");
@@ -266,10 +272,10 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::computeCauchyStress(const doub
   bool incremental = false;
 
 
-  dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NONE)->ExtractView(&defGrad);
+  dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NP1)->ExtractView(&defGrad);
   dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
 
-  CORRESPONDENCE::updateElasticCauchyStressSmallDef(defGrad, 
+  CORRESPONDENCE::updateElasticCauchyStressAnisotropic(defGrad, 
                                             unrotatedCauchyStressN,
                                             unrotatedCauchyStressNP1,
                                             numOwnedPoints,
@@ -284,8 +290,10 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::computeCauchyStress(const doub
   dataManager.getData(m_vonMisesStressFieldId, PeridigmField::STEP_NONE)->ExtractView(&vonMisesStress);
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_NP1)->ExtractView(&equivalentPlasticStrainNP1);
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_N)->ExtractView(&equivalentPlasticStrainN);
-  
-  CORRESPONDENCE::updateElasticPerfectlyPlasticCauchyStress(unrotatedRateOfDeformation,
+  double *modelCoordinates;
+  dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&modelCoordinates);
+  CORRESPONDENCE::updateElasticPerfectlyPlasticCauchyStress(modelCoordinates,
+                                                            unrotatedRateOfDeformation,
                                                             unrotatedCauchyStressN, 
                                                             unrotatedCauchyStressNP1, 
                                                             cauchyStressPlastic,
@@ -296,5 +304,11 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::computeCauchyStress(const doub
                                                             m_bulkModulus, 
                                                             m_shearModulus, 
                                                             m_yieldStress, 
+                                                            m_isFlaw,
+                                                            m_flawLocationX,
+                                                            m_flawLocationY,
+                                                            m_flawLocationZ,
+                                                            m_flawSize,
+                                                            m_flawMagnitude,
                                                             dt);
 }

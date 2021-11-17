@@ -53,6 +53,7 @@
 
 namespace CORRESPONDENCE {
 
+
 template<typename ScalarT>
 void updateElasticViscoplasticCauchyStress
 (
@@ -81,15 +82,78 @@ void updateElasticViscoplasticCauchyStress
     const double dt
 )
 {
-  
+    
+  const double* modelCoord = modelCoordinates;
   const ScalarT* rateOfDef = unrotatedRateOfDeformation;
   const ScalarT* stressN = cauchyStressN;
+  
   ScalarT* stressNP1 = cauchyStressNP1;
 
   ScalarT* vmStress = vonMisesStress;
 
   const ScalarT* eqpsN = equivalentPlasticStrainN;
   ScalarT* eqpsNP1 = equivalentPlasticStrainNP1;
+  for(int iID=0 ; iID<numPoints ; ++iID, modelCoord+=3, 
+      rateOfDef+=9, stressN+=9, stressNP1+=9,
+      ++vmStress,++eqpsN,++eqpsNP1){
+         
+         CORRESPONDENCE::updateElasticViscoplasticCauchyStressCode(modelCoord,
+                                                                   rateOfDef,
+                                                                   stressN,
+                                                                   stressNP1,
+                                                                   vmStress,
+                                                                   eqpsN,
+                                                                   eqpsNP1,
+                                                                   numPoints, 
+                                                                   bulkMod,
+                                                                   shearMod,
+                                                                   yieldStress,
+                                                                   strainHardExp,
+                                                                   rateHardExp,
+                                                                   refStrainRate,
+                                                                   refStrain0,
+                                                                   refStrain1,
+                                                                   isFlaw,
+                                                                   flawLocationX,
+                                                                   flawLocationY,
+                                                                   flawLocationZ,
+                                                                   flawSize,
+                                                                   flawMagnitude,
+                                                                   dt);
+          
+      }
+}
+
+template<typename ScalarT>
+void updateElasticViscoplasticCauchyStressCode
+(
+    const double* modelCoord,
+    const ScalarT* rateOfDef, 
+    const ScalarT* stressN, 
+    ScalarT* stressNP1, 
+    ScalarT* vmStress,
+    const ScalarT* eqpsN,
+    ScalarT* eqpsNP1,
+    const int numPoints, 
+    const double bulkMod,
+    const double shearMod,
+    const double yieldStress,
+    const double strainHardExp,
+    const double rateHardExp, 
+    const double refStrainRate,
+    const double refStrain0,
+    const double refStrain1,
+    const bool isFlaw,
+    const double flawLocationX,
+    const double flawLocationY,
+    const double flawLocationZ,
+    const double flawSize,
+    const double flawMagnitude,
+    const double dt
+)
+{
+  
+
 
   ScalarT strainInc[9];
   ScalarT deviatoricStrainInc[9];
@@ -121,265 +185,262 @@ void updateElasticViscoplasticCauchyStress
   ScalarT yfc;
 
   double reducedYieldStress;
-  const double* modelCoord = modelCoordinates;
 
 
-  for(int iID=0 ; iID<numPoints ; ++iID, modelCoord+=3, 
-      rateOfDef+=9, stressN+=9, stressNP1+=9,
-      ++vmStress,++eqpsN,++eqpsNP1){
 
-    //strainInc = dt * rateOfDef
-    for(int i = 0; i < 9; i++){
-      strainInc[i] = *(rateOfDef+i)*dt;
-      deviatoricStrainInc[i] = strainInc[i];
+
+
+  //strainInc = dt * rateOfDef
+  for(int i = 0; i < 9; i++){
+    strainInc[i] = *(rateOfDef+i)*dt;
+    deviatoricStrainInc[i] = strainInc[i];
+  }
+
+  //dilatation
+  dilatationInc = strainInc[0] + strainInc[4] + strainInc[8];
+
+  //deviatoric strain
+  deviatoricStrainInc[0] -= dilatationInc/3.0;
+  deviatoricStrainInc[4] -= dilatationInc/3.0;
+  deviatoricStrainInc[8] -= dilatationInc/3.0;
+
+  //Compute an elastic ``trail stress''
+  for(int i = 0; i < 9; i++){
+    *(stressNP1+i) = *(stressN+i) + deviatoricStrainInc[i]*2.0*shearMod;
+  }
+  *(stressNP1) += bulkMod*dilatationInc;
+  *(stressNP1+4) += bulkMod*dilatationInc;
+  *(stressNP1+8) += bulkMod*dilatationInc;
+
+  sphericalStressNP1 = (*(stressNP1) + *(stressNP1+4) + *(stressNP1+8))/3.0;
+
+  // Compute the ``trial'' von Mises stress
+  for(int i = 0; i < 9; i++){
+    deviatoricStressNP1[i] = *(stressNP1+i);
+  }
+  deviatoricStressNP1[0] -= sphericalStressNP1;
+  deviatoricStressNP1[4] -= sphericalStressNP1;
+  deviatoricStressNP1[8] -= sphericalStressNP1;
+
+  // Compute \S_ij * \S_ij
+  tempScalar = 0.0;
+  for(int j = 0; j < 3; j++){
+    for(int i = 0; i < 3; i++){
+      tempScalar += deviatoricStressNP1[i+3*j] * deviatoricStressNP1[i+3*j];
     }
+  }
 
-    //dilatation
-    dilatationInc = strainInc[0] + strainInc[4] + strainInc[8];
+  // Avoid divide-by-zero
+  deviatoricStressMagnitudeNP1 = std::max(1.0e-20,sqrt(tempScalar));
 
-    //deviatoric strain
-    deviatoricStrainInc[0] -= dilatationInc/3.0;
-    deviatoricStrainInc[4] -= dilatationInc/3.0;
-    deviatoricStrainInc[8] -= dilatationInc/3.0;
+  *vmStress = sqrt(3.0/2.0*tempScalar);
 
-    //Compute an elastic ``trail stress''
-    for(int i = 0; i < 9; i++){
-      *(stressNP1+i) = *(stressN+i) + deviatoricStrainInc[i]*2.0*shearMod;
-    }
-    *(stressNP1) += bulkMod*dilatationInc;
-    *(stressNP1+4) += bulkMod*dilatationInc;
-    *(stressNP1+8) += bulkMod*dilatationInc;
+  // Reduce yield stress if flaws are present
+  if(isFlaw){
+    //Increment the pointer
+    reducedYieldStress = yieldStress * (1.0 - flawMagnitude 
+                         * exp( (
+                         (- ( *(modelCoord) - flawLocationX)) * (*(modelCoord) - flawLocationX) -
+                         (( *(modelCoord+1) - flawLocationY)) * (*(modelCoord+1) - flawLocationY) -
+                         (( *(modelCoord+2) - flawLocationZ)) * (*(modelCoord+2) - flawLocationZ)
+                         ) / flawSize / flawSize
+                         ));
+  } else {
+    //Without flaws the reduced yield stress is the yield stress.
+    reducedYieldStress = yieldStress;
+  }
 
-    sphericalStressNP1 = (*(stressNP1) + *(stressNP1+4) + *(stressNP1+8))/3.0;
+  // Elastic or plastic?
+  if (*vmStress < reducedYieldStress){
+    // The step is definitely elastic, so skip the yield surface
+    // evaluation.
+    *eqpsNP1 = *eqpsN;
 
-    // Compute the ``trial'' von Mises stress
-    for(int i = 0; i < 9; i++){
-      deviatoricStressNP1[i] = *(stressNP1+i);
-    }
-    deviatoricStressNP1[0] -= sphericalStressNP1;
-    deviatoricStressNP1[4] -= sphericalStressNP1;
-    deviatoricStressNP1[8] -= sphericalStressNP1;
+  } else {
+    // The step could be plastic, we have to solve for the current value
+    // of the yield function to find out.  This is because the yield
+    // function is rate dependent and can change over a load step.
 
-    // Compute \S_ij * \S_ij
+
+    // Compute \S_ij * \epsilon_inc_ij
     tempScalar = 0.0;
     for(int j = 0; j < 3; j++){
       for(int i = 0; i < 3; i++){
-        tempScalar += deviatoricStressNP1[i+3*j] * deviatoricStressNP1[i+3*j];
+        tempScalar += deviatoricStressNP1[i+3*j] * deviatoricStrainInc[i+3*j];
       }
     }
 
-    // Avoid divide-by-zero
-    deviatoricStressMagnitudeNP1 = std::max(1.0e-20,sqrt(tempScalar));
+    scalarDeviatoricStrainInc = tempScalar / deviatoricStressMagnitudeNP1;
 
-    *vmStress = sqrt(3.0/2.0*tempScalar);
+    // First go back to step N and compute deviatoric stress and its
+    // magnitude.
+    sphericalStressN = (*(stressN) + *(stressN+4) + *(stressN+8))/3.0;
 
-    // Reduce yield stress if flaws are present
-    if(isFlaw){
-      //Increment the pointer
-      reducedYieldStress = yieldStress * (1.0 - flawMagnitude 
-                           * exp( (
-                           (- ( *(modelCoord) - flawLocationX)) * (*(modelCoord) - flawLocationX) -
-                           (( *(modelCoord+1) - flawLocationY)) * (*(modelCoord+1) - flawLocationY) -
-                           (( *(modelCoord+2) - flawLocationZ)) * (*(modelCoord+2) - flawLocationZ)
-                           ) / flawSize / flawSize
-                           ));
-    } else {
-      //Without flaws the reduced yield stress is the yield stress.
-      reducedYieldStress = yieldStress;
+    for (int i = 0; i < 9; i++) {
+      deviatoricStressN[i] = *(stressN+i);
+    }
+    deviatoricStressN[0] -= sphericalStressN;
+    deviatoricStressN[4] -= sphericalStressN;
+    deviatoricStressN[8] -= sphericalStressN;
+
+    // Compute \S_ij * \S_ij
+    tempScalar = 0.0;
+    for (int j = 0; j < 3; j++) {
+      for (int i = 0; i < 3; i++) {
+        tempScalar += deviatoricStressN[i+3*j] * deviatoricStressN[i+3*j];
+      }
     }
 
-    // Elastic or plastic?
-    if (*vmStress < reducedYieldStress){
-      // The step is definitely elastic, so skip the yield surface
-      // evaluation.
-      *eqpsNP1 = *eqpsN;
+    deviatoricStressMagnitudeN = sqrt(tempScalar);
 
-    } else {
-      // The step could be plastic, we have to solve for the current value
-      // of the yield function to find out.  This is because the yield
-      // function is rate dependent and can change over a load step.
+    //Verbose bi-section method to solve for deltaLambda
+    //TODO: Implement a ``smarter'' faster root solve here, i.e. Brent's
+    //method
+    deltaLambda = 1.0;
+    deltaLambdaOld = 0.0;
+    a = 0.0;
+    b = 1.0;
+    c = (a+b)/2.0;
 
+    //Bisection loop
+    for(int iter = 0; iter < 100000; iter++){
 
-      // Compute \S_ij * \epsilon_inc_ij
+      *eqpsNP1 = *eqpsN + b;
+      yfb = ViscoplasticNeedlemanYieldFunction(b, *eqpsNP1, reducedYieldStress, strainHardExp, rateHardExp, refStrainRate,refStrain0, refStrain1, dt);
+      *eqpsNP1 = *eqpsN + c;
+      yfc = ViscoplasticNeedlemanYieldFunction(c, *eqpsNP1, reducedYieldStress, strainHardExp, rateHardExp, refStrainRate,refStrain0, refStrain1, dt);
+
+      fb = scalarDeviatoricStrainInc - b - 1.0 / 2.0 / shearMod * (sqrt(2.0/3.0) * yfb - deviatoricStressMagnitudeN);
+      fc = scalarDeviatoricStrainInc - c - 1.0 / 2.0 / shearMod * (sqrt(2.0/3.0) * yfc - deviatoricStressMagnitudeN);
+
+      if(fb > 0.0 && fc > 0.0) {
+        b = c;
+      } 
+      else if(fb < 0.0 && fc < 0.0){
+        b = c;
+      }
+      else{
+        a = c;
+      }
+
+      deltaLambdaOld = c;
+      c = (a+b)/2.0;
+      deltaLambda = c;
+
+      if(fabs(deltaLambda - deltaLambdaOld)/fabs(deltaLambda) < 1.0e-6){
+        //We're converged, stop
+        break;
+      }
+      else if (iter == 99999){
+        //Error message here!
+        std::cout << "Bisection method failed to converge in 1e6 iterations" << std::endl;
+        break;
+      }
+    }
+
+    //Increment the plastic strain for the purposes of evaluating the
+    //yield surface
+    *eqpsNP1 = *eqpsN + sqrt(2.0/3.0) * deltaLambda;
+    //Evaluate the extent of the yield surface with the result of
+    //ViscoplasticNeedlemanFindRoot
+    yieldFunctionVal = ViscoplasticNeedlemanYieldFunction(deltaLambda, 
+                                                          *eqpsNP1, 
+                                                          reducedYieldStress, 
+                                                          strainHardExp, 
+                                                          rateHardExp, 
+                                                          refStrainRate, 
+                                                          refStrain0, 
+                                                          refStrain1, 
+                                                          dt);
+
+    //If true, the step is plastic and we need to return to the yield
+    //surface.  
+    if(*vmStress > yieldFunctionVal){
+
+      //multiply the trial deviatoric stress
+      tempScalar = sqrt(2.0/3.0)*yieldFunctionVal/deviatoricStressMagnitudeNP1;
+
+      // Return the deviatoric stress to the yield surface
+      for (int i = 0; i < 9; i++) {
+        deviatoricStressNP1[i] *= tempScalar; 
+        *(stressNP1+i) = deviatoricStressNP1[i];
+      }
+
+      // Update the Cauchy Stress
+      *stressNP1 += sphericalStressNP1;
+      *(stressNP1+4) += sphericalStressNP1;
+      *(stressNP1+8) += sphericalStressNP1;
+
+      // Update the von Mises stress now that the state of stress is on the
+      // yield surface
+
       tempScalar = 0.0;
       for(int j = 0; j < 3; j++){
         for(int i = 0; i < 3; i++){
-          tempScalar += deviatoricStressNP1[i+3*j] * deviatoricStrainInc[i+3*j];
+          tempScalar += deviatoricStressNP1[i+3*j] * deviatoricStressNP1[i+3*j];
         }
       }
 
-      scalarDeviatoricStrainInc = tempScalar / deviatoricStressMagnitudeNP1;
+      *vmStress = sqrt(3.0/2.0*tempScalar);
 
+      /////////////////////////////////////////////////////////
+      //
+      // Update the equivalent plastic strain
+      //
+      // The algorithm below is generic and should not need to be modified for
+      // any J2 plasticity yield surface.  It uses the difference in the yield
+      // surface location at the NP1 and N steps to increment eqps regardless
+      // of how the plastic multiplier was found in the yield surface
+      // evaluation.
+      //
       // First go back to step N and compute deviatoric stress and its
-      // magnitude.
-      sphericalStressN = (*(stressN) + *(stressN+4) + *(stressN+8))/3.0;
+      // magnitude.  We didn't do this earlier because it wouldn't be necassary
+      // if the step is elastic.
+      sphericalStressN = (*stressN + *(stressN+4) + *(stressN+8))/3.0;
 
-      for (int i = 0; i < 9; i++) {
+      for(int i = 0; i < 9; i++){
         deviatoricStressN[i] = *(stressN+i);
       }
       deviatoricStressN[0] -= sphericalStressN;
       deviatoricStressN[4] -= sphericalStressN;
       deviatoricStressN[8] -= sphericalStressN;
 
-      // Compute \S_ij * \S_ij
       tempScalar = 0.0;
-      for (int j = 0; j < 3; j++) {
-        for (int i = 0; i < 3; i++) {
+      for(int j = 0; j < 3; j++){
+        for(int i = 0; i < 3; i++){
           tempScalar += deviatoricStressN[i+3*j] * deviatoricStressN[i+3*j];
         }
       }
 
-      deviatoricStressMagnitudeN = sqrt(tempScalar);
+      //Ensure that this is at least a very small number to avoid a divide by
+      //zero
+      deviatoricStressMagnitudeN = std::max(1.0e-20,sqrt(tempScalar));
 
-      //Verbose bi-section method to solve for deltaLambda
-      //TODO: Implement a ``smarter'' faster root solve here, i.e. Brent's
-      //method
-      deltaLambda = 1.0;
-      deltaLambdaOld = 0.0;
-      a = 0.0;
-      b = 1.0;
-      c = (a+b)/2.0;
+      for(int i = 0; i < 9; i++){
+        //tempA -- The plastic deviatoric strain increment tensor \Delta e_{plastic} = \Delta e_{total} - \Delta e_{elastic}
+        tempA[i] = deviatoricStrainInc[i] - (deviatoricStressNP1[i] - deviatoricStressN[i]) / 2.0 / shearMod;
+        //tempB -- Deviatoric stress increment.  This is effectively an average of the deviatoric stress 
+        //direction unit tensors at the half-step between steps NP1 and N
+        tempB[i] = (deviatoricStressNP1[i]/deviatoricStressMagnitudeNP1 + 
+                    deviatoricStressN[i]/deviatoricStressMagnitudeN)/2.0;
+      }
 
-      //Bisection loop
-      for(int iter = 0; iter < 100000; iter++){
-
-        *eqpsNP1 = *eqpsN + b;
-        yfb = ViscoplasticNeedlemanYieldFunction(b, *eqpsNP1, reducedYieldStress, strainHardExp, rateHardExp, refStrainRate,refStrain0, refStrain1, dt);
-        *eqpsNP1 = *eqpsN + c;
-        yfc = ViscoplasticNeedlemanYieldFunction(c, *eqpsNP1, reducedYieldStress, strainHardExp, rateHardExp, refStrainRate,refStrain0, refStrain1, dt);
-
-        fb = scalarDeviatoricStrainInc - b - 1.0 / 2.0 / shearMod * (sqrt(2.0/3.0) * yfb - deviatoricStressMagnitudeN);
-        fc = scalarDeviatoricStrainInc - c - 1.0 / 2.0 / shearMod * (sqrt(2.0/3.0) * yfc - deviatoricStressMagnitudeN);
-
-        if(fb > 0.0 && fc > 0.0) {
-          b = c;
-        } 
-        else if(fb < 0.0 && fc < 0.0){
-          b = c;
-        }
-        else{
-          a = c;
-        }
-
-        deltaLambdaOld = c;
-        c = (a+b)/2.0;
-        deltaLambda = c;
-
-        if(fabs(deltaLambda - deltaLambdaOld)/fabs(deltaLambda) < 1.0e-6){
-          //We're converged, stop
-          break;
-        }
-        else if (iter == 99999){
-          //Error message here!
-          std::cout << "Bisection method failed to converge in 1e6 iterations" << std::endl;
-          break;
+      // Contract the two tensors. This represents a projection of the plastic
+      // strain increment tensor onto the "direction" of deviatoric stress
+      // increment
+      tempScalar = 0.0;
+      for(int j = 0; j < 3; j++){
+          for(int i = 0; i < 3; i++){
+        tempScalar += tempA[i+3*j] * tempB[i+3*j];
         }
       }
 
-      //Increment the plastic strain for the purposes of evaluating the
-      //yield surface
-      *eqpsNP1 = *eqpsN + sqrt(2.0/3.0) * deltaLambda;
-      //Evaluate the extent of the yield surface with the result of
-      //ViscoplasticNeedlemanFindRoot
-      yieldFunctionVal = ViscoplasticNeedlemanYieldFunction(deltaLambda, 
-                                                            *eqpsNP1, 
-                                                            reducedYieldStress, 
-                                                            strainHardExp, 
-                                                            rateHardExp, 
-                                                            refStrainRate, 
-                                                            refStrain0, 
-                                                            refStrain1, 
-                                                            dt);
+      // Increment the plastic strain
+      *eqpsNP1 = *eqpsN + std::max(0.0, sqrt(2.0/3.0) * tempScalar);
 
-      //If true, the step is plastic and we need to return to the yield
-      //surface.  
-      if(*vmStress > yieldFunctionVal){
-
-        //multiply the trial deviatoric stress
-        tempScalar = sqrt(2.0/3.0)*yieldFunctionVal/deviatoricStressMagnitudeNP1;
-
-        // Return the deviatoric stress to the yield surface
-        for (int i = 0; i < 9; i++) {
-          deviatoricStressNP1[i] *= tempScalar; 
-          *(stressNP1+i) = deviatoricStressNP1[i];
-        }
-
-        // Update the Cauchy Stress
-        *stressNP1 += sphericalStressNP1;
-        *(stressNP1+4) += sphericalStressNP1;
-        *(stressNP1+8) += sphericalStressNP1;
-
-        // Update the von Mises stress now that the state of stress is on the
-        // yield surface
-
-        tempScalar = 0.0;
-        for(int j = 0; j < 3; j++){
-          for(int i = 0; i < 3; i++){
-            tempScalar += deviatoricStressNP1[i+3*j] * deviatoricStressNP1[i+3*j];
-          }
-        }
-
-        *vmStress = sqrt(3.0/2.0*tempScalar);
-
-        /////////////////////////////////////////////////////////
-        //
-        // Update the equivalent plastic strain
-        //
-        // The algorithm below is generic and should not need to be modified for
-        // any J2 plasticity yield surface.  It uses the difference in the yield
-        // surface location at the NP1 and N steps to increment eqps regardless
-        // of how the plastic multiplier was found in the yield surface
-        // evaluation.
-        //
-        // First go back to step N and compute deviatoric stress and its
-        // magnitude.  We didn't do this earlier because it wouldn't be necassary
-        // if the step is elastic.
-        sphericalStressN = (*stressN + *(stressN+4) + *(stressN+8))/3.0;
-
-        for(int i = 0; i < 9; i++){
-          deviatoricStressN[i] = *(stressN+i);
-        }
-        deviatoricStressN[0] -= sphericalStressN;
-        deviatoricStressN[4] -= sphericalStressN;
-        deviatoricStressN[8] -= sphericalStressN;
-
-        tempScalar = 0.0;
-        for(int j = 0; j < 3; j++){
-          for(int i = 0; i < 3; i++){
-            tempScalar += deviatoricStressN[i+3*j] * deviatoricStressN[i+3*j];
-          }
-        }
-
-        //Ensure that this is at least a very small number to avoid a divide by
-        //zero
-        deviatoricStressMagnitudeN = std::max(1.0e-20,sqrt(tempScalar));
-
-        for(int i = 0; i < 9; i++){
-          //tempA -- The plastic deviatoric strain increment tensor \Delta e_{plastic} = \Delta e_{total} - \Delta e_{elastic}
-          tempA[i] = deviatoricStrainInc[i] - (deviatoricStressNP1[i] - deviatoricStressN[i]) / 2.0 / shearMod;
-          //tempB -- Deviatoric stress increment.  This is effectively an average of the deviatoric stress 
-          //direction unit tensors at the half-step between steps NP1 and N
-          tempB[i] = (deviatoricStressNP1[i]/deviatoricStressMagnitudeNP1 + 
-                      deviatoricStressN[i]/deviatoricStressMagnitudeN)/2.0;
-        }
-
-        // Contract the two tensors. This represents a projection of the plastic
-        // strain increment tensor onto the "direction" of deviatoric stress
-        // increment
-        tempScalar = 0.0;
-        for(int j = 0; j < 3; j++){
-            for(int i = 0; i < 3; i++){
-          tempScalar += tempA[i+3*j] * tempB[i+3*j];
-          }
-        }
-
-        // Increment the plastic strain
-        *eqpsNP1 = *eqpsN + std::max(0.0, sqrt(2.0/3.0) * tempScalar);
-
-      } else {
-        // The step is elastic
-        *eqpsNP1 = *eqpsN;
-      }
+    } else {
+      // The step is elastic
+      *eqpsNP1 = *eqpsN;
     }
   }
 }
@@ -605,6 +666,34 @@ template void updateElasticViscoplasticCauchyStress<double>
     const double dt
 );
 
+template<typename ScalarT>
+void updateElasticViscoplasticCauchyStressCode
+(
+    const double* modelCoord,
+    const double* rateOfDef, 
+    const double* stressN, 
+    double* stressNP1, 
+    double* vmStress,
+    const double* eqpsN,
+    double* eqpsNP1,
+    const int numPoints, 
+    const double bulkMod,
+    const double shearMod,
+    const double yieldStress,
+    const double strainHardExp,
+    const double rateHardExp, 
+    const double refStrainRate,
+    const double refStrain0,
+    const double refStrain1,
+    const bool isFlaw,
+    const double flawLocationX,
+    const double flawLocationY,
+    const double flawLocationZ,
+    const double flawSize,
+    const double flawMagnitude,
+    const double dt
+);
+
 template double ViscoplasticNeedlemanYieldFunction<double>
 (
     const double deltaLambda,
@@ -688,5 +777,31 @@ template void updateElasticViscoplasticCauchyStress<Sacado::Fad::DFad<double> >
     const double m_flawMagnitude,
     const double dt
 );
-
+template<typename ScalarT>
+void updateElasticViscoplasticCauchyStressCode
+(
+    const double* modelCoord,
+    const Sacado::Fad::DFad<double>* rateOfDef, 
+    const Sacado::Fad::DFad<double>* stressN, 
+    Sacado::Fad::DFad<double>* stressNP1, 
+    Sacado::Fad::DFad<double>* vmStress,
+    const Sacado::Fad::DFad<double>* eqpsN,
+    Sacado::Fad::DFad<double>* eqpsNP1,
+    const int numPoints, 
+    const double bulkMod,
+    const double shearMod,
+    const double yieldStress,
+    const double strainHardExp,
+    const double rateHardExp, 
+    const double refStrainRate,
+    const double refStrain0,
+    const double refStrain1,
+    const bool isFlaw,
+    const double flawLocationX,
+    const double flawLocationY,
+    const double flawLocationZ,
+    const double flawSize,
+    const double flawMagnitude,
+    const double dt
+);
 }

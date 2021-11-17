@@ -52,6 +52,30 @@ namespace CORRESPONDENCE {
 template<typename ScalarT>
 void updateElasticPerfectlyPlasticCauchyStress
 (
+    const double* modelCoord,
+    const ScalarT* unrotatedRateOfDeformation, 
+    const ScalarT* cauchyStressN, 
+    ScalarT* cauchyStressNP1, 
+    ScalarT* cauchyStressPlasticNP1,
+    ScalarT* vonMisesStress,
+    const ScalarT* equivalentPlasticStrainN,
+    ScalarT* equivalentPlasticStrainNP1,
+    const int numPoints, 
+    const double bulkMod,
+    const double shearMod,
+    const double yieldStress,
+    const bool isFlaw,
+    const double flawLocationX,
+    const double flawLocationY,
+    const double flawLocationZ,
+    const double flawSize,
+    const double flawMagnitude,
+    const double dt
+);
+
+template<typename ScalarT>
+void updateElasticPerfectlyPlasticCauchyStressCode
+(
     const ScalarT* unrotatedRateOfDeformation, 
     const ScalarT* cauchyStressN, 
     ScalarT* cauchyStressNP1, 

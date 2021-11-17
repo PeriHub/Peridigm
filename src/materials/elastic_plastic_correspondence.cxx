@@ -56,6 +56,7 @@ namespace CORRESPONDENCE {
 template<typename ScalarT>
 void updateElasticPerfectlyPlasticCauchyStress
 (
+    const double* modelCoord,
     const ScalarT* unrotatedRateOfDeformation, 
     const ScalarT* cauchyStressN, 
     ScalarT* cauchyStressNP1, 
@@ -67,6 +68,12 @@ void updateElasticPerfectlyPlasticCauchyStress
     const double bulkMod,
     const double shearMod,
     const double yieldStress,
+    const bool isFlaw,
+    const double flawLocationX,
+    const double flawLocationY,
+    const double flawLocationZ,
+    const double flawSize,
+    const double flawMagnitude,
     const double dt
 )
 {
@@ -97,34 +104,12 @@ void updateElasticPerfectlyPlasticCauchyStress
   ScalarT sphericalStressNP1;
   ScalarT tempScalar;
   ScalarT yieldFunction;
+  ScalarT reducedYieldStress;
 
-  for(int iID=0 ; iID<numPoints ; ++iID, rateOfDef+=9, stressN+=9,
+  for(int iID=0 ; iID<numPoints ; ++iID, rateOfDef+=9, stressN+=9,modelCoord+=3,
       stressNP1+=9, stressPlasticNP1+=9, ++vmStress,++eqpsN,++eqpsNP1){
 
-      //strainInc = dt * rateOfDef
-      //for(int i = 0; i < 9; i++){
-      //    strainInc[i] = *(rateOfDef+i)*dt;
-      //    deviatoricStrainInc[i] = strainInc[i];
-      //}
-      //
-      ////dilatation
-      //dilatationInc = strainInc[0] + strainInc[4] + strainInc[8];
-      //
-      ////deviatoric strain
-      //deviatoricStrainInc[0] -= dilatationInc/3.0;
-      //deviatoricStrainInc[4] -= dilatationInc/3.0;
-      //deviatoricStrainInc[8] -= dilatationInc/3.0;
-      //
-      ////Compute an elastic ``trail stress''
-      //for(int i = 0; i < 9; i++){
-      //    *(stressNP1+i) = *(stressN+i) + deviatoricStrainInc[i]*2.0*shearMod;
-      //
-      //}
-      //*(stressNP1)   += bulkMod*dilatationInc;
-      //*(stressNP1+4) += bulkMod*dilatationInc;
-      //*(stressNP1+8) += bulkMod*dilatationInc;
-      //
-      sphericalStressNP1 = (*(stressNP1) + *(stressNP1+4) + *(stressNP1+8))/3.0;
+     sphericalStressNP1 = (*(stressNP1) + *(stressNP1+4) + *(stressNP1+8))/3.0;
 
       // Compute the ``trial'' von Mises stress
       for(int i = 0; i < 9; i++){
@@ -146,12 +131,22 @@ void updateElasticPerfectlyPlasticCauchyStress
       }
 
       *vmStress = sqrt(3.0/2.0*tempScalar);
-
-      yieldFunction = yieldStress;
-
+    if(isFlaw){
+        //Increment the pointer
+        reducedYieldStress = yieldStress * (1.0 - flawMagnitude 
+                              * exp( (
+                              (- ( *(modelCoord) - flawLocationX)) * (*(modelCoord) - flawLocationX) -
+                              (( *(modelCoord+1) - flawLocationY)) * (*(modelCoord+1) - flawLocationY) -
+                              (( *(modelCoord+2) - flawLocationZ)) * (*(modelCoord+2) - flawLocationZ)
+                              ) / flawSize / flawSize
+                              ));
+      } else {
+        //Without flaws the reduced yield stress is the yield stress.
+        reducedYieldStress = yieldStress;
+      } 
       //If true, the step is plastic and we need to return to the yield
       //surface.  
-      if(*vmStress > yieldFunction){
+      if(*vmStress > reducedYieldStress){
 
         // Avoid divide-by-zero
         deviatoricStressMagnitudeNP1 = std::max(1.0e-20,sqrt(tempScalar));
@@ -748,6 +743,7 @@ void updateBondLevelElasticPerfectlyPlasticCauchyStress
 // Explicit template instantiation for double
 template void updateElasticPerfectlyPlasticCauchyStress<double>
 (
+    const double* modelCoord,
     const double* unrotatedRateOfDeformation, 
     const double* cauchyStressN, 
     double* cauchyStressNP1, 
@@ -759,6 +755,12 @@ template void updateElasticPerfectlyPlasticCauchyStress<double>
     const double bulkMod,
     const double shearMod,
     const double yieldStress,
+    const bool isFlaw,
+    const double flawLocationX,
+    const double flawLocationY,
+    const double flawLocationZ,
+    const double flawSize,
+    const double flawMagnitude,
     const double dt
 );
 
@@ -777,6 +779,7 @@ template void updateElasticPerfectlyPlasticCauchyStress<double>
     const double bulkMod,
     const double shearMod,
     const double yieldStress,
+    
     const double dt
 );
 
@@ -825,6 +828,7 @@ template void updateBondLevelElasticPerfectlyPlasticCauchyStress<double>
 /** Explicit template instantiation for Sacado::Fad::DFad<double>. */
 template void updateElasticPerfectlyPlasticCauchyStress<Sacado::Fad::DFad<double> >
 (
+    const double* modelCoord,
     const Sacado::Fad::DFad<double>* unrotatedRateOfDeformation, 
     const Sacado::Fad::DFad<double>* cauchyStressN, 
     Sacado::Fad::DFad<double>* cauchyStressNP1,
@@ -836,6 +840,12 @@ template void updateElasticPerfectlyPlasticCauchyStress<Sacado::Fad::DFad<double
     const double bulkMod,
     const double shearMod,
     const double yieldStress,
+    const bool isFlaw,
+    const double flawLocationX,
+    const double flawLocationY,
+    const double flawLocationZ,
+    const double flawSize,
+    const double flawMagnitude,
     const double dt
 );
 

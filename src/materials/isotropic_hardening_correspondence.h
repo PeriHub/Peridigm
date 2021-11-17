@@ -74,6 +74,30 @@ void updateElasticIsotropicHardeningPlasticCauchyStress
 );
 
 template<typename ScalarT>
+void updateElasticIsotropicHardeningPlasticCauchyStressCode
+(
+    const double* modelCoordinates, 
+    const ScalarT* unrotatedRateOfDeformation, 
+    const ScalarT* cauchyStressN, 
+    ScalarT* cauchyStressNP1, 
+    ScalarT* vonMisesStress,
+    const ScalarT* equivalentPlasticStrainN,
+    ScalarT* equivalentPlasticStrainNP1,
+    const int numPoints, 
+    const double bulkMod,
+    const double shearMod,
+    const double yieldStress,
+    const double hardMod,
+    const bool m_isFlaw,
+    const double m_flawLocationX,
+    const double m_flawLocationY,
+    const double m_flawLocationZ,
+    const double m_flawSize,
+    const double m_flawMagnitude,
+    const double dt
+);
+
+template<typename ScalarT>
 void updateElasticIsotropicPowerlawHardeningPlasticCauchyStress
 (
     const ScalarT* unrotatedRateOfDeformation, 

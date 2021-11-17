@@ -50,6 +50,7 @@
 
 #include <Teuchos_Assert.hpp>
 #include "Peridigm_MaterialFactory.hpp"
+#include "Peridigm_UserCorrespondenceMaterial.hpp"
 #include "Peridigm_ElasticLinearCorrespondenceMaterial.hpp"
 #include "Peridigm_ElasticMaterial.hpp"
 #include "Peridigm_MultiphysicsElasticMaterial.hpp"
@@ -123,6 +124,8 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
     materialModel = Teuchos::rcp( new LinearLPSPVMaterial(materialParams) );
   else if (materialModelName == "Linear Elastic Correspondence")
     materialModel = Teuchos::rcp( new ElasticLinearCorrespondenceMaterial(materialParams) );    
+  else if (materialModelName == "User Correspondence")
+    materialModel = Teuchos::rcp( new UserCorrespondenceMaterial(materialParams) );    
   else if (materialModelName == "Elastic Partial Volume"){
 #ifdef PERIDIGM_PV
     materialModel = Teuchos::rcp( new ElasticPVMaterial(materialParams) );
@@ -147,7 +150,16 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
   else {
     std::string invalidMaterial("\n**** Unrecognized material model: ");
     invalidMaterial += materialModelName;
-    invalidMaterial += ", must be \"Elastic\" or \"Elastic Plastic\" or \"Elastic Plastic Hardening\" or \"Viscoelastic\" or \"Elastic Correspondence\" or \"LCM\"  or \"Vector Poisson\" or \"Linear Elastic Correspondence\".\n";
+    invalidMaterial += ", must be \"Elastic\" or";
+    invalidMaterial +=   "\"Elastic Plastic\" or"; 
+    invalidMaterial += "\"Elastic Plastic Correspondence\" or ";
+    invalidMaterial += "\"Elastic Plastic Hardening\" or ";
+    invalidMaterial += "\"Viscoelastic\" or ";
+    invalidMaterial += "\"Elastic Correspondence\" or ";
+    invalidMaterial += "\"LCM\" or ";
+    invalidMaterial += "\"Vector Poisson\" or ";
+    invalidMaterial += "\"User Correspondence\" or ";
+    invalidMaterial += "\"Linear Elastic Correspondence\".\n";
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, invalidMaterial);
   }
 

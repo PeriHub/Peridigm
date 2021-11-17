@@ -56,6 +56,7 @@
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
+#include "damage_utilities.h"
 
 using namespace std;
 
@@ -129,6 +130,7 @@ m_hourglassStiffId(-1) {
         if (params.isParameter("Block_87")) {block[7] = params.get<int>("Block_87");}
         
     }
+    m_bondDiffSt = 1e10;
     if (params.isParameter("Stable Bond Difference"))
         m_bondDiffSt  = params.get<int>("Stable Bond Difference");
   //************************************
@@ -328,8 +330,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     ////////////////////////////////////////////////////
     double trialDamage(0.0);
     int neighborhoodListIndex(0), bondIndex(0), bondCheck(0);
-    int numNeighbors, neighborID, iNID;
-    double totalDamage;
+    int numNeighbors, neighborID = 0, iNID;
     double nodeInitialX[3], nodeCurrentX[3], nodeCurrentXN[3];
     nodeCurrentXN[0] = 0.0;
     nodeCurrentXN[1] = 0.0;
@@ -343,11 +344,11 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     double TPX, TPY, TPZ, TPXN, TPYN, TPZN;
     double factor, factorN;
     // deformed state
-    double Y_dx, Y_dy, Y_dz;
+    double Y[3]; //_dx, Y_dy, Y_dz;
     // initial state
-    double X_dx, X_dy, X_dz;
+    double X[3]; //_dx, X_dy, X_dz;
     // displacement vector state and abolute value
-    double etaX, etaY, etaZ, dEta, normEtaSq;
+    double eta[3], incEta[3], normEtaSq;
 
     double dX, dY;//, dYSq;
 
@@ -374,61 +375,48 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
         bondCheck = 0;
 
         nodeId = ownedIDs[iID];
-        nodeInitialX[0] = x[nodeId*3];
-        nodeInitialX[1] = x[nodeId*3+1];
-        nodeInitialX[2] = x[nodeId*3+2];
-        nodeCurrentX[0] = y[nodeId*3];
-        nodeCurrentX[1] = y[nodeId*3+1];
-        nodeCurrentX[2] = y[nodeId*3+2];
-        if (m_incremental){
-            nodeCurrentXN[0] = yN[nodeId*3];
-            nodeCurrentXN[1] = yN[nodeId*3+1];
-            nodeCurrentXN[2] = yN[nodeId*3+2];
+        for (int i = 0; i < 3; ++i){
+            nodeInitialX[i] = x[nodeId*3 + i];
+            nodeCurrentX[i] = y[nodeId*3 + i];
+            if (m_incremental){
+                nodeCurrentXN[i] = yN[nodeId*3 + i];       
+            }
         }
         for (iNID = 0; iNID < numNeighbors; ++iNID) {
-            
-            
             neighborID = neighborhoodList[neighborhoodListIndex++];
-            
-            if (detachedNodes[nodeId]!=0) continue;
-            if (detachedNodes[neighborID]!=0) continue;
-            X_dx = x[neighborID*3]   - nodeInitialX[0];
-            X_dy = x[neighborID*3+1] - nodeInitialX[1];
-            X_dz = x[neighborID*3+2] - nodeInitialX[2];
- 
-            Y_dx = y[neighborID*3]   - nodeCurrentX[0];
-            Y_dy = y[neighborID*3+1] - nodeCurrentX[1];
-            Y_dz = y[neighborID*3+2] - nodeCurrentX[2];
-            etaX  = (Y_dx-X_dx);
-            etaY  = (Y_dy-X_dy);
-            etaZ  = (Y_dz-X_dz);
-
-
-            //double uNx = y[neighborID*3]   - x[neighborID*3];
-            //double uNy = y[neighborID*3+1] - x[neighborID*3+1];
-            //double uNz = y[neighborID*3+2] - x[neighborID*3+2];
-            
-            
-            dX = distance(nodeInitialX[0], nodeInitialX[1], nodeInitialX[2], x[neighborID*3], x[neighborID*3+1], x[neighborID*3+2]);
-            dY = distance(nodeCurrentX[0], nodeCurrentX[1], nodeCurrentX[2], y[neighborID*3], y[neighborID*3+1], y[neighborID*3+2]);
-            dEta = dY-dX;
-                              if (m_incremental){
-                        //projection on bond, but energy only with incremental change
-                        
-                        etaX  = Y_dx-(yN[neighborID*3]   - nodeCurrentXN[0]);
-                        etaY  = Y_dy-(yN[neighborID*3+1] - nodeCurrentXN[1]);
-                        etaZ  = Y_dz-(yN[neighborID*3+2] - nodeCurrentXN[2]);
-                        // entlastung bedenken; ueber vorzeichenwechsel arbeiten; wenn Ynd1 groesser ist als Yn dann ist negativ der trigger und vice versa; grundanahme, dass schritte klein sind
-                    }
-                    else{bondEnergyN[bondIndex] = 0.0;}
-
-            normEtaSq = etaX*etaX+etaY*etaY+etaZ*etaZ;
-
             bool modelActive = true;
-            // if this option is active bond break only if they are streched
-            if (m_onlyTension == true && dEta<0) modelActive = false;
+            if (m_onlyTension == true){
+                // if this option is active bond break only if they are streched
+                dX = distance(nodeInitialX[0], nodeInitialX[1], nodeInitialX[2], x[neighborID*3], x[neighborID*3+1], x[neighborID*3+2]);
+                dY = distance(nodeCurrentX[0], nodeCurrentX[1], nodeCurrentX[2], y[neighborID*3], y[neighborID*3+1], y[neighborID*3+2]);
+                if (dY-dX<0) modelActive = false;
+            } 
             if (modelActive == true){
-                if (normEtaSq>0){
+                if (detachedNodes[nodeId]!=0) continue;
+                if (detachedNodes[neighborID]!=0) continue;
+                normEtaSq = 0.0;
+                for (int i = 0; i < 3; ++i){
+                    X[i] = x[neighborID*3 + i]   - nodeInitialX[i];
+                    Y[i] = y[neighborID*3 + i]   - nodeCurrentX[i];
+                    if (m_incremental){
+                        //projection on bond, but energy only with incremental change
+                        eta[i]  = Y[i]-X[i];
+                        incEta[i]  = Y[i]-(yN[neighborID*3 + i]   - nodeCurrentXN[i]);
+                    }
+                    else{
+                        eta[i]  = Y[i]-X[i];
+                        incEta[i] = eta[i];
+                    }
+                    normEtaSq+=eta[i]*eta[i];
+                }
+                /*
+                if m_incremental is true an energy accumlation is calculated using the trapezoidal integration;
+                therefore bondEnergyN has to set to zero, if m_incremental is false
+                */
+                if (m_incremental == false) bondEnergyN[bondIndex] = 0.0;
+
+                if (normEtaSq>0){// this is to avoid numerical issues
+                    
                     criticalEnergyTension = m_criticalEnergyTension;
                     
                     if (blockNumber[neighborID]==blockInterfaceId)criticalEnergyTension = m_criticalEnergyInterBlock;
@@ -437,58 +425,46 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                     omegaP2 = MATERIAL_EVALUATION::scalarInfluenceFunction(-dX, horizon[neighborID]); 
                     // average Force has to be taken
                     // if not the case where 
-                    if (m_plane == true) X_dz = 0;
+                    if (m_plane == true) X[2] = 0;
                     
-                    double FxsiX = *(defGrad)   * X_dx + *(defGrad+1) * X_dy + *(defGrad+2) * X_dz;
-                    double FxsiY = *(defGrad+3) * X_dx + *(defGrad+4) * X_dy + *(defGrad+5) * X_dz;
-                    double FxsiZ = *(defGrad+6) * X_dx + *(defGrad+7) * X_dy + *(defGrad+8) * X_dz;
+                    double FxsiX = *(defGrad)   * X[0] + *(defGrad+1) * X[1] + *(defGrad+2) * X[2];
+                    double FxsiY = *(defGrad+3) * X[0] + *(defGrad+4) * X[1] + *(defGrad+5) * X[2];
+                    double FxsiZ = *(defGrad+6) * X[0] + *(defGrad+7) * X[1] + *(defGrad+8) * X[2];
                     hStiff[0] = *(hourglassStiff  ); hStiff[1] = *(hourglassStiff+1);  hStiff[2] = *(hourglassStiff+2);
                     hStiff[3] = *(hourglassStiff+3); hStiff[4] = *(hourglassStiff+4);  hStiff[5] = *(hourglassStiff+5);
                     hStiff[6] = *(hourglassStiff+6); hStiff[7] = *(hourglassStiff+7);  hStiff[8] = *(hourglassStiff+8);
-                    CORRESPONDENCE::computeCorrespondenceStabilityWanEtAlShort(FxsiX,FxsiY,FxsiZ,Y_dx,Y_dy,Y_dz,hStiff,TS);
-               // std::cout<< TS[0]<<" dam"<< TS[1]<<std::endl;
-                    // volumes, or volume relation to include? should be inside via the shape tensor, which is included in tempStress
-                    TX  =   omegaP1 * ( tempStressX[3*nodeId]     * X_dx + tempStressX[3*nodeId+1]     * X_dy + tempStressX[3*nodeId+2]     * X_dz + hourglassScaling*TS[0]);
-                    TY  =   omegaP1 * ( tempStressY[3*nodeId]     * X_dx + tempStressY[3*nodeId+1]     * X_dy + tempStressY[3*nodeId+2]     * X_dz + hourglassScaling*TS[1]);
-                    TZ  =   omegaP1 * ( tempStressZ[3*nodeId]     * X_dx + tempStressZ[3*nodeId+1]     * X_dy + tempStressZ[3*nodeId+2]     * X_dz + hourglassScaling*TS[2]);
+                    CORRESPONDENCE::computeCorrespondenceStabilityWanEtAlShort(FxsiX,FxsiY,FxsiZ,Y[0],Y[1],Y[2],hStiff,TS);
+                    TX  =   omegaP1 * ( tempStressX[3*nodeId]     * X[0] + tempStressX[3*nodeId+1]     * X[1] + tempStressX[3*nodeId+2]     * X[2] + hourglassScaling*TS[0]);
+                    TY  =   omegaP1 * ( tempStressY[3*nodeId]     * X[0] + tempStressY[3*nodeId+1]     * X[1] + tempStressY[3*nodeId+2]     * X[2] + hourglassScaling*TS[1]);
+                    TZ  =   omegaP1 * ( tempStressZ[3*nodeId]     * X[0] + tempStressZ[3*nodeId+1]     * X[1] + tempStressZ[3*nodeId+2]     * X[2] + hourglassScaling*TS[2]);
                     // undeformedBondX, undeformedBondY, undeformedBondZ of bond 1-2 equal to -undeformedBondX, -undeformedBondY, -undeformedBondZ of bond 2-1
-                    TXN =   omegaP2 * ( tempStressX[3*neighborID] * X_dx + tempStressX[3*neighborID+1] * X_dy + tempStressX[3*neighborID+2] * X_dz + hourglassScaling*TS[0]);
-                    TYN =   omegaP2 * ( tempStressY[3*neighborID] * X_dx + tempStressY[3*neighborID+1] * X_dy + tempStressY[3*neighborID+2] * X_dz + hourglassScaling*TS[1]);
-                    TZN =   omegaP2 * ( tempStressZ[3*neighborID] * X_dx + tempStressZ[3*neighborID+1] * X_dy + tempStressZ[3*neighborID+2] * X_dz + hourglassScaling*TS[2]);
+                    TXN =   omegaP2 * ( tempStressX[3*neighborID] * X[0] + tempStressX[3*neighborID+1] * X[1] + tempStressX[3*neighborID+2] * X[2] + hourglassScaling*TS[0]);
+                    TYN =   omegaP2 * ( tempStressY[3*neighborID] * X[0] + tempStressY[3*neighborID+1] * X[1] + tempStressY[3*neighborID+2] * X[2] + hourglassScaling*TS[1]);
+                    TZN =   omegaP2 * ( tempStressZ[3*neighborID] * X[0] + tempStressZ[3*neighborID+1] * X[1] + tempStressZ[3*neighborID+2] * X[2] + hourglassScaling*TS[2]);
                     //std::cout<< "here2"<<std::endl;
                     // orthogonal projection of T and TN to the relative displacement vector Foster et al. "An energy based .."
                     // --> die senkrecht zur Projektion stehenden Anteile entsprechen eventuell den Schubanteilen. D.h. man könnte das Kriterium hier splitten.
-                    factor = (etaX*TX + etaY*TY + etaZ*TZ)/normEtaSq;
-                    TPX = factor*etaX; TPY = factor*etaY; TPZ = factor*etaZ;
+                    factor = (eta[0]*TX + eta[1]*TY + eta[2]*TZ)/normEtaSq;
+                    TPX = factor*eta[0]; TPY = factor*eta[1]; TPZ = factor*eta[2];
                     
                     //factor = (Y_dx*TX + Y_dy*TY + Y_dz*TZ)/dYSq;
                     //TPX = factor*Y_dx; TPY = factor*Y_dy; TPZ = factor*Y_dz;
                     
-                    factorN = (etaX*TXN + etaY*TYN + etaZ*TZN)/normEtaSq;
-                    TPXN = factorN*etaX; TPYN = factorN*etaY; TPZN = factorN*etaZ;
+                    factorN = (eta[0]*TXN + eta[1]*TYN + eta[2]*TZN)/normEtaSq;
+                    TPXN = factorN*eta[0]; TPYN = factorN*eta[1]; TPZN = factorN*eta[2];
                     
                     //factorN = (Y_dx*TXN + Y_dy*TYN + Y_dz*TZN)/dYSq;
                     //TPXN = factorN*Y_dx; TPYN = factorN*Y_dy; TPZN = factorN*Y_dz;
-                    if (m_incremental){
-                        //projection on bond, but energy only with incremental change
-                        
-                        etaX  = Y_dx-(yN[neighborID*3]   - nodeCurrentXN[0]);
-                        etaY  = Y_dy-(yN[neighborID*3+1] - nodeCurrentXN[1]);
-                        etaZ  = Y_dz-(yN[neighborID*3+2] - nodeCurrentXN[2]);
-                        // entlastung bedenken; ueber vorzeichenwechsel arbeiten; wenn Ynd1 groesser ist als Yn dann ist negativ der trigger und vice versa; grundanahme, dass schritte klein sind
-                    }
-                    else{bondEnergyN[bondIndex] = 0.0;}
+
                     // 0.25 oder 0.5
-                    bondEnergyNP1[bondIndex] = bondEnergyN[bondIndex] + 0.25*(1-bondDamageNP1[bondIndex])*(abs(TPX*etaX)+abs(TPXN*etaX)+abs(TPY*etaY)+abs(TPYN*etaY)+abs(TPZ*etaZ)+abs(TPZN*etaZ));
+                    bondEnergyNP1[bondIndex] = bondEnergyN[bondIndex] + 0.25*(1-bondDamageNP1[bondIndex])*(abs(TPX*incEta[0])+abs(TPXN*incEta[0])+abs(TPY*incEta[1])+abs(TPYN*incEta[1])+abs(TPZ*incEta[2])+abs(TPZN*incEta[2]));
                     
                 }
                 else
                 {
                     bondEnergyNP1[bondIndex] = 0;
                 }
-                //bondEnergy = 0.5*(sqrt(TX*TX)+sqrt(TXN*TXN))*sqrt((uNx-ux)*(uNx-ux)) + 0.5*(sqrt(TY*TY)+sqrt(TYN*TYN))*sqrt((uNy-uy)*(uNy-uy)) + 0.5*(sqrt(TZ*TZ)+sqrt(TZN*TZN))*sqrt((uNz-uz)*(uNz-uz));
                 
-
                 double avgHorizon = 0.5*(horizon[nodeId]+horizon[neighborID]);
                 if (bondEnergyNP1[bondIndex]<0){
                     std::cout<<TPX<<" "<< labs(TPXN)<<" BE "<<bondEnergyNP1[bondIndex]<<" BD  "<< (1-bondDamageNP1[bondIndex])<<std::endl;
@@ -501,27 +477,19 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                 }
                 else
                 {
-
                    quadhorizon =  3 /( avgHorizon * avgHorizon * avgHorizon * m_Thickness );
                 }
-                //quadhorizon =  4 /( m_pi * avgHorizon * avgHorizon * avgHorizon * avgHorizon ); 
+
                 critIso = bondEnergyNP1[bondIndex]/(criticalEnergyTension*quadhorizon);
-               // if (bondEnergyNP1[bondIndex] != 0) std::cout<<critIso<<std::endl;
-                //critIso = 0;
-                
-                //critIso = bondEnergy/(criticalEnergyTension*quadhorizon);
-                
-               // std::cout<<bondEnergy<<" EE "<<criticalEnergyTension*quadhorizon<<" Stress1 "<<dEta<<std::endl;
+
                 trialDamage = 0.0;
                 if (criticalEnergyTension > 0.0 && critIso > 1.0) {
                     trialDamage = bondDamageNP1[bondIndex] + degradationFactor;
                 }
-
                 if (trialDamage > bondDamageNP1[bondIndex]) {
                     if (trialDamage>1)trialDamage = 1;
                     bondDamageNP1[bondIndex] = trialDamage;
-                    bondCheck++;
-                    
+                    bondCheck++;    
                 }
             }
             bondDamageDiff[nodeId] = bondCheck;
@@ -545,34 +513,10 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
             check = checkDetachedNodes(numOwnedPoints, ownedIDs, neighborhoodList, dataManager);
         }
     }
-    neighborhoodListIndex = 0;
-    bondIndex = 0;
-    double volume;
-    for (iID = 0; iID < numOwnedPoints; ++iID) {
-        nodeId = ownedIDs[iID];
-        numNeighbors = neighborhoodList[neighborhoodListIndex++];
-        //neighborhoodListIndex += numNeighbors;
-        totalDamage = 0.0;
-        volume = vol[nodeId];
-        for (iNID = 0; iNID < numNeighbors; ++iNID) {
-            
-            neighborID = neighborhoodList[neighborhoodListIndex++];
-            // must be zero to avoid synchronization errors
-            
-            totalDamage += bondDamageNP1[bondIndex]*vol[neighborID];
-            volume += vol[neighborID];
-            bondIndex += 1;
-        }
-        if (numNeighbors > 0)
-            totalDamage /= numNeighbors;
-        else
-            totalDamage = 0.0;
 
-        damage[nodeId] = totalDamage/volume;
-
-    }
     
-    //*(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)) = *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1));
+    DAMAGE_UTILITIES::calculateDamageIndex(numOwnedPoints,ownedIDs,vol,neighborhoodList,bondDamageNP1, damage);
+   
 }
 
 int PeridigmNS::EnergyReleaseDamageCorrepondenceModel::checkDetachedNodes(

@@ -68,7 +68,7 @@ PeridigmNS::Compute_Deformation_Gradient::Compute_Deformation_Gradient(Teuchos::
   m_modelCoordinatesFId      = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::CONSTANT, "Model_Coordinates");
   m_coordinatesFId           = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Coordinates");
   m_shapeTensorInverseFId  = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Shape_Tensor_Inverse");
-  m_deformationGradientFId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient");
+  m_deformationGradientFId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Deformation_Gradient");
   m_bondDamageFieldId      = fieldManager.getFieldId(PeridigmField::BOND,    PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage");
 
     
@@ -105,7 +105,7 @@ int PeridigmNS::Compute_Deformation_Gradient::compute( Teuchos::RCP< std::vector
     dataManager->getData(m_coordinatesFId, PeridigmField::STEP_N)->ExtractView(&coordinates);
     dataManager->getData(m_coordinatesFId, PeridigmField::STEP_NP1)->ExtractView(&coordinatesNP1);
     dataManager->getData(m_shapeTensorInverseFId, PeridigmField::STEP_NONE)->ExtractView(&shapeTensorInverse);
-    dataManager->getData(m_deformationGradientFId, PeridigmField::STEP_NONE)->ExtractView(&deformationGradient);
+    dataManager->getData(m_deformationGradientFId, PeridigmField::STEP_NP1)->ExtractView(&deformationGradient);
     dataManager->getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamage);
     dataManager->getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
     dataManager->getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->ExtractView(&detachedNodes);
