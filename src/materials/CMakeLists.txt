@@ -18,6 +18,8 @@ set(PD_MATERIAL_SOURCES
     material_utilities.cxx
     nonlocal_diffusion.cxx
     pals.cxx
+    user_material_interface_correspondence.cxx
+    user_material.cxx
 )
 
 # Optional source files for Sandia internal development
