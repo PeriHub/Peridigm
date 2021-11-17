@@ -47,6 +47,7 @@
 
 #include "elastic_correspondence.h"
 #include "correspondence.h"
+#include "matrices.h"
 #include "material_utilities.h"
 #include <Sacado.hpp>
 #include <math.h> // for sqrt
@@ -1027,9 +1028,9 @@ ScalarT Cnew[][6]
     }
     ScalarT Ctemp[6][6];
     bool transpose = true;
-    CORRESPONDENCE::MatMul(6,tm ,C ,Ctemp, transpose);
+    MATRICES::MatMul(6,tm ,C ,Ctemp, transpose);
     transpose = false;
-    CORRESPONDENCE::MatMul(6,Ctemp ,tm ,Cnew, transpose);
+    MATRICES::MatMul(6,Ctemp ,tm ,Cnew, transpose);
 }
 template void createRotatedStiff<Sacado::Fad::DFad<double> >
 (

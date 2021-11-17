@@ -49,6 +49,7 @@
 #include "Peridigm_Field.hpp"
 #include "elastic.h"
 #include "correspondence.h"
+#include "matrices.h"
 #include <Teuchos_Assert.hpp>
 #include <Sacado.hpp> // for MPI_abort
 
@@ -346,12 +347,12 @@ PeridigmNS::HypoelasticCorrespondenceMaterial::initialize(const double dt,
   dataManager.getData(m_rotationTensorFieldId, PeridigmField::STEP_NP1)->ExtractView(&rotationTensorNP1);
 
   //Initialize the left stretch and rotation tenor to the identity matrix
-  CORRESPONDENCE::setOnesOnDiagonalFullTensor(deformationGradientN, numOwnedPoints);
-  CORRESPONDENCE::setOnesOnDiagonalFullTensor(deformationGradientNP1, numOwnedPoints);
-  CORRESPONDENCE::setOnesOnDiagonalFullTensor(leftStretchTensorN, numOwnedPoints);
-  CORRESPONDENCE::setOnesOnDiagonalFullTensor(leftStretchTensorNP1, numOwnedPoints);
-  CORRESPONDENCE::setOnesOnDiagonalFullTensor(rotationTensorN, numOwnedPoints);
-  CORRESPONDENCE::setOnesOnDiagonalFullTensor(rotationTensorNP1, numOwnedPoints);
+  MATRICES::setOnesOnDiagonalFullTensor(deformationGradientN, numOwnedPoints);
+  MATRICES::setOnesOnDiagonalFullTensor(deformationGradientNP1, numOwnedPoints);
+  MATRICES::setOnesOnDiagonalFullTensor(leftStretchTensorN, numOwnedPoints);
+  MATRICES::setOnesOnDiagonalFullTensor(leftStretchTensorNP1, numOwnedPoints);
+  MATRICES::setOnesOnDiagonalFullTensor(rotationTensorN, numOwnedPoints);
+  MATRICES::setOnesOnDiagonalFullTensor(rotationTensorNP1, numOwnedPoints);
 
   dataManager.getData(m_bondLevelUnrotatedRateOfDeformationXXFieldId, PeridigmField::STEP_NONE)->PutScalar(0.0);
   dataManager.getData(m_bondLevelUnrotatedRateOfDeformationXYFieldId, PeridigmField::STEP_NONE)->PutScalar(0.0);
@@ -822,7 +823,7 @@ PeridigmNS::HypoelasticCorrespondenceMaterial::computeForce(const double dt,
     if(*flyingPointFlg < 0.0){
 
       // Inner product of non-homogeneous integral and the inverse of the shape tensor
-      CORRESPONDENCE::MatrixMultiply(false, false, 1.0, nonhomoIntegral, shapeTensorInv, temp);
+      MATRICES::MatrixMultiply(false, false, 1.0, nonhomoIntegral, shapeTensorInv, temp);
 
       // Loop over the neighbors and compute contribution to force densities
       coordinatesPtr = coordinates + 3*iID;

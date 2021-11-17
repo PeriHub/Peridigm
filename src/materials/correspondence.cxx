@@ -46,6 +46,7 @@
 //@HEADER
 
 #include "correspondence.h"
+#include "matrices.h"
 #include "elastic_correspondence.h"
 #include "material_utilities.h"
 #include <Sacado.hpp>
@@ -58,300 +59,6 @@
 #include <vector> 
 #include <string> 
 namespace CORRESPONDENCE {
-
-template<typename ScalarT>
-void MatMul
-(
- int n,
- const ScalarT A[][6],
- const ScalarT B[][6],
- ScalarT C[][6],
- bool transpose
-)
-{
-  // This function computes result = alpha * a * b
-  // where alpha is a scalar and a and b are 3x3 matrices
-  // The arguments transA and transB denote whether or not
-  // to use the transpose of a and b, respectively.
-
-  // The default ordering is row-major:
-  //
-  // XX(0) XY(1) XZ(2)
-  // YX(3) YY(4) YZ(5)
-  // ZX(6) ZY(7) ZZ(8)
-  if (transpose==false){
-    for (int iID = 0; iID < n; ++iID){
-    /* For each column j of B */
-        for(int jID=0 ; jID<n ; ++jID){
-      /* Compute C(i,j) */
-            C[iID][jID] = 0;
-            for(int kID=0 ; kID<n ; ++kID){
-                // transponiertes tm
-                C[iID][jID] += A[iID][kID]*B[kID][jID];
-                }
-        }
-    }
-  }
-  
-  else {
-    for (int iID = 0; iID < n; ++iID){
-    /* For each column j of B */
-        for(int jID=0 ; jID<n ; ++jID){
-      /* Compute C(i,j) */
-            C[iID][jID] = 0;
-            for(int kID=0 ; kID<n ; ++kID){
-                // transponiertes tm
-                C[iID][jID] += A[kID][iID]*B[kID][jID];
-                }
-        }
-    }
-  }
-}
-
-template void MatMul<double>
-(
- int n,
- const double A[][6],
- const double B[][6],
- double C[][6],
- bool transpose
-);
-template void MatMul<Sacado::Fad::DFad<double> >
-(
- int n,
- const Sacado::Fad::DFad<double> A[][6],
- const Sacado::Fad::DFad<double> B[][6],
- Sacado::Fad::DFad<double> C[][6],
- bool transpose
- //int n,
- //const Sacado::Fad::DFad<double> A[][6],
- //const double B[][6],
- //Sacado::Fad::DFad<double> C[][6],
- //bool transpose
-);
-template<typename ScalarT>
-void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints){
- 
-  ScalarT *tens = tensor;
-
-  for(int iID=0; iID<numPoints; ++iID, tens+=9){
-      *(tens) = 1.0;
-      *(tens+4) = 1.0;
-      *(tens+8) = 1.0;
-  }  
-}
-
-template<typename ScalarT>
-int Invert3by3Matrix
-(
- const ScalarT* matrix,
- ScalarT& determinant,
- ScalarT* inverse
-)
-{
-  int returnCode(0);
-
-  ScalarT minor0 =  *(matrix+4) * *(matrix+8) - *(matrix+5) * *(matrix+7);
-  ScalarT minor1 =  *(matrix+3) * *(matrix+8) - *(matrix+5) * *(matrix+6);
-  ScalarT minor2 =  *(matrix+3) * *(matrix+7) - *(matrix+4) * *(matrix+6);
-  ScalarT minor3 =  *(matrix+1) * *(matrix+8) - *(matrix+2) * *(matrix+7);
-  ScalarT minor4 =  *(matrix)   * *(matrix+8) - *(matrix+6) * *(matrix+2);
-  ScalarT minor5 =  *(matrix)   * *(matrix+7) - *(matrix+1) * *(matrix+6);
-  ScalarT minor6 =  *(matrix+1) * *(matrix+5) - *(matrix+2) * *(matrix+4);
-  ScalarT minor7 =  *(matrix)   * *(matrix+5) - *(matrix+2) * *(matrix+3);
-  ScalarT minor8 =  *(matrix)   * *(matrix+4) - *(matrix+1) * *(matrix+3);
-  determinant = *(matrix) * minor0 - *(matrix+1) * minor1 + *(matrix+2) * minor2;
-
-  if(determinant == ScalarT(0.0)){
-    returnCode = 1;
-    *(inverse) = 0.0;
-    *(inverse+1) = 0.0;
-    *(inverse+2) = 0.0;
-    *(inverse+3) = 0.0;
-    *(inverse+4) = 0.0;
-    *(inverse+5) = 0.0;
-    *(inverse+6) = 0.0;
-    *(inverse+7) = 0.0;
-    *(inverse+8) = 0.0;
-  }
-  else{
-    *(inverse) = minor0/determinant;
-    *(inverse+1) = -1.0*minor3/determinant;
-    *(inverse+2) = minor6/determinant;
-    *(inverse+3) = -1.0*minor1/determinant;
-    *(inverse+4) = minor4/determinant;
-    *(inverse+5) = -1.0*minor7/determinant;
-    *(inverse+6) = minor2/determinant;
-    *(inverse+7) = -1.0*minor5/determinant;
-    *(inverse+8) = minor8/determinant;
-  }
-
-  return returnCode;
-}
-  
-//inversionReturnCode = Invert2by2Matrix(shapeTensor, shapeTensorDeterminant, shapeTensorInv);
-template<typename ScalarT>
-int Invert2by2Matrix
-(
- const ScalarT* matrix,
- ScalarT& determinant,
- ScalarT* inverse
-)
-{
-  int returnCode(0);
-  ScalarT a =  *(matrix);
-  ScalarT b =  *(matrix+1);
-  ScalarT c =  *(matrix+3);
-  ScalarT d =  *(matrix+4);
-  
-  
-  determinant = a*d - b*c ;
-
-  if(determinant == ScalarT(0.0)){
-      returnCode = 1;
-      *(inverse)   = 0.0;
-      *(inverse+1) = 0.0;
-      *(inverse+2) = 0.0;
-      *(inverse+3) = 0.0;
-      *(inverse+4) = 0.0;
-      *(inverse+5) = 0.0;
-      *(inverse+6) = 0.0;
-      *(inverse+7) = 0.0;
-      *(inverse+8) = 0.0;
-  }
-  else{
-      *(inverse)   = d/determinant;
-      *(inverse+1) = -1.0 * b/determinant;
-      *(inverse+2) = 0.0;
-      *(inverse+3) = -1.0 * c/determinant;
-      *(inverse+4) = a/determinant;
-      *(inverse+5) = 0.0;
-      *(inverse+6) = 0.0;
-      *(inverse+7) = 0.0;
-      *(inverse+8) = 0.0;
-  }
-    
-  return returnCode;
-}
-
-
-template<typename ScalarT>
-void TransposeMatrix
-(
- const ScalarT* matrix,
- ScalarT* transpose
-)
-{
-  // Store some values so that the matrix and transpose can be the
-  // same matrix (i.e., transpose in place)
-  ScalarT temp_xy( *(matrix+1) );
-  ScalarT temp_xz( *(matrix+2) );
-  ScalarT temp_yz( *(matrix+5) );
-
-  *(transpose)   = *(matrix);
-  *(transpose+1) = *(matrix+3);
-  *(transpose+2) = *(matrix+6);
-  *(transpose+3) = temp_xy;
-  *(transpose+4) = *(matrix+4);
-  *(transpose+5) = *(matrix+7);
-  *(transpose+6) = temp_xz;
-  *(transpose+7) = temp_yz;
-  *(transpose+8) = *(matrix+8);
-}
-
-template<typename ScalarT>
-void MatrixMultiply3x3
-(
- const ScalarT A[][3],
- const ScalarT B[][3],
- ScalarT C[][3]
-)
-{
-    C[0][0] = A[0][0] * B[0][0] + A[0][1] * B[1][0] + A[0][2] * B[2][0];
-    C[0][1] = A[0][0] * B[0][1] + A[0][1] * B[1][1] + A[0][2] * B[2][1];
-    C[0][2] = A[0][0] * B[0][2] + A[0][1] * B[1][2] + A[0][2] * B[2][2];
-    C[1][0] = A[1][0] * B[0][0] + A[1][1] * B[1][0] + A[1][2] * B[2][0];
-    C[1][1] = A[1][0] * B[0][1] + A[1][1] * B[1][1] + A[1][2] * B[2][1];
-    C[1][2] = A[1][0] * B[0][2] + A[1][1] * B[1][2] + A[1][2] * B[2][2];
-    C[2][0] = A[2][0] * B[0][0] + A[2][1] * B[1][0] + A[2][2] * B[2][0];
-    C[2][1] = A[2][0] * B[0][1] + A[2][1] * B[1][1] + A[2][2] * B[2][1];
-    C[2][2] = A[2][0] * B[0][2] + A[2][1] * B[1][2] + A[2][2] * B[2][2];
-}
-
-
-
-template<typename ScalarT>
-void MatrixMultiply
-(
- bool transA,
- bool transB,
- ScalarT alpha,
- const ScalarT* a,
- const ScalarT* b,
- ScalarT* result
-)
-{
-  // This function computes result = alpha * a * b
-  // where alpha is a scalar and a and b are 3x3 matrices
-  // The arguments transA and transB denote whether or not
-  // to use the transpose of a and b, respectively.
-
-  // The default ordering is row-major:
-  //
-  // XX(0) XY(1) XZ(2)
-  // YX(3) YY(4) YZ(5)
-  // ZX(6) ZY(7) ZZ(8)
-
-  if(!transA && !transB){
-    *(result+0) = *(a+0) * *(b+0) + *(a+1) * *(b+3) + *(a+2) * *(b+6);
-    *(result+1) = *(a+0) * *(b+1) + *(a+1) * *(b+4) + *(a+2) * *(b+7);
-    *(result+2) = *(a+0) * *(b+2) + *(a+1) * *(b+5) + *(a+2) * *(b+8);
-    *(result+3) = *(a+3) * *(b+0) + *(a+4) * *(b+3) + *(a+5) * *(b+6);
-    *(result+4) = *(a+3) * *(b+1) + *(a+4) * *(b+4) + *(a+5) * *(b+7);
-    *(result+5) = *(a+3) * *(b+2) + *(a+4) * *(b+5) + *(a+5) * *(b+8);
-    *(result+6) = *(a+6) * *(b+0) + *(a+7) * *(b+3) + *(a+8) * *(b+6);
-    *(result+7) = *(a+6) * *(b+1) + *(a+7) * *(b+4) + *(a+8) * *(b+7);
-    *(result+8) = *(a+6) * *(b+2) + *(a+7) * *(b+5) + *(a+8) * *(b+8);
-  }
-  else if(transA && !transB){
-    *(result+0) = *(a+0) * *(b+0) + *(a+3) * *(b+3) + *(a+6) * *(b+6);
-    *(result+1) = *(a+0) * *(b+1) + *(a+3) * *(b+4) + *(a+6) * *(b+7);
-    *(result+2) = *(a+0) * *(b+2) + *(a+3) * *(b+5) + *(a+6) * *(b+8);
-    *(result+3) = *(a+1) * *(b+0) + *(a+4) * *(b+3) + *(a+7) * *(b+6);
-    *(result+4) = *(a+1) * *(b+1) + *(a+4) * *(b+4) + *(a+7) * *(b+7);
-    *(result+5) = *(a+1) * *(b+2) + *(a+4) * *(b+5) + *(a+7) * *(b+8);
-    *(result+6) = *(a+2) * *(b+0) + *(a+5) * *(b+3) + *(a+8) * *(b+6);
-    *(result+7) = *(a+2) * *(b+1) + *(a+5) * *(b+4) + *(a+8) * *(b+7);
-    *(result+8) = *(a+2) * *(b+2) + *(a+5) * *(b+5) + *(a+8) * *(b+8);
-  }
-  else if(!transA && transB){
-    *(result+0) = *(a+0) * *(b+0) + *(a+1) * *(b+1) + *(a+2) * *(b+2);
-    *(result+1) = *(a+0) * *(b+3) + *(a+1) * *(b+4) + *(a+2) * *(b+5);
-    *(result+2) = *(a+0) * *(b+6) + *(a+1) * *(b+7) + *(a+2) * *(b+8);
-    *(result+3) = *(a+3) * *(b+0) + *(a+4) * *(b+1) + *(a+5) * *(b+2);
-    *(result+4) = *(a+3) * *(b+3) + *(a+4) * *(b+4) + *(a+5) * *(b+5);
-    *(result+5) = *(a+3) * *(b+6) + *(a+4) * *(b+7) + *(a+5) * *(b+8);
-    *(result+6) = *(a+6) * *(b+0) + *(a+7) * *(b+1) + *(a+8) * *(b+2);
-    *(result+7) = *(a+6) * *(b+3) + *(a+7) * *(b+4) + *(a+8) * *(b+5);
-    *(result+8) = *(a+6) * *(b+6) + *(a+7) * *(b+7) + *(a+8) * *(b+8);
-  }
-  else{
-    *(result+0) = *(a+0) * *(b+0) + *(a+3) * *(b+1) + *(a+6) * *(b+2);
-    *(result+1) = *(a+0) * *(b+3) + *(a+3) * *(b+4) + *(a+6) * *(b+5);
-    *(result+2) = *(a+0) * *(b+6) + *(a+3) * *(b+7) + *(a+6) * *(b+8);
-    *(result+3) = *(a+1) * *(b+0) + *(a+4) * *(b+1) + *(a+7) * *(b+2);
-    *(result+4) = *(a+1) * *(b+3) + *(a+4) * *(b+4) + *(a+7) * *(b+5);
-    *(result+5) = *(a+1) * *(b+6) + *(a+4) * *(b+7) + *(a+7) * *(b+8);
-    *(result+6) = *(a+2) * *(b+0) + *(a+5) * *(b+1) + *(a+8) * *(b+2);
-    *(result+7) = *(a+2) * *(b+3) + *(a+5) * *(b+4) + *(a+8) * *(b+5);
-    *(result+8) = *(a+2) * *(b+6) + *(a+5) * *(b+7) + *(a+8) * *(b+8);
-  }
-
-  if(alpha != 1.0){
-    for(int i=0 ; i<9 ; ++i)
-      *(result+i) *= alpha;
-  }
-}
 
 template<typename ScalarT>
 int EigenVec2D
@@ -473,18 +180,18 @@ double* detachedNodes
         }
         
         // Compute Fdot
-        MatrixMultiply(false, false, One, FdotFirstTerm, shapeTensorInv, Fdot);
+        MATRICES::MatrixMultiply(false, false, One, FdotFirstTerm, shapeTensorInv, Fdot);
 
         // Compute the inverse of the deformation gradient, Finverse
         if (type==true){
-            inversionReturnCode = Invert2by2Matrix(defGrad, determinant, Finverse);
+            inversionReturnCode = MATRICES::Invert2by2Matrix(defGrad, determinant, Finverse);
         }
         else{
-            inversionReturnCode = Invert3by3Matrix(defGrad, determinant, Finverse);
+            inversionReturnCode = MATRICES::Invert3by3Matrix(defGrad, determinant, Finverse);
             }
 
         // Compute the Eulerian velocity gradient L = Fdot * Finv
-        MatrixMultiply(false, false, One, Fdot, Finverse, eulerianVelGrad);
+        MATRICES::MatrixMultiply(false, false, One, Fdot, Finverse, eulerianVelGrad);
 
         
         
@@ -493,10 +200,10 @@ double* detachedNodes
         
         // Versuch der nicht geklappt hat
         //if (type==true){
-        //    inversionReturnCode = Invert2by2Matrix(defGradNP1, determinant, Finverse);
+        //    inversionReturnCode = MATRICES::Invert2by2Matrix(defGradNP1, determinant, Finverse);
         //}
         //else{
-        //    inversionReturnCode = Invert3by3Matrix(defGradNP1, determinant, Finverse);
+        //    inversionReturnCode = MATRICES::Invert3by3Matrix(defGradNP1, determinant, Finverse);
         //}
         //for(int i = 0; i < 9; i++){
         //  *(Fdot+i) = (*(defGradNP1+i)-*(defGrad+i))/ dt;
@@ -556,7 +263,7 @@ int computeLogStrain
   ScalarT One = 1.0;
   ScalarT OneHalf = 0.5;
   
-  MatrixMultiply(true,false,One,defGrad, defGrad, defGradTemp);
+  MATRICES::MatrixMultiply(true,false,One,defGrad, defGrad, defGradTemp);
   
   eigenVecReturnCode = EigenVec2D(defGradTemp,V);
   
@@ -566,7 +273,7 @@ int computeLogStrain
     return returnCode;
   }
 
-  inversionReturnCode = Invert2by2Matrix(V,determinant,V_inv);
+  inversionReturnCode = MATRICES::Invert2by2Matrix(V,determinant,V_inv);
 
   if(inversionReturnCode !=0)
   {
@@ -574,9 +281,9 @@ int computeLogStrain
     return returnCode;
   }
 
-  MatrixMultiply(false,false,One,V_inv, defGradTemp, A1_temp);
+  MATRICES::MatrixMultiply(false,false,One,V_inv, defGradTemp, A1_temp);
 
-  MatrixMultiply(false,false,One,A1_temp, V, A1);
+  MATRICES::MatrixMultiply(false,false,One,A1_temp, V, A1);
   
   *(A1_D_log+0) = log(*(A1+0));
   *(A1_D_log+1) = *(A1+1);
@@ -588,7 +295,7 @@ int computeLogStrain
   *(A1_D_log+7) = 0.0 ;
   *(A1_D_log+8) = 0.0 ;
   
-  MatrixMultiply(false,false,One,V, A1_D_log, A_log_temp);
+  MATRICES::MatrixMultiply(false,false,One,V, A1_D_log, A_log_temp);
   
   for (int i = 0; i < 9; i++)
   {
@@ -599,7 +306,7 @@ int computeLogStrain
     }
   }
   
-  MatrixMultiply(false,false,OneHalf,A_log_temp, V_inv, strainTemp);
+  MATRICES::MatrixMultiply(false,false,OneHalf,A_log_temp, V_inv, strainTemp);
 
   strain[0] = *(strainTemp+0);
   strain[1] = *(strainTemp+1);
@@ -742,15 +449,15 @@ double* detachedNodes
     if (*(detachedNodes+iID) == 0) {
         
             if (type==true){
-                inversionReturnCode = Invert2by2Matrix(shapeTensor, shapeTensorDeterminant, shapeTensorInv);
+                inversionReturnCode = MATRICES::Invert2by2Matrix(shapeTensor, shapeTensorDeterminant, shapeTensorInv);
 
             }
             else{
-                inversionReturnCode = Invert3by3Matrix(shapeTensor, shapeTensorDeterminant, shapeTensorInv);
+                inversionReturnCode = MATRICES::Invert3by3Matrix(shapeTensor, shapeTensorDeterminant, shapeTensorInv);
             }
             
         
-        MatrixMultiply(false, false, One, defGradFirstTerm, shapeTensorInv, defGrad);
+        MATRICES::MatrixMultiply(false, false, One, defGradFirstTerm, shapeTensorInv, defGrad);
         }
         
         
@@ -890,21 +597,21 @@ double* detachedNodes
     }
     
     // Compute Fdot
-    MatrixMultiply(false, false, One, FdotFirstTerm, shapeTensorInv, Fdot);
+    MATRICES::MatrixMultiply(false, false, One, FdotFirstTerm, shapeTensorInv, Fdot);
 
     // Compute the inverse of the deformation gradient, Finverse
     if (type==true){
-        inversionReturnCode = Invert2by2Matrix(defGrad, determinant, Finverse);
+        inversionReturnCode = MATRICES::Invert2by2Matrix(defGrad, determinant, Finverse);
     }
     else{
-        inversionReturnCode = Invert3by3Matrix(defGrad, determinant, Finverse);
+        inversionReturnCode = MATRICES::Invert3by3Matrix(defGrad, determinant, Finverse);
         }
     if(inversionReturnCode > 0){
         returnCode = 2;
         return returnCode;
     }
     // Compute the Eulerian velocity gradient L = Fdot * Finv
-    MatrixMultiply(false, false, One, Fdot, Finverse, eulerianVelGrad);
+    MATRICES::MatrixMultiply(false, false, One, Fdot, Finverse, eulerianVelGrad);
 
     // Compute rate-of-deformation tensor, D = 1/2 * (L + Lt)
     *(rateOfDef)   = *(eulerianVelGrad);
@@ -969,10 +676,10 @@ double* detachedNodes
 
     // Compute the inverse of the temp matrix
     if (type==true){
-        inversionReturnCode = Invert2by2Matrix(temp, determinant, tempInv);
+        inversionReturnCode = MATRICES::Invert2by2Matrix(temp, determinant, tempInv);
     }
     else{
-        inversionReturnCode = Invert3by3Matrix(temp, determinant, tempInv);
+        inversionReturnCode = MATRICES::Invert3by3Matrix(temp, determinant, tempInv);
         }
     if(inversionReturnCode > 0){
       returnCode = inversionReturnCode;
@@ -1012,7 +719,7 @@ double* detachedNodes
       //           = I + scaleFactor1 * OmegaTensor + scaleFactor2 * OmegaTensorSq
       scaleFactor1 = sin(dt*Omega) / Omega;
       scaleFactor2 = -(1.0 - cos(dt*Omega)) / OmegaSq;
-      MatrixMultiply(false, false, 1.0, OmegaTensor, OmegaTensor, OmegaTensorSq);
+      MATRICES::MatrixMultiply(false, false, 1.0, OmegaTensor, OmegaTensor, OmegaTensorSq);
       *(QMatrix)   = 1.0 + scaleFactor1 * *(OmegaTensor)   + scaleFactor2 * *(OmegaTensorSq)   ;
       *(QMatrix+1) =       scaleFactor1 * *(OmegaTensor+1) + scaleFactor2 * *(OmegaTensorSq+1) ;
       *(QMatrix+2) =       scaleFactor1 * *(OmegaTensor+2) + scaleFactor2 * *(OmegaTensorSq+2) ;
@@ -1030,14 +737,14 @@ double* detachedNodes
     };
 
     // Compute R_STEP_NP1 = QMatrix * R_STEP_N (T&F Eq. 36)
-    MatrixMultiply(false, false, 1.0, QMatrix, rotTensorN, rotTensorNP1);
+    MATRICES::MatrixMultiply(false, false, 1.0, QMatrix, rotTensorN, rotTensorNP1);
 
     // Compute rate of stretch, Vdot = L*V - V*Omega
     // First tempA = L*V, 
-    MatrixMultiply(false, false, 1.0, eulerianVelGrad, leftStretchN, tempA);
+    MATRICES::MatrixMultiply(false, false, 1.0, eulerianVelGrad, leftStretchN, tempA);
 
     // tempB = V*Omega
-    MatrixMultiply(false, false, 1.0, leftStretchN, OmegaTensor, tempB);
+    MATRICES::MatrixMultiply(false, false, 1.0, leftStretchN, OmegaTensor, tempB);
 
     //Vdot = tempA - tempB
     for(int i=0 ; i<9 ; ++i)
@@ -1048,10 +755,10 @@ double* detachedNodes
       *(leftStretchNP1+i) = *(leftStretchN+i) + dt * *(rateOfStretch+i);
 
     // Compute the unrotated rate-of-deformation, d, i.e., temp = D * R
-    MatrixMultiply(false, false, 1.0, rateOfDef, rotTensorNP1, temp);
+    MATRICES::MatrixMultiply(false, false, 1.0, rateOfDef, rotTensorNP1, temp);
 
     // d = Rt * temp
-    MatrixMultiply(true, false, 1.0, rotTensorNP1, temp, unrotRateOfDef);
+    MATRICES::MatrixMultiply(true, false, 1.0, rotTensorNP1, temp, unrotRateOfDef);
     //for(int i=0 ; i<9 ; ++i)
     //  *(unrotRateOfDef+i) = *(unrotRateOfDef+i) * dt;
   }
@@ -1223,25 +930,25 @@ void computeForcesAndStresses
     if (detachedNodes[iID]==0){
         if (m_plane==true){
             matrixInversionReturnCode =
-            CORRESPONDENCE::Invert2by2Matrix(defGrad, jacobianDeterminant, defGradInv);
+            MATRICES::Invert2by2Matrix(defGrad, jacobianDeterminant, defGradInv);
             }
         else{
             matrixInversionReturnCode =
-            CORRESPONDENCE::Invert3by3Matrix(defGrad, jacobianDeterminant, defGradInv);
+             MATRICES::Invert3by3Matrix(defGrad, jacobianDeterminant, defGradInv);
             }
     }
     //TEUCHOS_TEST_FOR_EXCEPT_MSG(matrixInversionReturnCode != 0, matrixInversionErrorMessage);
     
     //P = J * \sigma * F^(-T)
-    CORRESPONDENCE::MatrixMultiply(false, true, jacobianDeterminant, stress, defGradInv, piolaStress);
+     MATRICES::MatrixMultiply(false, true, jacobianDeterminant, stress, defGradInv, piolaStress);
 
     // Inner product of Piola stress and the inverse of the shape tensor
-    CORRESPONDENCE::MatrixMultiply(false, false, One, piolaStress, shapeTensorInv, temp);
+     MATRICES::MatrixMultiply(false, false, One, piolaStress, shapeTensorInv, temp);
 
     if (plast){
         
-        CORRESPONDENCE::MatrixMultiply(false, true, jacobianDeterminant, plasticStress, defGradInv, piolaStress);
-        CORRESPONDENCE::MatrixMultiply(false, false, One, piolaStress, shapeTensorInv, tempPlast);
+         MATRICES::MatrixMultiply(false, true, jacobianDeterminant, plasticStress, defGradInv, piolaStress);
+         MATRICES::MatrixMultiply(false, false, One, piolaStress, shapeTensorInv, tempPlast);
         if (adaptHourGlass){// kann wahrscheinlich weg
             hourglassScale = 1;
             for(int i=0; i<9; i++){
@@ -1859,8 +1566,8 @@ ScalarT* hourglassStiff
     CORRESPONDENCE::createRotationMatrix(alpha[0],rotationMatX,0);
     CORRESPONDENCE::createRotationMatrix(alpha[1],rotationMatY,1);
     CORRESPONDENCE::createRotationMatrix(alpha[2],rotationMatZ,2);
-    CORRESPONDENCE::MatrixMultiply3x3(rotationMatX, rotationMatY, temp);
-    CORRESPONDENCE::MatrixMultiply3x3(temp, rotationMatZ, rotationMat);
+     MATRICES::MatrixMultiply3x3(rotationMatX, rotationMatY, temp);
+     MATRICES::MatrixMultiply3x3(temp, rotationMatZ, rotationMat);
     
     CORRESPONDENCE::createRotatedStiff(Cstiff,rotationMat,C);
     //CORRESPONDENCE::createRotatedPythonBasedStiff(Cstiff,alpha,C); 
@@ -1894,9 +1601,9 @@ void rotateCauchyStress
         rotTensor+=9, unrotatedStress+=9, rotatedStress+=9){ 
 
       // temp = \sigma_unrot * Rt
-      CORRESPONDENCE::MatrixMultiply(false, true, 1.0, unrotatedStress, rotTensor, temp);
+       MATRICES::MatrixMultiply(false, true, 1.0, unrotatedStress, rotTensor, temp);
       // \sigma_rot = R * temp
-      CORRESPONDENCE::MatrixMultiply(false, false, 1.0, rotTensor, temp, rotatedStress);
+       MATRICES::MatrixMultiply(false, false, 1.0, rotTensor, temp, rotatedStress);
   }
 }
 
@@ -2155,7 +1862,7 @@ int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
         *(velGradFirstTerm+8) += temp * velStateZ * deformedBondZ;
       }
       
-      inversionReturnCode = Invert3by3Matrix(shapeTensor, shapeTensorDeterminant, shapeTensorInv);
+      inversionReturnCode = MATRICES::Invert3by3Matrix(shapeTensor, shapeTensorDeterminant, shapeTensorInv);
       if(inversionReturnCode > 0){
         returnCode = inversionReturnCode;
         std::cout << inversionErrorMessage;
@@ -2164,7 +1871,7 @@ int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
 
       // Matrix multiply the first term and the shape tensor inverse to compute
       // the velocity gradient
-      MatrixMultiply(false, false, 1.0, velGradFirstTerm, shapeTensorInv, velGrad);
+      MATRICES::MatrixMultiply(false, false, 1.0, velGradFirstTerm, shapeTensorInv, velGrad);
 
       // update volume
       // J dot = J . tr(L)
@@ -2299,7 +2006,7 @@ int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
         *(velGradFirstTerm+8) += temp * velStateZ * deformedBondZ;
       }
       
-      inversionReturnCode = Invert3by3Matrix(shapeTensor, shapeTensorDeterminant, shapeTensorInv);
+      inversionReturnCode = MATRICES::Invert3by3Matrix(shapeTensor, shapeTensorDeterminant, shapeTensorInv);
       if(inversionReturnCode > 0){
         returnCode = inversionReturnCode;
         std::cout << inversionErrorMessage;
@@ -2308,7 +2015,7 @@ int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
 
       // Matrix multiply the first term and the shape tensor inverse to compute
       // the velocity gradient
-      MatrixMultiply(false, false, 1.0, velGradFirstTerm, shapeTensorInv, velGrad);
+      MATRICES::MatrixMultiply(false, false, 1.0, velGradFirstTerm, shapeTensorInv, velGrad);
 
       *(velGradX+0) = *(velGrad+0); *(velGradX+1) = *(velGrad+1); *(velGradX+2) = *(velGrad+2); 
       *(velGradY+0) = *(velGrad+3); *(velGradY+1) = *(velGrad+4); *(velGradY+2) = *(velGrad+5); 
@@ -2603,7 +2310,7 @@ void updateDeformationGradient
       for(int i=0; i<9; i++)
         *(defGradNP1+i) = *(defGradN+i);
 
-      MatrixMultiply(false, false, 1.0, velGrad, defGradN, Fdot);
+      MATRICES::MatrixMultiply(false, false, 1.0, velGrad, defGradN, Fdot);
 
       for(int i=0; i<9; i++)
         *(defGradNP1+i) += *(Fdot+i) * dt;
@@ -2635,7 +2342,7 @@ void computeGreenLagrangeStrain
     // if the node is not flying, update the values. Otherwise, just skip
     if(*flyingPointFlg < 0.0){
 
-      MatrixMultiply(true, false, 1.0, defGrad, defGrad, temp);
+      MATRICES::MatrixMultiply(true, false, 1.0, defGrad, defGrad, temp);
 
       for(int i=0; i<9; i++)
         *(strain+i) = 0.5 * *(temp+i);
@@ -2762,7 +2469,7 @@ int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor(
       *(temp+8) = traceV - *(leftStretchN+8);
 
       // Compute the inverse of the temp matrix
-      Invert3by3Matrix(temp, determinant, tempInv);
+      MATRICES::Invert3by3Matrix(temp, determinant, tempInv);
       if(inversionReturnCode > 0){
         returnCode = inversionReturnCode;
         std::cout << inversionErrorMessage;
@@ -2803,7 +2510,7 @@ int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor(
         //           = I + scaleFactor1 * OmegaTensor + scaleFactor2 * OmegaTensorSq
         scaleFactor1 = sin(dt*Omega) / Omega;
         scaleFactor2 = -(1.0 - cos(dt*Omega)) / OmegaSq;
-        MatrixMultiply(false, false, 1.0, OmegaTensor, OmegaTensor, OmegaTensorSq);
+        MATRICES::MatrixMultiply(false, false, 1.0, OmegaTensor, OmegaTensor, OmegaTensorSq);
         *(QMatrix)   = 1.0 + scaleFactor1 * *(OmegaTensor)   + scaleFactor2 * *(OmegaTensorSq)   ;
         *(QMatrix+1) =       scaleFactor1 * *(OmegaTensor+1) + scaleFactor2 * *(OmegaTensorSq+1) ;
         *(QMatrix+2) =       scaleFactor1 * *(OmegaTensor+2) + scaleFactor2 * *(OmegaTensorSq+2) ;
@@ -2821,14 +2528,14 @@ int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor(
       };
 
       // Compute R_STEP_NP1 = QMatrix * R_STEP_N (T&F Eq. 36)
-      MatrixMultiply(false, false, 1.0, QMatrix, rotTensorN, rotTensorNP1);
+      MATRICES::MatrixMultiply(false, false, 1.0, QMatrix, rotTensorN, rotTensorNP1);
 
       // Compute rate of stretch, Vdot = L*V - V*Omega
       // First tempA = L*V, 
-      MatrixMultiply(false, false, 1.0, eulerianVelGrad, leftStretchN, tempA);
+      MATRICES::MatrixMultiply(false, false, 1.0, eulerianVelGrad, leftStretchN, tempA);
 
       // tempB = V*Omega
-      MatrixMultiply(false, false, 1.0, leftStretchN, OmegaTensor, tempB);
+      MATRICES::MatrixMultiply(false, false, 1.0, leftStretchN, OmegaTensor, tempB);
 
       //Vdot = tempA - tempB
       for(int i=0 ; i<9 ; ++i)
@@ -2839,10 +2546,10 @@ int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor(
         *(leftStretchNP1+i) = *(leftStretchN+i) + dt * *(rateOfStretch+i);
 
       // Compute the unrotated rate-of-deformation, d, i.e., temp = D * R
-      MatrixMultiply(false, false, 1.0, rateOfDef, rotTensorNP1, temp);
+      MATRICES::MatrixMultiply(false, false, 1.0, rateOfDef, rotTensorNP1, temp);
 
       // d = Rt * temp
-      MatrixMultiply(true, false, 1.0, rotTensorNP1, temp, unrotRateOfDef);
+      MATRICES::MatrixMultiply(true, false, 1.0, rotTensorNP1, temp, unrotRateOfDef);
     }
   }
 
@@ -3104,7 +2811,7 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor(
         *(temp+8) = traceV - *(leftStretchN+8);
 
         // Compute the inverse of the temp matrix
-        Invert3by3Matrix(temp, determinant, tempInv);
+        MATRICES::Invert3by3Matrix(temp, determinant, tempInv);
         if(inversionReturnCode > 0){
           returnCode = inversionReturnCode;
           std::cout << inversionErrorMessage;
@@ -3145,7 +2852,7 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor(
           //           = I + scaleFactor1 * OmegaTensor + scaleFactor2 * OmegaTensorSq
           scaleFactor1 = sin(dt*Omega) / Omega;
           scaleFactor2 = -(1.0 - cos(dt*Omega)) / OmegaSq;
-          MatrixMultiply(false, false, 1.0, OmegaTensor, OmegaTensor, OmegaTensorSq);
+          MATRICES::MatrixMultiply(false, false, 1.0, OmegaTensor, OmegaTensor, OmegaTensorSq);
           *(QMatrix)   = 1.0 + scaleFactor1 * *(OmegaTensor)   + scaleFactor2 * *(OmegaTensorSq)   ;
           *(QMatrix+1) =       scaleFactor1 * *(OmegaTensor+1) + scaleFactor2 * *(OmegaTensorSq+1) ;
           *(QMatrix+2) =       scaleFactor1 * *(OmegaTensor+2) + scaleFactor2 * *(OmegaTensorSq+2) ;
@@ -3163,14 +2870,14 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor(
         };
 
         // Compute R_STEP_NP1 = QMatrix * R_STEP_N (T&F Eq. 36)
-        MatrixMultiply(false, false, 1.0, QMatrix, rotTensorN, rotTensorNP1);
+        MATRICES::MatrixMultiply(false, false, 1.0, QMatrix, rotTensorN, rotTensorNP1);
 
         // Compute rate of stretch, Vdot = L*V - V*Omega
         // First tempA = L*V, 
-        MatrixMultiply(false, false, 1.0, eulerianVelGrad, leftStretchN, tempA);
+        MATRICES::MatrixMultiply(false, false, 1.0, eulerianVelGrad, leftStretchN, tempA);
 
         // tempB = V*Omega
-        MatrixMultiply(false, false, 1.0, leftStretchN, OmegaTensor, tempB);
+        MATRICES::MatrixMultiply(false, false, 1.0, leftStretchN, OmegaTensor, tempB);
 
         //Vdot = tempA - tempB
         for(int i=0 ; i<9 ; ++i)
@@ -3181,10 +2888,10 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor(
           *(leftStretchNP1+i) = *(leftStretchN+i) + dt * *(rateOfStretch+i);
 
         // Compute the unrotated rate-of-deformation, d, i.e., temp = D * R
-        MatrixMultiply(false, false, 1.0, rateOfDef, rotTensorNP1, temp);
+        MATRICES::MatrixMultiply(false, false, 1.0, rateOfDef, rotTensorNP1, temp);
 
         // d = Rt * temp
-        MatrixMultiply(true, false, 1.0, rotTensorNP1, temp, unrotRateOfDef);
+        MATRICES::MatrixMultiply(true, false, 1.0, rotTensorNP1, temp, unrotRateOfDef);
 
         // Store back in element-wise format
         *leftStretchXXNP1 = *(leftStretchNP1+0); *leftStretchXYNP1 = *(leftStretchNP1+1); *leftStretchXZNP1 = *(leftStretchNP1+2);
@@ -3252,9 +2959,9 @@ void rotateCauchyStress
     if(*flyingPointFlg < 0.0){
 
       // temp = \sigma_unrot * Rt
-      CORRESPONDENCE::MatrixMultiply(false, true, 1.0, unrotatedStress, rotTensor, temp);
+       MATRICES::MatrixMultiply(false, true, 1.0, unrotatedStress, rotTensor, temp);
       // \sigma_rot = R * temp
-      CORRESPONDENCE::MatrixMultiply(false, false, 1.0, rotTensor, temp, rotatedStress);
+       MATRICES::MatrixMultiply(false, false, 1.0, rotTensor, temp, rotatedStress);
     }
   }
 }
@@ -3355,9 +3062,9 @@ void rotateBondLevelCauchyStress(
         unrotatedStress[6] = *unrotatedStressZX; unrotatedStress[7] = *unrotatedStressZY; unrotatedStress[8] = *unrotatedStressZZ;
 
         // temp = \sigma_unrot * Rt
-        CORRESPONDENCE::MatrixMultiply(false, true, 1.0, unrotatedStress, rotTensor, temp);
+         MATRICES::MatrixMultiply(false, true, 1.0, unrotatedStress, rotTensor, temp);
         // \sigma_rot = R * temp
-        CORRESPONDENCE::MatrixMultiply(false, false, 1.0, rotTensor, temp, rotatedStress);
+         MATRICES::MatrixMultiply(false, false, 1.0, rotTensor, temp, rotatedStress);
 
         // update bond-level data field
         *rotatedStressXX = rotatedStress[0]; *rotatedStressXY = rotatedStress[1]; *rotatedStressXZ = rotatedStress[2]; 
@@ -3488,7 +3195,7 @@ void computeNonhomogeneityIntegral
         *(temp+8) = 1.0 - deformedBondZ * deformedBondZ / deformedBondLengthSq;
 
         // Matrix multiply the stress and the second term to compute the integrand
-        MatrixMultiply(false, false, 1.0, stress, temp, integrand);
+        MATRICES::MatrixMultiply(false, false, 1.0, stress, temp, integrand);
 
         omega = (1.0 - *bondDamagePtr) * MATERIAL_EVALUATION::scalarInfluenceFunction(deformedBondLength, *delta);
 
@@ -3515,36 +3222,6 @@ void computeNonhomogeneityIntegral
 
 /** Explicit template instantiation for double. */
 
-template void TransposeMatrix<double>
-(
- const double* matrix,
- double* transpose
-);
-
-template void MatrixMultiply3x3<double>
-(
- const double A[][3],
- const double B[][3],
- double C[][3]
-);
-
-template void MatrixMultiply3x3<Sacado::Fad::DFad<double> >
-(
- const Sacado::Fad::DFad<double> A[][3],
- const Sacado::Fad::DFad<double> B[][3],
- Sacado::Fad::DFad<double> C[][3]
-);
-
-template void MatrixMultiply<double>
-(
- bool transA,
- bool transB,
- double alpha,
- const double* a,
- const double* b,
- double* result
-);
-
 template void rotateCauchyStress<double>
 (
  const double* rotationTensor,
@@ -3552,19 +3229,6 @@ template void rotateCauchyStress<double>
  double* rotatedCauchyStress,
  int numPoints
  );
-
-template int Invert3by3Matrix<double>
-(
- const double* matrix,
- double& determinant,
- double* inverse
-);
-template int Invert2by2Matrix<double>
-(
- const double* matrix,
- double& determinant,
- double* inverse
-);
 
 template int computeLogStrain<double>
 (
@@ -3733,49 +3397,8 @@ template void setValuesForDetachedNodes<double>
  );
 
 
-template void setOnesOnDiagonalFullTensor<double>
-(
- double* tensor,
- int numPoints
-);
-
-
-
 /** Explicit template instantiation for Sacado::Fad::DFad<double>. */
 
-template void TransposeMatrix<Sacado::Fad::DFad<double> >
-(
- const Sacado::Fad::DFad<double>* matrix,
- Sacado::Fad::DFad<double>* transpose
-);
-
-
-
-
-
-template void MatrixMultiply<Sacado::Fad::DFad<double> >
-(
- bool transA,
- bool transB,
- Sacado::Fad::DFad<double> alpha,
- const Sacado::Fad::DFad<double>* a,
- const Sacado::Fad::DFad<double>* b,
- Sacado::Fad::DFad<double>* result
-);
-
-template int Invert3by3Matrix<Sacado::Fad::DFad<double> >
-(
- const Sacado::Fad::DFad<double>* matrix,
- Sacado::Fad::DFad<double>& determinant,
- Sacado::Fad::DFad<double>* inverse
-);
-
-template int Invert2by2Matrix<Sacado::Fad::DFad<double> >
-(
- const Sacado::Fad::DFad<double>* matrix,
- Sacado::Fad::DFad<double>& determinant,
- Sacado::Fad::DFad<double>* inverse
-);
 
 template void computeGreenLagrangeStrain<Sacado::Fad::DFad<double> >
 (

@@ -24,6 +24,9 @@ file (GLOB apiHEADERS
 file (GLOB ioHEADERS
   "${IO_DIR}/*.hpp"
 )
+file (GLOB mathHEADERS
+  "${MATH_DIR}/*.h"
+)
 file (GLOB materialsHEADERS
   "${MATERIALS_DIR}/*.hpp"
 )
@@ -46,6 +49,7 @@ set(Peridigm_HEADERS
     ${damageHEADERS}
     ${apiHEADERS}
     ${ioHEADERS}
+    ${mathHEADERS}
     ${materialsHEADERS}
     ${quickGridHEADERS}
     ${utilitiesHEADERS}
@@ -103,6 +107,7 @@ set(Peridigm_LINK_LIBRARIES
     ${MESH_INPUT_LIBS}
     ${UTILITIES_LIBS}
     ${PdMaterialUtilitiesLib}
+    ${PdMathUtilitiesLib}
     ${Trilinos_LIBRARIES}
     ${REQUIRED_LIBS}
     ${IMPROVED_QUADRATURE_LIBS}
@@ -133,6 +138,7 @@ set_property(TARGET Peridigm
 add_subdirectory (compute/)
 add_subdirectory (core/)
 add_subdirectory (io/)
+add_subdirectory (math/)
 add_subdirectory (materials/)
 add_subdirectory (damage/)
 

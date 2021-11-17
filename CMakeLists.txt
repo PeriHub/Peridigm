@@ -258,6 +258,7 @@ ENDIF()
 set(MESH_INPUT_LIBS QuickGrid)
 set(PDNEIGH_LIBS PdNeigh)
 set(UTILITIES_LIBS Utilities)
+set(PdMathUtilitiesLib PdMathUtilities)
 set(PdMaterialUtilitiesLib PdMaterialUtilities)
 set(PdDamageUtilitiesLib PdDamageUtilities)
 # include for all directories
@@ -278,6 +279,7 @@ ${CMAKE_SOURCE_DIR}/src/io/bond_volume
 ${CMAKE_SOURCE_DIR}/src/io/utilities
 ${CMAKE_SOURCE_DIR}/src/io/pdneigh
 ${CMAKE_SOURCE_DIR}/src/contact
+${CMAKE_SOURCE_DIR}/src/math
 ${CMAKE_SOURCE_DIR}/src/materials
 ${CMAKE_SOURCE_DIR}/src/damage
 ${CMAKE_SOURCE_DIR}/src/api
@@ -293,6 +295,7 @@ set(CONTACT_DIR          ${CMAKE_SOURCE_DIR}/src/contact)
 set(CORE_DIR             ${CMAKE_SOURCE_DIR}/src/core)
 set(DISCRETIZATION_DIR   ${CMAKE_SOURCE_DIR}/src/io/discretization)
 set(IO_DIR               ${CMAKE_SOURCE_DIR}/src/io)
+set(MATH_DIR             ${CMAKE_SOURCE_DIR}/src/math)
 set(MATERIALS_DIR        ${CMAKE_SOURCE_DIR}/src/materials)
 set(DAMAGE_DIR           ${CMAKE_SOURCE_DIR}/src/damage)
 set(API_DIR              ${CMAKE_SOURCE_DIR}/src/api)
@@ -307,6 +310,7 @@ include_directories(
 ${COMPUTE_DIR}
 ${CONTACT_DIR}
 ${CORE_DIR}
+${MATH_DIR}
 ${MATERIALS_DIR}
 ${DAMAGE_DIR}
 ${API_DIR}

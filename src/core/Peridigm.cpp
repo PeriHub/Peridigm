@@ -78,7 +78,7 @@
 #include "Peridigm_ShortRangeForceContactModel.hpp"
 #include "Peridigm_UserDefinedTimeDependentShortRangeForceContactModel.hpp"
 #include "Peridigm.hpp"
-#include "correspondence.h" // For Invert3by3Matrix // TODO this should go
+#include "matrices.h" // For Invert3by3Matrix
 #include "Peridigm_DataManager.hpp" //For readBlocktoDisk & writeBlocktoDisk
 #ifdef PERIDIGM_PV
   #include "Peridigm_PartialVolumeCalculator.hpp"
@@ -2205,7 +2205,7 @@ bool PeridigmNS::Peridigm::computePreconditioner(const Epetra_Vector& x, Epetra_
     TEUCHOS_TEST_FOR_EXCEPT_MSG(numEntries != 3, "**** PeridigmNS::Peridigm::computePreconditioner(), number of row entries not equal to three (block 3x3 matrix required).\n");
     for(int i=0 ; i<3 ; ++i)
       matrix[6+i] = valuesRow3[i];
-    err = CORRESPONDENCE::Invert3by3Matrix(matrix, determinant, inverse);
+    err = MATRICES::Invert3by3Matrix(matrix, determinant, inverse);
     TEUCHOS_TEST_FOR_EXCEPT_MSG(err != 0, "**** PeridigmNS::Peridigm::computePreconditioner(), Invert3by3Matrix() returned nonzero error code.\n");
     for(int i=0 ; i<3 ; ++i){
       valuesRow1[i] = inverse[i];
