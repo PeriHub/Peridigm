@@ -104,9 +104,10 @@ PeridigmNS::ElasticMaterial::ElasticMaterial(const Teuchos::ParameterList& param
   int m_horizonFieldId             = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, 	 PeridigmField::CONSTANT, "Horizon");
   m_damageModelFieldId 			   = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, 	 PeridigmField::TWO_STEP, "Damage_Model_Data");
      
-  if(m_applyThermalStrains)
+  if(m_applyThermalStrains){
     m_temperatureFieldId           = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Temperature");
     m_deltaTemperatureFieldId      = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Temperature_Change");
+  }
   if(m_computePartialStress)
     m_partialStressFieldId         = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Partial_Stress");
 

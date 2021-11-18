@@ -317,7 +317,7 @@ bool hencky
 {
   // Hooke's law
   const ScalarT* defGrad = DeformationGradient;
-  const ScalarT* sigmaN = unrotatedCauchyStressN;
+  // const ScalarT* sigmaN = unrotatedCauchyStressN;
   ScalarT* sigmaNP1 = unrotatedCauchyStressNP1;
 
   for(int iID=0 ; iID<numPoints ; ++iID, 
