@@ -54,7 +54,7 @@ add_executable(utFinitePlane utFinitePlane.cxx)
 target_link_libraries(utFinitePlane PdNeigh ${Trilinos_LIBRARIES} ${UT_REQUIRED_LIBS})
 add_test (utFinitePlane python ${CMAKE_BINARY_DIR}/scripts/run_unit_test.py ./utFinitePlane)
 
-add_executable(utFinitePlaneFilter utFinitePlaneFilter)
+add_executable(utFinitePlaneFilter utFinitePlaneFilter.cxx)
 target_link_libraries(utFinitePlaneFilter PdNeigh QuickGrid Utilities ${Trilinos_LIBRARIES} ${UT_REQUIRED_LIBS})
 #add_test (utFinitePlaneFilter python ${CMAKE_BINARY_DIR}/scripts/run_unit_test.py ./utFinitePlaneFilter)
 
