@@ -371,8 +371,8 @@ bool hencky
         CORRESPONDENCE::createRotationMatrix(angles[3*iID  ],rotationMatX,0);
         CORRESPONDENCE::createRotationMatrix(angles[3*iID+1],rotationMatY,1);
         CORRESPONDENCE::createRotationMatrix(angles[3*iID+2],rotationMatZ,2);
-        CORRESPONDENCE::MatrixMultiply3x3(rotationMatX, rotationMatY, temp);
-        CORRESPONDENCE::MatrixMultiply3x3(temp, rotationMatZ, rotationMat);
+        MATRICES::MatrixMultiply3x3(rotationMatX, rotationMatY, temp);
+        MATRICES::MatrixMultiply3x3(temp, rotationMatZ, rotationMat);
         CORRESPONDENCE::createRotatedStiff(Cstiff,rotationMat,C);
       //
       //}
