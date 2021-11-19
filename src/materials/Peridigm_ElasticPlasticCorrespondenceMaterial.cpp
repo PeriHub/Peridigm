@@ -78,7 +78,7 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::ElasticPlasticCorrespondenceMa
   m_fieldIds.push_back(m_unrotatedCauchyStressPlasticFieldId);
   m_fieldIds.push_back(m_vonMisesStressFieldId);
   m_fieldIds.push_back(m_equivalentPlasticStrainFieldId);
-  m_deformationGradientFieldId          = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient");
+  // m_deformationGradientFieldId          = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient");
   m_modelAnglesId                       = fieldManager.getFieldId(PeridigmField::NODE   , PeridigmField::VECTOR, PeridigmField::CONSTANT     , "Local_Angles");
   m_fieldIds.push_back(m_modelAnglesId);
   m_fieldIds.push_back(m_deformationGradientFieldId);
