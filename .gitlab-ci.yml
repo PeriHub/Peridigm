@@ -16,6 +16,7 @@ stages:
 build_job:
   allow_failure: true
   stage: build
+  image: docker
   variables: 
     CI_IMAGE: $CI_REGISTRY/hess_ja/pycodac/conda:latest
   # Add to get Docker-in-Docker capabilities
@@ -25,6 +26,7 @@ build_job:
   #   - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin 
   script:
     - docker info
+    - ls
   # after_script:
   #   - docker logout
 
