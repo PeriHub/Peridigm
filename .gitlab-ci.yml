@@ -12,6 +12,7 @@ variables: &globals
 
 stages:
   - build
+  - deploy
 
 build_job:
   allow_failure: true
@@ -27,12 +28,12 @@ build_job:
   script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker build -t peridigm .
-    - docker run peridigm ctest "-T Test --output-junit JUnitTestResults.xml --test-dir /build/Testing/"
-    - docker cp peridigm:JUnitTestResults.xml JUnitTestResults.xml
+    - docker run peridigm ctest -T Test --test-dir /peridigm/build
+    - docker cp peridigm:/peridigm/build/Testing Testing
   artifacts:
-    when: always
-    reports:
-      junit: JUnitTestResults.xml
+    paths:
+      - Testing
+    expire_in: 1 day
 
 
 # build_job:
@@ -79,19 +80,15 @@ build_job:
 #   dependencies:
 #     - build_job
 
-# deploy_job:
-#   tags:
-#     - wsl
-#   stage: deploy
-#   only:
-#     - tags
-#   script:
-#     - echo "deploying..."
-#     - cd $CI_PROJECT_DIR/build/
-#     - xsltproc $CI_PROJECT_DIR/scripts/CTest2JUnit.xsl Testing/`head -n 1 < Testing/TAG`/Test.xml > JUnitTestResults.xml
-#   artifacts:
-#     when: always
-#     reports:
-#       junit: build/JUnitTestResults.xml
-#   dependencies:
-#     - test_job
+deploy_job:
+  stage: deploy
+  script:
+    - echo "deploying..."
+    - cd $CI_PROJECT_DIR/
+    - xsltproc $CI_PROJECT_DIR/scripts/CTest2JUnit.xsl Testing/`head -n 1 < Testing/TAG`/Test.xml > JUnitTestResults.xml
+  artifacts:
+    when: always
+    reports:
+      junit: JUnitTestResults.xml
+  dependencies:
+    - build_job

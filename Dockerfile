@@ -9,6 +9,7 @@ RUN apt-get -yq update
 RUN apt-get -yq install openmpi-bin
 RUN apt-get -yq install openssh-server
 RUN apt-get -yq install libboost1.55
+RUN apt-get -yq install xsltproc
 
 #Build Peridigm
 RUN mkdir peridigm
