@@ -28,7 +28,7 @@ build_job:
   script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker build -t peridigm .
-    - docker run peridigm /opt/cmake/bin/ctest -T Test --test-dir /peridigm/build
+    - docker run peridigm /opt/cmake/bin/ctest -T Test --test-dir /peridigm/build > /dev/null
     - docker cp peridigm:/peridigm/build/Testing Testing
   artifacts:
     paths:
@@ -83,8 +83,8 @@ build_job:
 deploy_job:
   stage: deploy
   script:
-    - echo "deploying..."
     - cd $CI_PROJECT_DIR/
+    - ls
     - xsltproc $CI_PROJECT_DIR/scripts/CTest2JUnit.xsl Testing/`head -n 1 < Testing/TAG`/Test.xml > JUnitTestResults.xml
   artifacts:
     when: always
