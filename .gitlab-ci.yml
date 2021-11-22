@@ -28,7 +28,7 @@ build_job:
   script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker build -t peridigm .
-    - docker run peridigm ctest -T Test --test-dir /peridigm/build
+    - docker run peridigm /opt/cmake/bin/ctest -T Test --test-dir /peridigm/build
     - docker cp peridigm:/peridigm/build/Testing Testing
   artifacts:
     paths:
