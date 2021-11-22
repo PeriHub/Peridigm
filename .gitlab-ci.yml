@@ -1,60 +1,84 @@
 build_job:
-  tags:
-    - wsl
+  # tags:
+  #   - wsl
   stage: build  
-  only:
-    - tags
+  # only:
+  #   - tags
   script:
     - echo "building..."
-    - mkdir build
-    - cd build
-    - echo $CI_PROJECT_DIR
-    - cmake .. -D CMAKE_BUILD_TYPE:STRING=Release
-      -D Trilinos_DIR:PATH=/usr/local/bin/trilinos/lib/cmake/Trilinos/
-      -D CMAKE_C_COMPILER:STRING=/usr/local/lib/openmpi/bin/mpicc
-      -D CMAKE_CXX_COMPILER:STRING=/usr/local/lib/openmpi/bin/mpicxx
-      -D BOOST_ROOT=/usr/local/lib/boost/
-      -D CMAKE_CXX_FLAGS:STRING="-O2 -Wall -std=c++11 -pedantic -Wno-long-long -ftrapv -Wno-deprecated"
-    - cmake --build . -j 10
-  artifacts:
-    paths:
-      - build
-    expire_in: 1 day
+    - docker info
+    # - mkdir build
+    # - cd build
+    # - echo $CI_PROJECT_DIR
+    # - cmake .. -D CMAKE_BUILD_TYPE:STRING=Release
+    #   -D Trilinos_DIR:PATH=/usr/local/bin/trilinos/lib/cmake/Trilinos/
+    #   -D CMAKE_C_COMPILER:STRING=/usr/local/lib/openmpi/bin/mpicc
+    #   -D CMAKE_CXX_COMPILER:STRING=/usr/local/lib/openmpi/bin/mpicxx
+    #   -D BOOST_ROOT=/usr/local/lib/boost/
+    #   -D CMAKE_CXX_FLAGS:STRING="-O2 -Wall -std=c++11 -pedantic -Wno-long-long -ftrapv -Wno-deprecated"
+    # - cmake --build . -j 10
+  # artifacts:
+  #   paths:
+  #     - build
+  #   expire_in: 1 day
 
-test_job:
-  tags:
-    - wsl
-  stage: test
-  only:
-    - tags
-  before_script:
-    - echo "testing..."
-    - cd $CI_PROJECT_DIR/build
-    - ctest -T Test
-  script:
-    - echo "testing finished"
-  allow_failure: true
-  artifacts:
-    when: always
-    paths:
-      - build/Testing
-    expire_in: 1 day
-  dependencies:
-    - build_job
+# build_job:
+#   tags:
+#     - wsl
+#   stage: build  
+#   # only:
+#   #   - tags
+#   script:
+#     - echo "building..."
+#     - mkdir build
+#     - cd build
+#     - echo $CI_PROJECT_DIR
+#     - cmake .. -D CMAKE_BUILD_TYPE:STRING=Release
+#       -D Trilinos_DIR:PATH=/usr/local/bin/trilinos/lib/cmake/Trilinos/
+#       -D CMAKE_C_COMPILER:STRING=/usr/local/lib/openmpi/bin/mpicc
+#       -D CMAKE_CXX_COMPILER:STRING=/usr/local/lib/openmpi/bin/mpicxx
+#       -D BOOST_ROOT=/usr/local/lib/boost/
+#       -D CMAKE_CXX_FLAGS:STRING="-O2 -Wall -std=c++11 -pedantic -Wno-long-long -ftrapv -Wno-deprecated"
+#     - cmake --build . -j 10
+#   artifacts:
+#     paths:
+#       - build
+#     expire_in: 1 day
 
-deploy_job:
-  tags:
-    - wsl
-  stage: deploy
-  only:
-    - tags
-  script:
-    - echo "deploying..."
-    - cd $CI_PROJECT_DIR/build/
-    - xsltproc $CI_PROJECT_DIR/scripts/CTest2JUnit.xsl Testing/`head -n 1 < Testing/TAG`/Test.xml > JUnitTestResults.xml
-  artifacts:
-    when: always
-    reports:
-      junit: build/JUnitTestResults.xml
-  dependencies:
-    - test_job
+# test_job:
+#   tags:
+#     - wsl
+#   stage: test
+#   only:
+#     - tags
+#   before_script:
+#     - echo "testing..."
+#     - cd $CI_PROJECT_DIR/build
+#     - ctest -T Test
+#   script:
+#     - echo "testing finished"
+#   allow_failure: true
+#   artifacts:
+#     when: always
+#     paths:
+#       - build/Testing
+#     expire_in: 1 day
+#   dependencies:
+#     - build_job
+
+# deploy_job:
+#   tags:
+#     - wsl
+#   stage: deploy
+#   only:
+#     - tags
+#   script:
+#     - echo "deploying..."
+#     - cd $CI_PROJECT_DIR/build/
+#     - xsltproc $CI_PROJECT_DIR/scripts/CTest2JUnit.xsl Testing/`head -n 1 < Testing/TAG`/Test.xml > JUnitTestResults.xml
+#   artifacts:
+#     when: always
+#     reports:
+#       junit: build/JUnitTestResults.xml
+#   dependencies:
+#     - test_job
