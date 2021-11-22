@@ -21,9 +21,13 @@ build_job:
   # Add to get Docker-in-Docker capabilities
   services:
     - docker:dind
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin 
   script:
-    - docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
     - docker info
+  after_script:
+    - docker logout
+
 
 # build_job:
 #   tags:
