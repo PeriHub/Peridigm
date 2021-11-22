@@ -22,11 +22,7 @@ build_job:
   services:
     - docker:dind
   script:
-    - git config --global http.sslverify false
-    - git config --global url."https://${GIT_USER}:${GIT_PASSWORD}@gitlab.dlr.de/".insteadOf "https://gitlab.dlr.de/"
-    - git clone https://gitlab.dlr.de/fa_sw/stmlab/PyXMake/snippets/171.git shared
     - docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
-    - docker login -u $CI_REG_USER -p $CI_REG_TOKEN $CI_REGISTRY
     - docker info
 
 # build_job:
