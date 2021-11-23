@@ -32,7 +32,7 @@ build_job:
     - docker cp peridigm:/peridigm/build/Testing Testing
   after_script:
     - docker container ls
-    - CONTAINERNAME=$(docker ps --format "{{.Names}}")
+    - CONTAINERNAME=$(docker ps -a --format "{{.Names}}")
     - docker cp $CONTAINERNAME:/peridigm/build/Testing Testing
   artifacts:
     paths:
