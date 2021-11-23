@@ -27,7 +27,6 @@ build_job:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker build -t peridigm .
     - docker run peridigm /opt/cmake/bin/ctest -T Test --test-dir /peridigm/build || true
-    - docker container ls
     - CONTAINERNAME=$(docker ps -a --format "{{.Names}}")
     - docker cp $CONTAINERNAME:/peridigm/build/Testing Testing
   artifacts:
@@ -84,6 +83,7 @@ deploy_job:
   stage: deploy
   script:
     # - cd $CI_PROJECT_DIR/
+    - apt-get -yq install xsltproc
     - ls
     - xsltproc $CI_PROJECT_DIR/scripts/CTest2JUnit.xsl Testing/`head -n 1 < Testing/TAG`/Test.xml > JUnitTestResults.xml
   artifacts:
