@@ -1,5 +1,5 @@
-FROM peridigm/trilinos 
-MAINTAINER John Foster <johntfosterjr@gmail.com>
+FROM registry.gitlab-test.dlr.de/hess_ja/images/trilinos  
+MAINTAINER Jan-Timo Hesse <jan-timo.hesse@dlr.de>
 
 ENV HOME /root
 
@@ -9,6 +9,7 @@ RUN apt-get -yq update
 RUN apt-get -yq install openmpi-bin
 RUN apt-get -yq install openssh-server
 RUN apt-get -yq install libboost1.55
+RUN apt-get -yq install xsltproc
 
 #Build Peridigm
 RUN mkdir peridigm
@@ -24,10 +25,9 @@ WORKDIR /peridigm/build/
 RUN cmake \
     -D CMAKE_BUILD_TYPE:STRING=Release \
     -D CMAKE_INSTALL_PREFIX:PATH=/usr/local/peridigm \
-    -D CMAKE_CXX_FLAGS:STRING="-std=c++11 -O2" \
+    -D CMAKE_CXX_FLAGS:STRING="-O2 -Wall -std=c++14 -pedantic -Wno-long-long -ftrapv -Wno-deprecated" \
     -D TRILINOS_DIR:PATH=/usr/local/trilinos \
     -D CMAKE_CXX_COMPILER:STRING="mpicxx" \
-    -D BOOST_ROOT=/usr/include/boost \
     -D USE_DAKOTA:BOOL=OFF \
     ..; \
     make && make install; \

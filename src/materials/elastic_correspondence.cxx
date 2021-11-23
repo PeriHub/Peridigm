@@ -341,12 +341,6 @@ int type
 {
   if (type==0){
                           
-
-
-
-
-
-
     *(sigmaNP1)   = C[0][0]*strain[0][0] + C[0][1]*strain[1][1] + C[0][2]*strain[2][2] + C[0][3]*(strain[0][1] + strain[1][0]) + C[0][4]*(strain[0][2] + strain[2][0]) + C[0][5]*(strain[1][2] + strain[2][1]);
     *(sigmaNP1+1) = C[1][0]*strain[0][0] + C[1][1]*strain[1][1] + C[1][2]*strain[2][2] + C[1][3]*(strain[0][1] + strain[1][0]) + C[1][4]*(strain[0][2] + strain[2][0]) + C[1][5]*(strain[1][2] + strain[2][1]);
     *(sigmaNP1+2) = C[2][0]*strain[0][0] + C[2][1]*strain[1][1] + C[2][2]*strain[2][2] + C[2][3]*(strain[0][1] + strain[1][0]) + C[2][4]*(strain[0][2] + strain[2][0]) + C[2][5]*(strain[1][2] + strain[2][1]);
