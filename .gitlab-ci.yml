@@ -31,7 +31,9 @@ build_job:
     - docker run peridigm /opt/cmake/bin/ctest -T Test --test-dir /peridigm/build
     - docker cp peridigm:/peridigm/build/Testing Testing
   after_script:
-    - docker cp peridigm:/peridigm/build/Testing Testing
+    - docker container ls
+    - CONTAINERNAME=$(docker ps --format "{{.Names}}")
+    - docker cp $CONTAINERNAME:/peridigm/build/Testing Testing
   artifacts:
     paths:
       - Testing
