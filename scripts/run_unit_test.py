@@ -7,7 +7,7 @@ from subprocess import Popen
 
 if __name__ == "__main__":
 
-    executable = sys.argv[-1]
+    executable = sys.argv[-1] 
     base_name = string.splitfields(executable, '/')[-1]
     logfile = open(base_name + ".log", 'w')
 

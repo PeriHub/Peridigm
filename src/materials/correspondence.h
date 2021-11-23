@@ -107,7 +107,7 @@ template<typename ScalarT>
 int computeLogStrain
 (
  const ScalarT* defGrad,
- ScalarT strain[9]
+ ScalarT strain[][3]
 );
 
 template<typename ScalarT>
@@ -182,7 +182,11 @@ ScalarT* greenLagrangeStrainZY,
 ScalarT* greenLagrangeStrainZZ,
 int numPoints
 );
-
+template<typename ScalarT>
+void computeGreenLagrangeStrain
+(const ScalarT* defGrad,
+ScalarT strain[][3]
+);
 template<typename ScalarT>
 void computeHourglassForce
 (

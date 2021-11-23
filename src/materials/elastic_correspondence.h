@@ -186,21 +186,17 @@ bool hencky
 template<typename ScalarT>
 void updateElasticCauchyStressAnisotropicCode
 (
-const ScalarT* defGrad, 
-ScalarT* sigmaNP1, 
-int iID, 
+const ScalarT strain[][3], 
+ScalarT* sigmaNP1,
 const ScalarT Cstiff[][6],
-double* angles,
-int type,
-double dt,
-bool hencky
+int type
 );
+
 template<typename ScalarT>
 void createRotationMatrix
 (
-const double alpha,
-ScalarT rotationMat[][3],
-const int check
+const double* alpha,
+ScalarT rotMat[][3]
 );
 template<typename ScalarT>
 void createRotatedStiff

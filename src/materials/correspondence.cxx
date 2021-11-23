@@ -233,7 +233,7 @@ template<typename ScalarT>
 int computeLogStrain
 (
  const ScalarT* defGrad,
- ScalarT strain[9]
+ ScalarT strain[][3]
 )
 {
   // Hencky-Strain E = 0.5*ln(C)
@@ -308,10 +308,10 @@ int computeLogStrain
   
   MATRICES::MatrixMultiply(false,false,OneHalf,A_log_temp, V_inv, strainTemp);
 
-  strain[0] = *(strainTemp+0);
-  strain[1] = *(strainTemp+1);
-  strain[3] = *(strainTemp+3);
-  strain[4] = *(strainTemp+4);
+  strain[0][0] = *(strainTemp+0);
+  strain[1][0] = *(strainTemp+1);
+  strain[0][1] = *(strainTemp+3);
+  strain[1][1] = *(strainTemp+4);
 
   return returnCode;
 }
@@ -1562,13 +1562,8 @@ ScalarT* hourglassStiff
     const ScalarT* shapeTensorInv = shapeTensorInverse;
     ScalarT C[6][6];
     
-    ScalarT rotationMat[3][3], rotationMatX[3][3], rotationMatY[3][3], rotationMatZ[3][3], temp[3][3];
-    CORRESPONDENCE::createRotationMatrix(alpha[0],rotationMatX,0);
-    CORRESPONDENCE::createRotationMatrix(alpha[1],rotationMatY,1);
-    CORRESPONDENCE::createRotationMatrix(alpha[2],rotationMatZ,2);
-     MATRICES::MatrixMultiply3x3(rotationMatX, rotationMatY, temp);
-     MATRICES::MatrixMultiply3x3(temp, rotationMatZ, rotationMat);
-    
+    ScalarT rotationMat[3][3];
+    CORRESPONDENCE::createRotationMatrix(alpha,rotationMat);    
     CORRESPONDENCE::createRotatedStiff(Cstiff,rotationMat,C);
     //CORRESPONDENCE::createRotatedPythonBasedStiff(Cstiff,alpha,C); 
     // to be checked for 2D
@@ -2317,6 +2312,43 @@ void updateDeformationGradient
     }
   }
 }
+
+template<typename ScalarT>
+void computeGreenLagrangeStrain
+(const ScalarT* defGrad,
+ScalarT strain[][3]
+)
+{
+  strain[0][0] = 0.5 * ( defGrad[0] * defGrad[0] + defGrad[3] * defGrad[3] + defGrad[6] * defGrad[6]  - 1.0 );
+  strain[0][1] = 0.5 * ( defGrad[0] * defGrad[1] + defGrad[3] * defGrad[4] + defGrad[6] * defGrad[7]  );
+  strain[0][2] = 0.5 * ( defGrad[0] * defGrad[2] + defGrad[3] * defGrad[5] + defGrad[6] * defGrad[8]  );
+  strain[1][0] = 0.5 * ( defGrad[0] * defGrad[1] + defGrad[3] * defGrad[4] + defGrad[6] * defGrad[7]  );
+  strain[1][1] = 0.5 * ( defGrad[1] * defGrad[1] + defGrad[4] * defGrad[4] + defGrad[7] * defGrad[7]  - 1.0 );
+  strain[1][2] = 0.5 * ( defGrad[1] * defGrad[2] + defGrad[4] * defGrad[5] + defGrad[7] * defGrad[8]  );
+  strain[2][0] = 0.5 * ( defGrad[0] * defGrad[2] + defGrad[3] * defGrad[5] + defGrad[6] * defGrad[8]  );
+  strain[2][1] = 0.5 * ( defGrad[1] * defGrad[2] + defGrad[4] * defGrad[5] + defGrad[7] * defGrad[8]  );
+  strain[2][2] = 0.5 * ( defGrad[2] * defGrad[2] + defGrad[5] * defGrad[5] + defGrad[8] * defGrad[8]  - 1.0 );
+}
+
+
+template void computeGreenLagrangeStrain<Sacado::Fad::DFad<double>>
+(
+const Sacado::Fad::DFad<double>* defGrad, 
+Sacado::Fad::DFad<double> strain[][3]
+
+);
+template void computeGreenLagrangeStrain<double>
+(
+const double* defGrad, 
+double strain[][3]
+
+);
+
+
+
+
+
+
 
 template<typename ScalarT>
 void computeGreenLagrangeStrain
@@ -3233,12 +3265,12 @@ template void rotateCauchyStress<double>
 template int computeLogStrain<double>
 (
  const double* defGrad,
- double strain[9]
+ double strain[][3]
 );
 template int computeLogStrain<Sacado::Fad::DFad<double> >
 (
  const Sacado::Fad::DFad<double>* defGrad,
- Sacado::Fad::DFad<double>  strain[9]
+ Sacado::Fad::DFad<double>  strain[][3]
 );
 
 template int computeShapeTensorInverseAndApproximateDeformationGradient<double>

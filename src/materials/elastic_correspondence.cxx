@@ -50,7 +50,8 @@
 #include "matrices.h"
 #include "material_utilities.h"
 #include <Sacado.hpp>
-#include <math.h> // for sqrt
+#include <math.h>
+#include <cmath> 
 
 //#include <Teuchos_Assert.hpp>
 //#include <Epetra_SerialComm.h>
@@ -58,27 +59,6 @@
 
 using namespace std;
 namespace CORRESPONDENCE {
-
-//template<typename ScalarT>
-//void updateElasticCauchyStress
-//(
-//const ScalarT* deltaTemperatureN,
-//const ScalarT* deltaTemperatureNP1,
-//const ScalarT* unrotatedRateOfDeformation,
-//const ScalarT* unrotatedCauchyStressN,
-//ScalarT* unrotatedCauchyStressNP1,
-//const int numPoints,
-//const double bulkMod,
-//const double shearMod,
-//const double alpha,
-//const double dt
-//)
-//{
-//
-//
-//
-//}
-
 
 template<typename ScalarT>
 void updateElasticCauchyStress
@@ -315,130 +295,83 @@ bool incremental,
 bool hencky
 )
 {
-  // Hooke's law
+  
   const ScalarT* defGrad = DeformationGradient;
-  const ScalarT* sigmaN = unrotatedCauchyStressN;
   ScalarT* sigmaNP1 = unrotatedCauchyStressNP1;
-
+  ScalarT strain[3][3];
+  ScalarT rotMat[3][3], rotMatT[3][3], temp[3][3];
+  //int defGradLogReturnCode(0);
+  bool rotation = false;
   for(int iID=0 ; iID<numPoints ; ++iID, 
-        defGrad+=9, sigmaNP1+=9){
-          CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(defGrad, sigmaNP1, iID, Cstiff, angles, type, dt, hencky);
+        defGrad+=9, sigmaNP1+=9, angles+=3){
+
+
+          if (hencky){int defGradLogReturnCode = CORRESPONDENCE::computeLogStrain(defGrad,strain);}
+          else       {CORRESPONDENCE::computeGreenLagrangeStrain(defGrad,strain);}
+          //https://www.continuummechanics.org/stressxforms.html
+          // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
+          if (rotation){  
+            CORRESPONDENCE::createRotationMatrix(angles,rotMat);
+            MATRICES::TransposeMatrix(rotMat,rotMatT);
+            // geomNL
+            MATRICES::MatrixMultiply3x3(rotMatT,strain, temp);
+            MATRICES::MatrixMultiply3x3(temp,rotMat,strain);
+          }
+
+          CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(strain, sigmaNP1, Cstiff, type);
+          // rotation back
+          if (rotation){  
+            MATRICES::MatrixMultiply3x3fromVector(rotMat,sigmaNP1, temp);
+            MATRICES::MatrixMultiply3x3toVector(temp,rotMatT,sigmaNP1);
+
+          }
+
         }
 
 }
 
-
-
 template<typename ScalarT>
 void updateElasticCauchyStressAnisotropicCode
 (
-const ScalarT* defGrad, 
-ScalarT* sigmaNP1, 
-int iID, 
-const ScalarT Cstiff[][6],
-double* angles,
-int type,
-double dt,
-bool hencky
+const ScalarT strain[][3],
+ScalarT* sigmaNP1,
+const ScalarT C[][6],
+int type
 )
 {
-  // Hooke's law
-  
-  ScalarT strain[9];
-  ScalarT logStrain[9];
-  ScalarT C[6][6];
-  ScalarT rotationMat[3][3], rotationMatX[3][3], rotationMatY[3][3], rotationMatZ[3][3], temp[3][3];
-  // double alpha[3];
-  int defGradLogReturnCode(0);
-
-  // 0 -> xx,  1 -> xy, 2 -> xz
-  // 3 -> yx,  4 -> yy, 5 -> yz
-  // 6 -> zx,  7 -> zy, 8 -> zz
+  if (type==0){
+                          
 
 
- // for(int iID=0 ; iID<numPoints ; ++iID, 
- //       defGrad+=9, sigmaNP1+=9, sigmaN+=9){
-            // df muss genutzt werden EQ 34 Silling Stability --> d.h. ich muss das Delta bestimmen
-            // Schadensmodell muss angepasst werden
-            // Referenzkonfiguration muss angepasst werden
-            // volle C Matrix muss hier rein
-      // alpha[0] = angles[3*iID  ];
-      // alpha[1] = angles[3*iID+1];
-      // alpha[2] = angles[3*iID+2];
-      //CORRESPONDENCE::createRotatedPythonBasedStiff(Cstiff,alpha,C); 
-      //if (type != 0){
-      //  // rotation mathematical positive sense (downwards from x-axis)
-        CORRESPONDENCE::createRotationMatrix(angles[3*iID  ],rotationMatX,0);
-        CORRESPONDENCE::createRotationMatrix(angles[3*iID+1],rotationMatY,1);
-        CORRESPONDENCE::createRotationMatrix(angles[3*iID+2],rotationMatZ,2);
-        CORRESPONDENCE::MatrixMultiply3x3(rotationMatX, rotationMatY, temp);
-        CORRESPONDENCE::MatrixMultiply3x3(temp, rotationMatZ, rotationMat);
-        CORRESPONDENCE::createRotatedStiff(Cstiff,rotationMat,C);
-      //
-      //}
-      //else{
-      //  C[0][0] = Cstiff[0][0];C[1][0] = Cstiff[1][0];C[2][0] = Cstiff[2][0];C[3][0] = Cstiff[3][0];C[4][0] = Cstiff[4][0];C[5][0] = Cstiff[5][0];
-      //  C[0][1] = Cstiff[0][1];C[1][1] = Cstiff[1][1];C[2][1] = Cstiff[2][1];C[3][1] = Cstiff[3][1];C[4][1] = Cstiff[4][1];C[5][1] = Cstiff[5][1];
-      //  C[0][2] = Cstiff[0][2];C[1][2] = Cstiff[1][2];C[2][2] = Cstiff[2][2];C[3][2] = Cstiff[3][2];C[4][2] = Cstiff[4][2];C[5][2] = Cstiff[5][2];
-      //  C[0][3] = Cstiff[0][3];C[1][3] = Cstiff[1][3];C[2][3] = Cstiff[2][3];C[3][3] = Cstiff[3][3];C[4][3] = Cstiff[4][3];C[5][3] = Cstiff[5][3];
-      //  C[0][4] = Cstiff[0][4];C[1][4] = Cstiff[1][4];C[2][4] = Cstiff[2][4];C[3][4] = Cstiff[3][4];C[4][4] = Cstiff[4][4];C[5][4] = Cstiff[5][4];
-      //  C[0][5] = Cstiff[0][5];C[1][5] = Cstiff[1][5];C[2][5] = Cstiff[2][5];C[3][5] = Cstiff[3][5];C[4][5] = Cstiff[4][5];C[5][5] = Cstiff[5][5];
-      //}
-    if (type==0){
-        strain[0] = 0.5 * ( *(defGrad)*   *(defGrad)   + *(defGrad+3)* *(defGrad+3) + *(defGrad+6) * *(defGrad+6)  - 1.0 );
-        strain[1] = 0.5 * ( *(defGrad)*   *(defGrad+1) + *(defGrad+3)* *(defGrad+4) + *(defGrad+6) * *(defGrad+7)  );
-        strain[2] = 0.5 * ( *(defGrad)*   *(defGrad+2) + *(defGrad+3)* *(defGrad+5) + *(defGrad+6) * *(defGrad+8)  );
-        strain[3] = 0.5 * ( *(defGrad)*   *(defGrad+1) + *(defGrad+3)* *(defGrad+4) + *(defGrad+6) * *(defGrad+7)  );
-        strain[4] = 0.5 * ( *(defGrad+1)* *(defGrad+1) + *(defGrad+4)* *(defGrad+4) + *(defGrad+7) * *(defGrad+7)  - 1.0 );
-        strain[5] = 0.5 * ( *(defGrad+1)* *(defGrad+2) + *(defGrad+4)* *(defGrad+5) + *(defGrad+7) * *(defGrad+8)  );
-        strain[6] = 0.5 * ( *(defGrad)*   *(defGrad+2) + *(defGrad+3)* *(defGrad+5) + *(defGrad+6) * *(defGrad+8)  );
-        strain[7] = 0.5 * ( *(defGrad+1)* *(defGrad+2) + *(defGrad+4)* *(defGrad+5) + *(defGrad+7) * *(defGrad+8)  );
-        strain[8] = 0.5 * ( *(defGrad+2)* *(defGrad+2) + *(defGrad+5)* *(defGrad+5) + *(defGrad+8) * *(defGrad+8)  - 1.0 );
-        
-        *(sigmaNP1)   = C[0][0]*strain[0] + C[0][1]*strain[4] + C[0][2]*strain[8] + C[0][3]*(strain[5]+strain[7]) + C[0][4]*(strain[2]+strain[6]) + C[0][5]*(strain[1]+strain[3]);
-        *(sigmaNP1+1) = C[5][0]*strain[0] + C[5][1]*strain[4] + C[5][2]*strain[8] + C[5][3]*(strain[5]+strain[7]) + C[5][4]*(strain[2]+strain[6]) + C[5][5]*(strain[1]+strain[3]);
-        *(sigmaNP1+2) = C[4][0]*strain[0] + C[4][1]*strain[4] + C[4][2]*strain[8] + C[4][3]*(strain[5]+strain[7]) + C[4][4]*(strain[2]+strain[6]) + C[4][5]*(strain[1]+strain[3]);
-        *(sigmaNP1+3) = *(sigmaNP1+1);
-        *(sigmaNP1+4) = C[1][0]*strain[0] + C[1][1]*strain[4] + C[1][2]*strain[8] + C[1][3]*(strain[5]+strain[7]) + C[1][4]*(strain[2]+strain[6]) + C[1][5]*(strain[1]+strain[3]);
-        *(sigmaNP1+5) = C[3][0]*strain[0] + C[3][1]*strain[4] + C[3][2]*strain[8] + C[3][3]*(strain[5]+strain[7]) + C[3][4]*(strain[2]+strain[6]) + C[3][5]*(strain[1]+strain[3]);
-        *(sigmaNP1+6) = *(sigmaNP1+2);
-        *(sigmaNP1+7) = *(sigmaNP1+5);
-        *(sigmaNP1+8) =  C[2][0]*strain[0] + C[2][1]*strain[4] + C[2][2]*strain[8] + C[2][3]*(strain[5]+strain[7]) + C[2][4]*(strain[2]+strain[6]) + C[2][5]*(strain[1]+strain[3]);
-        
-      }
-      if (type!=0){
 
-          strain[0] = 0.5 * ( *(defGrad)*   *(defGrad)   + *(defGrad+3)* *(defGrad+3) - 1.0 );
-          strain[1] = 0.5 * ( *(defGrad)*   *(defGrad+1) + *(defGrad+3)* *(defGrad+4) );
-          strain[3] = 0.5 * ( *(defGrad+1)* *(defGrad)   + *(defGrad+4)* *(defGrad+3) );
-          strain[4] = 0.5 * ( *(defGrad+1)* *(defGrad+1) + *(defGrad+4)* *(defGrad+4) - 1.0 );
 
-        if(hencky && (*(defGrad)!=1 || *(defGrad+1)!=0 || *(defGrad+3)!=0 || *(defGrad+4)!=1))
-        {
-          defGradLogReturnCode = CORRESPONDENCE::computeLogStrain(defGrad,logStrain);
 
-          if (defGradLogReturnCode==0)
-          {
-            strain[0] = logStrain[0];
-            strain[1] = logStrain[1];
-            strain[3] = logStrain[3];
-            strain[4] = logStrain[4];
-          }
-        }
-        *(sigmaNP1)   = C[0][0]*strain[0] + C[0][1]*strain[4] + C[0][5]*(strain[1]+strain[3]);
-        *(sigmaNP1+1) = C[5][0]*strain[0] + C[5][1]*strain[4] + C[5][5]*(strain[1]+strain[3]);
 
-        *(sigmaNP1+2) = 0.0;
+    *(sigmaNP1)   = C[0][0]*strain[0][0] + C[0][1]*strain[1][1] + C[0][2]*strain[2][2] + C[0][3]*(strain[0][1] + strain[1][0]) + C[0][4]*(strain[0][2] + strain[2][0]) + C[0][5]*(strain[1][2] + strain[2][1]);
+    *(sigmaNP1+1) = C[1][0]*strain[0][0] + C[1][1]*strain[1][1] + C[1][2]*strain[2][2] + C[1][3]*(strain[0][1] + strain[1][0]) + C[1][4]*(strain[0][2] + strain[2][0]) + C[1][5]*(strain[1][2] + strain[2][1]);
+    *(sigmaNP1+2) = C[2][0]*strain[0][0] + C[2][1]*strain[1][1] + C[2][2]*strain[2][2] + C[2][3]*(strain[0][1] + strain[1][0]) + C[2][4]*(strain[0][2] + strain[2][0]) + C[2][5]*(strain[1][2] + strain[2][1]);
+    *(sigmaNP1+4) = C[3][0]*strain[0][0] + C[3][1]*strain[1][1] + C[3][2]*strain[2][2] + C[3][3]*(strain[0][1] + strain[1][0]) + C[3][4]*(strain[0][2] + strain[2][0]) + C[3][5]*(strain[1][2] + strain[2][1]);
+    *(sigmaNP1+5) = C[4][0]*strain[0][0] + C[4][1]*strain[1][1] + C[4][2]*strain[2][2] + C[4][3]*(strain[0][1] + strain[1][0]) + C[4][4]*(strain[0][2] + strain[2][0]) + C[4][5]*(strain[1][2] + strain[2][1]);        
+    *(sigmaNP1+8) = C[5][0]*strain[0][0] + C[5][1]*strain[1][1] + C[5][2]*strain[2][2] + C[5][3]*(strain[0][1] + strain[1][0]) + C[5][4]*(strain[0][2] + strain[2][0]) + C[5][5]*(strain[1][2] + strain[2][1]);
+    
+    *(sigmaNP1+3) = *(sigmaNP1+1);
+    *(sigmaNP1+6) = *(sigmaNP1+2);
+    *(sigmaNP1+7) = *(sigmaNP1+5);
 
-        *(sigmaNP1+3) = *(sigmaNP1+1);
-        *(sigmaNP1+4) = C[1][0] *strain[0] + C[1][1]* strain[4] + C[1][5]*(strain[1]+strain[3]);
-        *(sigmaNP1+5) = 0.0;
-        *(sigmaNP1+6) = 0.0;
-        *(sigmaNP1+7) = 0.0;
-        *(sigmaNP1+8) = 0.0;
-        
-      }
-   
+  }
+  else
+  {     
+    *(sigmaNP1)   = C[0][0]*strain[0][0] + C[0][1]*strain[1][1]  + C[0][3]*(strain[0][1] + strain[1][0]) ;
+    *(sigmaNP1+1) = C[1][0]*strain[0][0] + C[1][1]*strain[1][1]  + C[1][3]*(strain[0][1] + strain[1][0]) ;
+    *(sigmaNP1+2) = 0.0 ;
+    *(sigmaNP1+4) = C[3][0]*strain[0][0] + C[3][1]*strain[1][1]  + C[3][3]*(strain[0][1] + strain[1][0]) ;
+    *(sigmaNP1+5) = 0.0 ;        
+    *(sigmaNP1+8) = 0.0 ;
+    
+    *(sigmaNP1+3) = *(sigmaNP1+1);
+    *(sigmaNP1+6) = 0.0 ;
+    *(sigmaNP1+7) = 0.0 ;
+  }  
 }       
 template void updateElasticCauchyStressAnisotropic<Sacado::Fad::DFad<double>>
 (
@@ -469,25 +402,17 @@ bool hencky
 // Explicit template instantiation for double
 template void updateElasticCauchyStressAnisotropicCode<double>
 (
-const double* defGrad, 
+const double strain[][3], 
 double* sigmaNP1, 
-int iID, 
 const double Cstiff[][6],
-double* angles,
-int type,
-double dt,
-bool hencky
+int type
 );
 template void updateElasticCauchyStressAnisotropicCode<Sacado::Fad::DFad<double> >
 (
-const Sacado::Fad::DFad<double>* defGrad, 
+const Sacado::Fad::DFad<double> strain[][3], 
 Sacado::Fad::DFad<double>* sigmaNP1, 
-int iID, 
 const Sacado::Fad::DFad<double> Cstiff[][6],
-double* angles,
-int type,
-double dt,
-bool hencky
+int type
 );
 
 
@@ -943,46 +868,46 @@ template void updateBondLevelElasticCauchyStress<double>
 template<typename ScalarT>
 void createRotationMatrix
 (
-const double alpha,
-ScalarT rotMat[][3],
-const int check
+const double* alpha,
+ScalarT rotMat[][3]
 ){
     const double PI  = 3.141592653589793238463;
-    double rad = alpha*(PI)/180;
+    double rad[3];
     
-    
-    
-    if (check == 0){// x - direction
-        rotMat[0][0] = 1; rotMat[0][1] = 0;        rotMat[0][2] = 0;
-        rotMat[1][0] = 0; rotMat[1][1] = cos(rad); rotMat[1][2] = -sin(rad);
-        rotMat[2][0] = 0; rotMat[2][1] = sin(rad); rotMat[2][2] =  cos(rad);
-    }
-    if (check == 1){// y - direction
-        rotMat[0][0] =  cos(rad); rotMat[0][1] = 0; rotMat[0][2] = sin(rad);
-        rotMat[1][0] = 0;         rotMat[1][1] = 1; rotMat[1][2] = 0;
-        rotMat[2][0] = -sin(rad); rotMat[2][1] = 0; rotMat[2][2] = cos(rad);
-    }
-    if (check == 2){// z - direction
-        rotMat[0][0] = cos(rad); rotMat[0][1] = -sin(rad); rotMat[0][2] = 0;
-        rotMat[1][0] = sin(rad); rotMat[1][1] =  cos(rad); rotMat[1][2] = 0;
-        rotMat[2][0] = 0;        rotMat[2][1] = 0;         rotMat[2][2] = 1;
+    rad[0] = alpha[0]*(PI)/180.;
+    rad[1] = alpha[1]*(PI)/180.;
+    rad[2] = alpha[2]*(PI)/180.;
+    ScalarT rotMatX[3][3], rotMatY[3][3], rotMatZ[3][3], temp[3][3];
 
-    }
+    // x - direction
+    rotMatX[0][0] = 1; rotMatX[0][1] = 0;           rotMatX[0][2] = 0;
+    rotMatX[1][0] = 0; rotMatX[1][1] = cos(rad[0]); rotMatX[1][2] = -sin(rad[0]);
+    rotMatX[2][0] = 0; rotMatX[2][1] = sin(rad[0]); rotMatX[2][2] =  cos(rad[0]);
+    // y - direction
+    rotMatY[0][0] =  cos(rad[1]); rotMatY[0][1] = 0; rotMatY[0][2] = sin(rad[1]);
+    rotMatY[1][0] = 0;            rotMatY[1][1] = 1; rotMatY[1][2] = 0;
+    rotMatY[2][0] = -sin(rad[1]); rotMatY[2][1] = 0; rotMatY[2][2] = cos(rad[1]);
+    // z - direction
+    rotMatZ[0][0] = cos(rad[2]); rotMatZ[0][1] = -sin(rad[2]); rotMatZ[0][2] = 0;
+    rotMatZ[1][0] = sin(rad[2]); rotMatZ[1][1] =  cos(rad[2]); rotMatZ[1][2] = 0;
+    rotMatZ[2][0] = 0;           rotMatZ[2][1] = 0;            rotMatZ[2][2] = 1;
+    
+            
+    MATRICES::MatrixMultiply3x3(rotMatX, rotMatY, temp);
+    MATRICES::MatrixMultiply3x3(temp, rotMatZ, rotMat);
 }
 
 
 //// Explicit template instantiation for double
 template void createRotationMatrix<double>
 (
-const double alpha,
-double rotMat[][3],
-const int check
+const double* alpha,
+double rotMat[][3]
 );
 template void createRotationMatrix<Sacado::Fad::DFad<double> >
 (
-const double alpha,
-Sacado::Fad::DFad<double> rotMat[][3],
-const int check
+const double* alpha,
+Sacado::Fad::DFad<double> rotMat[][3]
 );
 
 
