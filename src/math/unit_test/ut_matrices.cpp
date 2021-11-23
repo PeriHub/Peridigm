@@ -256,7 +256,7 @@ TEUCHOS_UNIT_TEST(matrices, MatrixMultiply3x3fromVector) {
     double C[3][3] = {{30, 36, 42},
                      {66, 81, 96},
                      {102, 126, 150}};
-    double Ctest[6];
+    double Ctest[3][3];
     int n, m, x;
     x=1;
 
@@ -268,9 +268,11 @@ TEUCHOS_UNIT_TEST(matrices, MatrixMultiply3x3fromVector) {
             x++;
         }
 
-    MATRICES::MatrixMultiply3x3toVector(A,B,Ctest);
-    for (n=0; n<6; n++){
-            TEST_FLOATING_EQUALITY(Ctest[n],C[n],0);
+    MATRICES::MatrixMultiply3x3fromVector(A,B,Ctest);
+    for (n=0; n<3; n++)
+        for (m=0; m<3; m++)
+        {
+            TEST_FLOATING_EQUALITY(Ctest[n][m],C[n][m],0);
         }
 }
 
