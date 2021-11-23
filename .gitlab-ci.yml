@@ -23,12 +23,11 @@ build_job:
   # Add to get Docker-in-Docker capabilities
   services:
     - docker:dind
-  before_script:
+  script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker build -t peridigm .
     - docker run peridigm /opt/cmake/bin/ctest -T Test --test-dir /peridigm/build
-    - docker cp peridigm:/peridigm/build/Testing Testing
-  script:
+    - docker cp peridigm:/peridigm/build/Testing Testing || true
     - docker container ls
     - CONTAINERNAME=$(docker ps -a --format "{{.Names}}")
     - docker cp $CONTAINERNAME:/peridigm/build/Testing Testing
