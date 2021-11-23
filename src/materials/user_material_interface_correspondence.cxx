@@ -108,7 +108,7 @@ const std::string matname
   double SSE,SPD,SCD,RPL;
   //
   
-
+  
   for(int iID=0 ; iID<numPoints ; ++iID, 
         coords+=3, defGradN+=9, defGradNP1+=9, sigmaN+=9, GLStrainN+=9,GLStrainNP1+=9,sigmaNP1+=9, angles+=3){
           NOEL = iID;

@@ -226,6 +226,54 @@ TEUCHOS_UNIT_TEST(matrices, MatrixMultiply3x3) {
         }
 }
 
+TEUCHOS_UNIT_TEST(matrices, MatrixMultiply3x3toVector) {
+
+    double A[3][3];
+    double B[3][3];
+    double C[9] = {30, 36, 42, 66, 81, 96,102, 126, 150};
+    double Ctest[9];
+    int n, m, x;
+    x=1;
+
+    for (n=0; n<3; n++)
+        for (m=0; m<3; m++)
+        {
+            A[n][m]=x;
+            B[n][m]=x;
+            x++;
+        }
+
+    MATRICES::MatrixMultiply3x3toVector(A,B,Ctest);
+    for (n=0; n<8; n++){
+            TEST_FLOATING_EQUALITY(Ctest[n],C[n],0);
+        }
+}
+
+TEUCHOS_UNIT_TEST(matrices, MatrixMultiply3x3fromVector) {
+
+    double A[3][3];
+    double B[9];
+    double C[3][3] = {{30, 36, 42},
+                     {66, 81, 96},
+                     {102, 126, 150}};
+    double Ctest[6];
+    int n, m, x;
+    x=1;
+
+    for (n=0; n<3; n++)
+        for (m=0; m<3; m++)
+        {
+            A[n][m]=x;
+            B[x-1]=x;
+            x++;
+        }
+
+    MATRICES::MatrixMultiply3x3toVector(A,B,Ctest);
+    for (n=0; n<6; n++){
+            TEST_FLOATING_EQUALITY(Ctest[n],C[n],0);
+        }
+}
+
 TEUCHOS_UNIT_TEST(matrices, MatrixMultiply) {
 
     std::vector<double> AVector(9);
