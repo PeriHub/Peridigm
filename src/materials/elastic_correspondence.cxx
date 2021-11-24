@@ -339,32 +339,35 @@ const ScalarT C[][6],
 int type
 )
 {
+  // 0 -> xx,  1 -> xy, 2 -> xz
+  // 3 -> yx,  4 -> yy, 5 -> yz
+  // 6 -> zx,  7 -> zy, 8 -> zz
   if (type==0){
-                          
-    *(sigmaNP1)   = C[0][0]*strain[0][0] + C[0][1]*strain[1][1] + C[0][2]*strain[2][2] + C[0][3]*(strain[0][1] + strain[1][0]) + C[0][4]*(strain[0][2] + strain[2][0]) + C[0][5]*(strain[1][2] + strain[2][1]);
-    *(sigmaNP1+1) = C[1][0]*strain[0][0] + C[1][1]*strain[1][1] + C[1][2]*strain[2][2] + C[1][3]*(strain[0][1] + strain[1][0]) + C[1][4]*(strain[0][2] + strain[2][0]) + C[1][5]*(strain[1][2] + strain[2][1]);
-    *(sigmaNP1+2) = C[2][0]*strain[0][0] + C[2][1]*strain[1][1] + C[2][2]*strain[2][2] + C[2][3]*(strain[0][1] + strain[1][0]) + C[2][4]*(strain[0][2] + strain[2][0]) + C[2][5]*(strain[1][2] + strain[2][1]);
-    *(sigmaNP1+4) = C[3][0]*strain[0][0] + C[3][1]*strain[1][1] + C[3][2]*strain[2][2] + C[3][3]*(strain[0][1] + strain[1][0]) + C[3][4]*(strain[0][2] + strain[2][0]) + C[3][5]*(strain[1][2] + strain[2][1]);
-    *(sigmaNP1+5) = C[4][0]*strain[0][0] + C[4][1]*strain[1][1] + C[4][2]*strain[2][2] + C[4][3]*(strain[0][1] + strain[1][0]) + C[4][4]*(strain[0][2] + strain[2][0]) + C[4][5]*(strain[1][2] + strain[2][1]);        
-    *(sigmaNP1+8) = C[5][0]*strain[0][0] + C[5][1]*strain[1][1] + C[5][2]*strain[2][2] + C[5][3]*(strain[0][1] + strain[1][0]) + C[5][4]*(strain[0][2] + strain[2][0]) + C[5][5]*(strain[1][2] + strain[2][1]);
-    
-    *(sigmaNP1+3) = *(sigmaNP1+1);
-    *(sigmaNP1+6) = *(sigmaNP1+2);
-    *(sigmaNP1+7) = *(sigmaNP1+5);
+             
+  *(sigmaNP1)=   (strain[0][1]+strain[1][0])*C[0][5] + (strain[0][2]+strain[2][0])*C[0][4] + (strain[1][2]+strain[2][1])*C[0][3] + C[0][0]*strain[0][0] + C[0][1]*strain[1][1] + C[0][2]*strain[2][2] ;
+  *(sigmaNP1+1)= (strain[0][1]+strain[1][0])*C[5][5] + (strain[0][2]+strain[2][0])*C[5][4] + (strain[1][2]+strain[2][1])*C[5][3] + C[5][0]*strain[0][0] + C[5][1]*strain[1][1] + C[5][2]*strain[2][2] ;
+  *(sigmaNP1+2)= (strain[0][1]+strain[1][0])*C[4][5] + (strain[0][2]+strain[2][0])*C[4][4] + (strain[1][2]+strain[2][1])*C[4][3] + C[4][0]*strain[0][0] + C[4][1]*strain[1][1] + C[4][2]*strain[2][2] ;
+  *(sigmaNP1+3)= *(sigmaNP1+1) ;
+  *(sigmaNP1+4)= (strain[0][1]+strain[1][0])*C[1][5] + (strain[0][2]+strain[2][0])*C[1][4] + (strain[1][2]+strain[2][1])*C[1][3] + C[1][0]*strain[0][0] + C[1][1]*strain[1][1] + C[1][2]*strain[2][2] ;
+  *(sigmaNP1+5)= (strain[0][1]+strain[1][0])*C[3][5] + (strain[0][2]+strain[2][0])*C[3][4] + (strain[1][2]+strain[2][1])*C[3][3] + C[3][0]*strain[0][0] + C[3][1]*strain[1][1] + C[3][2]*strain[2][2] ;
+  *(sigmaNP1+6)= *(sigmaNP1+2) ;
+  *(sigmaNP1+7)= *(sigmaNP1+5) ;
+  *(sigmaNP1+8)= (strain[0][1]+strain[1][0])*C[2][5] + (strain[0][2]+strain[2][0])*C[2][4] + (strain[1][2]+strain[2][1])*C[2][3] + C[2][0]*strain[0][0] + C[2][1]*strain[1][1] + C[2][2]*strain[2][2] ;
+
 
   }
   else
   {     
-    *(sigmaNP1)   = C[0][0]*strain[0][0] + C[0][1]*strain[1][1]  + C[0][3]*(strain[0][1] + strain[1][0]) ;
-    *(sigmaNP1+1) = C[1][0]*strain[0][0] + C[1][1]*strain[1][1]  + C[1][3]*(strain[0][1] + strain[1][0]) ;
-    *(sigmaNP1+2) = 0.0 ;
-    *(sigmaNP1+4) = C[3][0]*strain[0][0] + C[3][1]*strain[1][1]  + C[3][3]*(strain[0][1] + strain[1][0]) ;
-    *(sigmaNP1+5) = 0.0 ;        
-    *(sigmaNP1+8) = 0.0 ;
-    
-    *(sigmaNP1+3) = *(sigmaNP1+1);
-    *(sigmaNP1+6) = 0.0 ;
-    *(sigmaNP1+7) = 0.0 ;
+    *(sigmaNP1)=  (strain[0][1]+strain[1][0])*C[0][5]  + C[0][0]*strain[0][0] + C[0][1]*strain[1][1] ;
+    *(sigmaNP1+1)= (strain[0][1]+strain[1][0])*C[5][5] + C[5][0]*strain[0][0] + C[5][1]*strain[1][1] ;
+    *(sigmaNP1+2)= 0.0 ;
+    *(sigmaNP1+3)= *(sigmaNP1+1) ;
+    *(sigmaNP1+4)= (strain[0][1]+strain[1][0])*C[1][5] + C[1][0]*strain[0][0] + C[1][1]*strain[1][1]  ;
+    *(sigmaNP1+5)= 0.0 ;
+    *(sigmaNP1+6)= *(sigmaNP1+2) ;
+    *(sigmaNP1+7)= *(sigmaNP1+5) ;
+    *(sigmaNP1+8)= 0.0 ;
+
   }  
 }       
 template void updateElasticCauchyStressAnisotropic<Sacado::Fad::DFad<double>>

@@ -2319,15 +2319,16 @@ void computeGreenLagrangeStrain
 ScalarT strain[][3]
 )
 {
-  strain[0][0] = 0.5 * ( defGrad[0] * defGrad[0] + defGrad[3] * defGrad[3] + defGrad[6] * defGrad[6]  - 1.0 );
-  strain[0][1] = 0.5 * ( defGrad[0] * defGrad[1] + defGrad[3] * defGrad[4] + defGrad[6] * defGrad[7]  );
-  strain[0][2] = 0.5 * ( defGrad[0] * defGrad[2] + defGrad[3] * defGrad[5] + defGrad[6] * defGrad[8]  );
-  strain[1][0] = 0.5 * ( defGrad[0] * defGrad[1] + defGrad[3] * defGrad[4] + defGrad[6] * defGrad[7]  );
-  strain[1][1] = 0.5 * ( defGrad[1] * defGrad[1] + defGrad[4] * defGrad[4] + defGrad[7] * defGrad[7]  - 1.0 );
-  strain[1][2] = 0.5 * ( defGrad[1] * defGrad[2] + defGrad[4] * defGrad[5] + defGrad[7] * defGrad[8]  );
-  strain[2][0] = 0.5 * ( defGrad[0] * defGrad[2] + defGrad[3] * defGrad[5] + defGrad[6] * defGrad[8]  );
-  strain[2][1] = 0.5 * ( defGrad[1] * defGrad[2] + defGrad[4] * defGrad[5] + defGrad[7] * defGrad[8]  );
-  strain[2][2] = 0.5 * ( defGrad[2] * defGrad[2] + defGrad[5] * defGrad[5] + defGrad[8] * defGrad[8]  - 1.0 );
+
+  strain[0][0] = 0.5 * ( *(defGrad)   * *(defGrad)   + *(defGrad+3) * *(defGrad+3) + *(defGrad+6) * *(defGrad+6)  - 1.0 );
+  strain[0][1] = 0.5 * ( *(defGrad)   * *(defGrad+1) + *(defGrad+3) * *(defGrad+4) + *(defGrad+6) * *(defGrad+7)  );
+  strain[0][2] = 0.5 * ( *(defGrad)   * *(defGrad+2) + *(defGrad+3) * *(defGrad+5) + *(defGrad+6) * *(defGrad+8)  );
+  strain[1][0] = 0.5 * ( *(defGrad)   * *(defGrad+1) + *(defGrad+3) * *(defGrad+4) + *(defGrad+6) * *(defGrad+7)  );
+  strain[1][1] = 0.5 * ( *(defGrad+1) * *(defGrad+1) + *(defGrad+4) * *(defGrad+4) + *(defGrad+7) * *(defGrad+7)  - 1.0 );
+  strain[1][2] = 0.5 * ( *(defGrad+1) * *(defGrad+2) + *(defGrad+4) * *(defGrad+5) + *(defGrad+7) * *(defGrad+8)  );
+  strain[2][0] = 0.5 * ( *(defGrad)   * *(defGrad+2) + *(defGrad+3) * *(defGrad+5) + *(defGrad+6) * *(defGrad+8)  );
+  strain[2][1] = 0.5 * ( *(defGrad+1) * *(defGrad+2) + *(defGrad+4) * *(defGrad+5) + *(defGrad+7) * *(defGrad+8)  );
+  strain[2][2] = 0.5 * ( *(defGrad+2) * *(defGrad+2) + *(defGrad+5) * *(defGrad+5) + *(defGrad+8) * *(defGrad+8)  - 1.0 );
 }
 
 
