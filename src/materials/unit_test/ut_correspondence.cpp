@@ -84,17 +84,17 @@ TEUCHOS_UNIT_TEST(correspondence, updateElasticCauchyStressAnisotropicCode) {
      //   int type
     CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(B, Ctest, A, 0);
     
-    double C[] = {484,  2590, 3292, 
-                  2590, 1186, 3994, 
-                  3292, 2590, 1888};
+    double C[] =      { 468.0  ,3978.0, 3276.0,
+                        3978.0 ,1170.0, 2574.0,
+                        3276.0 ,2574.0, 1872.0,};
 
     for (n=0; n<9; n++){
 
             TEST_FLOATING_EQUALITY(C[n],Ctest[n],tolerance);
         
     }
-    double C2D[] = {123, 915, 0, 
-                    915, 387, 0, 
+    double C2D[] = {167, 1487, 0, 
+                    1487, 431., 0, 
                     0,   0,   0};   
     
     CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(B, Ctest, A, 1);
@@ -106,7 +106,7 @@ TEUCHOS_UNIT_TEST(correspondence, updateElasticCauchyStressAnisotropicCode) {
 }
 
 TEUCHOS_UNIT_TEST(correspondence, createRotationMatrix) {
-    const double tolerance = 1.0e-15;
+    const double tolerance = 2.0e-8;
         
     int m,n;
     double Btest[3][3];
