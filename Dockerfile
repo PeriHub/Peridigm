@@ -39,7 +39,7 @@ ENV LD_LIBRARY_PATH /usr/local/netcdf/lib
 ENV PATH /usr/local/peridigm/bin:$PATH
 ENV PATH /usr/local/trilinos/bin:$PATH
 
-# Allow mpirun as root
+# Allow mpirun as root, should only be used in container
 ENV OMPI_ALLOW_RUN_AS_ROOT 1
 ENV OMPI_ALLOW_RUN_AS_ROOT_CONFIRM 1
 

@@ -18,8 +18,6 @@ build_job:
   allow_failure: true
   stage: build
   image: docker
-  variables: 
-    CI_IMAGE: $CI_REGISTRY/hess_ja/pycodac/conda:latest
   # Add to get Docker-in-Docker capabilities
   services:
     - docker:dind
