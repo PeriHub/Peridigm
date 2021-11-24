@@ -39,6 +39,10 @@ ENV LD_LIBRARY_PATH /usr/local/netcdf/lib
 ENV PATH /usr/local/peridigm/bin:$PATH
 ENV PATH /usr/local/trilinos/bin:$PATH
 
+# Allow mpirun as root
+ENV OMPI_ALLOW_RUN_AS_ROOT 1
+ENV OMPI_ALLOW_RUN_AS_ROOT_CONFIRM 1
+
 RUN mkdir /var/run/sshd
 EXPOSE 22
 CMD    ["/usr/sbin/sshd", "-D"]
