@@ -17,65 +17,25 @@ stages:
 build_job:
   allow_failure: true
   stage: build
+  variables:
+    CI_REGISTRY_PATH: "registry.gitlab-test.dlr.de/hess_ja/images/"
   image: docker
   # Add to get Docker-in-Docker capabilities
   services:
     - docker:dind
-  script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker build -t peridigm .
-    - docker run peridigm /opt/cmake/bin/ctest -T Test --test-dir /peridigm/build || true
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+    - docker build -t ${CI_REGISTRY_PATH}peridigm_image .
+    - docker push ${CI_REGISTRY_PATH}peridigm_image
+    - docker run ${CI_REGISTRY_PATH}peridigm_image /opt/cmake/bin/ctest -T Test --test-dir /peridigm/build || true
     - CONTAINERNAME=$(docker ps -a --format "{{.Names}}")
     - docker cp $CONTAINERNAME:/peridigm/build/Testing Testing
+  after_script:
+    - docker logout
   artifacts:
     paths:
       - Testing
     expire_in: 1 day
-
-
-# build_job:
-#   tags:
-#     - wsl
-#   stage: build  
-#   # only:
-#   #   - tags
-#   script:
-#     - echo "building..."
-#     - mkdir build
-#     - cd build
-#     - echo $CI_PROJECT_DIR
-#     - cmake .. -D CMAKE_BUILD_TYPE:STRING=Release
-#       -D Trilinos_DIR:PATH=/usr/local/bin/trilinos/lib/cmake/Trilinos/
-#       -D CMAKE_C_COMPILER:STRING=/usr/local/lib/openmpi/bin/mpicc
-#       -D CMAKE_CXX_COMPILER:STRING=/usr/local/lib/openmpi/bin/mpicxx
-#       -D BOOST_ROOT=/usr/local/lib/boost/
-#       -D CMAKE_CXX_FLAGS:STRING="-O2 -Wall -std=c++11 -pedantic -Wno-long-long -ftrapv -Wno-deprecated"
-#     - cmake --build . -j 10
-#   artifacts:
-#     paths:
-#       - build
-#     expire_in: 1 day
-
-# test_job:
-#   tags:
-#     - wsl
-#   stage: test
-#   only:
-#     - tags
-#   before_script:
-#     - echo "testing..."
-#     - cd $CI_PROJECT_DIR/build
-#     - ctest -T Test
-#   script:
-#     - echo "testing finished"
-#   allow_failure: true
-#   artifacts:
-#     when: always
-#     paths:
-#       - build/Testing
-#     expire_in: 1 day
-#   dependencies:
-#     - build_job
 
 deploy_job:
   stage: deploy
