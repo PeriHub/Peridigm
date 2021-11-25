@@ -25,6 +25,7 @@ build_job:
     - docker:dind
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+  script:
     - docker build -t ${CI_REGISTRY_PATH}peridigm_image .
     - docker push ${CI_REGISTRY_PATH}peridigm_image
     - docker run ${CI_REGISTRY_PATH}peridigm_image /opt/cmake/bin/ctest -T Test --test-dir /peridigm/build || true
