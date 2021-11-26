@@ -15,6 +15,8 @@ stages:
   - deploy
 
 build_job:
+  only:
+    - tags
   allow_failure: true
   stage: build
   variables:
@@ -39,6 +41,8 @@ build_job:
     expire_in: 1 day
 
 deploy_job:
+  only:
+    - tags
   stage: deploy
   script:
     # - cd $CI_PROJECT_DIR/
