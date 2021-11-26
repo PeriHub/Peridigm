@@ -1,4 +1,4 @@
-//! \file user_material.cxx
+/*! \file ut_damageUtility.cpp */
 
 //@HEADER
 // ************************************************************************
@@ -43,65 +43,41 @@
 // Stewart A. Silling    sasilli@sandia.gov
 //
 // ************************************************************************
-//
-// funded by EMMA project reference
-// Licence agreement
-//
-// Christian Willberg    christian.willberg@dlr.de
 //@HEADER
 
-#include "user_material.h"
-#include <Sacado.hpp>
-namespace CORRESPONDENCE {
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+#include "Teuchos_UnitTestRepository.hpp"
+#include "damage_utilities.h"
 
-template<typename ScalarT>
-void userMaterial
-(
-const ScalarT* defGrad, 
-const ScalarT* stressN, 
-ScalarT* StressNP1, 
-const int nprops,
-const ScalarT props[],
-const double* angles,
-const int type,
-const double dt,
-const bool hencky
-)
+using namespace std;
+using namespace Teuchos;
+
+TEUCHOS_UNIT_TEST(ut_damage_utilities, calculateDamageIndex) {
+
+    int numOwnedPoints=2;
+    double totalDamageTest[2] = {0,0};
+    int ownedIDs[2]={0,1};
+    double totalDamage[2];
+    double bondDamageNP1[2] = {1,0};
+    double vol[6] = {1,1};
+    int neighborhoodList[4] = {1,1,1,0};
+
+    int n;
+
+    DAMAGE_UTILITIES::calculateDamageIndex(numOwnedPoints,ownedIDs,vol,neighborhoodList,bondDamageNP1, totalDamage);
+    
+    for (n=0; n<numOwnedPoints; n++)
+        {
+            TEST_FLOATING_EQUALITY(totalDamage[n],totalDamageTest[n],0);
+        }
+    
+    
+    
+}
+
+int main
+(int argc, char* argv[])
 {
-    *(StressNP1) = *(StressNP1);
-
-
+  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 }
- 
-/*template void userMaterial<Sacado::Fad::DFad<double>>
-(
-const Sacado::Fad::DFad<double>* defGrad, 
-const Sacado::Fad::DFad<double>* stressN, 
-Sacado::Fad::DFad<double>* StressNP1, 
-const int nprops,
-const Sacado::Fad::DFad<double> props[],
-const double* angles,
-const int type,
-const double dt,
-const bool hencky
-);*/
-template void userMaterial<double>
-(
-const double* defGrad, 
-const double* stressN, 
-double* StressNP1, 
-const int nprops,
-const double props[],
-const double* angles,
-const int type,
-const double dt,
-const bool hencky
-);
-
-
-
-
-
-}
-
-

@@ -303,6 +303,9 @@ const bool hencky
   ScalarT* strain = &strainVector[0];
  std::string logStrainErrorMessage = "**** Error:  elastic_correspondence ::updateElasticCauchyStressAnisotropic() failed to compute logStrain.\n";
   
+
+  //int defGradLogReturnCode(0);
+  bool rotation = false;
   for(int iID=0 ; iID<numPoints ; ++iID, 
         defGrad+=9, sigmaNP1+=9, angles+=3){
 
@@ -314,14 +317,14 @@ const bool hencky
           else{CORRESPONDENCE::computeGreenLagrangeStrain(defGrad,strain);}
           //https://www.continuummechanics.org/stressxforms.html
           // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
-          if (coordinateTrafo[iID]==true){
+          if (rotation){  
             MATRICES::tensorRotation(angles,strain,true,strain);
           }
 
           CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(strain, sigmaNP1, Cstiff, type);
           // rotation back
-          if (coordinateTrafo[iID]==true){
-            MATRICES::tensorRotation(angles,sigmaNP1,false,sigmaNP1);
+          if (rotation){  
+            MATRICES::tensorRotation(angles,strain,false,strain);
           }
 
         }

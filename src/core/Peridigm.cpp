@@ -306,7 +306,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     fluidPressureVFieldId            = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Fluid_Pressure_V");
     fluidFlowDensityFieldId          = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Flux_Density");
   }
-
+  nodeTypeFieldId                    = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR, PeridigmField::CONSTANT, "Node_Type");
   modelCoordinatesFieldId            = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::CONSTANT, "Model_Coordinates");
   anglesFieldId                      = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::CONSTANT, "Local_Angles");
   coordinatesFieldId                 = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Coordinates");
@@ -484,6 +484,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   // \todo Replace this with a query to the requested output fields, which is why we're forcing this allocation.
   auxiliaryFieldIds.push_back(modelCoordinatesFieldId);
   auxiliaryFieldIds.push_back(anglesFieldId);
+  auxiliaryFieldIds.push_back(nodeTypeFieldId);
   auxiliaryFieldIds.push_back(coordinatesFieldId);
   auxiliaryFieldIds.push_back(displacementFieldId);
   auxiliaryFieldIds.push_back(velocityFieldId);
@@ -562,6 +563,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     blockIt->importData(peridigmDiscretization->getHorizon(),    horizonFieldId,          PeridigmField::STEP_NONE, Insert);
     blockIt->importData(peridigmDiscretization->getCellVolume(), volumeFieldId,           PeridigmField::STEP_NONE, Insert);
     // Warning angles work only for text files and not for other discretizations
+    blockIt->importData(peridigmDiscretization->getNodeType(),   nodeTypeFieldId, PeridigmField::STEP_NONE, Insert);
     blockIt->importData(peridigmDiscretization->getPointAngle(),   anglesFieldId, PeridigmField::STEP_NONE, Insert);
     blockIt->importData(peridigmDiscretization->getInitialX(),   modelCoordinatesFieldId, PeridigmField::STEP_NONE, Insert);
     blockIt->importData(peridigmDiscretization->getInitialX(),   coordinatesFieldId,      PeridigmField::STEP_N,    Insert);

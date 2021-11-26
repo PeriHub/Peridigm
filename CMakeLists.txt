@@ -280,6 +280,7 @@ set(PDNEIGH_LIBS PdNeigh)
 set(UTILITIES_LIBS Utilities)
 set(PdMathUtilitiesLib PdMathUtilities)
 set(PdMaterialUtilitiesLib PdMaterialUtilities)
+set(FEMUtilitiesLib FEMUtilities)
 set(PdDamageUtilitiesLib PdDamageUtilities)
 # include for all directories
 # Collection of include and lib directories
@@ -302,6 +303,7 @@ ${CMAKE_SOURCE_DIR}/src/contact
 ${CMAKE_SOURCE_DIR}/src/math
 ${CMAKE_SOURCE_DIR}/src/materials
 ${CMAKE_SOURCE_DIR}/src/materials/umats
+${CMAKE_SOURCE_DIR}/src/materials/fem
 ${CMAKE_SOURCE_DIR}/src/damage
 ${CMAKE_SOURCE_DIR}/src/api
 )
@@ -318,6 +320,7 @@ set(DISCRETIZATION_DIR   ${CMAKE_SOURCE_DIR}/src/io/discretization)
 set(IO_DIR               ${CMAKE_SOURCE_DIR}/src/io)
 set(MATH_DIR             ${CMAKE_SOURCE_DIR}/src/math)
 set(MATERIALS_DIR        ${CMAKE_SOURCE_DIR}/src/materials)
+set(FEM_DIR              ${CMAKE_SOURCE_DIR}/src/materials/fem)
 set(DAMAGE_DIR           ${CMAKE_SOURCE_DIR}/src/damage)
 set(API_DIR              ${CMAKE_SOURCE_DIR}/src/api)
 set(MESH_OUTPUT_DIR      ${CMAKE_SOURCE_DIR}/src/io/mesh_output)
@@ -333,6 +336,7 @@ ${CONTACT_DIR}
 ${CORE_DIR}
 ${MATH_DIR}
 ${MATERIALS_DIR}
+${FEM_DIR}
 ${DAMAGE_DIR}
 ${API_DIR}
 ${QUICK_GRID_DIR}

@@ -1,4 +1,4 @@
-//! \file user_material.cxx
+//! \file FEM_ElasticMaterial.hpp
 
 //@HEADER
 // ************************************************************************
@@ -44,64 +44,49 @@
 //
 // ************************************************************************
 //
-// funded by EMMA project reference
+// funded by dfg project reference
 // Licence agreement
 //
 // Christian Willberg    christian.willberg@dlr.de
 //@HEADER
 
-#include "user_material.h"
-#include <Sacado.hpp>
-namespace CORRESPONDENCE {
+#ifndef FEM_ELASTICMATERIAL_HPP
+#define FEM_ELASTICMATERIAL_HPP
 
-template<typename ScalarT>
-void userMaterial
-(
-const ScalarT* defGrad, 
-const ScalarT* stressN, 
-ScalarT* StressNP1, 
-const int nprops,
-const ScalarT props[],
-const double* angles,
-const int type,
-const double dt,
-const bool hencky
-)
-{
-    *(StressNP1) = *(StressNP1);
+#include "Peridigm_FEM.hpp"
+namespace PeridigmNS {
 
+  class FEMElasticMaterial : public FEMMaterial{
+  public:
 
-}
- 
-/*template void userMaterial<Sacado::Fad::DFad<double>>
-(
-const Sacado::Fad::DFad<double>* defGrad, 
-const Sacado::Fad::DFad<double>* stressN, 
-Sacado::Fad::DFad<double>* StressNP1, 
-const int nprops,
-const Sacado::Fad::DFad<double> props[],
-const double* angles,
-const int type,
-const double dt,
-const bool hencky
-);*/
-template void userMaterial<double>
-(
-const double* defGrad, 
-const double* stressN, 
-double* StressNP1, 
-const int nprops,
-const double props[],
-const double* angles,
-const int type,
-const double dt,
-const bool hencky
-);
+	//! Constructor.
+    FEMElasticMaterial(const Teuchos::ParameterList & params);
+
+    //! Destructor.
+    virtual ~FEMElasticMaterial();
+
+    //! Return name of material type
+    virtual std::string Name() const { return("FEM Elastic Material"); }
+
+    //! Evaluate the Cauchy stress. --> call from Peridigm_CorrespondenceMaterial.cpp
+    virtual void initialize(const double dt, 
+                            const int numOwnedPoints, 
+                            const int* ownedIDs,
+                            const int* topology,
+                            PeridigmNS::DataManager& dataManager);
+    virtual void computeCauchyStress(const double* strain,                                                  
+                                     double* sigmaInt) const;
+    //! Returns the requested material property
+    //! A dummy method here.
+    virtual double lookupMaterialProperty(const std::string keyname) const {return 0.0;}
 
 
+  protected:
 
-
-
+    // field spec ids for all relevant data
+    double C[6][6];
+    int m_type;
+    };
 }
 
-
+#endif // FEM_ELASTICMATERIAL_HPP

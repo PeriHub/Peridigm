@@ -78,8 +78,10 @@ namespace PeridigmNS {
 
     //! Get initial positions
     virtual Teuchos::RCP<Epetra_Vector> getInitialX() const;
-   //! Get point angle
+    //! Get point angle
     virtual Teuchos::RCP<Epetra_Vector> getPointAngle() const;
+    //! Get node type
+    virtual Teuchos::RCP<Epetra_Vector> getNodeType() const;
     //! Get the horizon value for each point.
     virtual Teuchos::RCP<Epetra_Vector> getHorizon() const;
 
@@ -117,7 +119,6 @@ namespace PeridigmNS {
     virtual double getMaxElementDimension() const { return maxElementDimension; }
 
   private:
-
     //! Private to prohibit copying
     TextFileDiscretization(const TextFileDiscretization&);
 
@@ -125,8 +126,33 @@ namespace PeridigmNS {
     TextFileDiscretization& operator=(const TextFileDiscretization&);
 
     //! Creates a discretization object based on data read from a text file.
+    void getDiscretization(const std::string& textFileName,
+                           std::vector<double>& coordinates,
+                           std::vector<int>& blockIds,
+                           std::vector<double>& volumes,
+                           std::vector<double>& angles,
+                           std::vector<double>& nodeType);
+    //! Creates a discretization object based on data read from a text file.
+    //! With additional topology information which can be used for finite element analysis
+
+    void getFETopology(const std::string& textFileName,
+                       std::vector<double>& coordinates,
+                       std::vector<int>& blockIds,
+                       std::vector<double>& volumes,
+                       std::vector<double>& angles,
+                       std::vector<double>& horizon,
+                       std::vector<int>& elementTopo,
+                       std::vector<double>& nodeType,
+                       int& numFE);
     QUICKGRID::Data getDecomp(const std::string& textFileName,
+                              const std::string& topologyFileName,
                               const Teuchos::RCP<Teuchos::ParameterList>& params);
+    double get_max_dist(const std::vector<double>& coordinates, const double coorAvg[3], const std::vector<int>& topo);
+    inline double distance(double a1, double a2, double a3,
+                           double b1, double b2, double b3) const
+    {
+      return (sqrt((a1 - b1) * (a1 - b1) + (a2 - b2) * (a2 - b2) + (a3 - b3) * (a3 - b3)));
+    }
 
   protected:
 
@@ -168,6 +194,9 @@ namespace PeridigmNS {
     
     //! Vector containing the point angles
     Teuchos::RCP<Epetra_Vector> pointAngle;
+    
+    //! Vector containing the node type
+    Teuchos::RCP<Epetra_Vector> nodeType;
     
     //! Vector containing horizons
     Teuchos::RCP<Epetra_Vector> horizonForEachPoint;

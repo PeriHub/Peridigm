@@ -63,6 +63,7 @@ typedef struct Data {
   std::shared_ptr<int> myGlobalIDs;
   std::shared_ptr<double> myX;
   std::shared_ptr<double> myAngle;
+  std::shared_ptr<double> myNodeType;
   std::shared_ptr<double> cellVolume;
   std::shared_ptr<int> neighborhood;
   std::shared_ptr<int> neighborhoodPtr;
@@ -113,10 +114,12 @@ typedef struct {
    * as the cell volume of the master;
    *
    * myX: cell coordinates
-     
-     * myAngle: Point Angles
+   *
+   * myAngle: Point Angles
+   *
+   * myNodeType: node type (1-point; 2-Finite Element or given topology)
    */
-  std::shared_ptr<double> theta, cellVolume, myX, myAngle;
+  std::shared_ptr<double> theta, cellVolume, myX, myAngle, myNodeType;
 } AxisSymmetricWedgeData;
 
 

@@ -213,6 +213,49 @@ bool DiskFilter::bondIntersectsDisk(const double* p0, const double* p1) const {
   return false;
 }
 
+void PreDefinedTopologyFilter::filterBonds(std::vector<int> &treeList, const double* pt, const size_t ptLocalId, const double* xOverlap, bool* bondFlags)
+{
+  bool* flagIter = bondFlags;
+  int id = ptLocalId;
+  for (unsigned int p = 0; p < treeList.size(); p++, flagIter++)
+  {
+    // global id of point within neighborhood -> separation in local id is made after filtering
+    // this avoids the transfer of nodes to cores where they are not needed.
+    size_t uid = treeList[p];
+    // Set flag for bonds that will be excluded from the neighborlist
+    if (ptLocalId == uid && !includeSelf)
+    {
+      *flagIter = 1;
+      continue;
+    }
+    if (idNotInTopology(uid, id))
+    {
+      *flagIter = 1;
+    }
+  }
+}
+
+bool PreDefinedTopologyFilter::idNotInTopology(const int uid, const int id) const
+{
+  bool check = true;
+  // global how
+  if (mapping[id] != -1){
+
+    for (int i = 0; i < topoList[mapping[id]]; i++)
+    {
+      
+      if (uid == topoList[mapping[id] + i + 1])
+      {
+        check = false;
+        break;
+      }
+    }
+  }
+  else {check = false;}
+  
+  return check;
+}
+
 void TriangleFilter::filterBonds(std::vector<int>& treeList, const double *pt, const size_t ptLocalId, const double *xOverlap, bool *bondFlags) {
 
   const double *p0 = pt;

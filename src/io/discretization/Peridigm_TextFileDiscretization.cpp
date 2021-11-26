@@ -80,13 +80,17 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
   TEUCHOS_TEST_FOR_TERMINATION(params->get<string>("Type") != "Text File", "Invalid Type in TextFileDiscretization");
 
   string meshFileName = params->get<string>("Input Mesh File");
-  if(params->isParameter("Omit Bonds Between Blocks"))
+  string topologyFileName = "";
+
+  if (params->isParameter("Input FEM Topology File"))
+    topologyFileName = params->get<string>("Input FEM Topology File");
+  if (params->isParameter("Omit Bonds Between Blocks"))
     bondFilterCommand = params->get<string>("Omit Bonds Between Blocks");
 
   // Set up bond filters
   createBondFilters(params);
 
-  QUICKGRID::Data decomp = getDecomp(meshFileName, params);
+  QUICKGRID::Data decomp = getDecomp(meshFileName, topologyFileName, params);
 
   // \todo Refactor; the createMaps() call is currently inside getDecomp() due to order-of-operations issues with tracking element blocks.
   //createMaps(decomp);
@@ -97,9 +101,10 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
 
   // fill the x vector with the current positions (owned positions only)
   initialX = Teuchos::rcp(new Epetra_Vector(Copy, *threeDimensionalMap, decomp.myX.get()));
-  //
+  // fill with local coordinate distribution
   pointAngle = Teuchos::rcp(new Epetra_Vector(Copy, *threeDimensionalMap, decomp.myAngle.get()));
-  
+  // fill with point or element separation
+  nodeType = Teuchos::rcp(new Epetra_Vector(Copy, *oneDimensionalMap, decomp.myNodeType.get()));
   // Create the bondMap, a local map used for constitutive data stored on bonds.
   createBondMapAndCheckForZeroNeighbors(bondMap, oneDimensionalMap, neighborhoodData, numBonds, maxNumBondsPerElem);
 
@@ -126,18 +131,17 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
 
 PeridigmNS::TextFileDiscretization::~TextFileDiscretization() {}
 
+void PeridigmNS::TextFileDiscretization::getDiscretization(const string& textFileName,
+                                                           vector<double> &coordinates,
+                                                           vector<int> &blockIds,
+                                                           vector<double> &volumes,
+                                                           vector<double> &angles,
+                                                           vector<double> &nodeType
 
-QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& textFileName,
-                                                              const Teuchos::RCP<Teuchos::ParameterList>& params) {
-
-  // Read data from the text file
-  vector<double> coordinates;
-  vector<double> volumes;
-  vector<int> blockIds;
-  vector<double> angles;
-
-  // Read the text file on the root processor
-  if(myPID == 0){
+)
+{
+  if (myPID == 0)
+  {
     ifstream inFile(textFileName.c_str());
     TEUCHOS_TEST_FOR_TERMINATION(!inFile.is_open(), "**** Error opening discretization text file.\n");
     while(inFile.good()){
@@ -153,32 +157,60 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
              back_inserter<vector<double> >(data));
         // Check for obvious problems with the data
         // Adapt to coordinate system and without --> to check
-        string msg = "\n**** Error parsing text file, invalid line: " + str + "\n";
-        TEUCHOS_TEST_FOR_TERMINATION(data.size() != 5 && data.size() != 8, msg);
-        
+        if (data.size() != 5 && data.size() != 8)
+        {
+          string msg = "\n**** Error parsing text file, invalid line: " + str + "\n";
+          TEUCHOS_TEST_FOR_EXCEPT_MSG(data.size() != 5, msg);
+          TEUCHOS_TEST_FOR_EXCEPT_MSG(data.size() != 8, msg);
+        }
         bool anglesImport = false;
         if (data.size() == 8) anglesImport = true;
         // Store the coordinates, block id, volumes and angles
         coordinates.push_back(data[0]);
         coordinates.push_back(data[1]);
         coordinates.push_back(data[2]);
+        nodeType.push_back(1);
         blockIds.push_back(static_cast<int>(data[3]));
         volumes.push_back(data[4]);
         if (anglesImport == true){
-            angles.push_back(data[5]);
-            angles.push_back(data[6]);
-            angles.push_back(data[7]);
+          angles.push_back(data[5]);
+          angles.push_back(data[6]);
+          angles.push_back(data[7]);
         }
         else{
-            angles.push_back(0.0);
-            angles.push_back(0.0);
-            angles.push_back(0.0);
+          angles.push_back(0.0);
+          angles.push_back(0.0);
+          angles.push_back(0.0);
         }
-        
       }
     }
     inFile.close();
   }
+}
+
+QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& textFileName,
+                                                              const string& topologyFileName,
+                                                              const Teuchos::RCP<Teuchos::ParameterList>& params)
+{
+
+  // Read data from the text file
+  vector<double> coordinates;
+  vector<double> volumes;
+  vector<int> blockIds;
+  vector<double> angles;
+  vector<double> horizon_of_element;
+  vector<int> elementTopo;
+  vector<double> nodeType;
+  getDiscretization(textFileName, coordinates, blockIds, volumes, angles,nodeType);
+  int numFE = 0;
+  if (params->isParameter("Input FEM Topology File"))
+  {
+    getFETopology(topologyFileName, coordinates, blockIds, volumes, angles, horizon_of_element, elementTopo, nodeType, numFE);
+    
+    std::shared_ptr<PdBondFilter::BondFilter> bondFilter(new PdBondFilter::PreDefinedTopologyFilter(static_cast<int>(blockIds.size()), numFE, elementTopo));
+    bondFilters.push_back(bondFilter);
+  }
+  // Read the text file on the root processor
 
   int numElements = static_cast<int>(blockIds.size());
   TEUCHOS_TEST_FOR_TERMINATION(myPID == 0 && numElements < 1, "**** Error reading discretization text file, no data found.\n");
@@ -221,7 +253,9 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   memcpy(decomp.cellVolume.get(), &volumes[0], numElements*sizeof(double)); 
   memcpy(decomp.myX.get(), &coordinates[0], 3*numElements*sizeof(double));
   memcpy(decomp.myAngle.get(), &angles[0], 3*numElements*sizeof(double));
-                                                              
+  // double, because the datamanage won't allow int
+  memcpy(decomp.myNodeType.get(), &nodeType[0], numElements*sizeof(double));
+  
   // Create a blockID vector in the current configuration
   // That is, the configuration prior to load balancing
   Epetra_BlockMap tempOneDimensionalMap(decomp.globalNumPoints,
@@ -277,8 +311,10 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
     double constantHorizonValue(0.0);
     if(hasConstantHorizon)
       constantHorizonValue = horizonManager.getBlockConstantHorizonValue(blockName);
+    unsigned int numGlobalIDs = globalIds.size() - numFE;
 
-    for(unsigned int i=0 ; i<globalIds.size() ; ++i){
+    for(unsigned int i=0 ; i<numGlobalIDs ; ++i){
+
       int localId = rebalancedMap.LID(globalIds[i]);
       if(hasConstantHorizon){
         (*rebalancedHorizonForEachPoint)[localId] = constantHorizonValue;
@@ -289,6 +325,15 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
         double z = rebalancedX[localId*3 + 2];
         double horizon = horizonManager.evaluateHorizon(blockName, x, y, z);
         (*rebalancedHorizonForEachPoint)[localId] = horizon;
+      }
+    }
+
+    if (params->isParameter("Input FEM Topology File"))
+    {
+      for (int i = 0; i < numFE; ++i)
+      {
+        int localId = rebalancedMap.LID(globalIds[numGlobalIDs + i]);
+        (*rebalancedHorizonForEachPoint)[localId] = horizon_of_element[i];
       }
     }
   }
@@ -320,6 +365,114 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   horizonForEachPoint->Import(*rebalancedHorizonForEachPoint, horizonImporter, Insert);
 
   return decomp;
+}
+
+void PeridigmNS::TextFileDiscretization::getFETopology(const string& fileName,
+                                                       vector<double>& coordinates,
+                                                       vector<int>& blockIds,
+                                                       vector<double>& volumes,
+                                                       vector<double>& angles,
+                                                       vector<double>& horizon,
+                                                       vector<int>& elementTopo,
+                                                       vector<double>& nodeType,
+                                                       int& numFE)
+{
+
+  if (myPID == 0)
+  {
+    numFE = 0;
+    double coorAvg[3], angAvg[3], volAvg;
+    int numOfFiniteElements;
+    std::string testString = "";
+    
+    if (fileName.compare(testString) != 0)
+    {
+      ifstream inFile(fileName.c_str());
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(!inFile.is_open(), "**** Error opening topology text file.\n");
+      while (inFile.good())
+      {
+        // defines points as points
+        // this is needed to separate between virtual element points and real points
+ 
+        numOfFiniteElements += 1;
+        string str;
+        getline(inFile, str);
+        str = trim(str);
+        // Ignore comment lines, otherwise parse
+        if (!(str[0] == '#' || str[0] == '/' || str[0] == '*' || str.size() == 0))
+        {
+          istringstream iss(str);
+          vector<int> topo;
+          copy(istream_iterator<int>(iss),
+               istream_iterator<int>(),
+               back_inserter<vector<int>>(topo));
+
+          blockIds.push_back(topo[0]);
+          elementTopo.push_back(static_cast<int>(topo.size() - 1));
+          // lenDecompElementNodes += static_cast<int>(topo.size()) + 1;
+
+          /*
+          tbd if multiple element types could exist in one block
+          */
+          coorAvg[0] = 0;
+          coorAvg[1] = 0;
+          coorAvg[2] = 0;
+          angAvg[0] = 0;
+          angAvg[1] = 0;
+          angAvg[2] = 0;
+          volAvg = 0;
+          for (unsigned int n = 1; n < topo.size(); n++)
+          {
+            elementTopo.push_back(static_cast<int>(topo[n]));
+            coorAvg[0] += coordinates[3 * topo[n]];
+            coorAvg[1] += coordinates[3 * topo[n] + 1];
+            coorAvg[2] += coordinates[3 * topo[n] + 2];
+            angAvg[0] += angles[3 * topo[n]];
+            angAvg[1] += angles[3 * topo[n] + 1];
+            angAvg[2] += angles[3 * topo[n] + 2];
+            volAvg += volumes[topo[n]];
+          }
+
+          for (unsigned int i = 0; i < 3; i++)
+          {
+            coorAvg[i] /= (topo.size() - 1);
+            angAvg[i] /= (topo.size() - 1);
+          }
+          coordinates.push_back(coorAvg[0]);
+          coordinates.push_back(coorAvg[1]);
+          coordinates.push_back(coorAvg[2]);
+          nodeType.push_back(2); // defines FE Elements
+          angles.push_back(angAvg[0]);
+          angles.push_back(angAvg[1]);
+          angles.push_back(angAvg[2]);
+          horizon.push_back(get_max_dist(coordinates, coorAvg, topo));
+          volumes.push_back(volAvg / (topo.size() - 1));
+          numFE = numFE + 1;
+        }
+      }
+
+      inFile.close();
+    }
+    // bondfilteraufruf
+  }
+}
+double PeridigmNS::TextFileDiscretization::get_max_dist(const vector<double> &coordinates, const double coorAvg[3],
+                                                        const vector<int> &topo)
+{
+  double horizon = 0.0;
+  double dist = 0.0;
+  for (int n = 1; n < topo[0] + 1; n++)
+  {
+    dist = abs(distance(coorAvg[0], coorAvg[1], coorAvg[2],
+                        coordinates[3 * topo[n]], coordinates[3 * topo[n] + 1], coordinates[3 * topo[n] + 2]));
+    if (horizon < dist)
+      // adding on percent to avoid round off errors
+      // because the neighborhoodlist is later adapted it does not matter if
+      // there are some extra nodes
+      horizon = 1.01 * dist;
+  }
+
+  return horizon;
 }
 
 void
@@ -488,7 +641,11 @@ PeridigmNS::TextFileDiscretization::getPointAngle() const
 { 
   return pointAngle;
 }
-
+Teuchos::RCP<Epetra_Vector>
+PeridigmNS::TextFileDiscretization::getNodeType() const
+{
+  return nodeType;
+}
 Teuchos::RCP<Epetra_Vector>
 PeridigmNS::TextFileDiscretization::getHorizon() const
 {

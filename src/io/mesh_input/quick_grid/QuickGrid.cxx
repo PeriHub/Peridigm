@@ -173,9 +173,10 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
 
   // coordinates
   Array<double> X(numCells*dimension);
-    
-    // angles
+  // angles
   Array<double> Angles(numCells*dimension);
+  // node type
+  Array<double> NodeType(numCells);  
   // volume
   Array<double> V(numCells);
 
@@ -191,7 +192,8 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
 
   // Initialize all the above data to zero
   double *xPtr = X.get();
-    double *anglesPtr = Angles.get();
+  double *anglesPtr = Angles.get();
+  double *nodeTypePtr = NodeType.get();
   double *vPtr = V.get();
   int *gIdsPtr = globalIds.get();
   int *nPtr = neighborhoodPtr.get();
@@ -200,7 +202,8 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
 
     for(size_t d=0;d<dimension;d++){
       xPtr[p*dimension+d]=0;
-            anglesPtr[p*dimension+d]=0;}
+      anglesPtr[p*dimension+d]=0;}
+    nodeTypePtr[p]=0;
     vPtr[p]=0;
     gIdsPtr[p]=0;
     nPtr[p]=0;
@@ -236,6 +239,7 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
   gridData.myGlobalIDs = globalIds.get_shared_ptr();
   gridData.myX = X.get_shared_ptr();
   gridData.myAngle = Angles.get_shared_ptr();
+  gridData.myNodeType = NodeType.get_shared_ptr();
   gridData.cellVolume = V.get_shared_ptr();
   gridData.neighborhood = neighborhoodList.get_shared_ptr();
   gridData.neighborhoodPtr = neighborhoodPtr.get_shared_ptr();

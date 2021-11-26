@@ -43,6 +43,11 @@
 // Stewart A. Silling    sasilli@sandia.gov
 //
 // ************************************************************************
+//
+// funded by EMMA project reference
+// Licence agreement
+//
+// Christian Willberg    christian.willberg@dlr.de
 //@HEADER
 
 #include "Peridigm_UserCorrespondenceMaterial.hpp"

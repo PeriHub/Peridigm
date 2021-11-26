@@ -1,4 +1,4 @@
-/*! \file ut_elasticcorrespondence.cpp */
+/*! \file ut_correspondence.cpp */
 
 //@HEADER
 // ************************************************************************
@@ -53,7 +53,6 @@
 using namespace std;
 using namespace Teuchos;
 
-
 TEUCHOS_UNIT_TEST(correspondence, updateElasticCauchyStressAnisotropicCode) {
     const double tolerance = 1.0e-15;
     double A[6][6] ;
@@ -67,18 +66,17 @@ TEUCHOS_UNIT_TEST(correspondence, updateElasticCauchyStressAnisotropicCode) {
              }
      }   
 
-    
     std::vector<double> BVector(9);
     double* B = &BVector[0];
     std::vector<double> testVector(9);
     double* Ctest = &testVector[0];
 
     num = 9;
-    for (n=0; n<9; n++){
-        B[n] = num;
+    for (m=0; m<9; m++){
+        B[m] = num;
         num++;
-        }
-      
+             
+     }   
      //updateElasticCauchyStressAnisotropicCode
      //   const ScalarT strain[][3],
      //   ScalarT* sigmaNP1,

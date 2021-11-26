@@ -47,7 +47,6 @@
 
 #include "Peridigm_CorrespondenceMaterial.hpp"
 #include "Peridigm_Field.hpp"
-#include "elastic.h"
 #include "correspondence.h"
 #include "matrices.h"
 #include "Peridigm_DegreesOfFreedomManager.hpp"

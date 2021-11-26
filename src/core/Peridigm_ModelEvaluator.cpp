@@ -97,20 +97,23 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset, bool damage
     Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData = blockIt->getNeighborhoodData();
     const int numOwnedPoints = neighborhoodData->NumOwnedPoints();
     const int* ownedIDs = neighborhoodData->OwnedIDs();
-    const int* neighborhoodList = neighborhoodData->NeighborhoodList();
+    
     Teuchos::RCP<PeridigmNS::DataManager> dataManager = blockIt->getDataManager();
     Teuchos::RCP<const PeridigmNS::Material> materialModel = blockIt->getMaterialModel();
 
+    
+    const int* neighborhoodList = neighborhoodData->NeighborhoodList();
     materialModel->precompute(dt,
                               numOwnedPoints,
                               ownedIDs,
                               neighborhoodList,
                               *dataManager);
+    
   }
   PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Precompute");
 
   // ---- Synchronize data computed in precompute ----
- PeridigmNS::DataManagerSynchronizer::self().synchronizeDataAfterPrecompute(workset->blocks);
+  PeridigmNS::DataManagerSynchronizer::self().synchronizeDataAfterPrecompute(workset->blocks);
 
  // PeridigmNS::DataManagerSynchronizer::self().synchronizeDataAfterPrecompute(workset->blocks);
 
@@ -133,6 +136,7 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset, bool damage
     
     if(runEval){
       PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Compute Force");
+      const int* neighborhoodList = neighborhoodData->NeighborhoodList();
       materialModel->computeForce(dt,
                                   numOwnedPoints,
                                   ownedIDs,

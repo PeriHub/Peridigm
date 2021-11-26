@@ -1,4 +1,4 @@
-//! \file Peridigm_UserCorrespondenceMaterial.hpp
+//! \file Peridigm_FEM.hpp
 
 //@HEADER
 // ************************************************************************
@@ -44,67 +44,96 @@
 //
 // ************************************************************************
 //
-// funded by EMMA project reference
+// funded by dfg project reference
 // Licence agreement
 //
 // Christian Willberg    christian.willberg@dlr.de
 //@HEADER
 
-#ifndef PERIDIGM_USERCORRESPONDENCEMATERIAL_HPP
-#define PERIDIGM_USERCORRESPONDENCEMATERIAL_HPP
+#ifndef PERIDIGM_FEM_HPP
+#define PERIDIGM_FEM_HPP
 
-#include "Peridigm_CorrespondenceMaterial.hpp"
+#include "Peridigm_Material.hpp"
 
 namespace PeridigmNS {
 
-  class UserCorrespondenceMaterial : public CorrespondenceMaterial{
+  class FEMMaterial : public Material{
   public:
 
-	//! Constructor.
-    UserCorrespondenceMaterial(const Teuchos::ParameterList & params);
+    //! Constructor.
+    FEMMaterial(const Teuchos::ParameterList & params);
 
     //! Destructor.
-    virtual ~UserCorrespondenceMaterial();
+    virtual ~FEMMaterial();
 
     //! Return name of material type
-    virtual std::string Name() const { return("User Correspondence"); }
+    virtual std::string Name() const { return("FEM Base Class"); }
 
-    //! Evaluate the Cauchy stress. --> call from Peridigm_CorrespondenceMaterial.cpp
-    virtual void initialize(const double dt, 
-                            const int numOwnedPoints, 
+    //! Returns the density of the material.
+    virtual double Density() const { return m_density; }
+
+    //! Returns the bulk modulus of the material.
+    virtual double BulkModulus() const { return m_bulkModulus; }
+
+    //! Returns the shear modulus of the material.
+    virtual double ShearModulus() const { return m_shearModulus; }
+
+    //! Returns a vector of field IDs corresponding to the variables associated with the material.
+    virtual std::vector<int> FieldIds() const { return m_fieldIds; }
+
+    //! Initialize the material model.
+    virtual void initialize(const double dt,
+                            const int numOwnedPoints,
                             const int* ownedIDs,
                             const int* neighborhoodList,
                             PeridigmNS::DataManager& dataManager);
-    virtual void computeCauchyStress(const double dt,
-                                     const int numOwnedPoints,
-                                     PeridigmNS::DataManager& dataManager,
-                                     const double time) const;
-    //! Returns the requested material property
-    //! A dummy method here.
-    virtual double lookupMaterialProperty(const std::string keyname) const {return 0.0;}
 
-    bool *coorTrafo = new bool;
+    //! Evaluate the Cauchy stress (pure virtual function, must be implemented by derived correspondence material models).
+    virtual void computeCauchyStress(const double* strain,
+                                     double* stress) const = 0;
+
+    //! Evaluate the internal force.
+    virtual void computeForce(const double dt,
+                              const int numOwnedPoints,
+                              const int* ownedIDs,
+                              const int* neighborhoodList,
+                              PeridigmNS::DataManager& dataManager) const;
+//////////////////////////////////////////////////////////////////////////////////
+
+
   protected:
+    double m_density;
+    double m_bulkModulus;
+    double m_shearModulus;
+    int numInt;
+    int nnode;
+    std::vector<int> topologyVector;
+    int numElements;
+    double *Bx = new double;
+    double *By = new double;
+    double *Bz = new double;
 
+    double *weightVector  = new double;
     // field spec ids for all relevant data
-    // should be adapted in future release to the specific needs of properties
-    // is now set to 100 properties for one material
-    int nprops;
-    double *userProperties = new double;
-    int m_type;
-    int nstatev;
-    int *m_state = new int;
+    std::vector<int> m_fieldIds;
+
     int m_modelCoordinatesFieldId;
-    int m_deformationGradientFieldId;
+    int m_coordinatesFieldId;
+    int m_forceDensityFieldId;
     int m_cauchyStressFieldId;
-    int m_strainFieldId;
+    int m_unrotatedCauchyStressFieldId;
+    int m_partialStressFieldId;
     int m_modelAnglesId;
-    int m_flyingPointFlagFieldId;
-    int m_rotationTensorFieldId;
-    bool m_planeStrain;
-    bool m_planeStress;
-    std::string matName;
+    int m_type;
+    int m_displacementFieldId;
+    int m_deformationGradientFieldId;
+    int m_volumeFieldId;
+    int m_nodeTypeFieldId;
+    int order[3];
+    int numIntDir[3];
+    bool twoD;
+
   };
 }
 
-#endif // PERIDIGM_USERCORRESPONDENCEMATERIAL_HPP
+#endif // PERIDIGM_FEM_HPP

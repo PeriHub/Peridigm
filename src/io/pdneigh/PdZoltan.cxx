@@ -456,7 +456,8 @@ void zoltanQuery_pointSizeInBytes
    * What are we packing up?  For each point:
    * 1)  coordinates:  size = dimension*sizeof(double)
    * 1a) volume:       size = sizeof(double)
-     * 1b) angles:       size = dimension*sizeof(double)
+   * 1b) node type:    size = sizeof(double)
+   * 1c) angles:       size = dimension*sizeof(double)
    * 2)  numNeighbors: size = sizeof(int)
    * 3)  neighbors:    size = numNeighbors*sizeof(int)
    */
@@ -490,7 +491,9 @@ void zoltanQuery_pointSizeInBytes
     numBytesPerPoint += bytesPerDouble;
     // angles
     numBytesPerPoint += dimension*bytesPerDouble;
-        // numNeighbors
+    // node type
+    numBytesPerPoint += bytesPerDouble;
+    // numNeighbors
     numBytesPerPoint += bytesPerInt;
     // neighbor list
     numBytesPerPoint += numNeigh*bytesPerInt;
@@ -542,14 +545,15 @@ void zoltanQuery_packPointsMultiFunction
    * 1) coordinates and using one memcpy
    * 2) volume using one memcpy
      * 2a)angles and using one memcpy
+     * 2b)nodeType and using one memcpy
    * 3) numNeigh and neighbors using one memcpy
    */
   int dimension = gridData->dimension;
   double *X = gridData->myX.get();
   double *V = gridData->cellVolume.get();
   double *A = gridData->myAngle.get();
-  
-    int *neighborList = gridData->neighborhood.get();
+  double *N = gridData->myNodeType.get();
+  int *neighborList = gridData->neighborhood.get();
   int *neighborListPtr = gridData->neighborhoodPtr.get();
 
   // iterate over addresses and copy bytes
@@ -561,7 +565,10 @@ void zoltanQuery_packPointsMultiFunction
 
     ZOLTAN_ID_TYPE id = *localIdsPtr;
 
-    // Mark this point as exported
+    // Mark this point as exported 
+    // Order must be equal everywhere, where the memory allocation occur
+    // to avoid missmatches
+    ////
     exportFlagPtr[id]=1;
 
     char *tmp = &buf[*idxPtr];
@@ -580,10 +587,19 @@ void zoltanQuery_packPointsMultiFunction
 
     // advance buffer pointer
     tmp += numBytes;
+
     // point angle
     numBytes = dimension*sizeof(double);
     void *angPtr = (void*)(&A[dimension*id]);
     memcpy((void*)tmp,angPtr,numBytes);
+
+    // advance buffer pointer
+    tmp += numBytes;
+
+    // node type
+    numBytes = sizeof(double);
+    void *nodeTypePtr = (void*)(&N[id]);
+    memcpy((void*)tmp,nodeTypePtr,numBytes);  
 
     // advance buffer pointer
     tmp += numBytes;
@@ -655,12 +671,14 @@ void zoltanQuery_unPackPointsMultiFunction
   std::shared_ptr<double> newX = newGridData.myX;                         double *newXPtr   = newX.get();
   std::shared_ptr<double> newV = newGridData.cellVolume;                  double *newVPtr   = newV.get();
   std::shared_ptr<double> newA = newGridData.myAngle;                     double *newAPtr   = newA.get();
+  std::shared_ptr<double> newN = newGridData.myNodeType;                  double *newNPtr   = newN.get();
   std::shared_ptr<int> newGlobalIds = newGridData.myGlobalIDs;            int    *newIdsPtr = newGlobalIds.get();
   std::shared_ptr<int> newNeighborhoodPtr = newGridData.neighborhoodPtr;  int    *newNeighPtrPtr = newNeighborhoodPtr.get();
 
   std::shared_ptr<double> X = gridData->myX;                              double *xPtr   = X.get();
   std::shared_ptr<double> V = gridData->cellVolume;                       double *vPtr   = V.get();
-    std::shared_ptr<double> A = gridData->myAngle;                          double *aPtr   = A.get();
+  std::shared_ptr<double> A = gridData->myAngle;                          double *aPtr   = A.get();
+  std::shared_ptr<double> N = gridData->myNodeType;                       double *nPtr   = N.get();
   std::shared_ptr<int> globalIds = gridData->myGlobalIDs;                 int    *idsPtr = globalIds.get();
   std::shared_ptr<int> neighborhoodPtr = gridData->neighborhoodPtr;       int    *neighPtrPtr = neighborhoodPtr.get();
   std::shared_ptr<int> neighborhood = gridData->neighborhood;             int    *neighPtr = neighborhood.get();
@@ -671,7 +689,7 @@ void zoltanQuery_unPackPointsMultiFunction
   int newSizeNeighborhoodList = 0;
 
   // Copy over points from old gridData that have not been exported
-  for(size_t p=0;p<gridData->numPoints;p++, exportPtr++, neighPtrPtr++, vPtr++, idsPtr++){
+  for(size_t p=0;p<gridData->numPoints;p++, exportPtr++, neighPtrPtr++, nPtr++, vPtr++, idsPtr++){
     // this means we keep this point
     if(0==*exportPtr){
 
@@ -682,6 +700,10 @@ void zoltanQuery_unPackPointsMultiFunction
             }
       newXPtr+=dimension;
       newAPtr+=dimension;
+
+      // node type
+      *newNPtr = *nPtr;
+      newNPtr++;
 
       // volume
       *newVPtr = *vPtr;
@@ -762,6 +784,7 @@ void zoltanQuery_unPackPointsMultiFunction
     tmp += numBytes;
     newVPtr++;
     totalNumBytes -= numBytes;
+
     // angle
     numBytes = dimension*sizeof(double);
     memcpy((void*)newAPtr,(void*)tmp,numBytes);
@@ -769,6 +792,7 @@ void zoltanQuery_unPackPointsMultiFunction
     // 2) decrement number of bytes
     tmp += numBytes;
     newAPtr+=dimension;
+    
     /*
      * This is the remaining number of bytes in buffer for point
      * NOTE: totalNumBytes != (1+numNeigh)*sizeof(int) -- most of the
@@ -776,6 +800,15 @@ void zoltanQuery_unPackPointsMultiFunction
      * with extra bytes that ends up cause the memcpy below to do a bad
      * write
      */
+    totalNumBytes -= numBytes;
+
+    // node type
+    numBytes = sizeof(double);
+    memcpy((void*)newNPtr,(void*)tmp,numBytes);
+    // 1) advance buffer pointer and volume pointer
+    // 2) decrement number of bytes
+    tmp += numBytes;
+    newNPtr++;
     totalNumBytes -= numBytes;
 
     // tmp buffer now points to start of neighorhood list; extract number of neighbors
@@ -810,6 +843,7 @@ void zoltanQuery_unPackPointsMultiFunction
   gridData->myX = newX;
   gridData->cellVolume = newV;
   gridData->myAngle = newA;
+  gridData->myNodeType = newN;
   gridData->neighborhood = newNeighborhood.get_shared_ptr();
   gridData->neighborhoodPtr = newNeighborhoodPtr;
   gridData->exportFlag = newGridData.exportFlag;
@@ -840,9 +874,11 @@ int computeSizeNewNeighborhoodList(int initialValue, int numImport, int *idx, ch
 
     // coordinates
     int numBytes = dimension*sizeof(double);
+    // cell volume
+    numBytes += sizeof(double);
     // angles
     numBytes += dimension*sizeof(double);
-    // cell volume
+    // node type
     numBytes += sizeof(double);
     // move pointer
     tmp += numBytes;

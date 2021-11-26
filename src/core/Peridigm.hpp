@@ -529,6 +529,8 @@ namespace PeridigmNS {
     Teuchos::RCP<Epetra_Vector> piolaStressTimesInvShapeTensorZ;
     //! point angles
     Teuchos::RCP<Epetra_Vector> pointAngles;
+    //! point angles
+    Teuchos::RCP<Epetra_Vector> nodeType;
     //! Global vector for plastic model data
     Teuchos::RCP<Epetra_Vector> plasticModelVal;
     //! Global vector for concentration
@@ -669,6 +671,7 @@ namespace PeridigmNS {
     int volumeFieldId;
     int modelCoordinatesFieldId;
     int anglesFieldId;
+    int nodeTypeFieldId;
     int coordinatesFieldId;
     int displacementFieldId;
     int velocityFieldId;

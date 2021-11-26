@@ -30,6 +30,9 @@ file (GLOB mathHEADERS
 file (GLOB materialsHEADERS
   "${MATERIALS_DIR}/*.hpp"
 )
+file (GLOB FEMHEADERS
+  "${FEM_DIR}/*.hpp"
+)
 file (GLOB quickGridHEADERS
   "${QUICK_GRID_DIR}/*.h"
 )
@@ -50,6 +53,7 @@ set(Peridigm_HEADERS
     ${apiHEADERS}
     ${ioHEADERS}
     ${mathHEADERS}
+    ${FEMHEADERS}
     ${materialsHEADERS}
     ${quickGridHEADERS}
     ${utilitiesHEADERS}
@@ -82,7 +86,9 @@ file (GLOB ioSOURCES
 file (GLOB materialsSOURCES
   "${MATERIALS_DIR}/*.cpp"
 )
-
+file (GLOB FEMSOURCES
+  "${FEM_DIR}/*.cpp"
+)
 set(Peridigm_SOURCES
     ${COMPUTE_DIR}/compute_includes.hpp
     ${computeSOURCES}
@@ -93,6 +99,7 @@ set(Peridigm_SOURCES
     ${apiSOURCES}
     ${ioSOURCES}
     ${materialsSOURCES}
+    ${FEMSOURCES}
     ${IMPROVED_QUADRATURE_SOURCES}
 )
 
@@ -112,6 +119,7 @@ set(Peridigm_LINK_LIBRARIES
     ${REQUIRED_LIBS}
     ${IMPROVED_QUADRATURE_LIBS}
     ${PdDamageUtilitiesLib}
+    ${FEMUtilitiesLib}
 )
 
 add_executable(Peridigm ${CORE_DIR}/Peridigm_Main.cpp)
@@ -140,6 +148,7 @@ add_subdirectory (core/)
 add_subdirectory (io/)
 add_subdirectory (math/)
 add_subdirectory (materials/)
+add_subdirectory (materials/fem)
 add_subdirectory (damage/)
 
 IF (INSTALL_PERIDIGM)
@@ -155,7 +164,7 @@ IF (INSTALL_PERIDIGM)
     LIBRARY DESTINATION ${LIB_INSTALL_DIR}
     ARCHIVE DESTINATION ${LIB_INSTALL_DIR})
   FILE(WRITE "${CMAKE_BINARY_DIR}/peridigm-targets.cmake"
-    "set(Peridigm_LIBRARIES ${Peridigm_LIBRARY} ${PDNEIGH_LIBS} ${MESH_INPUT_LIBS} ${UTILITIES_LIBS} ${PdMaterialUtilitiesLib} ${PdDamageUtilitiesLib})")
+    "set(Peridigm_LIBRARIES ${Peridigm_LIBRARY} ${PDNEIGH_LIBS} ${MESH_INPUT_LIBS} ${UTILITIES_LIBS} ${PdMaterialUtilitiesLib} ${PdDamageUtilitiesLib} ${FEMUtilitiesLib})")
   FILE(INSTALL "${CMAKE_BINARY_DIR}/peridigm-targets.cmake"
     DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIB_INSTALL_DIR}/Peridigm/cmake)
 ENDIF ()

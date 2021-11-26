@@ -88,7 +88,7 @@ void updateElasticPerfectlyPlasticCauchyStress
   ScalarT* eqpsNP1 = equivalentPlasticStrainNP1;
 
   //ScalarT strainInc[9];
-  ScalarT deviatoricStrainInc[9];
+  // ScalarT deviatoricStrainInc[9];
   ScalarT elasticStress[9];
   ScalarT deviatoricStressN[9];
   ScalarT deviatoricStressMagnitudeN;

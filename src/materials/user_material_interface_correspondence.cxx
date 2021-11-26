@@ -40,6 +40,11 @@
 // Christian Willberg christian.willberg@dlr.de
 //
 // ************************************************************************
+//
+// funded by EMMA project reference
+// Licence agreement
+//
+// Christian Willberg    christian.willberg@dlr.de
 //@HEADER
 
 #include "user_material_interface_correspondence.h"
@@ -47,7 +52,7 @@
 #include "matrices.h"
 #include <Sacado.hpp>
 #include <string>
-
+#include "matrices.h"
 namespace CORRESPONDENCE {
 
 

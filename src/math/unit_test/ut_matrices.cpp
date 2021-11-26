@@ -252,9 +252,77 @@ TEUCHOS_UNIT_TEST(matrices, Invert2by2Matrix) {
     *(A+3)=0;
     *(A+4)=0;
 
-    b = MATRICES::Invert3by3Matrix(A,determinant,Ctest);
+    b = MATRICES::Invert3by3Matrix(A,determinant,Ctest);	
     TEST_EQUALITY(b,1)
+}
 
+TEUCHOS_UNIT_TEST(correspondence, createRotationMatrix) {
+    const double tolerance = 2.0e-8;
+        
+    int n;
+
+    double A[3];
+
+    std::vector<double> BtestVec(9);
+    double* Btest = &BtestVec[0];
+    
+
+    // x-rotation
+    A[0] = 14;A[1] = 0;A[2] = 0;
+    MATRICES::createRotationMatrix(A,Btest);
+    
+    double Bx[9] = {1,  0, 0, 0, 0.97029573, -0.2419219, 0, 0.2419219, 0.97029573};
+
+    for (n=0; n<9; n++){
+        TEST_FLOATING_EQUALITY(Bx[n],Btest[n],tolerance);             
+    }
+    // x-rotation
+    A[0] = 0;A[1] = 70;A[2] = 0;
+    MATRICES::createRotationMatrix(A,Btest);
+    
+    double By[9] = {0.34202014, 0, 0.93969262, 0, 1, 0, -0.93969262, 0, 0.34202014};
+
+    for (n=0; n<9; n++){
+        TEST_FLOATING_EQUALITY(By[n],Btest[n],tolerance);        
+    }
+    // z-rotation
+    A[0] = 0;A[1] = 0;A[2] = 30;
+    MATRICES::createRotationMatrix(A,Btest);
+    
+    double Bz[9] = {0.8660254, -0.5, 0, 0.5, 0.8660254, 0, 0, 0, 1};
+
+    for (n=0; n<9; n++){
+        TEST_FLOATING_EQUALITY(Bz[n],Btest[n],tolerance);        
+    }
+}
+
+TEUCHOS_UNIT_TEST(matrices, setToZero) {
+
+    std::vector<double> AVector(9);
+    double* A = &AVector[0];
+    
+    *(A)=1;
+    *(A+1)=4;
+    *(A+2)=7;
+    *(A+3)=2;
+    *(A+4)=5;
+    *(A+5)=8;
+    *(A+6)=3;
+    *(A+7)=6;
+    *(A+8)=9;
+    MATRICES::setToZero(A,3);
+    for (int n=0; n<3; n++)
+    {
+        TEST_FLOATING_EQUALITY(*(A+n),0,0);
+    }
+    MATRICES::setToZero(&A[6],3);
+    for (int n=0; n<3; n++)
+    {
+        TEST_FLOATING_EQUALITY(*(A+6+n),0,0);
+    }
+    TEST_FLOATING_EQUALITY(*(A+3),2,0);
+    TEST_FLOATING_EQUALITY(*(A+4),5,0);
+    TEST_FLOATING_EQUALITY(*(A+5),8,0);
 }
 
 TEUCHOS_UNIT_TEST(matrices, TransposeMatrix) {
@@ -315,7 +383,58 @@ TEUCHOS_UNIT_TEST(matrices, MatrixMultiply3x3) {
             TEST_FLOATING_EQUALITY(Ctest[n][m],C[n][m],0);
         }
 }
+		
+TEUCHOS_UNIT_TEST(matrices, MatrixMultiply3x3toVector) {
 
+    double A[3][3];
+    double B[3][3];
+    double C[9] = {30, 36, 42, 66, 81, 96,102, 126, 150};
+    std::vector<double> testVector(9);
+    double* Ctest = &testVector[0];
+    int n, m, x;
+    x=1;
+
+    for (n=0; n<3; n++)
+        for (m=0; m<3; m++)
+        {
+            A[n][m]=x;
+            B[n][m]=x;
+            x++;
+        }
+
+    MATRICES::MatrixMultiply3x3toVector(A,B,Ctest);
+    for (n=0; n<9; n++){
+            TEST_FLOATING_EQUALITY(Ctest[n],C[n],0);
+        }
+}
+
+TEUCHOS_UNIT_TEST(matrices, MatrixMultiply3x3fromVector) {
+
+    double A[3][3];
+    double C[3][3] = {{30, 36, 42},
+                     {66, 81, 96},
+                     {102, 126, 150}};
+    std::vector<double> BVector(9);
+    double* B = &BVector[0];
+    double Ctest[3][3];
+    int n, m, x;
+    x=1;
+
+    for (n=0; n<3; n++){
+        for (m=0; m<3; m++)
+        {
+            A[n][m]=x;
+            B[x-1]=x;
+            x++;
+        }
+    }
+    MATRICES::MatrixMultiply3x3fromVector(A,B,Ctest);
+    for (n=0; n<3; n++){
+        for (m=0; m<3; m++){
+            TEST_FLOATING_EQUALITY(Ctest[n][m],C[n][m],0);
+        }
+        }
+}
 
 TEUCHOS_UNIT_TEST(matrices, MatrixMultiply) {
 

@@ -58,16 +58,19 @@ class NeighborhoodData {
 public:
 
   NeighborhoodData()
-    : numOwnedPoints(0), ownedIDs(0), neighborhoodListSize(0), neighborhoodList(0), neighborhoodPtr(0) {}
+    : numOwnedPoints(0), ownedIDs(0), neighborhoodListSize(0), neighborhoodList(0), neighborhoodPtr(0), topologyListSize(0), topology(0), topologyPtr(0) {}
 
   NeighborhoodData(const NeighborhoodData& other)
-    : numOwnedPoints(0), ownedIDs(0), neighborhoodListSize(0), neighborhoodList(0), neighborhoodPtr(0)
+    : numOwnedPoints(0), numOwnedElements(0), ownedIDs(0), neighborhoodListSize(0), neighborhoodList(0), neighborhoodPtr(0), topologyListSize(0), topology(0), topologyPtr(0)
   {
     SetNumOwned(other.NumOwnedPoints());
+    SetElementsOwned(other.NumOwnedPoints());
     SetNeighborhoodListSize(other.NeighborhoodListSize());
     memcpy(ownedIDs, other.ownedIDs, numOwnedPoints*sizeof(int));
     memcpy(neighborhoodPtr, other.neighborhoodPtr, numOwnedPoints*sizeof(int));
     memcpy(neighborhoodList, other.neighborhoodList, neighborhoodListSize*sizeof(int));
+    memcpy(topologyPtr, other.topologyPtr, numOwnedElements*sizeof(int));
+    memcpy(topology, other.topology, topologyListSize*sizeof(int));
   }
 
   ~NeighborhoodData(){
@@ -77,6 +80,10 @@ public:
     delete[] neighborhoodList;
   if(neighborhoodPtr != 0)
     delete[] neighborhoodPtr;
+  if(topology != 0)
+    delete[] topology;
+  if(topologyPtr != 0)
+    delete[] topologyPtr;
   }
 
   void SetNumOwned(int numOwned){
@@ -89,6 +96,12 @@ public:
   neighborhoodPtr = new int[numOwned];
   }
 
+ void SetElementsOwned(int elOwned){
+  if(topologyPtr != 0)
+    delete[] topologyPtr;
+  topologyPtr = new int[elOwned];
+  }
+
   void SetNeighborhoodListSize(int neighborhoodSize){
   neighborhoodListSize = neighborhoodSize;
   if(neighborhoodList != 0)
@@ -96,8 +109,19 @@ public:
   neighborhoodList = new int[neighborhoodListSize];
   }
 
+  void SetTopologyListSize(int sizeTopology){
+  topologyListSize = sizeTopology;
+  if(neighborhoodList != 0)
+    delete[] topology;
+  topology = new int[topologyListSize];
+  }
+
   int NumOwnedPoints() const{
     return numOwnedPoints;
+  }
+  
+  int NumOwnedElements() const{
+    return numOwnedElements;
   }
 
   int* OwnedIDs() const{
@@ -108,14 +132,26 @@ public:
     return neighborhoodPtr;
   }
 
+  int* TopologyPtr() const{
+    return topologyPtr;
+  }
+
   int NeighborhoodListSize() const{
     return neighborhoodListSize;
+  }
+
+  int TopologyListSize() const{
+    return topologyListSize;
   }
 
   int* NeighborhoodList() const{
     return neighborhoodList;
   }
 
+  int* Topology() const{
+    return topology;
+  }
+// memory element
   double memorySize() const{
     int sizeInBytes =
       (2*numOwnedPoints + neighborhoodListSize + 2)*sizeof(int) + 3*sizeof(int*);
@@ -140,11 +176,16 @@ public:
   }
 
 protected:
+  
   int numOwnedPoints;
+  int numOwnedElements;
   int* ownedIDs;
   int neighborhoodListSize;
   int* neighborhoodList;
   int* neighborhoodPtr;
+  int topologyListSize;
+  int* topology;
+  int* topologyPtr;
 };
 
 }
