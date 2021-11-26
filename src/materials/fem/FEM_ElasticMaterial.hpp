@@ -1,4 +1,5 @@
-//! \file matrices.h
+//! \file FEM_ElasticMaterial.hpp
+
 //@HEADER
 // ************************************************************************
 //
@@ -42,93 +43,59 @@
 // Stewart A. Silling    sasilli@sandia.gov
 //
 // ************************************************************************
-// Author of this Routine
-// Jan-Timo Hesse   Jan-Timo.Hesse@dlr.de
-// German Aerospace Center
+//
+// funded by dfg project reference
+// Licence agreement
+//
+// Christian Willberg    christian.willberg@dlr.de
 //@HEADER
-#ifndef MATRICES_H
-#define MATRICES_H
+
+#ifndef FEM_ELASTICMATERIAL_HPP
+#define FEM_ELASTICMATERIAL_HPP
 
 
-namespace MATRICES {
+namespace PeridigmNS {
 
-//! Invert a single 2-by-2 matrix; returns zero of successful, one if not successful (e.g., singular matrix).
-template<typename ScalarT>
-int Invert2by2Matrix
-(
-const ScalarT* matrix,
-ScalarT& determinant,
-ScalarT* inverse
-);
+  class ElasticLinearCorrespondenceMaterial : public CorrespondenceMaterial{
+  public:
 
-//! Invert a single 3-by-3 matrix; returns zero of successful, one if not successful (e.g., singular matrix).
-template<typename ScalarT>
-int Invert3by3Matrix
-(
-const ScalarT* matrix,
-ScalarT& determinant,
-ScalarT* inverse
-);
+	//! Constructor.
+    ElasticLinearCorrespondenceMaterial(const Teuchos::ParameterList & params);
 
-//! Inner product of two 3-by-3 matrices.
-template<typename ScalarT>
-void MatrixMultiply
-(
-bool transA,
-bool transB,
-ScalarT alpha,
-const ScalarT* a,
-const ScalarT* b,
-ScalarT* result
-);
+    //! Destructor.
+    virtual ~ElasticLinearCorrespondenceMaterial();
 
-template<typename ScalarT>
-void MatrixMultiply3x3
-(
-const ScalarT A[][3],
-const ScalarT B[][3],
-ScalarT C[][3]
-);
+    //! Return name of material type
+    virtual std::string Name() const { return("FEM Elastic Material"); }
 
-template<typename ScalarT>
-void MatrixMultiply3x3fromVector
-(
- const ScalarT  A[][3],
- const ScalarT* B,
- ScalarT C[][3]
-);
+    //! Evaluate the Cauchy stress. --> call from Peridigm_CorrespondenceMaterial.cpp
+    virtual void initialize(const double dt, 
+                            const int numOwnedPoints, 
+                            const int* ownedIDs,
+                            const int* neighborhoodList,
+                            PeridigmNS::DataManager& dataManager);
+    virtual void computeCauchyStress(const double dt,
+                                     const int numOwnedPoints,
+                                     const int* neighborhoodList,
+                                     PeridigmNS::DataManager& dataManager) const;
+    //! Returns the requested material property
+    //! A dummy method here.
+    virtual double lookupMaterialProperty(const std::string keyname) const {return 0.0;}
 
-template<typename ScalarT>
-void MatrixMultiply3x3toVector
-(
- const ScalarT A[][3],
- const ScalarT B[][3],
- ScalarT* C
-);
 
-template<typename ScalarT>
-void MatMul
-(
-int n,
-const ScalarT A[][6],
-const ScalarT B[][6],
-ScalarT C[][6],
-bool transpose
-);
+  protected:
 
-template<typename ScalarT>
-void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints);
-
-template<typename ScalarT>
-void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints);
-
-//! Transpose matrix; if both arguments are the same pointer then the matrix is transposed in place.
-template<typename ScalarT>
-void TransposeMatrix
-(
-const ScalarT* matrix,
-ScalarT* transpose
- );
-
+    // field spec ids for all relevant data
+    double C[6][6];
+    int m_type;
+    int m_stabilizationType;
+    int m_modelAnglesId;
+        
+    int m_deformationGradientFieldId;
+    int m_cauchyStressFieldId;
+    bool m_incremental;
+    bool m_hencky;
+  };
 }
-#endif // MATRICES_H
+
+#endif // FEM_ELASTICMATERIAL_HPP

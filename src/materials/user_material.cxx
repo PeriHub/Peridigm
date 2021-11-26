@@ -37,9 +37,17 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions?
-// Christian Willberg christian.willberg@dlr.de
+// David J. Littlewood   djlittl@sandia.gov
+// John A. Mitchell      jamitch@sandia.gov
+// Michael L. Parks      mlparks@sandia.gov
+// Stewart A. Silling    sasilli@sandia.gov
 //
 // ************************************************************************
+//
+// funded by EMMA project reference
+// Licence agreement
+//
+// Christian Willberg    christian.willberg@dlr.de
 //@HEADER
 
 #include "user_material.h"

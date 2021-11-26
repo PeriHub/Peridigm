@@ -1,3 +1,6 @@
+#
+# Add subdirectories
+#
 add_subdirectory (unit_test)
 
 # Collection of libs that we need to link with

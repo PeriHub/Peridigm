@@ -1,4 +1,5 @@
-//! \file matrices.h
+//! \file elastic_FEM.h
+
 //@HEADER
 // ************************************************************************
 //
@@ -40,95 +41,36 @@
 // John A. Mitchell      jamitch@sandia.gov
 // Michael L. Parks      mlparks@sandia.gov
 // Stewart A. Silling    sasilli@sandia.gov
-//
 // ************************************************************************
-// Author of this Routine
-// Jan-Timo Hesse   Jan-Timo.Hesse@dlr.de
-// German Aerospace Center
+//
+// funded by dfg project reference
+// Licence agreement
+//
+// Christian Willberg    christian.willberg@dlr.de
 //@HEADER
-#ifndef MATRICES_H
-#define MATRICES_H
+
+#ifndef ELASTICFEM_H
+#define ELASTICFEM_H
+
+namespace FEM {
 
 
-namespace MATRICES {
 
-//! Invert a single 2-by-2 matrix; returns zero of successful, one if not successful (e.g., singular matrix).
 template<typename ScalarT>
-int Invert2by2Matrix
+void updateElasticCauchyStressFEM
 (
-const ScalarT* matrix,
-ScalarT& determinant,
-ScalarT* inverse
+ScalarT* DeformationGradient, 
+ScalarT* unrotatedCauchyStressN, 
+ScalarT* unrotatedCauchyStressNP1, 
+int numPoints, 
+const ScalarT Cstiff[][6],
+double* angles,
+int type,
+double dt,
+bool incremental,
+bool hencky
 );
-
-//! Invert a single 3-by-3 matrix; returns zero of successful, one if not successful (e.g., singular matrix).
-template<typename ScalarT>
-int Invert3by3Matrix
-(
-const ScalarT* matrix,
-ScalarT& determinant,
-ScalarT* inverse
-);
-
-//! Inner product of two 3-by-3 matrices.
-template<typename ScalarT>
-void MatrixMultiply
-(
-bool transA,
-bool transB,
-ScalarT alpha,
-const ScalarT* a,
-const ScalarT* b,
-ScalarT* result
-);
-
-template<typename ScalarT>
-void MatrixMultiply3x3
-(
-const ScalarT A[][3],
-const ScalarT B[][3],
-ScalarT C[][3]
-);
-
-template<typename ScalarT>
-void MatrixMultiply3x3fromVector
-(
- const ScalarT  A[][3],
- const ScalarT* B,
- ScalarT C[][3]
-);
-
-template<typename ScalarT>
-void MatrixMultiply3x3toVector
-(
- const ScalarT A[][3],
- const ScalarT B[][3],
- ScalarT* C
-);
-
-template<typename ScalarT>
-void MatMul
-(
-int n,
-const ScalarT A[][6],
-const ScalarT B[][6],
-ScalarT C[][6],
-bool transpose
-);
-
-template<typename ScalarT>
-void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints);
-
-template<typename ScalarT>
-void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints);
-
-//! Transpose matrix; if both arguments are the same pointer then the matrix is transposed in place.
-template<typename ScalarT>
-void TransposeMatrix
-(
-const ScalarT* matrix,
-ScalarT* transpose
- );
 
 }
-#endif // MATRICES_H
+
+#endif // ELASTICFEM_H

@@ -1,4 +1,5 @@
-//! \file matrices.h
+//! \file FEM_routines.h
+
 //@HEADER
 // ************************************************************************
 //
@@ -40,95 +41,131 @@
 // John A. Mitchell      jamitch@sandia.gov
 // Michael L. Parks      mlparks@sandia.gov
 // Stewart A. Silling    sasilli@sandia.gov
-//
 // ************************************************************************
-// Author of this Routine
-// Jan-Timo Hesse   Jan-Timo.Hesse@dlr.de
-// German Aerospace Center
+//
+// funded by dfg project reference
+// Licence agreement
+//
+// Christian Willberg    christian.willberg@dlr.de
 //@HEADER
-#ifndef MATRICES_H
-#define MATRICES_H
+
+#ifndef ELASTICFEM_H
+#define ELASTICFEM_H
+
+namespace FEM {
 
 
-namespace MATRICES {
 
-//! Invert a single 2-by-2 matrix; returns zero of successful, one if not successful (e.g., singular matrix).
 template<typename ScalarT>
-int Invert2by2Matrix
+void updateElasticCauchyStressFEM
 (
-const ScalarT* matrix,
-ScalarT& determinant,
-ScalarT* inverse
+ScalarT* DeformationGradient, 
+ScalarT* unrotatedCauchyStressN, 
+ScalarT* unrotatedCauchyStressNP1, 
+int numPoints, 
+const ScalarT Cstiff[][6],
+double* angles,
+int type,
+double dt,
+bool incremental,
+bool hencky
+);
+void shapeFunctionsLagrangeRecursive
+(
+    double* N, 
+    const int order, 
+    const double elCoor
 );
 
-//! Invert a single 3-by-3 matrix; returns zero of successful, one if not successful (e.g., singular matrix).
-template<typename ScalarT>
-int Invert3by3Matrix
+void computeStrain
 (
-const ScalarT* matrix,
-ScalarT& determinant,
-ScalarT* inverse
+const double B[6][],
+const double* u, 
+const int dof,
+double strain[6]
 );
 
-//! Inner product of two 3-by-3 matrices.
-template<typename ScalarT>
-void MatrixMultiply
+
+void BMatrixLagrange
 (
-bool transA,
-bool transB,
-ScalarT alpha,
-const ScalarT* a,
-const ScalarT* b,
-ScalarT* result
+double* Bmatrix, 
+const int order, 
+const double elCoor[3],
+const double* coor
+);
+void derivativeShapeFunctionsLagrangeRecursive
+(
+    double* B, 
+    const double* N,
+    const int order,
+    const double* xi,
+    const double elCoor
+);
+void getLagrangeElementData
+(
+const int order[3], 
+const double elCoorx,
+const double elCoory,
+const double elCoorz,
+double* Nxi,
+double* Neta,
+double* Npsi,
+double* Bxi,
+double* Beta,
+double* Bpsi
+);
+void defineLagrangianGridSpace
+(
+const int order,
+double* xi
+);
+
+void shapeFunctionsLagrange
+(
+double* Nmatrix, 
+const int order[3], 
+const double elCoor[3]
+);
+
+void weightsAndIntegrationPoints
+(
+const int order, 
+double* elCoor,
+double* weights
+);
+
+
+template<typename ScalarT>
+void getNodelForce
+(
+ScalarT* DeformationGradient, 
+ScalarT* unrotatedCauchyStressN, 
+ScalarT* unrotatedCauchyStressNP1, 
+int numPoints, 
+const ScalarT Cstiff[][6],
+double* angles,
+int type,
+double dt,
+bool incremental,
+bool hencky
 );
 
 template<typename ScalarT>
-void MatrixMultiply3x3
+void computeStrain
 (
-const ScalarT A[][3],
-const ScalarT B[][3],
-ScalarT C[][3]
+ScalarT* DeformationGradient, 
+ScalarT* unrotatedCauchyStressN, 
+ScalarT* unrotatedCauchyStressNP1, 
+int numPoints, 
+const ScalarT Cstiff[][6],
+double* angles,
+int type,
+double dt,
+bool incremental,
+bool hencky
 );
 
-template<typename ScalarT>
-void MatrixMultiply3x3fromVector
-(
- const ScalarT  A[][3],
- const ScalarT* B,
- ScalarT C[][3]
-);
-
-template<typename ScalarT>
-void MatrixMultiply3x3toVector
-(
- const ScalarT A[][3],
- const ScalarT B[][3],
- ScalarT* C
-);
-
-template<typename ScalarT>
-void MatMul
-(
-int n,
-const ScalarT A[][6],
-const ScalarT B[][6],
-ScalarT C[][6],
-bool transpose
-);
-
-template<typename ScalarT>
-void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints);
-
-template<typename ScalarT>
-void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints);
-
-//! Transpose matrix; if both arguments are the same pointer then the matrix is transposed in place.
-template<typename ScalarT>
-void TransposeMatrix
-(
-const ScalarT* matrix,
-ScalarT* transpose
- );
 
 }
-#endif // MATRICES_H
+
+#endif // ELASTICFEM_H

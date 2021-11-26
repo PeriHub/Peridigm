@@ -43,6 +43,11 @@
 // Stewart A. Silling    sasilli@sandia.gov
 //
 // ************************************************************************
+//
+// funded by EMMA project reference
+// Licence agreement
+//
+// Christian Willberg    christian.willberg@dlr.de
 //@HEADER
 #ifndef USER_MATERIAL_H
 #define USER_MATERIAL_H

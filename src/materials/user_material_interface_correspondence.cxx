@@ -40,6 +40,11 @@
 // Christian Willberg christian.willberg@dlr.de
 //
 // ************************************************************************
+//
+// funded by EMMA project reference
+// Licence agreement
+//
+// Christian Willberg    christian.willberg@dlr.de
 //@HEADER
 
 #include "user_material_interface_correspondence.h"

@@ -1,4 +1,5 @@
-//! \file matrices.h
+/*! \file ut_damageUtility.cpp */
+
 //@HEADER
 // ************************************************************************
 //
@@ -42,93 +43,41 @@
 // Stewart A. Silling    sasilli@sandia.gov
 //
 // ************************************************************************
-// Author of this Routine
-// Jan-Timo Hesse   Jan-Timo.Hesse@dlr.de
-// German Aerospace Center
 //@HEADER
-#ifndef MATRICES_H
-#define MATRICES_H
 
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+#include "Teuchos_UnitTestRepository.hpp"
+#include "damage_utilities.h"
 
-namespace MATRICES {
+using namespace std;
+using namespace Teuchos;
 
-//! Invert a single 2-by-2 matrix; returns zero of successful, one if not successful (e.g., singular matrix).
-template<typename ScalarT>
-int Invert2by2Matrix
-(
-const ScalarT* matrix,
-ScalarT& determinant,
-ScalarT* inverse
-);
+TEUCHOS_UNIT_TEST(ut_damage_utilities, calculateDamageIndex) {
 
-//! Invert a single 3-by-3 matrix; returns zero of successful, one if not successful (e.g., singular matrix).
-template<typename ScalarT>
-int Invert3by3Matrix
-(
-const ScalarT* matrix,
-ScalarT& determinant,
-ScalarT* inverse
-);
+    int numOwnedPoints=2;
+    double totalDamageTest[2] = {0,0};
+    int ownedIDs[2]={0,1};
+    double totalDamage[2];
+    double bondDamageNP1[2] = {1,0};
+    double vol[6] = {1,1};
+    int neighborhoodList[4] = {1,1,1,0};
 
-//! Inner product of two 3-by-3 matrices.
-template<typename ScalarT>
-void MatrixMultiply
-(
-bool transA,
-bool transB,
-ScalarT alpha,
-const ScalarT* a,
-const ScalarT* b,
-ScalarT* result
-);
+    int n;
 
-template<typename ScalarT>
-void MatrixMultiply3x3
-(
-const ScalarT A[][3],
-const ScalarT B[][3],
-ScalarT C[][3]
-);
-
-template<typename ScalarT>
-void MatrixMultiply3x3fromVector
-(
- const ScalarT  A[][3],
- const ScalarT* B,
- ScalarT C[][3]
-);
-
-template<typename ScalarT>
-void MatrixMultiply3x3toVector
-(
- const ScalarT A[][3],
- const ScalarT B[][3],
- ScalarT* C
-);
-
-template<typename ScalarT>
-void MatMul
-(
-int n,
-const ScalarT A[][6],
-const ScalarT B[][6],
-ScalarT C[][6],
-bool transpose
-);
-
-template<typename ScalarT>
-void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints);
-
-template<typename ScalarT>
-void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints);
-
-//! Transpose matrix; if both arguments are the same pointer then the matrix is transposed in place.
-template<typename ScalarT>
-void TransposeMatrix
-(
-const ScalarT* matrix,
-ScalarT* transpose
- );
-
+    DAMAGE_UTILITIES::calculateDamageIndex(numOwnedPoints,ownedIDs,vol,neighborhoodList,bondDamageNP1, totalDamage);
+    
+    for (n=0; n<numOwnedPoints; n++)
+        {
+            TEST_FLOATING_EQUALITY(totalDamage[n],totalDamageTest[n],0);
+        }
+    
+    
+    
 }
-#endif // MATRICES_H
+
+int main
+(int argc, char* argv[])
+{
+  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+}
