@@ -54,8 +54,6 @@
 
 namespace FEM {
 
-
-
 template<typename ScalarT>
 void updateElasticCauchyStressFEM
 (
@@ -72,19 +70,11 @@ bool hencky
 );
 void shapeFunctionsLagrangeRecursive
 (
-    double* N, 
-    const int order, 
-    const double elCoor
+double* N, 
+const int order, 
+const double* xi,
+const double elCoor
 );
-
-void computeStrain
-(
-const double B[6][],
-const double* u, 
-const int dof,
-double strain[6]
-);
-
 
 void BMatrixLagrange
 (
@@ -95,11 +85,11 @@ const double* coor
 );
 void derivativeShapeFunctionsLagrangeRecursive
 (
-    double* B, 
-    const double* N,
-    const int order,
-    const double* xi,
-    const double elCoor
+double* B, 
+const double* N,
+const int order,
+const double* xi,
+const double elCoor
 );
 void getLagrangeElementData
 (
@@ -164,8 +154,27 @@ double dt,
 bool incremental,
 bool hencky
 );
-
-
+void computeStrain
+(
+const double B[][6],
+const double* u, 
+const int dof,
+double strain[6]
+);
+void Jacobian
+(
+const double* Nxi,
+const double* Neta,
+const double* Npsi,
+const double* Bxi,
+const double* Beta,
+const double* Bpsi,
+const int nELnodes, 
+const double* coor,
+double* J,
+double* Jinv,
+double detJ
+);
 }
 
 #endif // ELASTICFEM_H

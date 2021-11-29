@@ -30,6 +30,9 @@ file (GLOB mathHEADERS
 file (GLOB materialsHEADERS
   "${MATERIALS_DIR}/*.hpp"
 )
+file (GLOB FEMHEADERS
+  "${FEM_DIR}/*.hpp"
+)
 file (GLOB quickGridHEADERS
   "${QUICK_GRID_DIR}/*.h"
 )
@@ -144,6 +147,7 @@ add_subdirectory (core/)
 add_subdirectory (io/)
 add_subdirectory (math/)
 add_subdirectory (materials/)
+add_subdirectory (materials/fem)
 add_subdirectory (damage/)
 
 IF (INSTALL_PERIDIGM)

@@ -54,7 +54,7 @@
 #include <Sacado.hpp>
 #include <math.h>
 #include <cmath> 
-
+#include "FEM_routines.h"
 //#include <Teuchos_Assert.hpp>
 //#include <Epetra_SerialComm.h>
 
@@ -105,9 +105,9 @@ else
 void getLagrangeElementData
 (
 const int order[3], 
-const double* elCoorx,
-const double* elCoory,
-const double* elCoorz,
+const double elCoorx,
+const double elCoory,
+const double elCoorz,
 double* Nxi,
 double* Neta,
 double* Npsi,
@@ -122,46 +122,41 @@ double* Bpsi
 // coor is added later --> issue
 // testcase
 //Eq 9.12 Zienkiewicz
-    std::vector<double> xiVector(order[0]+1), etaVector(order[1]+1), psiVector(order[2]+1);
-    double* xi = &xiVector[0], eta = &xiVector[0], psi = &xiVector[0];
+    std::vector<double> xiVector(order[0]+1);
+    double* xi = &xiVector[0];
+    std::vector<double> etaVector(order[1]+1);
+    double* eta = &etaVector[0];
+    std::vector<double> psiVector(order[2]+1);
+    double* psi = &psiVector[0];
     FEM::defineLagrangianGridSpace(order[0], xi);
     FEM::defineLagrangianGridSpace(order[1], eta);
     FEM::defineLagrangianGridSpace(order[2], psi);
-    FEM::shapeFunctionsLagrangeRecursive(Nxi,  order[0],xi, elCoorx);
-    FEM::shapeFunctionsLagrangeRecursive(Neta, order[1],eta,elCoory);
-    FEM::shapeFunctionsLagrangeRecursive(Npsi, order[2],psi,elCoorz);
-    FEM::derivativeShapeFunctionsLagrangeRecursive(Bxi,  Nxi,  order[0], xi, elCoorx);
-    FEM::derivativeShapeFunctionsLagrangeRecursive(Beta, Neta, order[1], eta,elCoory);
-    FEM::derivativeShapeFunctionsLagrangeRecursive(Bpsi, Npsi, order[2], psi,elCoorz);
+    FEM::shapeFunctionsLagrangeRecursive(Nxi,  order[0], xi, elCoorx);
+    FEM::shapeFunctionsLagrangeRecursive(Neta, order[1], eta,elCoory);
+    FEM::shapeFunctionsLagrangeRecursive(Npsi, order[2], psi,elCoorz);
+    //FEM::derivativeShapeFunctionsLagrangeRecursive(Bxi,  Nxi,  order[0], xi, elCoorx);
+    //FEM::derivativeShapeFunctionsLagrangeRecursive(Beta, Neta, order[1], eta,elCoory);
+    //FEM::derivativeShapeFunctionsLagrangeRecursive(Bpsi, Npsi, order[2], psi,elCoorz);
 
 }
 
 void createBMatrix
 (
 const int order[3], 
-const double elCoor[3]
+const double elCoor[3],
 double* Nmatrix,
 double* Bmatrix
 )
 {
-    std::vector<double> xiVector(order[0]+1), etaVector(order[1]+1), psiVector(order[2]+1);
-    double* xi = &xiVector[0], eta = &xiVector[0], psi = &xiVector[0];
-    std::vector<double> NxiVector(order[0]+1), NetaVector(order[1]+1), NpsiVector(order[2]+1);
-    double* Nxi = &xiVector[0], Neta = &xiVector[0], Npsi = &xiVector[0];
-    std::vector<double> BxiVector(order[0]+1), BetaVector(order[1]+1), BpsiVector(order[2]+1);
-    double* Bxi = &xiVector[0], Beta = &xiVector[0], Bpsi = &xiVector[0];
-    FEM::getLagrangeElementData()
+   // std::vector<double> xiVector(order[0]+1), etaVector(order[1]+1), psiVector(order[2]+1);
+   // double* xi = &xiVector[0], eta = &xiVector[0], psi = &xiVector[0];
+   // std::vector<double> NxiVector(order[0]+1), NetaVector(order[1]+1), NpsiVector(order[2]+1);
+   // double* Nxi = &xiVector[0], Neta = &xiVector[0], Npsi = &xiVector[0];
+   // std::vector<double> BxiVector(order[0]+1), BetaVector(order[1]+1), BpsiVector(order[2]+1);
+   // double* Bxi = &xiVector[0], Beta = &xiVector[0], Bpsi = &xiVector[0];
+    //FEM::getLagrangeElementData()
 }
 
-void shapeFunctionsLagrangeRecursive
-    (
-        double* N, 
-        const int order, 
-        const double* xi,
-        const double elCoor
-    )
-
-}
 
 void defineLagrangianGridSpace
 (
@@ -194,6 +189,7 @@ void derivativeShapeFunctionsLagrangeRecursive
                 B[k] = 1.0/(elCoor-xi[i])*N[k];
             }
         }
+    }
 }
 
 void Jacobian
@@ -205,34 +201,35 @@ void Jacobian
     const double* Beta,
     const double* Bpsi,
     const int nELnodes, 
-    const double coor,
-    double J[3][3],
-    double Jinv[3][3],
+    const double* coor,
+    double* J,
+    double* Jinv,
     double detJ
 )
-{// EQ. 9.11 - 9.12 The finite element method. The Basis (2000) Zienkievicz, Taylor
-    for(int i=0;k<nELnodes+1;i++){
-        J[0][0] += Bxi[i]*Neta[i]*Npsi[i]*coor[3*i];
-        J[0][1] += Bxi[i]*Neta[i]*Npsi[i]*coor[3*i];
-        J[0][2] += Bxi[i]*Neta[i]*Npsi[i]*coor[3*i];
-        J[1][0] += Nxi[i]*Beta[i]*Npsi[i]*coor[3*i+1];
-        J[1][1] += Nxi[i]*Beta[i]*Npsi[i]*coor[3*i+1];
-        J[1][2] += Nxi[i]*Beta[i]*Npsi[i]*coor[3*i+1];
-        J[2][0] += Nxi[i]*Neta[i]*Bpsi[i]*coor[3*i+2];
-        J[2][1] += Nxi[i]*Neta[i]*Bpsi[i]*coor[3*i+2];
-        J[2][2] += Nxi[i]*Neta[i]*Bpsi[i]*coor[3*i+2];
+{
+    // EQ. 9.11 - 9.12 The finite element method. The Basis (2000) Zienkievicz, Taylor
+    for(int i=0;i<nELnodes+1;i++){
+        *(J)   += Bxi[i]*Neta[i]*Npsi[i]*coor[3*i];
+        *(J+1) += Bxi[i]*Neta[i]*Npsi[i]*coor[3*i];
+        *(J+2) += Bxi[i]*Neta[i]*Npsi[i]*coor[3*i];
+        *(J+3) += Nxi[i]*Beta[i]*Npsi[i]*coor[3*i+1];
+        *(J+4) += Nxi[i]*Beta[i]*Npsi[i]*coor[3*i+1];
+        *(J+5) += Nxi[i]*Beta[i]*Npsi[i]*coor[3*i+1];
+        *(J+6) += Nxi[i]*Neta[i]*Bpsi[i]*coor[3*i+2];
+        *(J+7) += Nxi[i]*Neta[i]*Bpsi[i]*coor[3*i+2];
+        *(J+8) += Nxi[i]*Neta[i]*Bpsi[i]*coor[3*i+2];
     }
         
-    MATRICES::Invert3by3Matrix(J, detJ, Jinv)
+    int returnCode = MATRICES::Invert3by3Matrix(J, detJ, Jinv);
 }
 
 void shapeFunctionsLagrangeRecursive
-    (
-        double* N, 
-        const int order, 
-        const double* xi,
-        const double elCoor
-    )
+(
+    double* N, 
+    const int order, 
+    const double* xi,
+    const double elCoor
+)
 {
 
     for(int k=0;k<order+1;k++){
@@ -268,7 +265,7 @@ const double elCoor[3]
 }
 void computeStrain
 (
-const double B[6][],
+const double B[][6],
 const double* u, 
 const int dof,
 double strain[6]
@@ -277,7 +274,7 @@ double strain[6]
     for (int iID = 0; iID < 6; ++iID){
         strain[iID] = 0.0;
         for(int jID=0 ; jID < dof ; ++jID){
-            strain[iID] += B[iID][jID] * u[jID];
+            strain[iID] += B[jID][iID] * u[jID];
         }
     }
 }

@@ -16,6 +16,8 @@ stages:
 
 build_job:
   allow_failure: true
+  only:
+    - tags 
   stage: build
   variables:
     CI_REGISTRY_PATH: "registry.gitlab-test.dlr.de/hess_ja/images/"
@@ -40,6 +42,8 @@ build_job:
 
 deploy_job:
   stage: deploy
+  only:
+    - tags 
   script:
     # - cd $CI_PROJECT_DIR/
     - apk add libxslt

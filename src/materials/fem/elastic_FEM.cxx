@@ -51,6 +51,7 @@
 //@HEADER
 
 #include "elastic_correspondence.h"
+#include "elastic_FEM.h"
 #include "correspondence.h"
 #include "matrices.h"
 #include "material_utilities.h"
@@ -123,14 +124,14 @@ int order[3]
   
 
   
-  int dof = 3*(order[0]+1)*(order[1]+1)*(order[2]+1);  
-  int numNeigh = *neighPtr; neighPtr++;
-  for(int n=0;n<numNeigh;n++,neighPtr++){
-              int localId = *neighPtr;
-              elNodalCoor = &nodalCoor[localId]
-              FEM::getJacobian(elNodalCoor,Nxi,Neta,Npsi,Bxi,Beta,Bpsi)
+ // int dof = 3*(order[0]+1)*(order[1]+1)*(order[2]+1);  
+ // int numNeigh = *neighPtr; neighPtr++;
+ // for(int n=0;n<numNeigh;n++,neighPtr++){
+ //             int localId = *neighPtr;
+ //             elNodalCoor = &nodalCoor[localId];
+ //             FEM::getJacobian(elNodalCoor,Nxi,Neta,Npsi,Bxi,Beta,Bpsi)}
     for(int iID=0 ; iID<numEL ; ++iID, 
-          defGrad+=9, sigmaNP1+=9, angles+=3){
+          sigmaNP1+=9, angles+=3){
             //for (int k=0...)
             //disp(k) = dispGlob(iID, k);
 
@@ -163,13 +164,13 @@ int order[3]
               
               //sigmaNP1 += sigmaInt;
 
-            }
+            //}
             // gemittelte Spannungen
             // sigmaNP1 /= numInt;
             //globForce(topo) += force; ??
-          }
+          //}
 
-}
+//}
 
 template void updateElasticCauchyStressFEM<Sacado::Fad::DFad<double>>
 (

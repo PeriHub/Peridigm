@@ -140,6 +140,34 @@ TEUCHOS_UNIT_TEST(FEM, shapeFunctionsLagrange) {
 
 }
 
+TEUCHOS_UNIT_TEST(FEM, defineLagrangianGridSpace) {
+    const double tolerance = 1.0e-15;
+    std::vector<double> BTestVector(6);
+    double* BTest = &BTestVector[0];
+    double B[6];
+    int A;
+    A = 1;
+    FEM::defineLagrangianGridSpace(A, BTest);
+    B[0] = -1;
+    B[1] =  1;
+    for (int n=0; n<A+1; n++){
+        TEST_FLOATING_EQUALITY(B[n],BTest[n],tolerance);
+    }
+    A = 5;
+    B[0] = -1;
+    B[1] = -0.6;
+    B[2] = -0.2;
+    B[3] = 0.2;
+    B[4] = 0.6;
+    B[5] =  1;
+    FEM::defineLagrangianGridSpace(A, BTest);
+    for (int n=0; n<A+1; n++){
+        TEST_FLOATING_EQUALITY(B[n],BTest[n],tolerance);
+    }
+}
+
+
+
 int main
 (int argc, char* argv[])
 {
