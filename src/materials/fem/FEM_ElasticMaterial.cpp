@@ -60,11 +60,17 @@ PeridigmNS::FEMElasticMaterial::FEMElasticMaterial(const Teuchos::ParameterList&
   : FEM(params),
     m_modelAnglesId(-1),
     m_deformationGradientFieldId(-1),
-    m_cauchyStressFieldId(-1)
+    m_cauchyStressFieldId(-1),
+    m_displacementFieldId(-1)
 {
   bool m_planeStrain = false, m_planeStress = false;
   m_type = 0;
   m_density = params.get<double>("Density");
+  order[0] = params.get<int>("Order");
+  order[1] = params.get<int>("Order");
+  order[2] = params.get<int>("Order");
+  if (params.isParameter("Order_Y")) order[1] = params.get<int>("Order_Y");
+  if (params.isParameter("Order_Z")) order[2] = params.get<int>("Order_Z");
   if (params.isParameter("Plane Strain")){
     m_planeStrain = params.get<bool>("Plane Strain");
     }
@@ -73,14 +79,7 @@ PeridigmNS::FEMElasticMaterial::FEMElasticMaterial(const Teuchos::ParameterList&
     }
   if (m_planeStrain==true)m_type=1;
   if (m_planeStress==true)m_type=2;
-  m_incremental = false;
-    if (params.isParameter("Incremental")){
-        m_incremental = params.get<bool>("Incremental");
-    }
-  m_hencky = false;
-  if (params.isParameter("Hencky Strain")){
-      m_hencky = params.get<bool>("Hencky Strain");
-  }
+
  
   double C11=0.0, C44=0.0, C55=0.0, C66=0.0, C12=0.0, C13=0.0, C14=0.0, C15=0.0, C16=0.0, C22=0.0, C33=0.0;
   double  C23=0.0, C24=0.0, C25=0.0, C26=0.0, C34=0.0, C35=0.0, C36=0.0, C45=0.0, C46=0.0, C56=0.0;
@@ -201,11 +200,13 @@ PeridigmNS::FEMElasticMaterial::FEMElasticMaterial(const Teuchos::ParameterList&
 
   m_cauchyStressFieldId                 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Unrotated_Cauchy_Stress");
   m_modelCoordinatesFieldId             = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR,      PeridigmField::CONSTANT, "Model_Coordinates");
+  m_displacementFieldId                 = fieldManager.getFieldId(PeridigmField::NODE   , PeridigmField::VECTOR, PeridigmField::TWO_STEP     , "Displacements");
   m_coordinatesFieldId                  = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR,      PeridigmField::TWO_STEP, "Coordinates");
   m_modelAnglesId                       = fieldManager.getFieldId(PeridigmField::NODE   , PeridigmField::VECTOR, PeridigmField::CONSTANT     , "Local_Angles");
   
   m_fieldIds.push_back(m_cauchyStressFieldId);
   m_fieldIds.push_back(m_modelCoordinatesFieldId);
+  m_fieldIds.push_back(m_displacementFieldId);
   m_fieldIds.push_back(m_coordinatesFieldId);
   m_fieldIds.push_back(m_modelAnglesId);
 
@@ -240,29 +241,32 @@ PeridigmNS::FEMElasticMaterial::computeCauchyStress(const double dt,
 
   
 
-  double *CauchyStressNP1, *defGrad, *angles;
+  double *CauchyStressNP1, *coor, *angles, *displacements, *deformedCoor;
  
 
   dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&CauchyStressNP1);
-  dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NP1)->ExtractView(&defGrad);
-  dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
 
-  FEM::elasticFEM(defGrad, 
-                                            CauchyStress,
-                                            CauchyStressNP1,
-                                            numOwnedPoints,
-                                            C,
-                                            angles,
-                                            m_type,
-                                            dt,
-                                            incremental,
-                                            m_hencky); // --> ruft updateElasticCauchyStressAnisotropicCode auf
+  dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
+  dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&coor);
+  dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&deformedCoor);
+  dataManager.getData(m_displacementFieldId, PeridigmField::STEP_NP1)->ExtractView(&displacements);
+  
+  FEM::getDisplacements(numOwnedPoints,coor,deformedCoor,displacements);
+  int numElements;
+  int *elementNodalList;
+  FEM::elasticFEM(coor, 
+                  displacements,
+                  CauchyStressNP1,
+                  numElements,
+                  elementNodalList
+                  C,
+                  angles,
+                  m_type,
+                  dt,
+                  order); // --> ruft updateElasticCauchyStressAnisotropicCode auf
                                             
                                             
-                                            
-    if (m_incremental == true){
-        std::cout<<"please choose elastic correspondence. incremental not implemented yet for anisotropic material"<<std::endl;
-    }                                        
+                                     
                                             
                                            
 }

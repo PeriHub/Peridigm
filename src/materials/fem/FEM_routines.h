@@ -49,8 +49,8 @@
 // Christian Willberg    christian.willberg@dlr.de
 //@HEADER
 
-#ifndef ELASTICFEM_H
-#define ELASTICFEM_H
+#ifndef FEMROUTINES_H
+#define FEMROUTINES_H
 
 namespace FEM {
 
@@ -175,6 +175,24 @@ double* J,
 double* Jinv,
 double detJ
 );
+void getDisplacements
+(
+    int numOwnedPoints,
+    const double* modelCoordinates,
+    const double* coordinatesNP1,
+    double* displacements
+);
+void BMatrixData
+(
+    const int order[3],
+    double* Nxi,
+    double* Neta,
+    double* Npsi,
+    double* Bxi,
+    double* Beta,
+    double* Bpsi,
+    double B[][6]
+);
 }
 
-#endif // ELASTICFEM_H
+#endif // FEMROUTINES_H

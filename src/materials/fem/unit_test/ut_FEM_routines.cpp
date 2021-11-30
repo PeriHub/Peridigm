@@ -97,9 +97,7 @@ TEUCHOS_UNIT_TEST(FEM, weightsAndIntegrationPoints) {
                 TEST_FLOATING_EQUALITY(elCoor[n],elCoorTest[n],tolerance);
                 TEST_FLOATING_EQUALITY(weights[n],weightsTest[n],tolerance);
         }
-    }
-
-    
+    } 
 
 }
 TEUCHOS_UNIT_TEST(FEM, shapeFunctionsLagrange) {
@@ -134,9 +132,7 @@ TEUCHOS_UNIT_TEST(FEM, shapeFunctionsLagrange) {
                 }
 
         }
-    
-
-    
+ 
 
 }
 

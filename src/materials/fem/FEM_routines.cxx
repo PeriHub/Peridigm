@@ -99,8 +99,34 @@ else
 }
 
 }
-
-
+void BMatrixData
+(
+    const int order[3],
+    double* Nxi,
+    double* Neta,
+    double* Npsi,
+    double* Bxi,
+    double* Beta,
+    double* Bpsi,
+    double B[][6]
+)
+{
+    int pos = 0;
+    for(int k=0;k<order[2];++k){
+        for(int j=0;j<order[1];++j){
+            for(int i=0;i<order[0];++i){
+                B[pos][0]   = Bxi[i]*Neta[j]*Npsi[k]; B[pos+1][0] = 0.0; B[pos+2][0] = 0.0;
+                B[pos][1]   = 0.0; B[pos+1][0] = Nxi[i]*Beta[j]*Npsi[k]; B[pos+2][0] = 0.0;
+                B[pos][2]   = 0.0; B[pos+1][0] = 0.0; B[pos][0] = Nxi[i]*Neta[j]*Bpsi[k];
+                
+                B[pos][3]   = Nxi[i]*Beta[j]*Npsi[k]; B[pos+1][0] = Bxi[i]*Neta[j]*Npsi[k]; B[pos+2][0] = 0.0;
+                B[pos][4]   = 0.0; B[pos][0] = Nxi[i]*Neta[j]*Bpsi[k]; B[pos+2][0] = Nxi[i]*Beta[j]*Npsi[k];
+                B[pos][5]   = Nxi[i]*Neta[j]*Bpsi[k]; B[pos+1][0] = 0.0; B[pos+2][0] = Bxi[i]*Neta[j]*Npsi[k];
+                pos += 3;
+            }
+        }
+}
+}
 
 void getLagrangeElementData
 (
@@ -134,9 +160,9 @@ double* Bpsi
     FEM::shapeFunctionsLagrangeRecursive(Nxi,  order[0], xi, elCoorx);
     FEM::shapeFunctionsLagrangeRecursive(Neta, order[1], eta,elCoory);
     FEM::shapeFunctionsLagrangeRecursive(Npsi, order[2], psi,elCoorz);
-    //FEM::derivativeShapeFunctionsLagrangeRecursive(Bxi,  Nxi,  order[0], xi, elCoorx);
-    //FEM::derivativeShapeFunctionsLagrangeRecursive(Beta, Neta, order[1], eta,elCoory);
-    //FEM::derivativeShapeFunctionsLagrangeRecursive(Bpsi, Npsi, order[2], psi,elCoorz);
+    FEM::derivativeShapeFunctionsLagrangeRecursive(Bxi,  Nxi,  order[0], xi, elCoorx);
+    FEM::derivativeShapeFunctionsLagrangeRecursive(Beta, Neta, order[1], eta,elCoory);
+    FEM::derivativeShapeFunctionsLagrangeRecursive(Bpsi, Npsi, order[2], psi,elCoorz);
 
 }
 
@@ -209,15 +235,15 @@ void Jacobian
 {
     // EQ. 9.11 - 9.12 The finite element method. The Basis (2000) Zienkievicz, Taylor
     for(int i=0;i<nELnodes+1;i++){
-        *(J)   += Bxi[i]*Neta[i]*Npsi[i]*coor[3*i];
-        *(J+1) += Bxi[i]*Neta[i]*Npsi[i]*coor[3*i];
-        *(J+2) += Bxi[i]*Neta[i]*Npsi[i]*coor[3*i];
-        *(J+3) += Nxi[i]*Beta[i]*Npsi[i]*coor[3*i+1];
-        *(J+4) += Nxi[i]*Beta[i]*Npsi[i]*coor[3*i+1];
-        *(J+5) += Nxi[i]*Beta[i]*Npsi[i]*coor[3*i+1];
-        *(J+6) += Nxi[i]*Neta[i]*Bpsi[i]*coor[3*i+2];
-        *(J+7) += Nxi[i]*Neta[i]*Bpsi[i]*coor[3*i+2];
-        *(J+8) += Nxi[i]*Neta[i]*Bpsi[i]*coor[3*i+2];
+        *(J)   += Bxi[i]*Neta[j]*Npsi[k]*coor[3*i];
+        *(J+1) += Bxi[i]*Neta[j]*Npsi[k]*coor[3*i];
+        *(J+2) += Bxi[i]*Neta[j]*Npsi[k]*coor[3*i];
+        *(J+3) += Nxi[i]*Beta[j]*Npsi[k]*coor[3*i+1];
+        *(J+4) += Nxi[i]*Beta[j]*Npsi[k]*coor[3*i+1];
+        *(J+5) += Nxi[i]*Beta[j]*Npsi[k]*coor[3*i+1];
+        *(J+6) += Nxi[i]*Neta[j]*Bpsi[k]*coor[3*i+2];
+        *(J+7) += Nxi[i]*Neta[j]*Bpsi[k]*coor[3*i+2];
+        *(J+8) += Nxi[i]*Neta[j]*Bpsi[k]*coor[3*i+2];
     }
         
     int returnCode = MATRICES::Invert3by3Matrix(J, detJ, Jinv);
@@ -279,5 +305,20 @@ double strain[6]
     }
 }
 
+void getDisplacements
+(
+    int numOwnedPoints,
+    const double* modelCoordinates,
+    const double* coordinatesNP1,
+    double* displacements
+)
+{
+    const double* modelCoord = modelCoordinates;
+    const double* coorNP1 = coordinatesNP1;
+    double* disp = displacements;
+    for(int i=0 ; i<numOwnedPoints ; ++i){
+        *(disp+i) = *(coorNP1+i)-*(modelCoord+i);
+    }
+}
 
 }

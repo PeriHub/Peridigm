@@ -90,11 +90,11 @@ namespace PeridigmNS {
     int m_type;
     int m_stabilizationType;
     int m_modelAnglesId;
-        
+    int m_displacementFieldId;
     int m_deformationGradientFieldId;
     int m_cauchyStressFieldId;
-    bool m_incremental;
-    bool m_hencky;
+    
+    int order[3];
   };
 }
 
