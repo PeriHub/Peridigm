@@ -33,10 +33,20 @@ find_library(Lapack_LIBRARY
 )
 set(BlasLapack_Libraries ${blas} ${lapack})
             
-        
-    
-                              
-  
+link_directories(${USER_LIBRARY_DIRS})
+find_library(User_LIBRARY
+  NAMES libabaqus.so
+  PATHS ${USER_LIBRARY_DIRS}
+)    
+MESSAGE("User Libraries:")
+MESSAGE("   USER_LIBRARY_DIRS = ${USER_LIBRARY_DIRS}")
+MESSAGE(STATUS "User_LIBRARY: [${User_LIBRARY}]")
+MESSAGE("")
+
+if (NOT User_LIBRARY)
+MESSAGE(SEND_ERROR "Did not find user lib")
+endif(NOT User_LIBRARY)                          
+
 
 #
               
@@ -328,12 +338,12 @@ ${BOND_VOL_QUICK_GRID}
 
 set (REQUIRED_LIBS
 ${BlasLapack_Libraries}
+${User_LIBRARY}
 ${Trilinos_TPL_LIBRARIES}
 )
 
 set (UT_REQUIRED_LIBS
-${BlasLapack_Libraries}
-        
+${BlasLapack_Libraries}  
 )
 
 add_subdirectory (src)

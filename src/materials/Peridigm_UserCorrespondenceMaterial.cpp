@@ -100,6 +100,7 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
   m_modelAnglesId                       = fieldManager.getFieldId(PeridigmField::NODE   , PeridigmField::VECTOR, PeridigmField::CONSTANT     , "Local_Angles");
   m_flyingPointFlagFieldId              = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Flying_Point_Flag");
   m_rotationTensorFieldId               = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Rotation_Tensor");
+  nstatev = 0;
   if (params.isParameter("Number of State Vars")){
     nstatev = params.get<int>("Number of State Vars");
     // FULL_TENSOR is used. Therefore, nine entries will be inialized at ones. 

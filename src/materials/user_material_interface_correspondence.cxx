@@ -114,17 +114,22 @@ const std::string matname
           NOEL = iID;
           CORRESPONDENCE::DIFFTENSOR(GLStrainN, GLStrainNP1, deps);
           CORRESPONDENCE::DIFFTENSOR(RotationN, RotationNP1, drot);
-          /*
-          Rotationstransformation
+
+          // Rotationstransformation
 
           CORRESPONDENCE::UMAT(sigmaNP1,statev,DSDDE,SSE,SPD,SCD,RPL,
           DDSDDT, DRPLDE,DRPLDT,GLStrainN,deps,time,dtime,temp,dtemp,
           PREDEF,DPRED,matname,nnormal,nshr,nstresscomp,nstatev,props,
           nprops,coords,drot,PNEWDT,CELENT,defGradN,defGradNP1,
-          NOEL,NPT,KSLAY,KSPT,JSTEP,KINC)
+          NOEL,NPT,KSLAY,KSPT,JSTEP,KINC);
            
-          Rotationstransformation 
-            */                          
+          // Rotationstransformation 
+
+          /*
+          CORRESPONDENCE::UPERMAT(stressnew[0], statenew[0], stressold[0], stateold[0], straininc[0], props,
+                  &steptime, &totaltime, &dt, &iID, &MatID, &numPoints, &NDI, &NSHR, &NSTATV, &NPROPS);
+               
+          */   
 
 
         }

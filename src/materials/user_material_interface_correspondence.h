@@ -84,6 +84,28 @@ const ScalarT* TENSORNP1,
 ScalarT* DTENSOR
 );
 
+extern "C" void UPERMAT(double stressnew[], double statenew[], 
+						double stressold[], double stateold[], 
+						double straininc[], const double props[],
+						const double *steptime, const double *totaltime, const double *dt, 
+						int *NodeID, const int *MatID, 
+						const int *NPOINT, const int *NDI, const int *NSHR, 
+						const int *NSTATV, const int *NPROPS);
+
+/*
+SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD,
+     1 RPL,DDSDDT,DRPLDE,DRPLDT,
+     2 STRAN,DSTRAN,TIME,DTIME,TEMP,DTEMP,PREDEF,DPRED,CMNAME,
+     3 NDI,NSHR,NTENS,NSTATV,PROPS,NPROPS,COORDS,DROT,PNEWDT,
+     4 CELENT,DFGRD0,DFGRD1,NOEL,NPT,LAYER,KSPT,JSTEP,KINC)
+*/   
+
+extern "C" void UMAT(double *sigmaNP1, double *statev, double DSDDE[6][6], double SSE, double SPD, double SCD, double RPL,
+          double DDSDDT[6], double DRPLDE[6], double DRPLDT, const double *GLStrainN, double deps[9], const double time, const double dtime, const double* temp, const double* dtemp,
+          double PREDEF, double DPRED, const std::string matname, int nnormal, int nshr, int nstresscomp, const int nstatev, const double *props,
+          const int nprops, const double* coords, double drot[9], double PNEWDT, double CELENT, const double* defGradN, const double* defGradNP1,
+          int NOEL, int NPT, int KSLAY, int KSPT, int JSTEP, int KINC);
+
 }
 
 #endif // USER_MATERIAL_INTERFACE_CORRESPONDENCE_H
