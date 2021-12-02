@@ -35,7 +35,7 @@ set(BlasLapack_Libraries ${blas} ${lapack})
             
 link_directories(${USER_LIBRARY_DIRS})
 find_library(User_LIBRARY
-  NAMES libabaqus.so
+  NAMES libusermat.so
   PATHS ${USER_LIBRARY_DIRS}
 )    
 MESSAGE("User Libraries:")

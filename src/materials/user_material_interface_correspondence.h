@@ -100,11 +100,30 @@ SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD,
      4 CELENT,DFGRD0,DFGRD1,NOEL,NPT,LAYER,KSPT,JSTEP,KINC)
 */   
 
+/*
 extern "C" void UMAT(double *sigmaNP1, double *statev, double DSDDE[6][6], double SSE, double SPD, double SCD, double RPL,
           double DDSDDT[6], double DRPLDE[6], double DRPLDT, const double *GLStrainN, double deps[9], const double time, const double dtime, const double* temp, const double* dtemp,
-          double PREDEF, double DPRED, const std::string matname, int nnormal, int nshr, int nstresscomp, const int nstatev, const double *props,
-          const int nprops, const double* coords, double drot[9], double PNEWDT, double CELENT, const double* defGradN, const double* defGradNP1,
-          int NOEL, int NPT, int KSLAY, int KSPT, int JSTEP, int KINC);
+          double PREDEF, double DPRED, int nnormal, int nshr, int nstresscomp, const int nstatev, const double *props,
+          const int nprops, const double* coords, double drot[3][3], double PNEWDT, double CELENT, const double* defGradN, const double* defGradNP1,
+          int NOEL, int NPT, int KSLAY, int KSPT, int JSTEP, int KINC); //const std::string matname,
+*/  
+
+// extern "C" void UMAT(double *sigmaNP1, int *NSTRESS); //const std::string matname,
+
+/*
+extern "C" void UMAT(double *stress, double *statev, double *ddsdde, double *sse, double *spd,
+		double *scd, double *rpl, double *ddsddt, double *drplde, double *drpldt,
+		const double *GLStrainN, double *deps, const double *time, const double *dtime, const double *temp, const double *dtemp,
+          double *PREDEF, double *DPRED, int *nnormal, int *nshr, int *nstresscomp, const int *nstatev, const double *props,
+          const int *nprops, const double *coords, double *drot, double *PNEWDT, double *CELENT, const double *defGradN, const double *defGradNP1,
+          int *NOEL, int *NPT, int *KSLAY, int *KSPT, int *JSTEP, int *KINC);
+*/ 
+extern "C" void UMAT(double *stress, double *statev, double *ddsdde, double *sse, double *spd,
+		double *scd, double *rpl, double *ddsddt, double *drplde, double *drpldt,
+		const double *GLStrainN, double *deps, const double *time, const double *dtime, const double *temp, const double *dtemp,
+          double *PREDEF, double *DPRED, int *nnormal, int *nshr, int *nstresscomp, const int *nstatev, const double *props,
+          const int *nprops, const double *coords, double *drot, double *PNEWDT, double *CELENT, const double *defGradN, const double *defGradNP1,
+          int *NOEL, int *NPT, int *KSLAY, int *KSPT, int *JSTEP, int *KINC);
 
 }
 
