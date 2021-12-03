@@ -99,47 +99,35 @@ else
 }
 
 }
-void BMatrixData
-(
-    const int order[3],
-    double* Nxi,
-    double* Neta,
-    double* Npsi,
-    double* Bxi,
-    double* Beta,
-    double* Bpsi,
-    double B[][6]
-)
-{
-    int pos = 0;
-    for(int k=0;k<order[2];++k){
-        for(int j=0;j<order[1];++j){
-            for(int i=0;i<order[0];++i){
-                B[pos][0]   = Bxi[i]*Neta[j]*Npsi[k]; B[pos+1][0] = 0.0; B[pos+2][0] = 0.0;
-                B[pos][1]   = 0.0; B[pos+1][0] = Nxi[i]*Beta[j]*Npsi[k]; B[pos+2][0] = 0.0;
-                B[pos][2]   = 0.0; B[pos+1][0] = 0.0; B[pos][0] = Nxi[i]*Neta[j]*Bpsi[k];
-                
-                B[pos][3]   = Nxi[i]*Beta[j]*Npsi[k]; B[pos+1][0] = Bxi[i]*Neta[j]*Npsi[k]; B[pos+2][0] = 0.0;
-                B[pos][4]   = 0.0; B[pos][0] = Nxi[i]*Neta[j]*Bpsi[k]; B[pos+2][0] = Nxi[i]*Beta[j]*Npsi[k];
-                B[pos][5]   = Nxi[i]*Neta[j]*Bpsi[k]; B[pos+1][0] = 0.0; B[pos+2][0] = Bxi[i]*Neta[j]*Npsi[k];
-                pos += 3;
-            }
-        }
-}
-}
 
-void getLagrangeElementData
+
+void getElementTopo
 (
 const int order[3], 
-const double elCoorx,
-const double elCoory,
-const double elCoorz,
+int topo[][3]
+)
+{
+    int count = 0;
+    for (int kID=0 ; kID<order[2]+1 ; ++kID){
+      for (int jID=0 ; jID<order[1]+1 ; ++jID){
+        for (int iID=0 ; iID<order[0]+1 ; ++iID){
+          
+          topo[count][0] = iID;
+          topo[count][1] = jID;
+          topo[count][2] = kID;
+          count += 1;
+   
+        }
+      }
+    }
+
+}
+void getLagrangeElementData
+(
+const int order, 
+const double elCoor,
 double* Nxi,
-double* Neta,
-double* Npsi,
-double* Bxi,
-double* Beta,
-double* Bpsi
+double* Bxi
 )
 {
 
@@ -148,40 +136,25 @@ double* Bpsi
 // coor is added later --> issue
 // testcase
 //Eq 9.12 Zienkiewicz
-    std::vector<double> xiVector(order[0]+1);
+    std::vector<double> xiVector(order+1);
     double* xi = &xiVector[0];
-    std::vector<double> etaVector(order[1]+1);
-    double* eta = &etaVector[0];
-    std::vector<double> psiVector(order[2]+1);
-    double* psi = &psiVector[0];
-    FEM::defineLagrangianGridSpace(order[0], xi);
-    FEM::defineLagrangianGridSpace(order[1], eta);
-    FEM::defineLagrangianGridSpace(order[2], psi);
-    FEM::shapeFunctionsLagrangeRecursive(Nxi,  order[0], xi, elCoorx);
-    FEM::shapeFunctionsLagrangeRecursive(Neta, order[1], eta,elCoory);
-    FEM::shapeFunctionsLagrangeRecursive(Npsi, order[2], psi,elCoorz);
-    FEM::derivativeShapeFunctionsLagrangeRecursive(Bxi,  Nxi,  order[0], xi, elCoorx);
-    FEM::derivativeShapeFunctionsLagrangeRecursive(Beta, Neta, order[1], eta,elCoory);
-    FEM::derivativeShapeFunctionsLagrangeRecursive(Bpsi, Npsi, order[2], psi,elCoorz);
+    //std::vector<double> etaVector(order[1]+1);
+    //double* eta = &etaVector[0];
+    //std::vector<double> psiVector(order[2]+1);
+    //double* psi = &psiVector[0];
+    FEM::defineLagrangianGridSpace(order, xi);
+    //FEM::defineLagrangianGridSpace(order[1], eta);
+    //FEM::defineLagrangianGridSpace(order[2], psi);
+    FEM::shapeFunctionsLagrangeRecursive(Nxi,  order, xi, elCoor);
+    //FEM::shapeFunctionsLagrangeRecursive(Neta, order[1], eta,elCoory);
+    //FEM::shapeFunctionsLagrangeRecursive(Npsi, order[2], psi,elCoorz);
+    FEM::derivativeShapeFunctionsLagrangeRecursive(Bxi,  Nxi,  order, xi, elCoor);
+    //FEM::derivativeShapeFunctionsLagrangeRecursive(Beta, Neta, order[1], eta,elCoory);
+    //FEM::derivativeShapeFunctionsLagrangeRecursive(Bpsi, Npsi, order[2], psi,elCoorz);
 
 }
 
-void createBMatrix
-(
-const int order[3], 
-const double elCoor[3],
-double* Nmatrix,
-double* Bmatrix
-)
-{
-   // std::vector<double> xiVector(order[0]+1), etaVector(order[1]+1), psiVector(order[2]+1);
-   // double* xi = &xiVector[0], eta = &xiVector[0], psi = &xiVector[0];
-   // std::vector<double> NxiVector(order[0]+1), NetaVector(order[1]+1), NpsiVector(order[2]+1);
-   // double* Nxi = &xiVector[0], Neta = &xiVector[0], Npsi = &xiVector[0];
-   // std::vector<double> BxiVector(order[0]+1), BetaVector(order[1]+1), BpsiVector(order[2]+1);
-   // double* Bxi = &xiVector[0], Beta = &xiVector[0], Bpsi = &xiVector[0];
-    //FEM::getLagrangeElementData()
-}
+
 
 
 void defineLagrangianGridSpace
@@ -217,8 +190,28 @@ void derivativeShapeFunctionsLagrangeRecursive
         }
     }
 }
+void getNodelForce
+(
+const double* Nxi,
+const double* Neta,
+const double* Npsi,
+const double* Bxi,
+const double* Beta,
+const double* Bpsi,
+const int topo[][3],
+const double* sigmaInt, 
+const int dof,
+double elNodalForces
+)
+{
 
-void Jacobian
+    
+}
+
+
+
+
+void getJacobian
 (
     const double* Nxi,
     const double* Neta,
@@ -226,24 +219,25 @@ void Jacobian
     const double* Bxi,
     const double* Beta,
     const double* Bpsi,
-    const int nELnodes, 
+    const int dof, 
+    const int topo[][3],
     const double* coor,
     double* J,
-    double* Jinv,
-    double detJ
+    double detJ,
+    double* Jinv
 )
 {
     // EQ. 9.11 - 9.12 The finite element method. The Basis (2000) Zienkievicz, Taylor
-    for(int i=0;i<nELnodes+1;i++){
-        *(J)   += Bxi[i]*Neta[j]*Npsi[k]*coor[3*i];
-        *(J+1) += Bxi[i]*Neta[j]*Npsi[k]*coor[3*i];
-        *(J+2) += Bxi[i]*Neta[j]*Npsi[k]*coor[3*i];
-        *(J+3) += Nxi[i]*Beta[j]*Npsi[k]*coor[3*i+1];
-        *(J+4) += Nxi[i]*Beta[j]*Npsi[k]*coor[3*i+1];
-        *(J+5) += Nxi[i]*Beta[j]*Npsi[k]*coor[3*i+1];
-        *(J+6) += Nxi[i]*Neta[j]*Bpsi[k]*coor[3*i+2];
-        *(J+7) += Nxi[i]*Neta[j]*Bpsi[k]*coor[3*i+2];
-        *(J+8) += Nxi[i]*Neta[j]*Bpsi[k]*coor[3*i+2];
+    for(int i=0;i<dof/3;i++){
+        *(J)   += Bxi[topo[i][0]]*Neta[topo[i][1]]*Npsi[topo[i][2]]*coor[3*i];
+        *(J+1) += Bxi[topo[i][0]]*Neta[topo[i][1]]*Npsi[topo[i][2]]*coor[3*i];
+        *(J+2) += Bxi[topo[i][0]]*Neta[topo[i][1]]*Npsi[topo[i][2]]*coor[3*i];
+        *(J+3) += Nxi[topo[i][0]]*Beta[topo[i][1]]*Npsi[topo[i][2]]*coor[3*i+1];
+        *(J+4) += Nxi[topo[i][0]]*Beta[topo[i][1]]*Npsi[topo[i][2]]*coor[3*i+1];
+        *(J+5) += Nxi[topo[i][0]]*Beta[topo[i][1]]*Npsi[topo[i][2]]*coor[3*i+1];
+        *(J+6) += Nxi[topo[i][0]]*Neta[topo[i][1]]*Bpsi[topo[i][2]]*coor[3*i+2];
+        *(J+7) += Nxi[topo[i][0]]*Neta[topo[i][1]]*Bpsi[topo[i][2]]*coor[3*i+2];
+        *(J+8) += Nxi[topo[i][0]]*Neta[topo[i][1]]*Bpsi[topo[i][2]]*coor[3*i+2];
     }
         
     int returnCode = MATRICES::Invert3by3Matrix(J, detJ, Jinv);
@@ -291,18 +285,52 @@ const double elCoor[3]
 }
 void computeStrain
 (
-const double B[][6],
+const double* Nxi,
+const double* Neta,
+const double* Npsi,
+const double* Bxi,
+const double* Beta,
+const double* Bpsi,
+const int topo[][3],
 const double* u, 
 const int dof,
-double strain[6]
+double strain[3][3]
 )
+// zienkiewicz Basics EQ 6.11 with different Voigt notation
+// determined with python sympy
+//Bxi_0*u1_0 + Bxi_1*u1_1 + Bxi_2*u1_2 + Bxi_3*u1_3
+//Beta_0*u2_0 + Beta_1*u2_1 + Beta_2*u2_2 + Beta_3*u2_3
+//Bpsi_0*u3_0 + Bpsi_1*u3_1 + Bpsi_2*u3_2 + Bpsi_3*u3_3
+//Bpsi_0*u1_0 + Bpsi_1*u1_1 + Bpsi_2*u1_2 + Bpsi_3*u1_3 + Bxi_0*u3_0 + Bxi_1*u3_1 + Bxi_2*u3_2 + Bxi_3*u3_3    
+//Beta_0*u3_0 + Beta_1*u3_1 + Beta_2*u3_2 + Beta_3*u3_3 + Bpsi_0*u2_0 + Bpsi_1*u2_1 + Bpsi_2*u2_2 + Bpsi_3*u2_3
+//Beta_0*u1_0 + Beta_1*u1_1 + Beta_2*u1_2 + Beta_3*u1_3 + Bxi_0*u2_0 + Bxi_1*u2_1 + Bxi_2*u2_2 + Bxi_3*u2_3  
+
 {
+    double BxiTemp, BetaTemp, BpsiTemp;
     for (int iID = 0; iID < 6; ++iID){
-        strain[iID] = 0.0;
-        for(int jID=0 ; jID < dof ; ++jID){
-            strain[iID] += B[jID][iID] * u[jID];
-        }
+        strain[iID][0] = 0.0;
+        strain[iID][1] = 0.0;
+        strain[iID][2] = 0.0;
+        strain[iID][3] = 0.0;
+        strain[iID][4] = 0.0;
+        strain[iID][5] = 0.0;
     }
+    for(int iID=0 ; iID < dof/3 ; ++iID){
+        BxiTemp  = Bxi[topo[iID][0]]*Neta[topo[iID][1]]*Npsi[topo[iID][2]];
+        BetaTemp = Nxi[topo[iID][0]]*Beta[topo[iID][1]]*Npsi[topo[iID][2]];
+        BpsiTemp = Nxi[topo[iID][0]]*Neta[topo[iID][1]]*Bpsi[topo[iID][2]];
+        strain[0][0] += BxiTemp * u[3*iID];
+        strain[1][1] += BetaTemp * u[3*iID+1];
+        strain[2][2] += BpsiTemp * u[3*iID+2];
+        strain[1][2] += BpsiTemp * u[3*iID] + BxiTemp * u[3*iID+2];
+        strain[0][2] += BetaTemp * u[3*iID+2] + BpsiTemp * u[3*iID+1];
+        strain[0][1] += BetaTemp * u[3*iID] + BxiTemp * u[3*iID+1];
+      
+        
+    }
+    strain[1][0] = strain[0][1];
+    strain[2][0] = strain[0][2];
+    strain[2][1] = strain[1][2];
 }
 
 void getDisplacements

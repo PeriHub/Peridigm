@@ -61,7 +61,8 @@ PeridigmNS::FEMElasticMaterial::FEMElasticMaterial(const Teuchos::ParameterList&
     m_modelAnglesId(-1),
     m_deformationGradientFieldId(-1),
     m_cauchyStressFieldId(-1),
-    m_displacementFieldId(-1)
+    m_displacementFieldId(-1),
+    m_forceDensityFieldId(-1)
 {
   bool m_planeStrain = false, m_planeStress = false;
   m_type = 0;
@@ -203,12 +204,13 @@ PeridigmNS::FEMElasticMaterial::FEMElasticMaterial(const Teuchos::ParameterList&
   m_displacementFieldId                 = fieldManager.getFieldId(PeridigmField::NODE   , PeridigmField::VECTOR, PeridigmField::TWO_STEP     , "Displacements");
   m_coordinatesFieldId                  = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR,      PeridigmField::TWO_STEP, "Coordinates");
   m_modelAnglesId                       = fieldManager.getFieldId(PeridigmField::NODE   , PeridigmField::VECTOR, PeridigmField::CONSTANT     , "Local_Angles");
-  
+  m_forceDensityFieldId                 = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Force_Density");
   m_fieldIds.push_back(m_cauchyStressFieldId);
   m_fieldIds.push_back(m_modelCoordinatesFieldId);
   m_fieldIds.push_back(m_displacementFieldId);
   m_fieldIds.push_back(m_coordinatesFieldId);
   m_fieldIds.push_back(m_modelAnglesId);
+  m_fieldIds.push_back(m_forceDensityFieldId);
 
 }
 
@@ -241,7 +243,7 @@ PeridigmNS::FEMElasticMaterial::computeCauchyStress(const double dt,
 
   
 
-  double *CauchyStressNP1, *coor, *angles, *displacements, *deformedCoor;
+  double *CauchyStressNP1, *coor, *angles, *displacements, *deformedCoor, *force;
  
 
   dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&CauchyStressNP1);
@@ -250,7 +252,7 @@ PeridigmNS::FEMElasticMaterial::computeCauchyStress(const double dt,
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&coor);
   dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&deformedCoor);
   dataManager.getData(m_displacementFieldId, PeridigmField::STEP_NP1)->ExtractView(&displacements);
-  
+  dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&force);
   FEM::getDisplacements(numOwnedPoints,coor,deformedCoor,displacements);
   int numElements;
   int *elementNodalList;
@@ -263,7 +265,8 @@ PeridigmNS::FEMElasticMaterial::computeCauchyStress(const double dt,
                   angles,
                   m_type,
                   dt,
-                  order); // --> ruft updateElasticCauchyStressAnisotropicCode auf
+                  order,
+                  force); // --> ruft updateElasticCauchyStressAnisotropicCode auf
                                             
                                             
                                      

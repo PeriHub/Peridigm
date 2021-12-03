@@ -56,19 +56,20 @@ namespace FEM {
 
 
 
-template<typename ScalarT>
+//template<typename double>
 void updateElasticCauchyStressFEM
  (
-  ScalarT* modelCoordinates,
-  ScalarT* deformedCoordinates, 
-  ScalarT* unrotatedCauchyStressNP1, 
+  const double* modelCoordinates,
+  const double* deformedCoordinates, 
+  double* unrotatedCauchyStressNP1, 
   int numElements, 
   int* elementNodalList,
-  const ScalarT Cstiff[][6],
+  const double Cstiff[][6],
   double* angles,
   int type,
   double dt,
-  int order[3]
+  int order[3],
+  double* globalForce
   );
 
 }

@@ -67,33 +67,34 @@
 using namespace std;
 namespace FEM {
 
-  template<typename ScalarT>
+  //template<typename ScalarT>
   void updateElasticCauchyStressFEM
- (
-  ScalarT* modelCoordinates,
-  ScalarT* displacements, 
-  ScalarT* unrotatedCauchyStressNP1, 
+  (
+  const double* modelCoordinates,
+  const double* displacements, 
+  double* unrotatedCauchyStressNP1, 
   int numElements, 
   int* elementNodalList,
-  const ScalarT Cstiff[][6],
+  const double Cstiff[][6],
   double* angles,
   int type,
   double dt,
-  int order[3]
+  int order[3],
+  double* globalForce 
   )
   { 
-
-    ScalarT* nodalCoor = modelCoordinates;
-    ScalarT* disp = displacements;
-    ScalarT* sigmaNP1 = unrotatedCauchyStressNP1;
-    ScalarT strain[3][3];
-    ScalarT rotMat[3][3], rotMatT[3][3], temp[3][3];
-    //int defGradLogReturnCode(0);
     bool rotation = false;
-    std::vector<ScalarT> sigmaIntVector(9);
-    ScalarT* sigmaInt = &sigmaIntVector[0];
-    ScalarT* elNodalCoor;
-    int* neighPtr = neighborhoodList;
+    const double* nodalCoor = modelCoordinates;
+    const double* disp = displacements;
+    double* force = globalForce;
+    double* sigmaNP1 = unrotatedCauchyStressNP1;
+    double strain[3][3];
+    double rotMat[3][3], rotMatT[3][3], temp[3][3];
+    //int defGradLogReturnCode(0);
+
+    std::vector<double> sigmaIntVector(9);
+    double* sigmaInt = &sigmaIntVector[0];
+    int* elemNodalPtr = elementNodalList;
     
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     // for higher order it has to be adapted
@@ -104,14 +105,15 @@ namespace FEM {
     int ndof = numInt * 3;
     std::vector<double> dispNodalVector(ndof);
     double* dispNodal = &dispNodalVector[0];
-    std::vector<double> coorNodalVector(ndof);
-    double* coorNodal = &coorNodalVector[0];
-    
-    std::vector<double> NxiVector(numInt), NetaVector(numInt), NpsiVector(numInt);
+    std::vector<double> elNodalCoorVector(ndof);
+    double* elNodalCoor = &elNodalCoorVector[0];
+    std::vector<double> elNodalForceVector(ndof);
+    double* elNodalForces = &elNodalForceVector[0];
+    std::vector<double> NxiVector(numInt * (order[0]+1)), NetaVector(numInt * (order[1]+1) ), NpsiVector(numInt * (order[2]+1) );
     double* Nxi = &NxiVector[0];
     double* Neta = &NetaVector[0];
     double* Npsi = &NpsiVector[0];
-    std::vector<double> BxiVector(numInt), BetaVector(numInt), BpsiVector(numInt);
+    std::vector<double> BxiVector(numInt * (order[0]+1)), BetaVector(numInt * (order[1]+1)), BpsiVector(numInt * (order[2]+1));
     double* Bxi = &BxiVector[0];
     double* Beta = &BetaVector[0];
     double* Bpsi = &BpsiVector[0];
@@ -123,121 +125,116 @@ namespace FEM {
     double* weightsx = &weightxVector[0];
     double* weightsy = &weightyVector[0];
     double* weightsz = &weightzVector[0];
-    std::vector<double> BMatrixVector(ndof*numInt,6);
-    double* &BMatrix;
     int topo[numInt][3];
+    std::vector<double> JMat(9);
+    double* J = &JMat[0];
+    std::vector<double> JinvMat(9);
+    double* Jinv = &JinvMat[0];
+    double detJ = 0.0;
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     // irgendwie in die init?
     // das wäre der Austausch für verschiedene Elementtypen
     // falsch
+    
     FEM::weightsAndIntegrationPoints(order[0], elCoorx, weightsx);
     FEM::weightsAndIntegrationPoints(order[1], elCoory, weightsy);
     FEM::weightsAndIntegrationPoints(order[2], elCoorz, weightsz);
-    int count = 0;
-    for (int kID=0 ; kID<order[2]+1 ; ++kID){
-      for (int jID=0 ; jID<order[1]+1 ; ++jID){
-        for (int iID=0 ; iID<order[0]+1 ; ++iID){
-          FEM::getLagrangeElementData(order,elCoorx[iID],elCoory[jID],elCoorz[kID],Nxi,Neta,Npsi,Bxi,Beta,Bpsi);
-          FEM::BMatrixData(order,Nxi,Neta,Npsi,Bxi,Beta,Bpsi,BMatrix);
-          topo[count][0] = iID;
-          topo[count][1] = jID;
-          topo[count][2] = kID;
-          count += 1;
-          BMatrix+=ndof;
-        }
-      }
-    }
-
+    FEM::getElementTopo(order, topo);
     
-  //for (int iID=0 ; iID<order[0]+1 ; ++iID){  
-  // int dof = 3*(order[0]+1)*(order[1]+1)*(order[2]+1);  
-  // int numNeigh = *neighPtr; neighPtr++;
-  // for(int n=0;n<numNeigh;n++,neighPtr++){
-  //             int localId = *neighPtr;
-  //             elNodalCoor = &nodalCoor[localId];
-  //             FEM::getJacobian(elNodalCoor,Nxi,Neta,Npsi,Bxi,Beta,Bpsi)}
-  
-  for(int iID=0 ; iID<numElements ; ++iID, sigmaNP1+=9, angles+=3){
-        int numNeigh = *neighPtr; 
-        for(int n=0 ; n<numNeigh ; ++n){
-          neighPtr++;
-          int localId = *neighPtr;
-          coorNodal[3*n] =   nodalCoor[localId];
-          coorNodal[3*n+1] = nodalCoor[localId+1];
-          coorNodal[3*n+2] = nodalCoor[localId+2];
-          dispNodal[3*n] =   disp[localId];
-          dispNodal[3*n+1] = disp[localId+1];
-          dispNodal[3*n+2] = disp[localId+2];
-        }
+    for (int iID=0 ; iID<order[0]+1 ; ++iID){
+      FEM::getLagrangeElementData(order[0],elCoorx[iID],Nxi,Bxi);
+    }  
+    for (int iID=0 ; iID<order[1]+1 ; ++iID){
+      FEM::getLagrangeElementData(order[1],elCoory[iID],Neta,Beta);
+    }  
+    for (int iID=0 ; iID<order[2]+1 ; ++iID){
+      FEM::getLagrangeElementData(order[2],elCoorz[iID],Npsi,Bpsi);
+    }  
+
+    for(int iID=0 ; iID<numElements ; ++iID, sigmaNP1+=9, angles+=3){
+      int numNeigh = *elemNodalPtr; 
+      for(int n=0 ; n<numNeigh ; ++n){
+        elemNodalPtr++;
+        int localId = *elemNodalPtr;
+        elNodalCoor[3*n]   = nodalCoor[localId];
+        elNodalCoor[3*n+1] = nodalCoor[localId+1];
+        elNodalCoor[3*n+2] = nodalCoor[localId+2];
+        dispNodal[3*n]     = disp[localId];
+        dispNodal[3*n+1]   = disp[localId+1];
+        dispNodal[3*n+2]   = disp[localId+2];
+        elNodalForces[3*n]     = 0.0;
+        elNodalForces[3*n+1]   = 0.0;
+        elNodalForces[3*n+2]   = 0.0;
         
-              //FEM::BMatrix(shape, modelCoorNeigh, BMatrix, detJ);
-        for (int jID=0 ; jID<numInt ; ++jID){
-                FEM::getJacobian(elNodalCoor,Nxi,Neta,Npsi,Bxi,Beta,Bpsi)
-                //
-                FEM::computeStrain(BMatrix,disp, ndof,strain); 
-                
-                //https://www.continuummechanics.org/stressxforms.html
-                // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
-                if (rotation){  
-                  CORRESPONDENCE::createRotationMatrix(angles,rotMat);
-                  MATRICES::TransposeMatrix(rotMat,rotMatT);
-                  // geomNL
-                  MATRICES::MatrixMultiply3x3(rotMatT,strain, temp);
-                  MATRICES::MatrixMultiply3x3(temp,rotMat,strain);
-                }
-
-                CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(strain, sigmaInt, Cstiff, type);
-                // rotation back
-                if (rotation){  
-                  MATRICES::MatrixMultiply3x3fromVector(rotMat,sigmaInt, temp);
-                  MATRICES::MatrixMultiply3x3toVector(temp,rotMatT,sigmaInt);
-
-                }
-
-                //FEM::getNodelForce(BMatrix,n,m,sigmaInt, detJ, force)
-                //force += Btranspose*sigmaInt*detJ;
+      }
+      
+      for (int jID=0 ; jID<numInt ; ++jID){
+        // only if nodes and integration points are equal the topology is suitable here.
+        
+        FEM::getJacobian(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,ndof,topo,elNodalCoor, J, detJ, Jinv);
+        //
+        FEM::computeStrain(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,topo,dispNodal, ndof, strain); 
+        
+        //https://www.continuummechanics.org/stressxforms.html
+        // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
+        if (rotation){  
+          CORRESPONDENCE::createRotationMatrix(angles,rotMat);
+          MATRICES::TransposeMatrix(rotMat,rotMatT);
+          // geomNL
+          MATRICES::MatrixMultiply3x3(rotMatT,strain, temp);
+          MATRICES::MatrixMultiply3x3(temp,rotMat,strain);
+        }
+        CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(strain, sigmaInt, Cstiff, type);
+        // rotation back
+        if (rotation){  
+          MATRICES::MatrixMultiply3x3fromVector(rotMat,sigmaInt, temp);
+          MATRICES::MatrixMultiply3x3toVector(temp,rotMatT,sigmaInt);
+        }
+        FEM::getNodelForce(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,topo, sigmaInt, ndof, elNodalForces);
+              //force += Btranspose*sigmaInt*detJ;
                 
                 //sigmaNP1 += sigmaInt;
-    for(int n=0 ; n<numNeigh ; ++n){
-          neighPtr++;
-          int localId = *neighPtr;
-          //forceGlob(iID, k)=force(k)
-        }
-
-              }
+    
+              
               // gemittelte Spannungen
               // sigmaNP1 /= numInt;
               //globForce(topo) += force; ??
-            }
+      }
+        force[localId]  +=elNodalForces[3*n];      
+        force[localId+1]+=elNodalForces[3*n+1];
+        force[localId+2]+=elNodalForces[3*n+2];
 
+
+
+    }
+    
   }
-
-  template void updateElasticCauchyStressFEM<Sacado::Fad::DFad<double>>
-  (
-  Sacado::Fad::DFad<double>* modelCoordinates,
-  Sacado::Fad::DFad<double>* deformedCoordinates, 
-  Sacado::Fad::DFad<double>* unrotatedCauchyStressNP1, 
-  int numPoints, 
-  int* neighborhoodList,
-  const Sacado::Fad::DFad<double> Cstiff[][6],
-  double* angles,
-  int type,
-  double dt,
-  int order[3]
-  );
-  template void updateElasticCauchyStressFEM<double>
-  (
-  double* modelCoordinates,
-  double* deformedCoordinates, 
-  double* unrotatedCauchyStressNP1, 
-  int numPoints, 
-  int* neighborhoodList,
-  const double Cstiff[][6],
-  double* angles,
-  int type,
-  double dt,
-  int order[3]
-  );
+  //template void updateElasticCauchyStressFEM<Sacado::Fad::DFad<double>>
+  //(
+  //const Sacado::Fad::DFad<double>* modelCoordinates,
+  //const Sacado::Fad::DFad<double>* deformedCoordinates, 
+  //Sacado::Fad::DFad<double>* unrotatedCauchyStressNP1, 
+  //int numPoints, 
+  //int* neighborhoodList,
+  //const Sacado::Fad::DFad<double> Cstiff[][6],
+  //double* angles,
+  //int type,
+  //double dt,
+  //int order[3]
+  //);
+  //template void updateElasticCauchyStressFEM<double>
+  //(
+  //const double* modelCoordinates,
+  //const double* deformedCoordinates, 
+  //double* unrotatedCauchyStressNP1, 
+  //int numPoints, 
+  //int* neighborhoodList,
+  //const double Cstiff[][6],
+  //double* angles,
+  //int type,
+  //double dt,
+  //int order[3]
+  //);
 
 
 
@@ -248,3 +245,4 @@ namespace FEM {
 }
 
 
+  

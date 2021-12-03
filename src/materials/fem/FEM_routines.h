@@ -76,13 +76,7 @@ const double* xi,
 const double elCoor
 );
 
-void BMatrixLagrange
-(
-double* Bmatrix, 
-const int order, 
-const double elCoor[3],
-const double* coor
-);
+
 void derivativeShapeFunctionsLagrangeRecursive
 (
 double* B, 
@@ -93,23 +87,37 @@ const double elCoor
 );
 void getLagrangeElementData
 (
-const int order[3], 
-const double elCoorx,
-const double elCoory,
-const double elCoorz,
+const int order, 
+const double elCoor,
 double* Nxi,
-double* Neta,
-double* Npsi,
-double* Bxi,
-double* Beta,
-double* Bpsi
+double* Bxi
 );
+
+void getNodelForce
+(
+const double* Nxi,
+const double* Neta,
+const double* Npsi,
+const double* Bxi,
+const double* Beta,
+const double* Bpsi,
+const int topo[][3],
+const double* sigmaInt, 
+const int dof,
+double elNodalForces
+);
+
+
 void defineLagrangianGridSpace
 (
 const int order,
 double* xi
 );
-
+void getElementTopo
+(
+const int order[3], 
+const int topo[][3]
+);
 void shapeFunctionsLagrange
 (
 double* Nmatrix, 
@@ -140,28 +148,7 @@ bool incremental,
 bool hencky
 );
 
-template<typename ScalarT>
 void computeStrain
-(
-ScalarT* DeformationGradient, 
-ScalarT* unrotatedCauchyStressN, 
-ScalarT* unrotatedCauchyStressNP1, 
-int numPoints, 
-const ScalarT Cstiff[][6],
-double* angles,
-int type,
-double dt,
-bool incremental,
-bool hencky
-);
-void computeStrain
-(
-const double B[][6],
-const double* u, 
-const int dof,
-double strain[6]
-);
-void Jacobian
 (
 const double* Nxi,
 const double* Neta,
@@ -169,11 +156,25 @@ const double* Npsi,
 const double* Bxi,
 const double* Beta,
 const double* Bpsi,
-const int nELnodes, 
+const int topo[][3],
+const double* u, 
+const int dof,
+double strain[3][3]
+);
+void getJacobian
+(
+const double* Nxi,
+const double* Neta,
+const double* Npsi,
+const double* Bxi,
+const double* Beta,
+const double* Bpsi,
+const int dof, 
+const int topo[][3],
 const double* coor,
 double* J,
-double* Jinv,
-double detJ
+double detJ,
+double* Jinv
 );
 void getDisplacements
 (
@@ -182,17 +183,7 @@ void getDisplacements
     const double* coordinatesNP1,
     double* displacements
 );
-void BMatrixData
-(
-    const int order[3],
-    double* Nxi,
-    double* Neta,
-    double* Npsi,
-    double* Bxi,
-    double* Beta,
-    double* Bpsi,
-    double B[][6]
-);
+
 }
 
 #endif // FEMROUTINES_H

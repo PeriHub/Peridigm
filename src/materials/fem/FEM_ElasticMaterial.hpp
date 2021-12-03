@@ -93,7 +93,7 @@ namespace PeridigmNS {
     int m_displacementFieldId;
     int m_deformationGradientFieldId;
     int m_cauchyStressFieldId;
-    
+    int m_forceDensityFieldId;
     int order[3];
   };
 }

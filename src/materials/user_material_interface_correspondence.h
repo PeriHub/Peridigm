@@ -88,7 +88,16 @@ const ScalarT* TENSORN,
 const ScalarT* TENSORNP1, 
 ScalarT* DTENSOR
 );
-
+void GETVOIGTNOTATION
+(
+const double* TENSOR,
+double VOIGT[6]
+);
+void GETTENSORNOTATION
+(
+const double VOIGT[6],
+double* TENSOR
+);
 }
 
 #endif // USER_MATERIAL_INTERFACE_CORRESPONDENCE_H
