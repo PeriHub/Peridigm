@@ -104,7 +104,7 @@ const double* Bpsi,
 const int topo[][3],
 const double* sigmaInt, 
 const int dof,
-double elNodalForces
+double* elNodalForces
 );
 
 
@@ -133,20 +133,6 @@ double* weights
 );
 
 
-template<typename ScalarT>
-void getNodelForce
-(
-ScalarT* DeformationGradient, 
-ScalarT* unrotatedCauchyStressN, 
-ScalarT* unrotatedCauchyStressNP1, 
-int numPoints, 
-const ScalarT Cstiff[][6],
-double* angles,
-int type,
-double dt,
-bool incremental,
-bool hencky
-);
 
 void computeStrain
 (

@@ -201,11 +201,32 @@ const double* Bpsi,
 const int topo[][3],
 const double* sigmaInt, 
 const int dof,
-double elNodalForces
+double* elNodalForces
 )
-{
+{   
+    // determined by python sympy
+    //Beta_0*s12 + Bpsi_0*s23 + Bxi_0*s11
+    //Beta_0*s22 + Bpsi_0*s13 + Bxi_0*s12
+    //Beta_0*s13 + Bpsi_0*s33 + Bxi_0*s23
+    //Beta_1*s12 + Bpsi_1*s23 + Bxi_1*s11
+    //Beta_1*s22 + Bpsi_1*s13 + Bxi_1*s12
+    //Beta_1*s13 + Bpsi_1*s33 + Bxi_1*s23
+    //Beta_2*s12 + Bpsi_2*s23 + Bxi_2*s11
+    //Beta_2*s22 + Bpsi_2*s13 + Bxi_2*s12
+    //Beta_2*s13 + Bpsi_2*s33 + Bxi_2*s23
+    //Beta_3*s12 + Bpsi_3*s23 + Bxi_3*s11
+    //Beta_3*s22 + Bpsi_3*s13 + Bxi_3*s12
+    //Beta_3*s13 + Bpsi_3*s33 + Bxi_3*s23
+    double BxiTemp, BetaTemp, BpsiTemp;
+    for(int iID=0 ; iID < dof/3 ; ++iID){
+        BxiTemp  = Bxi[topo[iID][0]]*Neta[topo[iID][1]]*Npsi[topo[iID][2]];
+        BetaTemp = Nxi[topo[iID][0]]*Beta[topo[iID][1]]*Npsi[topo[iID][2]];
+        BpsiTemp = Nxi[topo[iID][0]]*Neta[topo[iID][1]]*Bpsi[topo[iID][2]];
+        elNodalForces[3*iID]   = BxiTemp* *(sigmaInt)   + BetaTemp* *(sigmaInt+1) + BpsiTemp* *(sigmaInt+7);
+        elNodalForces[3*iID+1] = BxiTemp* *(sigmaInt+1) + BetaTemp* *(sigmaInt+4) + BpsiTemp* *(sigmaInt+2);
+        elNodalForces[3*iID+2] = BxiTemp* *(sigmaInt+7) + BetaTemp* *(sigmaInt+2) + BpsiTemp* *(sigmaInt+8);
+    }
 
-    
 }
 
 

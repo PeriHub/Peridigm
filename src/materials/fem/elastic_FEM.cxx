@@ -131,6 +131,7 @@ namespace FEM {
     std::vector<double> JinvMat(9);
     double* Jinv = &JinvMat[0];
     double detJ = 0.0;
+    int localId, numNeigh;
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     // irgendwie in die init?
     // das wäre der Austausch für verschiedene Elementtypen
@@ -152,10 +153,10 @@ namespace FEM {
     }  
 
     for(int iID=0 ; iID<numElements ; ++iID, sigmaNP1+=9, angles+=3){
-      int numNeigh = *elemNodalPtr; 
+      numNeigh = *elemNodalPtr; 
       for(int n=0 ; n<numNeigh ; ++n){
         elemNodalPtr++;
-        int localId = *elemNodalPtr;
+        localId = *elemNodalPtr;
         elNodalCoor[3*n]   = nodalCoor[localId];
         elNodalCoor[3*n+1] = nodalCoor[localId+1];
         elNodalCoor[3*n+2] = nodalCoor[localId+2];
@@ -200,11 +201,18 @@ namespace FEM {
               // sigmaNP1 /= numInt;
               //globForce(topo) += force; ??
       }
-        force[localId]  +=elNodalForces[3*n];      
-        force[localId+1]+=elNodalForces[3*n+1];
-        force[localId+2]+=elNodalForces[3*n+2];
 
+      numNeigh = *elemNodalPtr; 
+      for(int n=0 ; n<numNeigh ; ++n){
+        elemNodalPtr++;
+        localId = *elemNodalPtr;
+        force[localId]   +=elNodalForces[3*n];      
+        force[localId+1] +=elNodalForces[3*n+1];
+        force[localId+2] +=elNodalForces[3*n+2];
 
+      }
+
+ 
 
     }
     
