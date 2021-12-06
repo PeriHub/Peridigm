@@ -201,30 +201,33 @@ const double* Bpsi,
 const int topo[][3],
 const double* sigmaInt, 
 const int dof,
+const double detJ,
+const double* Jinv, 
+const bool twoD,
 double* elNodalForces
 )
 {   
-    // determined by python sympy
-    //Beta_0*s12 + Bpsi_0*s23 + Bxi_0*s11
-    //Beta_0*s22 + Bpsi_0*s13 + Bxi_0*s12
-    //Beta_0*s13 + Bpsi_0*s33 + Bxi_0*s23
-    //Beta_1*s12 + Bpsi_1*s23 + Bxi_1*s11
-    //Beta_1*s22 + Bpsi_1*s13 + Bxi_1*s12
-    //Beta_1*s13 + Bpsi_1*s33 + Bxi_1*s23
-    //Beta_2*s12 + Bpsi_2*s23 + Bxi_2*s11
-    //Beta_2*s22 + Bpsi_2*s13 + Bxi_2*s12
-    //Beta_2*s13 + Bpsi_2*s33 + Bxi_2*s23
-    //Beta_3*s12 + Bpsi_3*s23 + Bxi_3*s11
-    //Beta_3*s22 + Bpsi_3*s13 + Bxi_3*s12
-    //Beta_3*s13 + Bpsi_3*s33 + Bxi_3*s23
+
+
     double BxiTemp, BetaTemp, BpsiTemp;
     for(int iID=0 ; iID < dof/3 ; ++iID){
-        BxiTemp  = Bxi[topo[iID][0]]*Neta[topo[iID][1]]*Npsi[topo[iID][2]];
-        BetaTemp = Nxi[topo[iID][0]]*Beta[topo[iID][1]]*Npsi[topo[iID][2]];
-        BpsiTemp = Nxi[topo[iID][0]]*Neta[topo[iID][1]]*Bpsi[topo[iID][2]];
-        elNodalForces[3*iID]   = BxiTemp* *(sigmaInt)   + BetaTemp* *(sigmaInt+1) + BpsiTemp* *(sigmaInt+7);
-        elNodalForces[3*iID+1] = BxiTemp* *(sigmaInt+1) + BetaTemp* *(sigmaInt+4) + BpsiTemp* *(sigmaInt+2);
-        elNodalForces[3*iID+2] = BxiTemp* *(sigmaInt+7) + BetaTemp* *(sigmaInt+2) + BpsiTemp* *(sigmaInt+8);
+        if (twoD){
+            BxiTemp  = Bxi[topo[iID][0]]*Neta[topo[iID][1]] * detJ;
+            BetaTemp = Nxi[topo[iID][0]]*Beta[topo[iID][1]] * detJ;
+            BpsiTemp = Nxi[topo[iID][0]]*Neta[topo[iID][1]] * detJ;
+        }
+        else{
+            BxiTemp  = Bxi[topo[iID][0]]*Neta[topo[iID][1]]*Npsi[topo[iID][2]] * detJ;
+            BetaTemp = Nxi[topo[iID][0]]*Beta[topo[iID][1]]*Npsi[topo[iID][2]] * detJ;
+            BpsiTemp = Nxi[topo[iID][0]]*Neta[topo[iID][1]]*Bpsi[topo[iID][2]] * detJ;
+        }
+        // determined by python sympy
+        // Bxi_i*J00*s11 + s12*(Beta_i*J00 + Bxi_i*J01) + s23*(Bpsi_i*J00 + Bxi_i*J02)
+        // Beta_i*J11*s22 + s12*(Beta_i*J10 + Bxi_i*J11) + s13*(Beta_i*J12 + Bpsi_i*J11)
+        // Bpsi_i*J22*s33 + s13*(Beta_i*J22 + Bpsi_i*J21) + s23*(Bpsi_i*J20 + Bxi_i*J22)
+        elNodalForces[3*iID]   = *(Jinv) * *(sigmaInt)*BxiTemp + *(sigmaInt+1)*(*(Jinv)*BetaTemp + *(Jinv+1)*BxiTemp) + *(sigmaInt+5)*(*(Jinv)*BpsiTemp + *(Jinv+2)*BxiTemp);
+        elNodalForces[3*iID+1] = *(Jinv+4) * *(sigmaInt+4)*BetaTemp + *(sigmaInt+1)*(*(Jinv+3)*BetaTemp + *(Jinv+4)*BxiTemp) + *(sigmaInt+2)*(*(Jinv+4)*BpsiTemp + *(Jinv+5)*BetaTemp);
+        elNodalForces[3*iID+2] = *(Jinv+8) * *(sigmaInt+8)*BpsiTemp + *(sigmaInt+2)*(*(Jinv+7)*BpsiTemp + *(Jinv+8)*BetaTemp) + *(sigmaInt+5)*(*(Jinv+6)*BpsiTemp + *(Jinv+8)*BxiTemp);
     }
 
 }
@@ -243,25 +246,43 @@ void getJacobian
     const int dof, 
     const int topo[][3],
     const double* coor,
+    const bool twoD,
     double* J,
     double detJ,
     double* Jinv
 )
 {
+    int returnCode;
     // EQ. 9.11 - 9.12 The finite element method. The Basis (2000) Zienkievicz, Taylor
-    for(int i=0;i<dof/3;i++){
-        *(J)   += Bxi[topo[i][0]]*Neta[topo[i][1]]*Npsi[topo[i][2]]*coor[3*i];
-        *(J+1) += Bxi[topo[i][0]]*Neta[topo[i][1]]*Npsi[topo[i][2]]*coor[3*i];
-        *(J+2) += Bxi[topo[i][0]]*Neta[topo[i][1]]*Npsi[topo[i][2]]*coor[3*i];
-        *(J+3) += Nxi[topo[i][0]]*Beta[topo[i][1]]*Npsi[topo[i][2]]*coor[3*i+1];
-        *(J+4) += Nxi[topo[i][0]]*Beta[topo[i][1]]*Npsi[topo[i][2]]*coor[3*i+1];
-        *(J+5) += Nxi[topo[i][0]]*Beta[topo[i][1]]*Npsi[topo[i][2]]*coor[3*i+1];
-        *(J+6) += Nxi[topo[i][0]]*Neta[topo[i][1]]*Bpsi[topo[i][2]]*coor[3*i+2];
-        *(J+7) += Nxi[topo[i][0]]*Neta[topo[i][1]]*Bpsi[topo[i][2]]*coor[3*i+2];
-        *(J+8) += Nxi[topo[i][0]]*Neta[topo[i][1]]*Bpsi[topo[i][2]]*coor[3*i+2];
+    if (twoD){
+        for(int i=0;i<dof/3;i++){
+            *(J)   += Bxi[topo[i][0]]*Neta[topo[i][1]]*coor[3*i];
+            *(J+1) += Bxi[topo[i][0]]*Neta[topo[i][1]]*coor[3*i];
+            *(J+2) += 0.0;
+            *(J+3) += Nxi[topo[i][0]]*Beta[topo[i][1]]*coor[3*i+1];
+            *(J+4) += Nxi[topo[i][0]]*Beta[topo[i][1]]*coor[3*i+1];
+            *(J+5) += 0.0;
+            *(J+6) += 0.0;
+            *(J+7) += 0.0;
+            *(J+8) += 0.0;
+        }
+        returnCode = MATRICES::Invert2by2Matrix(J, detJ, Jinv);
     }
+    else{
+        for(int i=0;i<dof/3;i++){
+            *(J)   += Bxi[topo[i][0]]*Neta[topo[i][1]]*Npsi[topo[i][2]]*coor[3*i];
+            *(J+1) += Bxi[topo[i][0]]*Neta[topo[i][1]]*Npsi[topo[i][2]]*coor[3*i];
+            *(J+2) += Bxi[topo[i][0]]*Neta[topo[i][1]]*Npsi[topo[i][2]]*coor[3*i];
+            *(J+3) += Nxi[topo[i][0]]*Beta[topo[i][1]]*Npsi[topo[i][2]]*coor[3*i+1];
+            *(J+4) += Nxi[topo[i][0]]*Beta[topo[i][1]]*Npsi[topo[i][2]]*coor[3*i+1];
+            *(J+5) += Nxi[topo[i][0]]*Beta[topo[i][1]]*Npsi[topo[i][2]]*coor[3*i+1];
+            *(J+6) += Nxi[topo[i][0]]*Neta[topo[i][1]]*Bpsi[topo[i][2]]*coor[3*i+2];
+            *(J+7) += Nxi[topo[i][0]]*Neta[topo[i][1]]*Bpsi[topo[i][2]]*coor[3*i+2];
+            *(J+8) += Nxi[topo[i][0]]*Neta[topo[i][1]]*Bpsi[topo[i][2]]*coor[3*i+2];
+        }
         
-    int returnCode = MATRICES::Invert3by3Matrix(J, detJ, Jinv);
+        returnCode = MATRICES::Invert3by3Matrix(J, detJ, Jinv);
+    }
 }
 
 void shapeFunctionsLagrangeRecursive
@@ -315,16 +336,18 @@ const double* Bpsi,
 const int topo[][3],
 const double* u, 
 const int dof,
+const double* Jinv,
+const bool twoD,
 double strain[3][3]
 )
 // zienkiewicz Basics EQ 6.11 with different Voigt notation
 // determined with python sympy
-//Bxi_0*u1_0 + Bxi_1*u1_1 + Bxi_2*u1_2 + Bxi_3*u1_3
-//Beta_0*u2_0 + Beta_1*u2_1 + Beta_2*u2_2 + Beta_3*u2_3
-//Bpsi_0*u3_0 + Bpsi_1*u3_1 + Bpsi_2*u3_2 + Bpsi_3*u3_3
-//Bpsi_0*u1_0 + Bpsi_1*u1_1 + Bpsi_2*u1_2 + Bpsi_3*u1_3 + Bxi_0*u3_0 + Bxi_1*u3_1 + Bxi_2*u3_2 + Bxi_3*u3_3    
-//Beta_0*u3_0 + Beta_1*u3_1 + Beta_2*u3_2 + Beta_3*u3_3 + Bpsi_0*u2_0 + Bpsi_1*u2_1 + Bpsi_2*u2_2 + Bpsi_3*u2_3
-//Beta_0*u1_0 + Beta_1*u1_1 + Beta_2*u1_2 + Beta_3*u1_3 + Bxi_0*u2_0 + Bxi_1*u2_1 + Bxi_2*u2_2 + Bxi_3*u2_3  
+//J00*(Bxi_i*u1_i)
+//J11*(Beta_i*u2_i)
+//J22*(Bpsi_i*u3_i)
+//u1_i*(Bpsi_i*J00 + Bxi_i*J02) + u3_i*(Bpsi_i*J20 + Bxi_i*J22)
+//u2_i*(Beta_i*J12 + Bpsi_i*J11) + u3_i*(Beta_i*J22 + Bpsi_i*J21)
+//u1_i*(Beta_i*J00 + Bxi_i*J01) + u2_i*(Beta_i*J10 + Bxi_i*J11)
 
 {
     double BxiTemp, BetaTemp, BpsiTemp;
@@ -337,15 +360,33 @@ double strain[3][3]
         strain[iID][5] = 0.0;
     }
     for(int iID=0 ; iID < dof/3 ; ++iID){
-        BxiTemp  = Bxi[topo[iID][0]]*Neta[topo[iID][1]]*Npsi[topo[iID][2]];
-        BetaTemp = Nxi[topo[iID][0]]*Beta[topo[iID][1]]*Npsi[topo[iID][2]];
-        BpsiTemp = Nxi[topo[iID][0]]*Neta[topo[iID][1]]*Bpsi[topo[iID][2]];
-        strain[0][0] += BxiTemp * u[3*iID];
-        strain[1][1] += BetaTemp * u[3*iID+1];
-        strain[2][2] += BpsiTemp * u[3*iID+2];
-        strain[1][2] += BpsiTemp * u[3*iID] + BxiTemp * u[3*iID+2];
-        strain[0][2] += BetaTemp * u[3*iID+2] + BpsiTemp * u[3*iID+1];
-        strain[0][1] += BetaTemp * u[3*iID] + BxiTemp * u[3*iID+1];
+        if (twoD){
+            BxiTemp  = Bxi[topo[iID][0]]*Neta[topo[iID][1]];
+            BetaTemp = Nxi[topo[iID][0]]*Beta[topo[iID][1]];
+            BpsiTemp = Nxi[topo[iID][0]]*Neta[topo[iID][1]];
+        }
+        else{
+            BxiTemp  = Bxi[topo[iID][0]]*Neta[topo[iID][1]]*Npsi[topo[iID][2]];
+            BetaTemp = Nxi[topo[iID][0]]*Beta[topo[iID][1]]*Npsi[topo[iID][2]];
+            BpsiTemp = Nxi[topo[iID][0]]*Neta[topo[iID][1]]*Bpsi[topo[iID][2]];
+        }
+        // determined with python sympy
+        //J00*(Bxi_i*u1_i)
+        //J11*(Beta_i*u2_i)
+        //J22*(Bpsi_i*u3_i)
+        
+        
+        
+        strain[0][0] += *(Jinv)   * BxiTemp  * u[3*iID];
+        strain[1][1] += *(Jinv+4) * BetaTemp * u[3*iID+1];
+        strain[2][2] += *(Jinv+8) * BpsiTemp * u[3*iID+2];
+        //u1_i*(Bpsi_i*J00 + Bxi_i*J02) + u3_i*(Bpsi_i*J20 + Bxi_i*J22)
+        
+        strain[1][2] += (*(Jinv) * BpsiTemp + *(Jinv+2) * BxiTemp)  * u[3*iID] + (*(Jinv+6) * BxiTemp  + *(Jinv+8) * BxiTemp) * u[3*iID+2];
+        //u2_i*(Beta_i*J12 + Bpsi_i*J11) + u3_i*(Beta_i*J22 + Bpsi_i*J21)
+        strain[0][2] += (*(Jinv+5) * BetaTemp + *(Jinv+4) * BpsiTemp) * u[3*iID+1] + (*(Jinv+7) * BpsiTemp + *(Jinv+8) * BetaTemp)* u[3*iID+2];
+        //u1_i*(Beta_i*J00 + Bxi_i*J01) + u2_i*(Beta_i*J10 + Bxi_i*J11)
+        strain[0][1] += (*(Jinv) * BetaTemp + *(Jinv+1) * BxiTemp)  * u[3*iID] + (*(Jinv+3) * BetaTemp + *(Jinv+4) * BxiTemp) * u[3*iID+1];
       
         
     }

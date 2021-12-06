@@ -104,6 +104,9 @@ const double* Bpsi,
 const int topo[][3],
 const double* sigmaInt, 
 const int dof,
+const double detJ,
+const double* Jinv, 
+const bool twoD,
 double* elNodalForces
 );
 
@@ -145,6 +148,8 @@ const double* Bpsi,
 const int topo[][3],
 const double* u, 
 const int dof,
+const double* Jinv,
+const bool twoD,
 double strain[3][3]
 );
 void getJacobian
@@ -158,6 +163,7 @@ const double* Bpsi,
 const int dof, 
 const int topo[][3],
 const double* coor,
+const bool twoD,
 double* J,
 double detJ,
 double* Jinv

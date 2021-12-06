@@ -139,7 +139,7 @@ namespace FEM {
     
     FEM::weightsAndIntegrationPoints(order[0], elCoorx, weightsx);
     FEM::weightsAndIntegrationPoints(order[1], elCoory, weightsy);
-    FEM::weightsAndIntegrationPoints(order[2], elCoorz, weightsz);
+    if (type == 0) FEM::weightsAndIntegrationPoints(order[2], elCoorz, weightsz);
     FEM::getElementTopo(order, topo);
     
     for (int iID=0 ; iID<order[0]+1 ; ++iID){
@@ -148,10 +148,11 @@ namespace FEM {
     for (int iID=0 ; iID<order[1]+1 ; ++iID){
       FEM::getLagrangeElementData(order[1],elCoory[iID],Neta,Beta);
     }  
-    for (int iID=0 ; iID<order[2]+1 ; ++iID){
-      FEM::getLagrangeElementData(order[2],elCoorz[iID],Npsi,Bpsi);
-    }  
-
+    if (type == 0){
+      for (int iID=0 ; iID<order[2]+1 ; ++iID){
+        FEM::getLagrangeElementData(order[2],elCoorz[iID],Npsi,Bpsi);
+      }  
+    }
     for(int iID=0 ; iID<numElements ; ++iID, sigmaNP1+=9, angles+=3){
       numNeigh = *elemNodalPtr; 
       for(int n=0 ; n<numNeigh ; ++n){
@@ -168,13 +169,14 @@ namespace FEM {
         elNodalForces[3*n+2]   = 0.0;
         
       }
-      
+      bool twoD = false;
+      if (type!=0) twoD = true;
       for (int jID=0 ; jID<numInt ; ++jID){
         // only if nodes and integration points are equal the topology is suitable here.
         
-        FEM::getJacobian(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,ndof,topo,elNodalCoor, J, detJ, Jinv);
+        FEM::getJacobian(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,ndof,topo,elNodalCoor, twoD, J, detJ, Jinv);
         //
-        FEM::computeStrain(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,topo,dispNodal, ndof, strain); 
+        FEM::computeStrain(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,topo,dispNodal, ndof, Jinv, twoD, strain); 
         
         //https://www.continuummechanics.org/stressxforms.html
         // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
@@ -191,7 +193,7 @@ namespace FEM {
           MATRICES::MatrixMultiply3x3fromVector(rotMat,sigmaInt, temp);
           MATRICES::MatrixMultiply3x3toVector(temp,rotMatT,sigmaInt);
         }
-        FEM::getNodelForce(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,topo, sigmaInt, ndof, elNodalForces);
+        FEM::getNodelForce(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,topo, sigmaInt, ndof, detJ, Jinv, twoD, elNodalForces);
               //force += Btranspose*sigmaInt*detJ;
                 
                 //sigmaNP1 += sigmaInt;
