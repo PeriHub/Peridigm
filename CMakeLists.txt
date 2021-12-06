@@ -34,10 +34,14 @@ find_library(Lapack_LIBRARY
 set(BlasLapack_Libraries ${blas} ${lapack})
             
 link_directories(${USER_LIBRARY_DIRS})
+find_library(Fortran_Interface_LIBRARY
+  NAMES libinterface.so
+  PATHS ${USER_LIBRARY_DIRS}
+)
 find_library(User_LIBRARY
   NAMES libusermat.so
   PATHS ${USER_LIBRARY_DIRS}
-)    
+)
 MESSAGE("User Libraries:")
 MESSAGE("   USER_LIBRARY_DIRS = ${USER_LIBRARY_DIRS}")
 MESSAGE(STATUS "User_LIBRARY: [${User_LIBRARY}]")
@@ -45,7 +49,9 @@ MESSAGE("")
 
 if (NOT User_LIBRARY)
 MESSAGE(SEND_ERROR "Did not find user lib")
-endif(NOT User_LIBRARY)                          
+endif(NOT User_LIBRARY)     
+
+set(User_Libraries ${Fortran_Interface_LIBRARY} ${User_LIBRARY})                     
 
 
 #
@@ -338,7 +344,7 @@ ${BOND_VOL_QUICK_GRID}
 
 set (REQUIRED_LIBS
 ${BlasLapack_Libraries}
-${User_LIBRARY}
+${User_Libraries}
 ${Trilinos_TPL_LIBRARIES}
 )
 

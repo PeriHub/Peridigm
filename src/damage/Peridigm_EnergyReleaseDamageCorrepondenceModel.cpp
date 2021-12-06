@@ -351,7 +351,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     // displacement vector state and abolute value
     double eta[3], incEta[3], normEtaSq;
 
-    double dX, dY;//, dYSq;
+    double dX = 0.0, dY;//, dYSq;
 
     //---------------------------
     // INITIALIZE PROCESS STEP t

@@ -56,10 +56,10 @@
 PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos::ParameterList& params)
   : CorrespondenceMaterial(params),
     m_modelCoordinatesFieldId(-1),
-    m_modelAnglesId(-1),
     m_deformationGradientFieldId(-1),
     m_cauchyStressFieldId(-1),
     m_strainFieldId(-1),
+    m_modelAnglesId(-1),
     m_flyingPointFlagFieldId(-1),
     m_rotationTensorFieldId(-1)    
 {
@@ -74,10 +74,10 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
     }
   if (m_planeStrain==true)m_type=1;
   if (m_planeStress==true)m_type=2;
-  //std::string var =params.get<std::string>("Materials");
+
   std::string var =params.name();
-  //https://stackoverflow.com/questions/14265581/parse-split-a-string-in-c-using-string-delimiter-standard-c 
-  //matName tbd;
+  std::string delimiter = "->";
+  matName = var.substr(var.find_last_of(delimiter)+1,var.length());
 
   nprops = params.get<int>("Number of Properties");
   string prop = "Prop_";
@@ -161,7 +161,7 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
   //PLACEHOLDER//
   ///////////////
   double *temperature = NULL, *dtemperature = NULL;
-  double time;
+  double time = 0.0;
   //////////////////////////////
 
   double *angles, *modelCoordinates;

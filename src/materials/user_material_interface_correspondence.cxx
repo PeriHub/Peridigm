@@ -87,7 +87,8 @@ const std::string matname
   ScalarT* GLStrainNP1 = strainNP1;
   const ScalarT* sigmaN = strainN;
   ScalarT* sigmaNP1 = unrotatedCauchyStressNP1;
-  //const std::string matname;
+  char matnameArray[80];
+  int nname;
   double deps[9], drot[9];
   // double* deps; 
   // double* drot;
@@ -109,7 +110,7 @@ const std::string matname
   double DDSDDT[6], DRPLDE[6];
   // double* DDSDDT;
   // double* DRPLDE;
-  double* DRPLDT;
+  double DRPLDT = -1;
   double SSE = -1,SPD = -1,SCD = -1,RPL = -1;
   //
   
@@ -120,39 +121,21 @@ const std::string matname
           CORRESPONDENCE::DIFFTENSOR(GLStrainN, GLStrainNP1, deps);
           CORRESPONDENCE::DIFFTENSOR(RotationN, RotationNP1, drot);
 
+          nname = matname.length();
+
+          for(unsigned int i=0; i<matname.length(); ++i)
+          {
+            matnameArray[i] = matname[i];
+          }
+
           // Rotationstransformation
-
-          CORRESPONDENCE::UMAT(sigmaNP1,statev,DSDDE,&SSE,&SPD,&SCD,&RPL,
-          DDSDDT, DRPLDE,DRPLDT,GLStrainN,deps,&time,&dtime,temp,dtemp,
-          &PREDEF,&DPRED,&nnormal,&nshr,&nstresscomp,&nstatev,props,
+          CORRESPONDENCE::UMATINT(sigmaNP1,statev,DSDDE,&SSE,&SPD,&SCD,&RPL,
+          DDSDDT, DRPLDE,&DRPLDT,GLStrainN,deps,&time,&dtime,temp,dtemp,
+          &PREDEF,&DPRED,matnameArray,&nnormal,&nshr,&nstresscomp,&nstatev,props,
           &nprops,coords,drot,&PNEWDT,&CELENT,defGradN,defGradNP1,
-          &NOEL,&NPT,&KSLAY,&KSPT,&JSTEP,&KINC); //matname
-
-          /*
-          CORRESPONDENCE::UMAT(sigmaNP1,statev,DSDDE,&SSE,&SPD,&SCD,&RPL,
-          DDSDDT, DRPLDE,DRPLDT,GLStrainN,deps,&time,&dtime,temp,dtemp,
-          &PREDEF,&DPRED,&nnormal,&nshr,&nstresscomp,&nstatev,props,
-          &nprops,coords,drot,&PNEWDT,&CELENT,defGradN,defGradNP1,
-          &NOEL,&NPT,&KSLAY,&KSPT,&JSTEP,&KINC); */
-
-          // std::cout<< *(sigmaNP1+0) <<std::endl;
-          // std::cout<< NSTRESS <<std::endl;
-          // std::cout<< &NSTRESS <<std::endl;
-          // CORRESPONDENCE::UMAT(sigmaNP1, &NSTRESS); 
-          // std::cout<< *(sigmaNP1+0) <<std::endl;
-          // std::cout<< *(sigmaNP1+1) <<std::endl;
-          // std::cout<< *(sigmaNP1+2) <<std::endl;
-          // std::cout<< *(sigmaNP1+3) <<std::endl;
-          // std::cout<< *(sigmaNP1+4) <<std::endl;
+          &NOEL,&NPT,&KSLAY,&KSPT,&JSTEP,&KINC,&nname); 
 
           // Rotationstransformation 
-
-          /*
-          CORRESPONDENCE::UPERMAT(stressnew[0], statenew[0], stressold[0], stateold[0], straininc[0], props,
-                  &steptime, &totaltime, &dt, &iID, &MatID, &numPoints, &NDI, &NSHR, &NSTATV, &NPROPS);
-               
-          */   
-
 
         }
 
