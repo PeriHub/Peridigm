@@ -87,8 +87,11 @@ const std::string matname
   ScalarT* GLStrainNP1 = strainNP1;
   const ScalarT* sigmaN = strainN;
   ScalarT* sigmaNP1 = unrotatedCauchyStressNP1;
-  //const std::string matname;
-  ScalarT deps[9], drot[9];
+  char matnameArray[80];
+  int nname;
+  double deps[9], drot[9];
+  // double* deps; 
+  // double* drot;
 
   CORRESPONDENCE::computeGreenLagrangeStrain(defGradNP1,GLStrainNP1,flyingPointFlag ,numPoints);
 
@@ -103,29 +106,36 @@ const std::string matname
   // not supported
   double PREDEF = -1, DPRED = -1, PNEWDT = -1, CELENT = -1;
   int NPT = -1, KSLAY = -1, KSPT = -1, JSTEP = -1, KINC = -1;
-  double DSDDE[6][6];
-  double DDSDDT[6], DRPLDE[6], DRPLDT;
-  double SSE,SPD,SCD,RPL;
+  double DSDDE[6*6];
+  double DDSDDT[6], DRPLDE[6];
+  // double* DDSDDT;
+  // double* DRPLDE;
+  double DRPLDT = -1;
+  double SSE = -1,SPD = -1,SCD = -1,RPL = -1;
   //
-  
   
   for(int iID=0 ; iID<numPoints ; ++iID, 
         coords+=3, defGradN+=9, defGradNP1+=9, sigmaN+=9, GLStrainN+=9,GLStrainNP1+=9,sigmaNP1+=9, angles+=3){
           NOEL = iID;
+
           CORRESPONDENCE::DIFFTENSOR(GLStrainN, GLStrainNP1, deps);
           CORRESPONDENCE::DIFFTENSOR(RotationN, RotationNP1, drot);
-          /*
-          Rotationstransformation
 
-          CORRESPONDENCE::UMAT(sigmaNP1,statev,DSDDE,SSE,SPD,SCD,RPL,
-          DDSDDT, DRPLDE,DRPLDT,GLStrainN,deps,time,dtime,temp,dtemp,
-          PREDEF,DPRED,matname,nnormal,nshr,nstresscomp,nstatev,props,
-          nprops,coords,drot,PNEWDT,CELENT,defGradN,defGradNP1,
-          NOEL,NPT,KSLAY,KSPT,JSTEP,KINC)
-           
-          Rotationstransformation 
-            */                          
+          nname = matname.length();
 
+          for(unsigned int i=0; i<matname.length(); ++i)
+          {
+            matnameArray[i] = matname[i];
+          }
+
+          // Rotationstransformation
+          CORRESPONDENCE::UMATINT(sigmaNP1,statev,DSDDE,&SSE,&SPD,&SCD,&RPL,
+          DDSDDT, DRPLDE,&DRPLDT,GLStrainN,deps,&time,&dtime,temp,dtemp,
+          &PREDEF,&DPRED,matnameArray,&nnormal,&nshr,&nstresscomp,&nstatev,props,
+          &nprops,coords,drot,&PNEWDT,&CELENT,defGradN,defGradNP1,
+          &NOEL,&NPT,&KSLAY,&KSPT,&JSTEP,&KINC,&nname); 
+
+          // Rotationstransformation 
 
         }
 

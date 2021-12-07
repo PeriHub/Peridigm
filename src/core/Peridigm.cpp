@@ -1005,6 +1005,7 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
 void PeridigmNS::Peridigm::initializeWorkset() {
   workset = Teuchos::rcp(new Workset);
   workset->timeStep = 0.0;
+  workset->currentTime = 0.0;
   workset->blocks = blocks;
   if(!contactManager.is_null())
     workset->contactManager = contactManager;
@@ -1686,6 +1687,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         cout << "<- Reduce dt: " << dt  << " nsteps: " << nsteps << endl;
         }
         workset->timeStep = dt;
+        workset->currentTime = timeCurrent;
 
         adaptiveImportStep = PeridigmField::STEP_NP1;
         adaptiveExportStep = PeridigmField::STEP_N;
@@ -1709,6 +1711,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
           cout << "-> Raise dt: " << dt  << " nsteps: " << nsteps << endl;
           }
         workset->timeStep = dt;
+        workset->currentTime = timeCurrent;
 
         adaptiveImportStep = PeridigmField::STEP_NP1;
         adaptiveExportStep = PeridigmField::STEP_NP1;
@@ -2858,6 +2861,7 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
     timeCurrent = timeSteps[step];
     double timeIncrement = timeCurrent - timePrevious;
     workset->timeStep = timeIncrement;
+    workset->currentTime = timeCurrent;
 
     m_noxJacobianUpdateCounter = 0;
 
@@ -3461,6 +3465,7 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
     timeCurrent = timeSteps[step];
     double timeIncrement = timeCurrent - timePrevious;
     workset->timeStep = timeIncrement;
+    workset->currentTime = timeCurrent;
 
     deltaU->PutScalar(0.0);
     if(analysisHasMultiphysics){
@@ -3947,6 +3952,7 @@ void PeridigmNS::Peridigm::executeImplicitDiffusion(Teuchos::RCP<Teuchos::Parame
     timeCurrent = timeSteps[step];
     double timeIncrement = timeCurrent - timePrevious;
     workset->timeStep = timeIncrement;
+    workset->currentTime = timeCurrent;
 
     //deltaU->PutScalar(0.0);
 
