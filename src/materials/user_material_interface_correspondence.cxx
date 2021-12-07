@@ -159,7 +159,8 @@ void GETVOIGTNOTATION
 const double* TENSOR,
 double VOIGT[6]
 )
-{
+{ // UMAT consistent 11,22,33,23,13,12
+  
   VOIGT[0] = *(TENSOR);
   VOIGT[1] = *(TENSOR+4);
   VOIGT[2] = *(TENSOR+8);

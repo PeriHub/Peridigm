@@ -80,6 +80,10 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
   TEUCHOS_TEST_FOR_EXCEPT_MSG(params->get<string>("Type") != "Text File", "Invalid Type in TextFileDiscretization");
 
   string meshFileName = params->get<string>("Input Mesh File");
+  string topologyFileName;
+  
+  if(params->isParameter("Input FEM Topology File"))
+    topologyFileName = params->get<string>("Input FEM Topology File");  
   if(params->isParameter("Omit Bonds Between Blocks"))
     bondFilterCommand = params->get<string>("Omit Bonds Between Blocks");
 
@@ -396,6 +400,13 @@ PeridigmNS::TextFileDiscretization::createNeighborhoodData(const QUICKGRID::Data
    memcpy(neighborhoodData->NeighborhoodList(),
  		 Discretization::getLocalNeighborList(decomp, *oneDimensionalOverlapMap).get(),
  		 decomp.sizeNeighborhoodList*sizeof(int));
+  memcpy(neighborhoodData->ElementNodalPtr(), 
+ 		 decomp.elementNodalPtr.get(),
+ 		 decomp.numPoints*sizeof(int));
+   neighborhoodData->SetElementNodalListSize(decomp.sizeElementTopologyList);
+   memcpy(neighborhoodData->ElementNodalList(),
+ 		 Discretization::getElementNodalList(decomp, *oneDimensionalOverlapMap).get(),
+ 		 decomp.sizeElementNodalList*sizeof(int));
    neighborhoodData = filterBonds(neighborhoodData);
 }
 

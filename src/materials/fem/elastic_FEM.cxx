@@ -193,12 +193,8 @@ namespace FEM {
           MATRICES::MatrixMultiply3x3fromVector(rotMat,sigmaInt, temp);
           MATRICES::MatrixMultiply3x3toVector(temp,rotMatT,sigmaInt);
         }
-        FEM::getNodelForce(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,topo, sigmaInt, ndof, detJ, Jinv, twoD, elNodalForces);
-              //force += Btranspose*sigmaInt*detJ;
-                
-                //sigmaNP1 += sigmaInt;
-    
-              
+        FEM::getNodelForce(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,topo, sigmaInt, ndof, abs(detJ), Jinv, twoD, elNodalForces);
+
               // gemittelte Spannungen
               // sigmaNP1 /= numInt;
               //globForce(topo) += force; ??
@@ -208,9 +204,9 @@ namespace FEM {
       for(int n=0 ; n<numNeigh ; ++n){
         elemNodalPtr++;
         localId = *elemNodalPtr;
-        force[localId]   +=elNodalForces[3*n];      
-        force[localId+1] +=elNodalForces[3*n+1];
-        force[localId+2] +=elNodalForces[3*n+2];
+        force[localId]   += elNodalForces[3*n];      
+        force[localId+1] += elNodalForces[3*n+1];
+        force[localId+2] += elNodalForces[3*n+2];
 
       }
 

@@ -280,7 +280,7 @@ void getJacobian
             *(J+7) += Nxi[topo[i][0]]*Neta[topo[i][1]]*Bpsi[topo[i][2]]*coor[3*i+2];
             *(J+8) += Nxi[topo[i][0]]*Neta[topo[i][1]]*Bpsi[topo[i][2]]*coor[3*i+2];
         }
-        
+       
         returnCode = MATRICES::Invert3by3Matrix(J, detJ, Jinv);
     }
 }
