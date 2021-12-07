@@ -88,6 +88,7 @@ void
 PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset, bool damageExist) const
 {
   const double dt = workset->timeStep;
+  const double currentTime = workset->currentTime;
   std::vector<PeridigmNS::Block>::iterator blockIt;
 
   // ---- Evaluate Precompute ----

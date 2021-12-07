@@ -57,6 +57,7 @@ namespace PeridigmNS {
   struct Workset {
     Workset() {}
     double timeStep;
+    double currentTime;
     Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks;
     Teuchos::RCP< PeridigmNS::ContactManager > contactManager;
     Teuchos::RCP<PeridigmNS::Material::JacobianType> jacobianType;
