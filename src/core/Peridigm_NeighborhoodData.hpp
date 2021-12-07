@@ -58,16 +58,18 @@ class NeighborhoodData {
 public:
 
   NeighborhoodData()
-    : numOwnedPoints(0), ownedIDs(0), neighborhoodListSize(0), neighborhoodList(0), neighborhoodPtr(0) {}
+    : numOwnedPoints(0), ownedIDs(0), neighborhoodListSize(0), neighborhoodList(0), neighborhoodPtr(0), elementNodalListSize(0), elementNodalList(0), elementNodalPtr(0) {}
 
   NeighborhoodData(const NeighborhoodData& other)
-    : numOwnedPoints(0), ownedIDs(0), neighborhoodListSize(0), neighborhoodList(0), neighborhoodPtr(0)
+    : numOwnedPoints(0), ownedIDs(0), neighborhoodListSize(0), neighborhoodList(0), neighborhoodPtr(0), elementNodalListSize(0), elementNodalList(0), elementNodalPtr(0)
   {
     SetNumOwned(other.NumOwnedPoints());
     SetNeighborhoodListSize(other.NeighborhoodListSize());
     memcpy(ownedIDs, other.ownedIDs, numOwnedPoints*sizeof(int));
     memcpy(neighborhoodPtr, other.neighborhoodPtr, numOwnedPoints*sizeof(int));
     memcpy(neighborhoodList, other.neighborhoodList, neighborhoodListSize*sizeof(int));
+    memcpy(elementNodalPtr, other.elementNodalPtr, numOwnedPoints*sizeof(int));
+    memcpy(elementNodalList, other.elementNodalList, elementNodalListSize*sizeof(int));
   }
 
   ~NeighborhoodData(){
@@ -77,6 +79,10 @@ public:
     delete[] neighborhoodList;
   if(neighborhoodPtr != 0)
     delete[] neighborhoodPtr;
+  if(elementNodalList != 0)
+    delete[] elementNodalList;
+  if(elementNodalPtr != 0)
+    delete[] elementNodalPtr;
   }
 
   void SetNumOwned(int numOwned){
@@ -87,6 +93,9 @@ public:
   if(neighborhoodPtr != 0)
     delete[] neighborhoodPtr;
   neighborhoodPtr = new int[numOwned];
+  if(elementNodalPtr != 0)
+    delete[] elementNodalPtr;
+  elementNodalPtr = new int[numOwned];
   }
 
   void SetNeighborhoodListSize(int neighborhoodSize){
@@ -96,6 +105,13 @@ public:
   neighborhoodList = new int[neighborhoodListSize];
   }
 
+  void SetNeighborhoodListSize(int elementNodalSize){
+  elementNodalListSize = elementNodalSize;
+  if(neighborhoodList != 0)
+    delete[] elementNodalList;
+  elementNodalList = new int[elementNodalListSize];
+  }
+  
   int NumOwnedPoints() const{
     return numOwnedPoints;
   }
@@ -108,12 +124,24 @@ public:
     return neighborhoodPtr;
   }
 
+  int* ElementNodalPtr() const{
+    return elementNodalPtr;
+  }
+
   int NeighborhoodListSize() const{
     return neighborhoodListSize;
   }
 
+  int ElementNodalListSize() const{
+    return elementNodalListSize;
+  }
+
   int* NeighborhoodList() const{
     return neighborhoodList;
+  }
+
+  int* ElementNodalList() const{
+    return elementNodalList;
   }
 
   double memorySize() const{
@@ -145,6 +173,9 @@ protected:
   int neighborhoodListSize;
   int* neighborhoodList;
   int* neighborhoodPtr;
+  int elementNodalListSize;
+  int* elementNodalList;
+  int* elementNodalPtr;
 };
 
 }
