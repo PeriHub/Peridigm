@@ -80,7 +80,7 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
   TEUCHOS_TEST_FOR_EXCEPT_MSG(params->get<string>("Type") != "Text File", "Invalid Type in TextFileDiscretization");
 
   string meshFileName = params->get<string>("Input Mesh File");
-  string topologyFileName;
+  string topologyFileName = "";
   
   if(params->isParameter("Input FEM Topology File"))
     topologyFileName = params->get<string>("Input FEM Topology File");  
@@ -90,7 +90,7 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
   // Set up bond filters
   createBondFilters(params);
 
-  QUICKGRID::Data decomp = getDecomp(meshFileName, params);
+  QUICKGRID::Data decomp = getDecomp(meshFileName, topologyFileName, params);
 
   // \todo Refactor; the createMaps() call is currently inside getDecomp() due to order-of-operations issues with tracking element blocks.
   //createMaps(decomp);
@@ -163,6 +163,7 @@ PeridigmNS::TextFileDiscretization::~TextFileDiscretization() {}
 
 
 QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& textFileName,
+                                                              const string& meshFileName,
                                                               const Teuchos::RCP<Teuchos::ParameterList>& params) {
 
   // Read data from the text file
@@ -170,7 +171,8 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   vector<double> volumes;
   vector<int> blockIds;
   vector<double> angles;
-
+  vector<int> elementTopo;
+  vector<int> numberOfElementNodes;
   // Read the text file on the root processor
   if(myPID == 0){
     ifstream inFile(textFileName.c_str());
@@ -215,6 +217,29 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
       }
     }
     inFile.close();
+    std:string testString = "";
+    if (meshFileName != testString){
+      ifstream inFile(meshFileName.c_str());
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(!inFile.is_open(), "**** Error opening topology text file.\n");
+      while(inFile.good()){
+        string str;
+        getline(inFile, str);
+        str = trim(str);
+        // Ignore comment lines, otherwise parse
+        if( !(str[0] == '#' || str[0] == '/' || str[0] == '*' || str.size() == 0) ){
+          istringstream iss(str);
+          vector<int> topo;
+          copy(istream_iterator<int>(iss),
+              istream_iterator<int>(),
+              back_inserter<vector<int> >(topo));
+          numberOfElementNodes.push_back(static_cast<int>(topo[0]));
+          for (int n = 0; n<topo.size(); n++){
+            elementTopo.push_back(static_cast<int>(topo[n]));
+          } 
+        }
+      }
+      inFile.close();
+    }
   }
 
   int numElements = static_cast<int>(blockIds.size());

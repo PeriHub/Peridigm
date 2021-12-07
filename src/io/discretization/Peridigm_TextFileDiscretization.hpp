@@ -126,6 +126,7 @@ namespace PeridigmNS {
 
     //! Creates a discretization object based on data read from a text file.
     QUICKGRID::Data getDecomp(const std::string& textFileName,
+                              const std::string& meshFileName,
                               const Teuchos::RCP<Teuchos::ParameterList>& params);
 
   protected:
