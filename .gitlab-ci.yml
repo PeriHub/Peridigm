@@ -29,10 +29,10 @@ build_job:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
   script:
     - docker build -t ${CI_REGISTRY_PATH}peridigm_image .
-    - docker push ${CI_REGISTRY_PATH}peridigm_image
-    - docker run ${CI_REGISTRY_PATH}peridigm_image /opt/cmake/bin/ctest -T Test --test-dir /peridigm/build || true
+    - docker run ${CI_REGISTRY_PATH}peridigm_image /opt/cmake/bin/ctest -T Test --test-dir /Peridigm/build || true
     - CONTAINERNAME=$(docker ps -a --format "{{.Names}}")
-    - docker cp $CONTAINERNAME:/peridigm/build/Testing Testing
+    - docker cp $CONTAINERNAME:/Peridigm/build/Testing Testing
+    - docker push ${CI_REGISTRY_PATH}peridigm_image
   after_script:
     - docker logout
   artifacts:
