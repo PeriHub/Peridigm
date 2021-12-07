@@ -2,10 +2,9 @@
 
 import sys
 import os
-import re
 from subprocess import Popen
 
-test_dir = "ViscoplasticNeedlemanFullyPrescribedTension_WithFlaw/np4"
+test_dir = "np4"
 base_name = "ViscoplasticNeedlemanFullyPrescribedTension_WithFlaw"
 
 if __name__ == "__main__":

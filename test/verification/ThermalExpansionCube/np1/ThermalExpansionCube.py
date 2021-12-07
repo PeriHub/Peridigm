@@ -2,10 +2,9 @@
 
 import sys
 import os
-import re
 from subprocess import Popen
 
-test_dir = "ThermalExpansionCube/np1"
+test_dir = "np1"
 base_name = "ThermalExpansionCube"
 
 if __name__ == "__main__":

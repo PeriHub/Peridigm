@@ -1,2 +1,1 @@
-blot LinearLPSBar.e -input LinearLPSBar.blot met
-gnuplot LinearLPSBar.plotgen
+../LinearLPSBar.post

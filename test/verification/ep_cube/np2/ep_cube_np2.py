@@ -2,10 +2,9 @@
 
 import sys
 import os
-import re
 from subprocess import Popen
 
-test_dir = "ep_cube/np2"
+test_dir = "np2"
 base_name = "ep_cube"
 
 if __name__ == "__main__":
@@ -48,7 +47,7 @@ if __name__ == "__main__":
     command = ["../../../../scripts/exodiff", \
                "-stat", \
                "-f", \
-               "../"+base_name+".comp", \               
+               "../"+base_name+".comp", \
                base_name+".e", \
                "../"+base_name+"_gold.e"]
     p = Popen(command, stdout=logfile, stderr=logfile)

@@ -2,10 +2,9 @@
 
 import sys
 import os
-import re
 from subprocess import Popen
 
-test_dir = "ElasticCorrespondenceFullyPrescribedTension/np1"
+test_dir = "np1"
 base_name = "ElasticCorrespondenceFullyPrescribedTension"
 
 if __name__ == "__main__":

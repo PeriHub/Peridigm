@@ -2,11 +2,10 @@
 
 import sys
 import os
-import re
 import glob
 from subprocess import Popen
 
-test_dir = "Compression_2x1x1/np2"
+test_dir = "np2"
 base_name = "Compression_2x1x1"
 
 if __name__ == "__main__":
@@ -34,7 +33,7 @@ if __name__ == "__main__":
         os.remove(file)
 
     # run Peridigm
-    command = ["mpiexec", "-np", "2", "../../../../src/Peridigm", "../"+base_name+".peridigm"]
+    command = ["mpiexec", "-np", "2", "../../../../src/Peridigm", "../"+base_name+".yaml"]
     p = Popen(command, stdout=logfile, stderr=logfile)
     return_code = p.wait()
     if return_code != 0:

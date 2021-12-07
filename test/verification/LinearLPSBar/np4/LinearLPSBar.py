@@ -2,11 +2,10 @@
 
 import sys
 import os
-import re
 import glob
 from subprocess import Popen
 
-test_dir = "LinearLPSBar/np4"
+test_dir = "np4"
 base_name = "LinearLPSBar"
 
 if __name__ == "__main__":
@@ -34,7 +33,7 @@ if __name__ == "__main__":
         os.remove(file)
 
     # run Peridigm
-    command = ["mpiexec", "-np", "4", "../../../../src/Peridigm", "../"+base_name+".peridigm"]
+    command = ["mpiexec", "-np", "4", "../../../../src/Peridigm", "../"+base_name+".yaml"]
     p = Popen(command, stdout=logfile, stderr=logfile)
     return_code = p.wait()
     if return_code != 0:

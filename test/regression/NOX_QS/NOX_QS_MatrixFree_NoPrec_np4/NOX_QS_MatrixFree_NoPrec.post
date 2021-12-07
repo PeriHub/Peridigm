@@ -1,3 +1,1 @@
-blot NOX_QS_MatrixFree_NoPrec.e -input NOX_QS.blot met
-cat NOX_QS_MatrixFree_NoPrec.csv
-
+../NOX_QS_MatrixFree_NoPrec.post

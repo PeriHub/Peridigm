@@ -2,11 +2,10 @@
 
 import sys
 import os
-import re
 import glob
 from subprocess import Popen
 
-test_dir = "Contact_2x1x1/np2"
+test_dir = "np2"
 base_name = "Contact_2x1x1"
 
 if __name__ == "__main__":
@@ -55,7 +54,7 @@ if __name__ == "__main__":
     p = Popen(command, stdout=logfile, stderr=logfile)
     return_code = p.wait()
     if return_code != 0:
-        result = return_code    
+        result = return_code
 
     logfile.close()
 

@@ -2,10 +2,9 @@
 
 import sys
 import os
-import re
 from subprocess import Popen
 
-test_dir = "LinearLPSBar/np1"
+test_dir = "np1"
 base_name = "LinearLPSBar"
 
 if __name__ == "__main__":
@@ -35,7 +34,7 @@ if __name__ == "__main__":
         os.remove(file)
 
     # run Peridigm
-    command = ["../../../../src/Peridigm", "../"+base_name+".peridigm"]
+    command = ["../../../../src/Peridigm", "../"+base_name+".yaml"]
     p = Popen(command, stdout=logfile, stderr=logfile)
     return_code = p.wait()
     if return_code != 0:
