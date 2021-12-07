@@ -56,14 +56,14 @@
 
 namespace PeridigmNS {
 
-  class ElasticLinearCorrespondenceMaterial : public CorrespondenceMaterial{
+  class FEMElasticMaterial : public FEM{
   public:
 
 	//! Constructor.
-    ElasticLinearCorrespondenceMaterial(const Teuchos::ParameterList & params);
+    FEMElasticMaterial(const Teuchos::ParameterList & params);
 
     //! Destructor.
-    virtual ~ElasticLinearCorrespondenceMaterial();
+    virtual ~FEMElasticMaterial();
 
     //! Return name of material type
     virtual std::string Name() const { return("FEM Elastic Material"); }
@@ -72,11 +72,11 @@ namespace PeridigmNS {
     virtual void initialize(const double dt, 
                             const int numOwnedPoints, 
                             const int* ownedIDs,
-                            const int* neighborhoodList,
+                            const int* elementNodalList,
                             PeridigmNS::DataManager& dataManager);
     virtual void computeCauchyStress(const double dt,
                                      const int numOwnedPoints,
-                                     const int* neighborhoodList,
+                                     const int* elementNodalList,
                                      PeridigmNS::DataManager& dataManager) const;
     //! Returns the requested material property
     //! A dummy method here.

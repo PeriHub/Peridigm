@@ -54,7 +54,6 @@
 #define PERIDIGM_FEM_HPP
 
 #include "Peridigm_Material.hpp"
-#include "Peridigm_InfluenceFunction.hpp"
 
 namespace PeridigmNS {
 
@@ -86,7 +85,7 @@ namespace PeridigmNS {
     virtual void initialize(const double dt,
                             const int numOwnedPoints,
                             const int* ownedIDs,
-                            const int* neighborhoodList,
+                            const int* elementNodalList,
                             PeridigmNS::DataManager& dataManager);
 
     //! Evaluate the Cauchy stress (pure virtual function, must be implemented by derived correspondence material models).
@@ -98,7 +97,7 @@ namespace PeridigmNS {
     virtual void computeForce(const double dt,
                               const int numOwnedPoints,
                               const int* ownedIDs,
-                              const int* neighborhoodList,
+                              const int* elementNodalList,
                               PeridigmNS::DataManager& dataManager) const;
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -112,7 +111,6 @@ namespace PeridigmNS {
     bool m_applyAutomaticDifferentiationJacobian;
     bool m_applyThermalStrains;
     double D;
-    PeridigmNS::InfluenceFunction::functionPointer m_OMEGA;
 
     // field spec ids for all relevant data
     std::vector<int> m_fieldIds;

@@ -105,13 +105,13 @@ public:
   neighborhoodList = new int[neighborhoodListSize];
   }
 
-  void SetNeighborhoodListSize(int elementNodalSize){
+  void SetElementNodalListSize(int elementNodalSize){
   elementNodalListSize = elementNodalSize;
   if(neighborhoodList != 0)
     delete[] elementNodalList;
   elementNodalList = new int[elementNodalListSize];
   }
-  
+
   int NumOwnedPoints() const{
     return numOwnedPoints;
   }
@@ -143,7 +143,7 @@ public:
   int* ElementNodalList() const{
     return elementNodalList;
   }
-
+// memory element
   double memorySize() const{
     int sizeInBytes =
       (2*numOwnedPoints + neighborhoodListSize + 2)*sizeof(int) + 3*sizeof(int*);

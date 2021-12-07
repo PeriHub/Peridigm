@@ -112,6 +112,27 @@ std::shared_ptr<int> PeridigmNS::Discretization::getLocalOwnedIds(const QUICKGRI
   return localIds.get_shared_ptr();
 }
 
+std::shared_ptr<int> PeridigmNS::Discretization::getElementNodalList(const QUICKGRID::Data& gridData, const Epetra_BlockMap& overlapMap){
+  UTILITIES::Array<int> localNeighborList(gridData.sizeElementNodalList);
+  int *localNeig = localNeighborList.get();
+  int *neighPtr = gridData.elementNodalPtr.get();
+  int *neigh = gridData.elementNodal.get();
+  for(size_t p=0;p<gridData.numElements;p++){
+    int ptr = neighPtr[p];
+    int numNeigh = neigh[ptr];
+    localNeig[ptr]=numNeigh;
+    for(int n=1;n<=numNeigh;n++){
+      int gid = neigh[ptr+n];
+      int localId = overlapMap.LID(gid);
+      localNeig[ptr+n] = localId;
+    }
+  }
+  return localNeighborList.get_shared_ptr();
+}
+
+
+
+
 std::shared_ptr<int> PeridigmNS::Discretization::getLocalNeighborList(const QUICKGRID::Data& gridData, const Epetra_BlockMap& overlapMap){
   UTILITIES::Array<int> localNeighborList(gridData.sizeNeighborhoodList);
   int *localNeig = localNeighborList.get();

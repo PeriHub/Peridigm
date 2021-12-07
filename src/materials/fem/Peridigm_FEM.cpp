@@ -52,11 +52,6 @@
 
 #include "Peridigm_FEM.hpp"
 #include "Peridigm_Field.hpp"
-#include "elastic.h"
-#include "correspondence.h"
-#include "matrices.h"
-#include "Peridigm_DegreesOfFreedomManager.hpp"
-#include "elastic_correspondence.h"
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
@@ -79,12 +74,8 @@ PeridigmNS::FEM::FEM(const Teuchos::ParameterList& params)
   m_modelAnglesId                     = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::CONSTANT, "Local_Angles");
   m_coordinatesFieldId                = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Coordinates");
   m_forceDensityFieldId               = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Force_Density");
-  if(m_applyThermalStrains){
-    m_temperatureFieldId      = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Temperature");
-  }
+  
   m_unrotatedCauchyStressFieldId      = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Unrotated_Cauchy_Stress");
-  m_unrotatedRateOfDeformationFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Rate_Of_Deformation");
-  m_unrotatedCauchyStressPlasticFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Plastic_Cauchy_Stress");
   m_cauchyStressFieldId               = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Cauchy_Stress");
   m_partialStressFieldId              = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Partial_Stress");
   
@@ -96,7 +87,7 @@ PeridigmNS::FEM::FEM(const Teuchos::ParameterList& params)
   
   m_fieldIds.push_back(m_unrotatedCauchyStressFieldId);
   m_fieldIds.push_back(m_cauchyStressFieldId);
-  m_fieldIds.push_back(m_unrotatedCauchyStressPlasticFieldId);
+
   m_fieldIds.push_back(m_partialStressFieldId);
   m_fieldIds.push_back(m_modelAnglesId);
   if(m_applyThermalStrains){m_fieldIds.push_back(m_temperatureFieldId);}
@@ -108,10 +99,10 @@ PeridigmNS::FEM::~FEM()
 
 void
 PeridigmNS::FEM::initialize(const double dt,
-                                               const int numOwnedPoints,
-                                               const int* ownedIDs,
-                                               const int* neighborhoodList,
-                                               PeridigmNS::DataManager& dataManager)
+                            const int numOwnedPoints,
+                            const int* ownedIDs,
+                            const int* elementNodalList,
+                            PeridigmNS::DataManager& dataManager)
 {
   
  // FEM::createLumbedMassesSomeHow()
@@ -120,15 +111,15 @@ PeridigmNS::FEM::initialize(const double dt,
 
 void
 PeridigmNS::FEM::computeForce(const double dt,
-                                                 const int numOwnedPoints,
-                                                 const int* ownedIDs,
-                                                 const int* neighborhoodList,
-                                                 PeridigmNS::DataManager& dataManager) const
+                              const int numOwnedPoints,
+                              const int* ownedIDs,
+                              const int* elementNodalList,
+                              PeridigmNS::DataManager& dataManager) const
 {
   // Zero out the forces and partial stress
 
  
-  computeCauchyStress(dt, numOwnedPoints, neighborhoodList, dataManager);
+  computeCauchyStress(dt, numOwnedPoints, elementNodalList, dataManager);
  
 // brauchen wir vielleicht nicht
 // FEM::computeForcesAndStresses(

@@ -98,15 +98,25 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset, bool damage
     Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData = blockIt->getNeighborhoodData();
     const int numOwnedPoints = neighborhoodData->NumOwnedPoints();
     const int* ownedIDs = neighborhoodData->OwnedIDs();
-    const int* neighborhoodList = neighborhoodData->NeighborhoodList();
+    
     Teuchos::RCP<PeridigmNS::DataManager> dataManager = blockIt->getDataManager();
     Teuchos::RCP<const PeridigmNS::Material> materialModel = blockIt->getMaterialModel();
-
-    materialModel->precompute(dt,
-                              numOwnedPoints,
-                              ownedIDs,
-                              neighborhoodList,
-                              *dataManager);
+    if (materialModel->Name().find("FEM")!=std::string::npos){
+      const int* elementNodalList = neighborhoodData->ElementNodalList();
+      materialModel->precompute(dt,
+                          numOwnedPoints,
+                          ownedIDs,
+                          elementNodalList,
+                          *dataManager);
+    }
+    else{
+      const int* neighborhoodList = neighborhoodData->NeighborhoodList();
+      materialModel->precompute(dt,
+                                numOwnedPoints,
+                                ownedIDs,
+                                neighborhoodList,
+                                *dataManager);
+    }
   }
   PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Precompute");
 
@@ -134,11 +144,23 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset, bool damage
     
     if(runEval){
       PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Compute Force");
-      materialModel->computeForce(dt,
+      if (materialModel->Name().find("FEM")!=std::string::npos){
+        const int* elementNodalList = neighborhoodData->ElementNodalList();
+        materialModel->computeForce(dt,
+                                numOwnedPoints,
+                                ownedIDs,
+                                elementNodalList,
+                                *dataManager);
+          }
+      else{
+        const int* neighborhoodList = neighborhoodData->NeighborhoodList();
+        materialModel->computeForce(dt,
                                   numOwnedPoints,
                                   ownedIDs,
                                   neighborhoodList,
                                   *dataManager);
+      }
+
       PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Internal Force:Compute Force");
     }
     

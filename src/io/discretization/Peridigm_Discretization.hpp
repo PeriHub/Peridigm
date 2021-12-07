@@ -173,6 +173,9 @@ namespace PeridigmNS {
     //! Get the local owned IDs.
     static std::shared_ptr<int> getLocalOwnedIds(const QUICKGRID::Data& gridData, const Epetra_BlockMap& overlapMap);
 
+    //! Get the element nodal list.
+    static std::shared_ptr<int> getElementNodalList(const QUICKGRID::Data& gridData, const Epetra_BlockMap& overlapMap);
+
     //! Get the local neighborhood list.
     static std::shared_ptr<int> getLocalNeighborList(const QUICKGRID::Data& gridData, const Epetra_BlockMap& overlapMap);
 

@@ -403,7 +403,7 @@ PeridigmNS::TextFileDiscretization::createNeighborhoodData(const QUICKGRID::Data
   memcpy(neighborhoodData->ElementNodalPtr(), 
  		 decomp.elementNodalPtr.get(),
  		 decomp.numPoints*sizeof(int));
-   neighborhoodData->SetElementNodalListSize(decomp.sizeElementTopologyList);
+   neighborhoodData->SetElementNodalListSize(decomp.sizeElementNodalList);
    memcpy(neighborhoodData->ElementNodalList(),
  		 Discretization::getElementNodalList(decomp, *oneDimensionalOverlapMap).get(),
  		 decomp.sizeElementNodalList*sizeof(int));
