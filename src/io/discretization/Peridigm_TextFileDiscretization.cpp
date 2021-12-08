@@ -234,7 +234,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
               back_inserter<vector<int> >(topo));
           numberOfElementNodes.push_back(static_cast<int>(topo.size()));
           elementTopo.push_back(static_cast<int>(topo.size()));
-          for (int n = 0; n<topo.size(); n++){
+          for (unsigned int n = 0; n<topo.size(); n++){
             elementTopo.push_back(static_cast<int>(topo[n]));
           } 
         }
