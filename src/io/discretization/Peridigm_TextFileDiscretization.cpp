@@ -217,8 +217,8 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
       }
     }
     inFile.close();
-    std:string testString = "";
-    if (meshFileName != testString){
+    std::string testString = "";
+    if (meshFileName.compare(testString) != 0){
       ifstream inFile(meshFileName.c_str());
       TEUCHOS_TEST_FOR_EXCEPT_MSG(!inFile.is_open(), "**** Error opening topology text file.\n");
       while(inFile.good()){
@@ -232,7 +232,8 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
           copy(istream_iterator<int>(iss),
               istream_iterator<int>(),
               back_inserter<vector<int> >(topo));
-          numberOfElementNodes.push_back(static_cast<int>(topo[0]));
+          numberOfElementNodes.push_back(static_cast<int>(topo.size()));
+          elementTopo.push_back(static_cast<int>(topo.size()));
           for (int n = 0; n<topo.size(); n++){
             elementTopo.push_back(static_cast<int>(topo[n]));
           } 
@@ -241,7 +242,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
       inFile.close();
     }
   }
-
+//Hier geht es weiter
   int numElements = static_cast<int>(blockIds.size());
   TEUCHOS_TEST_FOR_EXCEPT_MSG(myPID == 0 && numElements < 1, "**** Error reading discretization text file, no data found.\n");
 
