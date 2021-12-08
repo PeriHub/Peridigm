@@ -162,7 +162,34 @@ TEUCHOS_UNIT_TEST(FEM, defineLagrangianGridSpace) {
     }
 }
 
+TEUCHOS_UNIT_TEST(FEM, getDisplacements) {
+    const double tolerance = 1.0e-15;
+    int A = 2;
+    std::vector<double> BVector(6);
+    double* B = &BVector[0];
+    B = {0,0.1,-0.3,100,20.25,11};
+    std::vector<double> CVector(6);
+    double* C = &CVector[0];
+    C = {0,-0.1,-0.3,1,0,12}
+    std::vector<double> DVector(6);
+    double* D = &DVector[0];
+    D = {0,-0.2,0.0,-99,-20.25,1};
+    std::vector<double> DVectorTest(6);
+    double* DTest = &DVectorTest[0];
+    double B[6];
 
+    int numOwnedPoints,
+    const double* modelCoordinates,
+    const double* coordinatesNP1,
+    double* displacements
+
+    FEM::getDisplacements(A, B, C, D);
+ 
+    for (int n=0; n<3*A+2; n++){
+        TEST_FLOATING_EQUALITY(D[n],DTest[n],tolerance);
+    }
+    
+}
 
 int main
 (int argc, char* argv[])
