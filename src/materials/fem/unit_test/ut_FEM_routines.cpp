@@ -105,11 +105,12 @@ TEUCHOS_UNIT_TEST(FEM, shapeFunctionsLagrange) {
         std::vector<double> NmatrixTestVector(8);
         double* NmatrixTest = &NmatrixTestVector[0];
         double Nmatrix[9];
-        const double elCoor[3]
-
-        double elCoor[3],weights[3], order[3];
-
-        if (order == 1){
+        double elCoor[3];
+        int order[3];
+        order[0]=1;
+        order[1]=1;
+        order[2]=1;
+        if (order[0] == 1){
                 Nmatrix[0]= 0.09806875 ;
                 Nmatrix[1]= 0.13268124999999997 ;
                 Nmatrix[2]= 0.07144374999999999 ;
@@ -127,8 +128,8 @@ TEUCHOS_UNIT_TEST(FEM, shapeFunctionsLagrange) {
                 order[2] = 1;
                 FEM::shapeFunctionsLagrange(NmatrixTest, order, elCoor);
                 for (int n=0; n<2; n++){
-                        TEST_FLOATING_EQUALITY(N[n],NmatrixTest[n],tolerance);
-                        TEST_FLOATING_EQUALITY(weights[n],weightsTest[n],tolerance);
+                        TEST_FLOATING_EQUALITY(Nmatrix[n],NmatrixTest[n],tolerance);
+                       
                 }
 
         }
@@ -165,23 +166,12 @@ TEUCHOS_UNIT_TEST(FEM, defineLagrangianGridSpace) {
 TEUCHOS_UNIT_TEST(FEM, getDisplacements) {
     const double tolerance = 1.0e-15;
     int A = 2;
-    std::vector<double> BVector(6);
-    double* B = &BVector[0];
-    B = {0,0.1,-0.3,100,20.25,11};
-    std::vector<double> CVector(6);
-    double* C = &CVector[0];
-    C = {0,-0.1,-0.3,1,0,12}
-    std::vector<double> DVector(6);
-    double* D = &DVector[0];
-    D = {0,-0.2,0.0,-99,-20.25,1};
+
+    double B[6] = {0,0.1,-0.3,100,20.25,11};
+    double C[6] = {0,-0.1,-0.3,1,0,12};
+    double D[6] = {0,-0.2,0.0,-99,-20.25,1};
     std::vector<double> DVectorTest(6);
     double* DTest = &DVectorTest[0];
-    double B[6];
-
-    int numOwnedPoints,
-    const double* modelCoordinates,
-    const double* coordinatesNP1,
-    double* displacements
 
     FEM::getDisplacements(A, B, C, D);
  

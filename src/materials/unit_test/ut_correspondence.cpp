@@ -86,7 +86,7 @@ TEUCHOS_UNIT_TEST(correspondence, updateElasticCauchyStressAnisotropicCode) {
     
     double C[] =      { 468.0  ,3978.0, 3276.0,
                         3978.0 ,1170.0, 2574.0,
-                        3276.0 ,2574.0, 1872.0,};
+                        3276.0 ,2574.0, 1872.0};
 
     for (n=0; n<9; n++){
 
