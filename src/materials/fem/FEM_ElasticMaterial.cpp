@@ -52,6 +52,7 @@
 #include "FEM_ElasticMaterial.hpp"
 #include "Peridigm_Field.hpp"
 #include "elastic_FEM.h"
+#include "FEM_routines.h"
 #include <Teuchos_Assert.hpp>
 
 using namespace std;
@@ -253,14 +254,15 @@ PeridigmNS::FEMElasticMaterial::computeCauchyStress(const double dt,
   dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&deformedCoor);
   dataManager.getData(m_displacementFieldId, PeridigmField::STEP_NP1)->ExtractView(&displacements);
   dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&force);
+  
   FEM::getDisplacements(numOwnedPoints,coor,deformedCoor,displacements);
   int numElements;
-  int *elementNodalList;
+
   FEM::elasticFEM(coor, 
                   displacements,
                   CauchyStressNP1,
                   numElements,
-                  elementNodalList
+                  elementNodalList,
                   C,
                   angles,
                   m_type,

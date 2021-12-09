@@ -170,10 +170,10 @@ double* Jinv
 );
 void getDisplacements
 (
-    int numOwnedPoints,
-    const double* modelCoordinates,
-    const double* coordinatesNP1,
-    double* displacements
+int numOwnedPoints,
+const double* modelCoordinates,
+const double* coordinatesNP1,
+double* displacements
 );
 
 }

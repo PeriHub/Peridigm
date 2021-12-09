@@ -57,7 +57,7 @@ namespace FEM {
 
 
 //template<typename double>
-void updateElasticCauchyStressFEM
+void elasticFEM
  (
   const double* modelCoordinates,
   const double* deformedCoordinates, 

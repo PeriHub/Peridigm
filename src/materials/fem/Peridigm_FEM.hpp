@@ -91,6 +91,7 @@ namespace PeridigmNS {
     //! Evaluate the Cauchy stress (pure virtual function, must be implemented by derived correspondence material models).
     virtual void computeCauchyStress(const double dt,
                                      const int numOwnedPoints,
+                                     const int* elementNodalList,
                                      PeridigmNS::DataManager& dataManager) const = 0;
 
     //! Evaluate the internal force.

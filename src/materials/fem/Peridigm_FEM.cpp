@@ -59,7 +59,7 @@ using namespace std;
 
 PeridigmNS::FEM::FEM(const Teuchos::ParameterList& params)
   : Material(params),
-    m_density(0.0), 
+    m_density(0.0)
     
 {
      
@@ -90,7 +90,7 @@ PeridigmNS::FEM::FEM(const Teuchos::ParameterList& params)
 
   m_fieldIds.push_back(m_partialStressFieldId);
   m_fieldIds.push_back(m_modelAnglesId);
-  if(m_applyThermalStrains){m_fieldIds.push_back(m_temperatureFieldId);}
+  
 }
 
 PeridigmNS::FEM::~FEM()

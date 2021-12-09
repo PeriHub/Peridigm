@@ -68,7 +68,7 @@ using namespace std;
 namespace FEM {
 
   //template<typename ScalarT>
-  void updateElasticCauchyStressFEM
+  void elasticFEM
   (
   const double* modelCoordinates,
   const double* displacements, 

@@ -53,7 +53,7 @@
 #ifndef FEM_ELASTICMATERIAL_HPP
 #define FEM_ELASTICMATERIAL_HPP
 
-
+#include "Peridigm_FEM.hpp"
 namespace PeridigmNS {
 
   class FEMElasticMaterial : public FEM{
@@ -95,6 +95,7 @@ namespace PeridigmNS {
     int m_cauchyStressFieldId;
     int m_forceDensityFieldId;
     int order[3];
+    bool m_plane;
   };
 }
 

@@ -70,7 +70,7 @@
 #include "Peridigm_DiffusionMaterial.hpp"
 #include "Peridigm_Pals_Model.hpp"
 #include "Peridigm_LinearLPSPVMaterial.hpp"
-//#include "FEMElasticMaterial.hpp"
+#include "FEM_ElasticMaterial.hpp"
 #ifdef PERIDIGM_PV
   #include "Peridigm_ElasticPVMaterial.hpp"
 #endif
@@ -125,8 +125,8 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
     materialModel = Teuchos::rcp( new LinearLPSPVMaterial(materialParams) );
   else if (materialModelName == "Linear Elastic Correspondence")
     materialModel = Teuchos::rcp( new ElasticLinearCorrespondenceMaterial(materialParams) );    
-  //else if (materialModelName == "FEM Elastic Material")
-  //  materialModel = Teuchos::rcp( new FEMElasticMaterial(materialParams) );    
+  else if (materialModelName == "FEM Elastic Material")
+    materialModel = Teuchos::rcp( new FEMElasticMaterial(materialParams) );    
   else if (materialModelName == "User Correspondence")
     materialModel = Teuchos::rcp( new UserCorrespondenceMaterial(materialParams) );    
   else if (materialModelName == "Elastic Partial Volume"){
