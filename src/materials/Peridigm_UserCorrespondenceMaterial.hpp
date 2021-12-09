@@ -72,7 +72,8 @@ namespace PeridigmNS {
                             PeridigmNS::DataManager& dataManager);
     virtual void computeCauchyStress(const double dt,
                                      const int numOwnedPoints,
-                                     PeridigmNS::DataManager& dataManager) const;
+                                     PeridigmNS::DataManager& dataManager,
+                                     const double time) const;
     //! Returns the requested material property
     //! A dummy method here.
     virtual double lookupMaterialProperty(const std::string keyname) const {return 0.0;}

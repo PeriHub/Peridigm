@@ -119,7 +119,8 @@ PeridigmNS::ViscoplasticNeedlemanCorrespondenceMaterial::initialize(const double
 void
 PeridigmNS::ViscoplasticNeedlemanCorrespondenceMaterial::computeCauchyStress(const double dt,
                                                                const int numOwnedPoints,
-                                                               PeridigmNS::DataManager& dataManager) const
+                                                               PeridigmNS::DataManager& dataManager,
+                                                               const double time) const
 {
   double *unrotatedCauchyStressN;
   dataManager.getData(m_unrotatedCauchyStressFieldId, PeridigmField::STEP_N)->ExtractView(&unrotatedCauchyStressN);

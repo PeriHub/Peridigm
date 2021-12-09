@@ -90,7 +90,8 @@ PeridigmNS::ElasticCorrespondenceMaterial::~ElasticCorrespondenceMaterial()
 void
 PeridigmNS::ElasticCorrespondenceMaterial::computeCauchyStress(const double dt,
                                                                const int numOwnedPoints,
-                                                               PeridigmNS::DataManager& dataManager) const
+                                                               PeridigmNS::DataManager& dataManager,
+                                                               const double time) const
 {
   double *unrotatedCauchyStressN;
   dataManager.getData(m_unrotatedCauchyStressFieldId, PeridigmField::STEP_N)->ExtractView(&unrotatedCauchyStressN);

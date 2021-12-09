@@ -228,7 +228,8 @@ PeridigmNS::ElasticLinearCorrespondenceMaterial::initialize(const double dt,
 void
 PeridigmNS::ElasticLinearCorrespondenceMaterial::computeCauchyStress(const double dt,
                                                                const int numOwnedPoints,
-                                                               PeridigmNS::DataManager& dataManager) const
+                                                               PeridigmNS::DataManager& dataManager,
+                                                               const double time) const
 {
 
   

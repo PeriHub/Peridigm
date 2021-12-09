@@ -154,14 +154,15 @@ PeridigmNS::UserCorrespondenceMaterial::initialize(const double dt,
 
 void
 PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
-                                                               const int numOwnedPoints,
-                                                               PeridigmNS::DataManager& dataManager) const
+                                                            const int numOwnedPoints,
+                                                            PeridigmNS::DataManager& dataManager,
+                                                            const double time) const
 {
   ///////////////
   //PLACEHOLDER//
   ///////////////
   double *temperature = NULL, *dtemperature = NULL;
-  double time = 0.0;
+  // double time = 0.0;
   //////////////////////////////
 
   double *angles, *modelCoordinates;

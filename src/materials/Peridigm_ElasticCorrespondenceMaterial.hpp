@@ -67,7 +67,8 @@ namespace PeridigmNS {
     //! Evaluate the Cauchy stress.
     virtual void computeCauchyStress(const double dt,
                                      const int numOwnedPoints,
-                                     PeridigmNS::DataManager& dataManager) const;
+                                     PeridigmNS::DataManager& dataManager,
+                                     const double time = 0.0) const;
 
     //! Returns the requested material property
     //! A dummy method here.

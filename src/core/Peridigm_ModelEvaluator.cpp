@@ -139,7 +139,8 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset, bool damage
                                   numOwnedPoints,
                                   ownedIDs,
                                   neighborhoodList,
-                                  *dataManager);
+                                  *dataManager,
+                                  currentTime);
       PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Internal Force:Compute Force");
     }
     
