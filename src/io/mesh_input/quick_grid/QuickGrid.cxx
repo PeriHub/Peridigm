@@ -185,16 +185,20 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
   // array in indices that point to neighborhood for a given localId
   Array<int> neighborhoodPtr(numCells);
 
+  // array in indices that point to element neighborhood for a given localId
+  Array<int> elementNodesPtr(numCells);
+
   // Flag for marking points that get exported during load balance
   Array<char> exportFlag(numCells);
 
 
   // Initialize all the above data to zero
   double *xPtr = X.get();
-    double *anglesPtr = Angles.get();
+  double *anglesPtr = Angles.get();
   double *vPtr = V.get();
   int *gIdsPtr = globalIds.get();
   int *nPtr = neighborhoodPtr.get();
+  int *ePtr = elementNodesPtr.get();
   char *exportFlagPtr = exportFlag.get();
   for(size_t p=0;p<numCells;p++){
 
@@ -204,6 +208,7 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
     vPtr[p]=0;
     gIdsPtr[p]=0;
     nPtr[p]=0;
+    ePtr[p]=0;
     exportFlagPtr[p]=0;
   }
 
@@ -227,6 +232,21 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
    * number of neighbors for every point is zero
    */
   *neighborhood = 0;
+  /*
+   * Initialize finite element nodes list to a consistent state
+   * 1) Set sizeElementNodesList=1
+   * 2) Create a new and empty element topology list
+   * 3) Set elementNodes pointer for each point to 0
+   */
+
+
+  int sizeElementNodesList=1;
+  Array<int> elementNodesList(sizeElementNodesList);
+  int *elementNodes = elementNodesList.get();
+  /*
+   * number of neighbors for every point is zero
+   */
+  *elementNodes = 0;
 
   gridData.dimension = dimension;
   gridData.globalNumPoints = 0;
@@ -239,6 +259,8 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
   gridData.cellVolume = V.get_shared_ptr();
   gridData.neighborhood = neighborhoodList.get_shared_ptr();
   gridData.neighborhoodPtr = neighborhoodPtr.get_shared_ptr();
+  gridData.elementNodes = elementNodesList.get_shared_ptr();
+  gridData.elementNodesPtr = elementNodesPtr.get_shared_ptr();
   gridData.exportFlag = exportFlag.get_shared_ptr();
   gridData.unPack = true;
 
