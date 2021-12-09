@@ -596,7 +596,10 @@ void NeighborhoodList::createAndAddNeighborhood(){
    * create neighborhood
    */
   buildNeighborhoodList(newNumPoints,xOverlapArray.get_shared_ptr());
-
+  /*
+   * create elementList
+   */
+  //buildTopologyList(newNumPoints,xOverlapArray.get_shared_ptr());
   /*
    * Now, we have to map the neighborhood list from "localIds" to "globalIds"
    * Copy gIds from above gIdsOverlapArray into gidNeigh
@@ -613,10 +616,24 @@ void NeighborhoodList::createAndAddNeighborhood(){
       *gidNeigh = *(gIdsOverlap+*gidNeigh);
     }
   }
-
+  /*
+  size_neighborhood_list=num_owned_points;
+  int *gidNeigh = neighborhood.get();
+  int *num_neigh = num_neighbors.get();
+  int *gIdsOverlap = gIdsOverlapArray.get();
+  for(size_t p=0;p<num_owned_points;p++,num_neigh++){
+    *num_neigh = *gidNeigh; gidNeigh++;
+    size_neighborhood_list += *num_neigh;
+    for(int n=0;n<*num_neigh;n++,gidNeigh++){
+      *gidNeigh = *(gIdsOverlap+*gidNeigh);
+    }
+  }
+  */
   Zoltan_Comm_Destroy(&plan);
 
 }
+
+
 
 void NeighborhoodList::buildNeighborhoodList(int numOverlapPoints,std::shared_ptr<double> xOverlapPtr)
 {
@@ -755,9 +772,84 @@ void NeighborhoodList::buildNeighborhoodList(int numOverlapPoints,std::shared_pt
   PeridigmNS::Memstat * memstat = PeridigmNS::Memstat::Instance();
   memstat->addStat("Zoltan Search Tree");
 
-
-
   delete searchTree;
 }
+
+//
+//void NeighborhoodList::buildTopologyList(int numOverlapPoints,std::shared_ptr<double> xOverlapPtr)
+//{
+//
+//  const double* xOverlap = xOverlapPtr.get();
+//
+//  size_t sizeList = 0;
+//  size_t max=0;
+//  
+//  /*
+//   * Second pass to populate neighborhood list
+//   */
+//  neighborhood_ptr = Array<int>(num_owned_points);
+//  neighborhood     = Array<int>(sizeList);
+//  Array<bool> markForExclusion(max);
+//
+//  {
+//    /*
+//     * Loop over owned points and determine number of points in horizon
+//     */
+//    int *ptr = neighborhood_ptr.get();
+//    int neighPtr = 0;
+//    int *list = neighborhood.get();
+//    int *elementList = elements.get();
+//  
+//    for(size_t p=0;p<num_elements;p++,ptr++){
+//      *ptr = neighPtr;
+//      std::vector<int> treeList[numNodes];
+//      /*
+//       * Note that list returned includes this point * but at start of list
+//       */
+//      
+//      numNodes = elementTopo;
+//      elementTopo++;
+//      for(int itopo=0;itopo<numNodes; numNodes++)
+//        treeList[itopo] = *(elementTopo+itopo);
+//        }
+//      
+//
+//      /*
+//       * Save address for number of neighbors; will assign later
+//       */
+//      int *numNeighPtr = list; list++;
+//      /*
+//       * Loop over flags and save neighbors as appropriate; also accumulate number of neighbors
+//       */
+//      size_t numNeigh=0;
+//      for(unsigned int n=0;n<treeList.size();n++){
+//
+//        int uid = treeList[n]; // global Uid
+//        *list = uid;
+//        list++;
+//        numNeigh++; // local Uid
+//      }
+//
+//      /*
+//       * Now save number of neighbors
+//       */
+//      *numElemNodesPtr = topo;
+//      /*
+//       * increment neighborhood pointer
+//       */
+//      elemNodesPtr += (topo+1);
+//      /*
+//      *numNeighPtr = numNeigh;
+//      /*
+//       * increment neighborhood pointer
+//       */
+//      neighPtr += (numNeigh+1);
+//      /*
+//       * Delete list
+//       */
+//    }
+//  }
+//  */
+//}
 
 }

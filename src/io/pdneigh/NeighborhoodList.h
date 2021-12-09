@@ -163,6 +163,7 @@ public:
 private:
 
   void buildNeighborhoodList(int numOverlapPoints,shared_ptr<double> xOverlapPtr);
+  void buildTopologyList(int numOverlapPoints,shared_ptr<double> xOverlapPtr);
   Array<int> createLocalNeighborList(const Epetra_BlockMap& overlapMap);
   Array<int> createSharedGlobalIds() const;
   void createAndAddNeighborhood();
@@ -172,11 +173,12 @@ private:
   shared_ptr<const Epetra_Comm> epetraComm;
   std::map<Epetra_MapTag, shared_ptr<Epetra_BlockMap>, MapComparator > epetra_block_maps;
   size_t num_owned_points, size_neighborhood_list;
+  size_t num_elements;
   double frameset_buffer_size;
     Teuchos::RCP<Epetra_Vector> horizons;
   shared_ptr<int> owned_gids;
   shared_ptr<double> owned_x;
-  Array<int> neighborhood, local_neighborhood, neighborhood_ptr, num_neighbors, sharedGIDs;
+  Array<int> neighborhood, elements, local_neighborhood, neighborhood_ptr, num_neighbors, sharedGIDs;
   struct Zoltan_Struct* zoltan;
   std::vector< shared_ptr<PdBondFilter::BondFilter> > filter_ptrs;
 

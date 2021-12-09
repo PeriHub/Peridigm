@@ -172,7 +172,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   vector<int> blockIds;
   vector<double> angles;
   vector<int> elementTopo;
-  vector<int> numberOfElementNodes;
+  int numOfFiniteElements = 0;
   // Read the text file on the root processor
   if(myPID == 0){
     ifstream inFile(textFileName.c_str());
@@ -218,10 +218,13 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
     }
     inFile.close();
     std::string testString = "";
+    
     if (meshFileName.compare(testString) != 0){
       ifstream inFile(meshFileName.c_str());
       TEUCHOS_TEST_FOR_EXCEPT_MSG(!inFile.is_open(), "**** Error opening topology text file.\n");
+      
       while(inFile.good()){
+        numOfFiniteElements += 1;
         string str;
         getline(inFile, str);
         str = trim(str);
@@ -232,7 +235,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
           copy(istream_iterator<int>(iss),
               istream_iterator<int>(),
               back_inserter<vector<int> >(topo));
-          numberOfElementNodes.push_back(static_cast<int>(topo.size()));
+          
           elementTopo.push_back(static_cast<int>(topo.size()));
           for (unsigned int n = 0; n<topo.size(); n++){
             elementTopo.push_back(static_cast<int>(topo[n]));
@@ -242,7 +245,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
       inFile.close();
     }
   }
-//Hier geht es weiter
+
   int numElements = static_cast<int>(blockIds.size());
   TEUCHOS_TEST_FOR_EXCEPT_MSG(myPID == 0 && numElements < 1, "**** Error reading discretization text file, no data found.\n");
 
@@ -284,7 +287,8 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   memcpy(decomp.cellVolume.get(), &volumes[0], numElements*sizeof(double)); 
   memcpy(decomp.myX.get(), &coordinates[0], 3*numElements*sizeof(double));
   memcpy(decomp.myAngle.get(), &angles[0], 3*numElements*sizeof(double));
-                                                              
+  //memcpy(decomp.elementNodal.get(), &elementTopo[0], static_cast<int>(elementTopo.size())*sizeof(int));
+                                                          
   // Create a blockID vector in the current configuration
   // That is, the configuration prior to load balancing
   Epetra_BlockMap tempOneDimensionalMap(decomp.globalNumPoints,
@@ -332,6 +336,11 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   PeridigmNS::HorizonManager& horizonManager = PeridigmNS::HorizonManager::self();
   Teuchos::RCP<Epetra_Vector> rebalancedHorizonForEachPoint = Teuchos::rcp(new Epetra_Vector(rebalancedMap));
   double* rebalancedX = decomp.myX.get();
+  /*
+   CW
+   no difference between PD blocks and FE blocks is made, because it is not known for the algorithm yet
+   in the text input only blocks are given without property entries
+  */
   for(map<string, vector<int> >::const_iterator it = elementBlocks->begin() ; it != elementBlocks->end() ; it++){
     const string& blockName = it->first;
     const vector<int>& globalIds = it->second;
@@ -355,20 +364,33 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
       }
     }
   }
-
-  // execute neighbor search and update the decomp to include resulting ghosts
+  /*
+   execute neighbor search and update the decomp to include resulting ghosts
+   CW
+   if topo exists, this search must not be done. The neighborhoodlist is then the topology list.
+   The difference between neighborhoodlist and elementtopology is the sorting
+   This allows an arbitrary neighborhood for PD using the mesh topology input without
+   the reference to the element topology within the material routines
+  */
   std::shared_ptr<const Epetra_Comm> commSp(comm.getRawPtr(), NonDeleter<const Epetra_Comm>());
   Teuchos::RCP<PDNEIGH::NeighborhoodList> list;
+  Teuchos::RCP<PDNEIGH::NeighborhoodList> topoList;
   if(bondFilters.size() == 0){
     list = Teuchos::rcp(new PDNEIGH::NeighborhoodList(commSp,decomp.zoltanPtr.get(),decomp.numPoints,decomp.myGlobalIDs,decomp.myX,rebalancedHorizonForEachPoint));
   }
   else{
     list = Teuchos::rcp(new PDNEIGH::NeighborhoodList(commSp,decomp.zoltanPtr.get(),decomp.numPoints,decomp.myGlobalIDs,decomp.myX,rebalancedHorizonForEachPoint,bondFilters));
+    topoList = Teuchos::rcp(new PDNEIGH::NeighborhoodList(commSp,decomp.zoltanPtr.get(),decomp.numPoints,decomp.myGlobalIDs,decomp.myX,rebalancedHorizonForEachPoint,bondFilters));
   }
   decomp.neighborhood=list->get_neighborhood();
   decomp.sizeNeighborhoodList=list->get_size_neighborhood_list();
   decomp.neighborhoodPtr=list->get_neighborhood_ptr();
 
+  //decomp.elementNodes=topoList->get_neighborhood();
+  //decomp.numElements=numOfFiniteElements;
+  //decomp.elementNodesPtr=topoList.get_neighborhood_ptr();
+  
+ 
   // Create all the maps.
   createMaps(decomp);
 
@@ -426,19 +448,21 @@ PeridigmNS::TextFileDiscretization::createNeighborhoodData(const QUICKGRID::Data
    memcpy(neighborhoodData->NeighborhoodList(),
  		 Discretization::getLocalNeighborList(decomp, *oneDimensionalOverlapMap).get(),
  		 decomp.sizeNeighborhoodList*sizeof(int));
-  memcpy(neighborhoodData->ElementNodalPtr(), 
- 		 decomp.elementNodalPtr.get(),
+    memcpy(neighborhoodData->ElementNodalPtr(), 
+ 		 decomp.elementNodesPtr.get(),
  		 decomp.numPoints*sizeof(int));
-   neighborhoodData->SetElementNodalListSize(decomp.sizeElementNodalList);
+   neighborhoodData->SetElementNodalListSize(decomp.sizeElementNodesList);
    memcpy(neighborhoodData->ElementNodalList(),
  		 Discretization::getElementNodalList(decomp, *oneDimensionalOverlapMap).get(),
- 		 decomp.sizeElementNodalList*sizeof(int));
+ 		 decomp.sizeElementNodesList*sizeof(int));
    neighborhoodData = filterBonds(neighborhoodData);
 }
 
 Teuchos::RCP<PeridigmNS::NeighborhoodData>
 PeridigmNS::TextFileDiscretization::filterBonds(Teuchos::RCP<PeridigmNS::NeighborhoodData> unfilteredNeighborhoodData)
 {
+  //if neighborhoodData->SetElementNodalListSize
+  
   // Set up a block bonding matrix, which defines whether or not bonds should be formed across blocks
   int numBlocks = getNumBlocks();
   std::vector< std::vector<bool> > blockBondingMatrix(numBlocks);
