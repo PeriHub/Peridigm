@@ -53,6 +53,7 @@ set(Peridigm_HEADERS
     ${apiHEADERS}
     ${ioHEADERS}
     ${mathHEADERS}
+    ${FEMHEADERS}
     ${materialsHEADERS}
     ${quickGridHEADERS}
     ${utilitiesHEADERS}
