@@ -138,7 +138,8 @@ namespace PeridigmNS {
                  const int numOwnedPoints,
                  const int* ownedIDs,
                  const int* neighborhoodList,
-                 PeridigmNS::DataManager& dataManager) const {};
+                 PeridigmNS::DataManager& dataManager,
+                 const int numElements = 0) const {};
 
     //! Compute the divergence of the flux (for diffusion models).
     virtual void

@@ -73,13 +73,13 @@ namespace FEM {
   const double* modelCoordinates,
   const double* displacements, 
   double* unrotatedCauchyStressNP1, 
-  int numElements, 
-  int* elementNodalList,
+  const int numElements, 
+  const int* elementNodalList,
   const double Cstiff[][6],
-  double* angles,
-  int type,
-  double dt,
-  int order[3],
+  const double* angles,
+  const int type,
+  const double dt,
+  const int order[3],
   double* globalForce 
   )
   { 
@@ -94,7 +94,7 @@ namespace FEM {
 
     std::vector<double> sigmaIntVector(9);
     double* sigmaInt = &sigmaIntVector[0];
-    int* elemNodalPtr = elementNodalList;
+    const int* elemNodalPtr = elementNodalList;
     
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     // for higher order it has to be adapted

@@ -278,7 +278,11 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   vector<int> globalIds(numElements);
   for(unsigned int i=0 ; i<globalIds.size() ; ++i)
     globalIds[i] = i;
-
+  // Create list of global elements ids
+  // if no elements exist, the list length is zero
+  vector<int> globalElementIds(numOfFiniteElements);
+  for(unsigned int i=0 ; i<globalElementIds.size() ; ++i)
+    globalElementIds[i] = i;
   // Copy data into a decomp object
   int dimension = 3;
   QUICKGRID::Data decomp = QUICKGRID::allocatePdGridData(numElements, dimension);
@@ -377,11 +381,11 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   Teuchos::RCP<PDNEIGH::NeighborhoodList> topoList;
   if(bondFilters.size() == 0){
     list = Teuchos::rcp(new PDNEIGH::NeighborhoodList(commSp,decomp.zoltanPtr.get(),decomp.numPoints,decomp.myGlobalIDs,decomp.myX,rebalancedHorizonForEachPoint));
+    topoList = Teuchos::rcp(new PDNEIGH::NeighborhoodList(commSp,decomp.zoltanPtr.get(),decomp.numPoints,decomp.myGlobalIDs,decomp.myX,rebalancedHorizonForEachPoint));
   }
   else{
     list = Teuchos::rcp(new PDNEIGH::NeighborhoodList(commSp,decomp.zoltanPtr.get(),decomp.numPoints,decomp.myGlobalIDs,decomp.myX,rebalancedHorizonForEachPoint,bondFilters));
-    topoList = Teuchos::rcp(new PDNEIGH::NeighborhoodList(commSp,decomp.zoltanPtr.get(),decomp.numPoints,decomp.myGlobalIDs,decomp.myX,rebalancedHorizonForEachPoint,bondFilters));
-  }
+      }
   decomp.neighborhood=list->get_neighborhood();
   decomp.sizeNeighborhoodList=list->get_size_neighborhood_list();
   decomp.neighborhoodPtr=list->get_neighborhood_ptr();

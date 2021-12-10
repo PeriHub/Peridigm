@@ -60,16 +60,16 @@ namespace FEM {
 void elasticFEM
  (
   const double* modelCoordinates,
-  const double* deformedCoordinates, 
+  const double* displacements, 
   double* unrotatedCauchyStressNP1, 
-  int numElements, 
-  int* elementNodalList,
+  const int numElements, 
+  const int* elementNodalList,
   const double Cstiff[][6],
-  double* angles,
-  int type,
-  double dt,
-  int order[3],
-  double* globalForce
+  const double* angles,
+  const int type,
+  const double dt,
+  const int order[3],
+  double* globalForce 
   );
 
 }

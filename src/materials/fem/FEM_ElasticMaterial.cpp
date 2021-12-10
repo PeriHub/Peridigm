@@ -58,7 +58,7 @@
 using namespace std;
 
 PeridigmNS::FEMElasticMaterial::FEMElasticMaterial(const Teuchos::ParameterList& params)
-  : FEM(params),
+  : FEMMaterial(params),
     m_modelAnglesId(-1),
     m_deformationGradientFieldId(-1),
     m_cauchyStressFieldId(-1),
@@ -237,9 +237,10 @@ PeridigmNS::FEMElasticMaterial::initialize(const double dt,
 
 void
 PeridigmNS::FEMElasticMaterial::computeCauchyStress(const double dt,
-                                                               const int numOwnedPoints,
-                                                               const int* elementNodalList,
-                                                               PeridigmNS::DataManager& dataManager) const
+                                                    const int numElements,
+                                                    const int numNodes,
+                                                    const int* elementNodalList,
+                                                    PeridigmNS::DataManager& dataManager) const
 {
 
   
@@ -254,10 +255,10 @@ PeridigmNS::FEMElasticMaterial::computeCauchyStress(const double dt,
   dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&deformedCoor);
   dataManager.getData(m_displacementFieldId, PeridigmField::STEP_NP1)->ExtractView(&displacements);
   dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&force);
+  // numowned muss aus modeleval übergeben
+  //FEM::getDisplacements(numOwnedPoints,coor,deformedCoor,displacements);
   
-  FEM::getDisplacements(numOwnedPoints,coor,deformedCoor,displacements);
-  int numElements;
-
+  
   FEM::elasticFEM(coor, 
                   displacements,
                   CauchyStressNP1,

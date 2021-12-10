@@ -185,9 +185,6 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
   // array in indices that point to neighborhood for a given localId
   Array<int> neighborhoodPtr(numCells);
 
-  // array in indices that point to element neighborhood for a given localId
-  Array<int> elementNodesPtr(numCells);
-
   // Flag for marking points that get exported during load balance
   Array<char> exportFlag(numCells);
 
@@ -198,7 +195,6 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
   double *vPtr = V.get();
   int *gIdsPtr = globalIds.get();
   int *nPtr = neighborhoodPtr.get();
-  int *ePtr = elementNodesPtr.get();
   char *exportFlagPtr = exportFlag.get();
   for(size_t p=0;p<numCells;p++){
 
@@ -208,7 +204,6 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
     vPtr[p]=0;
     gIdsPtr[p]=0;
     nPtr[p]=0;
-    ePtr[p]=0;
     exportFlagPtr[p]=0;
   }
 
@@ -239,6 +234,71 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
    * 3) Set elementNodes pointer for each point to 0
    */
 
+  gridData.dimension = dimension;
+  gridData.globalNumPoints = 0;
+  gridData.numPoints = numCells;
+  gridData.sizeNeighborhoodList = sizeNeighborhoodList;
+  gridData.numExport=0;
+  gridData.myGlobalIDs = globalIds.get_shared_ptr();
+  gridData.myX = X.get_shared_ptr();
+  gridData.myAngle = Angles.get_shared_ptr();
+  gridData.cellVolume = V.get_shared_ptr();
+  gridData.neighborhood = neighborhoodList.get_shared_ptr();
+  gridData.neighborhoodPtr = neighborhoodPtr.get_shared_ptr();
+  gridData.exportFlag = exportFlag.get_shared_ptr();
+  gridData.unPack = true;
+
+  return gridData;
+}
+
+QuickGridData allocateFEMGridData(size_t numCells, size_t dimension){
+
+  // coordinates
+  Array<double> X(numCells*dimension);
+    
+    // angles
+  Array<double> Angles(numCells*dimension);
+
+  // Global ids for cells on this processor
+  Array<int> globalIds(numCells);
+
+  // array in indices that point to element neighborhood for a given localId
+  Array<int> elementNodesPtr(numCells);
+
+  // Flag for marking points that get exported during load balance
+  Array<char> exportFlag(numCells);
+
+
+  // Initialize all the above data to zero
+  double *xPtr = X.get();
+  double *anglesPtr = Angles.get();
+  int *gIdsPtr = globalIds.get();
+  int *ePtr = elementNodesPtr.get();
+  char *exportFlagPtr = exportFlag.get();
+  for(size_t p=0;p<numCells;p++){
+
+    for(size_t d=0;d<dimension;d++){
+      xPtr[p*dimension+d]=0;
+            anglesPtr[p*dimension+d]=0;}
+    gIdsPtr[p]=0;
+    ePtr[p]=0;
+    exportFlagPtr[p]=0;
+  }
+
+  /*
+   * Neighborhood data is consistent but essentially empty.
+   * Points, Ids, volume are allocated but need to be filled with
+   * correct values
+   */
+  QuickGridData gridData;
+
+  /*
+   * Initialize finite element nodes list to a consistent state
+   * 1) Set sizeElementNodesList=1
+   * 2) Create a new and empty element topology list
+   * 3) Set elementNodes pointer for each point to 0
+   */
+
 
   int sizeElementNodesList=1;
   Array<int> elementNodesList(sizeElementNodesList);
@@ -251,14 +311,10 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
   gridData.dimension = dimension;
   gridData.globalNumPoints = 0;
   gridData.numPoints = numCells;
-  gridData.sizeNeighborhoodList = sizeNeighborhoodList;
   gridData.numExport=0;
   gridData.myGlobalIDs = globalIds.get_shared_ptr();
   gridData.myX = X.get_shared_ptr();
   gridData.myAngle = Angles.get_shared_ptr();
-  gridData.cellVolume = V.get_shared_ptr();
-  gridData.neighborhood = neighborhoodList.get_shared_ptr();
-  gridData.neighborhoodPtr = neighborhoodPtr.get_shared_ptr();
   gridData.elementNodes = elementNodesList.get_shared_ptr();
   gridData.elementNodesPtr = elementNodesPtr.get_shared_ptr();
   gridData.exportFlag = exportFlag.get_shared_ptr();
@@ -266,6 +322,7 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
 
   return gridData;
 }
+
 
 Array<double> getDiscretization(const Spec1D& spec){
   size_t numCells = spec.getNumCells();

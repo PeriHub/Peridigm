@@ -56,7 +56,7 @@
 #include "Peridigm_FEM.hpp"
 namespace PeridigmNS {
 
-  class FEMElasticMaterial : public FEM{
+  class FEMElasticMaterial : public FEMMaterial{
   public:
 
 	//! Constructor.
@@ -70,12 +70,13 @@ namespace PeridigmNS {
 
     //! Evaluate the Cauchy stress. --> call from Peridigm_CorrespondenceMaterial.cpp
     virtual void initialize(const double dt, 
-                            const int numOwnedPoints, 
+                            const int numElements, 
                             const int* ownedIDs,
                             const int* elementNodalList,
                             PeridigmNS::DataManager& dataManager);
     virtual void computeCauchyStress(const double dt,
-                                     const int numOwnedPoints,
+                                     const int numElements,
+                                     const int numNodes,
                                      const int* elementNodalList,
                                      PeridigmNS::DataManager& dataManager) const;
     //! Returns the requested material property

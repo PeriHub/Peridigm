@@ -146,11 +146,13 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset, bool damage
       PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Compute Force");
       if (materialModel->Name().find("FEM")!=std::string::npos){
         const int* elementNodalList = neighborhoodData->ElementNodalList();
+        const int numElements =0;//= neighborhoodData->ElementNodes();
         materialModel->computeForce(dt,
                                 numOwnedPoints,
                                 ownedIDs,
                                 elementNodalList,
-                                *dataManager);
+                                *dataManager,
+                                numElements);
           }
       else{
         const int* neighborhoodList = neighborhoodData->NeighborhoodList();

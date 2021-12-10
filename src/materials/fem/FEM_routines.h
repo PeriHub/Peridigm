@@ -152,6 +152,11 @@ const double* Jinv,
 const bool twoD,
 double strain[3][3]
 );
+void getElementTopo
+(
+const int order[3], 
+int topo[][3]
+);
 void getJacobian
 (
 const double* Nxi,

@@ -57,7 +57,7 @@
 #include <Sacado.hpp>
 using namespace std;
 
-PeridigmNS::FEM::FEM(const Teuchos::ParameterList& params)
+PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
   : Material(params),
     m_density(0.0)
     
@@ -93,12 +93,12 @@ PeridigmNS::FEM::FEM(const Teuchos::ParameterList& params)
   
 }
 
-PeridigmNS::FEM::~FEM()
+PeridigmNS::FEMMaterial::~FEMMaterial()
 {
 }
 
 void
-PeridigmNS::FEM::initialize(const double dt,
+PeridigmNS::FEMMaterial::initialize(const double dt,
                             const int numOwnedPoints,
                             const int* ownedIDs,
                             const int* elementNodalList,
@@ -110,16 +110,17 @@ PeridigmNS::FEM::initialize(const double dt,
 }
 
 void
-PeridigmNS::FEM::computeForce(const double dt,
+PeridigmNS::FEMMaterial::computeForce(const double dt,
                               const int numOwnedPoints,
                               const int* ownedIDs,
                               const int* elementNodalList,
-                              PeridigmNS::DataManager& dataManager) const
+                              PeridigmNS::DataManager& dataManager,
+                              const int numElements) const
 {
   // Zero out the forces and partial stress
 
- 
-  computeCauchyStress(dt, numOwnedPoints, elementNodalList, dataManager);
+  
+  computeCauchyStress(dt, numOwnedPoints, numElements, elementNodalList, dataManager);
  
 // brauchen wir vielleicht nicht
 // FEM::computeForcesAndStresses(

@@ -57,14 +57,14 @@
 
 namespace PeridigmNS {
 
-  class FEM : public Material{
+  class FEMMaterial : public Material{
   public:
 
     //! Constructor.
-    FEM(const Teuchos::ParameterList & params);
+    FEMMaterial(const Teuchos::ParameterList & params);
 
     //! Destructor.
-    virtual ~FEM();
+    virtual ~FEMMaterial();
 
     //! Return name of material type
     virtual std::string Name() const { return("FEM Base Class"); }
@@ -83,7 +83,7 @@ namespace PeridigmNS {
 
     //! Initialize the material model.
     virtual void initialize(const double dt,
-                            const int numOwnedPoints,
+                            const int numElements,
                             const int* ownedIDs,
                             const int* elementNodalList,
                             PeridigmNS::DataManager& dataManager);
@@ -91,6 +91,7 @@ namespace PeridigmNS {
     //! Evaluate the Cauchy stress (pure virtual function, must be implemented by derived correspondence material models).
     virtual void computeCauchyStress(const double dt,
                                      const int numOwnedPoints,
+                                     const int numElements,
                                      const int* elementNodalList,
                                      PeridigmNS::DataManager& dataManager) const = 0;
 
@@ -99,7 +100,8 @@ namespace PeridigmNS {
                               const int numOwnedPoints,
                               const int* ownedIDs,
                               const int* elementNodalList,
-                              PeridigmNS::DataManager& dataManager) const;
+                              PeridigmNS::DataManager& dataManager,
+                              const int numElements) const;
 //////////////////////////////////////////////////////////////////////////////////
 
 
