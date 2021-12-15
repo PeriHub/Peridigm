@@ -3123,7 +3123,7 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
         ", convergence criterion = " << residualTolerance << endl;
 
     // Solve!
-    while(noxSolverStatus != NOX::StatusTest::Converged && noxSolverStatus != NOX::StatusTest::Failed){
+    while(noxSolverStatus != NOX::StatusTest::Converged && noxSolverStatus != NOX::StatusTest::Failed && solverIteration <= maxIterations){
 
       // Track the total number of iterations taken over the simulation
       *nonlinearSolverIterations += 1;
@@ -3143,6 +3143,8 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
 
     if(solverIteration > maxIterations){
       failedQS = true;
+      if(peridigmComm->MyPID() == 0)
+        cout << "\nWarning:  Nonlinear solver failed to converge in maximum allowable iterations." << endl;
       break;
     }
 

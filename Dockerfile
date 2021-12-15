@@ -28,7 +28,8 @@ RUN cmake \
     -D TRILINOS_DIR:PATH=/usr/local/trilinos \
     -D USER_LIBRARY_DIRS:PATH=/Peridigm/src/materials/umats \
     -D CMAKE_CXX_COMPILER:STRING="mpicxx" \
-    -D USE_DAKOTA:BOOL=OFF \
+    -D PERFORMANCE_TEST_MACHINE:STRING="WSL" \
+    -D ALBANY_SEACAS:BOOL=ON \
     ..; \
     make && make install; \
     cd ..

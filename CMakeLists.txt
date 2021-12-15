@@ -297,6 +297,7 @@ ${CMAKE_SOURCE_DIR}/src/io/pdneigh
 ${CMAKE_SOURCE_DIR}/src/contact
 ${CMAKE_SOURCE_DIR}/src/math
 ${CMAKE_SOURCE_DIR}/src/materials
+${CMAKE_SOURCE_DIR}/src/materials/umats
 ${CMAKE_SOURCE_DIR}/src/damage
 ${CMAKE_SOURCE_DIR}/src/api
 )
