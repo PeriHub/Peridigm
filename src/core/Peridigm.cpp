@@ -5013,7 +5013,7 @@ double PeridigmNS::Peridigm::computeQuasiStaticResidual(Teuchos::RCP<Epetra_Vect
   PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
 
   PeridigmNS::Timer::self().startTimer("Internal Force");
-  modelEvaluator->evalModel(workset, true);
+  modelEvaluator->evalModel(workset, false);
   PeridigmNS::Timer::self().stopTimer("Internal Force");
 
   // Copy force from the data manager to the mothership vector
