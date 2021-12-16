@@ -202,7 +202,7 @@ PeridigmNS::ElasticMaterial::computeStoredElasticEnergyDensity(const double dt,
 {
   // This function is intended to be called from a compute class.
   // The compute class should have already created the Stored_Elastic_Energy_Density field id.
-  //int storedElasticEnergyDensityFieldId = PeridigmNS::FieldManager::self().getFieldId("Stored_Elastic_Energy_Density");
+  int storedElasticEnergyDensityFieldId = PeridigmNS::FieldManager::self().getFieldId("Stored_Elastic_Energy_Density");
 
   double *x, *y, *cellVolume, *weightedVolume, *dilatation, *bondDamage; 
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
@@ -211,8 +211,8 @@ PeridigmNS::ElasticMaterial::computeStoredElasticEnergyDensity(const double dt,
   dataManager.getData(m_weightedVolumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&weightedVolume);
   dataManager.getData(m_dilatationFieldId, PeridigmField::STEP_NP1)->ExtractView(&dilatation);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
-  //double *storedElasticEnergyDensity;
-  //dataManager.getData(storedElasticEnergyDensityFieldId, PeridigmField::STEP_NONE)->ExtractView(&storedElasticEnergyDensity);
+  double *storedElasticEnergyDensity;
+  dataManager.getData(storedElasticEnergyDensityFieldId, PeridigmField::STEP_NONE)->ExtractView(&storedElasticEnergyDensity);
 
   double *deltaTemperature = NULL;
   if(m_applyThermalStrains)
@@ -258,7 +258,7 @@ PeridigmNS::ElasticMaterial::computeStoredElasticEnergyDensity(const double dt,
       omega=m_OMEGA(initialDistance,m_horizon);
       temp += (1.0-neighborBondDamage)*omega*deviatoricExtension*deviatoricExtension*cellVolume[neighborId];
     }
-    //storedElasticEnergyDensity[nodeId] = 0.5*m_bulkModulus*nodeDilatation*nodeDilatation + 0.5*alpha*temp;
+    storedElasticEnergyDensity[nodeId] = 0.5*m_bulkModulus*nodeDilatation*nodeDilatation + 0.5*alpha*temp;
     damageModel[3*iID] = 0.5*m_bulkModulus*nodeDilatation*nodeDilatation + 0.5*alpha*temp;
   }
 }
