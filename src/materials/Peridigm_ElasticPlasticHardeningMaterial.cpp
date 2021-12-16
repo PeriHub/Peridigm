@@ -149,7 +149,8 @@ PeridigmNS::ElasticPlasticHardeningMaterial::computeForce(const double dt,
                                                           const int numOwnedPoints,
                                                           const int* ownedIDs,
                                                           const int* neighborhoodList,
-                                                          PeridigmNS::DataManager& dataManager) const
+                                                          PeridigmNS::DataManager& dataManager,
+                                                          const double currentTime) const
 {
   double *x, *y, *volume, *dilatation, *weightedVolume, *bondDamage, *edpN, *edpNP1, *lambdaN, *lambdaNP1, *force, *ownedShearCorrectionFactor;
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);

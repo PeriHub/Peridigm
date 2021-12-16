@@ -99,7 +99,8 @@ PeridigmNS::ShortRangeForceContactModel::computeForce(const double dt,
                                                       const int numOwnedPoints,
                                                       const int* ownedIDs,
                                                       const int* contactNeighborhoodList,
-                                                      PeridigmNS::DataManager& dataManager) const
+                                                      PeridigmNS::DataManager& dataManager,
+                                                      const double currentTime) const
 {
   // Zero out the forces
   dataManager.getData(m_contactForceDensityFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);

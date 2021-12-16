@@ -73,7 +73,8 @@ namespace PeridigmNS {
                  const int numOwnedPoints,
                  const int* ownedIDs,
                  const int* contactNeighborhoodList,
-                 PeridigmNS::DataManager& dataManager) const;
+                 PeridigmNS::DataManager& dataManager,
+                 const double currentTime = 0.0) const;
 
     virtual void 
     evaluateParserFriction(double & currentValue, double & previousValue, const double & timeCurrent=0.0, const double & timePrevious=0.0);               

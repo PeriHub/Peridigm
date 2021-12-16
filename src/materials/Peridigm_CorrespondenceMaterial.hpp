@@ -96,7 +96,7 @@ namespace PeridigmNS {
                               const int* ownedIDs,
                               const int* neighborhoodList,
                               PeridigmNS::DataManager& dataManager,
-                              const double time = 0.0) const;
+                              const double currentTime = 0.0) const;
 //////////////////////////////////////////////////////////////////////////////////
 
 //! Evaluate the jacobian.

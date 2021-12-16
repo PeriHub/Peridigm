@@ -114,7 +114,8 @@ namespace PeridigmNS {
                  const int numOwnedPoints,
                  const int* ownedIDs,
                  const int* neighborhoodList,
-                 PeridigmNS::DataManager& dataManager) const;
+                 PeridigmNS::DataManager& dataManager,
+                 const double currentTime = 0.0) const;
 
   protected:
 

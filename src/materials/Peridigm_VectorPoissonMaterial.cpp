@@ -90,7 +90,8 @@ PeridigmNS::VectorPoissonMaterial::computeForce(const double dt,
                                                 const int numOwnedPoints,
                                                 const int* ownedIDs,
                                                 const int* neighborhoodList,
-                                                PeridigmNS::DataManager& dataManager) const
+                                                PeridigmNS::DataManager& dataManager,
+                                                const double currentTime) const
 {
   // Zero out the forces
   dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);

@@ -453,7 +453,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                  const int* ownedIDs,
                                                  const int* neighborhoodList,
                                                  PeridigmNS::DataManager& dataManager,
-                                                 const double time) const
+                                                 const double currentTime) const
 {
   // Zero out the forces and partial stress
 
@@ -623,7 +623,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   // multiple Cauchy stresses will be provided over the datamanager --> Peridigm_ElasticLinearCorrespondence
 
  
-  computeCauchyStress(dt, numOwnedPoints, dataManager, time);
+  computeCauchyStress(dt, numOwnedPoints, dataManager, currentTime);
  
 
   // rotate back to the Eulerian frame

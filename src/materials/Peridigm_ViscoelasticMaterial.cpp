@@ -114,10 +114,11 @@ void PeridigmNS::ViscoelasticMaterial::initialize(const double dt,
 
 void
 PeridigmNS::ViscoelasticMaterial::computeForce(const double dt,
-                                                          const int numOwnedPoints,
-                                                          const int* ownedIDs,
-                                                          const int* neighborhoodList,
-                                                          PeridigmNS::DataManager& dataManager) const
+                                               const int numOwnedPoints,
+                                               const int* ownedIDs,
+                                               const int* neighborhoodList,
+                                               PeridigmNS::DataManager& dataManager,
+                                               const double currentTime) const
 {
   double *x, *yN, *yNP1, *volume, *dilatationN, *dilatationNp1, *weightedVolume, *bondDamage, *edbN, *edbNP1,  *force;
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
