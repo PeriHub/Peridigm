@@ -58,6 +58,7 @@ typedef struct Data {
   size_t globalNumPoints;
   size_t numPoints;
   int sizeNeighborhoodList;
+  int sizeTopologyList;
   int numExport;
   bool unPack;
   std::shared_ptr<int> myGlobalIDs;
@@ -66,9 +67,11 @@ typedef struct Data {
   std::shared_ptr<double> cellVolume;
   std::shared_ptr<int> neighborhood;
   std::shared_ptr<int> neighborhoodPtr;
+  std::shared_ptr<int> topology;
+  std::shared_ptr<int> topologyPtr;
   std::shared_ptr<char> exportFlag;
   std::shared_ptr<struct Zoltan_Struct> zoltanPtr;
-  Data() : dimension(-1), globalNumPoints(-1), numPoints(-1), sizeNeighborhoodList(-1), numExport(0) {}
+  Data() : dimension(-1), globalNumPoints(-1), numPoints(-1), sizeNeighborhoodList(-1), sizeTopologyList(-1), numExport(0) {}
   Data(int d, int numPoints, int myNumPts) : dimension(d), globalNumPoints(numPoints), numPoints(myNumPts) {}
 } QuickGridData;
 

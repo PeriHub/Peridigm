@@ -298,9 +298,9 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   memcpy(decomp.cellVolume.get(), &volumes[0], numElements*sizeof(double)); 
   memcpy(decomp.myX.get(), &coordinates[0], 3*numElements*sizeof(double));
   memcpy(decomp.myAngle.get(), &angles[0], 3*numElements*sizeof(double));
-  //if (lenDecompElementNodes > 0)
-  //  lenDecompElementNodes = 1;
-  //memcpy(decomp.elementNodes.get(), &elementTopo[0], lenDecompElementNodes*sizeof(int));
+  if (lenDecompElementNodes > 0)
+    lenDecompElementNodes = 1;
+  memcpy(decomp.topology.get(), &elementTopo[0], lenDecompElementNodes*sizeof(int));
   
   //memcpy(decomp.elementNodal.get(), &elementTopo[0], static_cast<int>(elementTopo.size())*sizeof(int));
                                                           

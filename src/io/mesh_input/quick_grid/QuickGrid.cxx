@@ -185,6 +185,9 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
   // array in indices that point to neighborhood for a given localId
   Array<int> neighborhoodPtr(numCells);
 
+  // array in indices that point to topology for a given elementId
+  Array<int> topologyPtr(numCells);
+
   // Flag for marking points that get exported during load balance
   Array<char> exportFlag(numCells);
 
@@ -195,6 +198,7 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
   double *vPtr = V.get();
   int *gIdsPtr = globalIds.get();
   int *nPtr = neighborhoodPtr.get();
+  int *ePtr = topologyPtr.get();
   char *exportFlagPtr = exportFlag.get();
   for(size_t p=0;p<numCells;p++){
 
@@ -204,6 +208,7 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
     vPtr[p]=0;
     gIdsPtr[p]=0;
     nPtr[p]=0;
+    ePtr[p]=0;
     exportFlagPtr[p]=0;
   }
 
@@ -233,11 +238,22 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
    * 2) Create a new and empty element topology list
    * 3) Set elementNodes pointer for each point to 0
    */
+  int sizeTopologyList=1;
+  Array<int> topologyList(sizeTopologyList);
+  int *topology = topologyList.get();
+ /*
+   * number of neighbors for every point is zero
+   */
+  *topology = 0;
+
+
+
 
   gridData.dimension = dimension;
   gridData.globalNumPoints = 0;
   gridData.numPoints = numCells;
   gridData.sizeNeighborhoodList = sizeNeighborhoodList;
+  gridData.sizeTopologyList = sizeTopologyList;
   gridData.numExport=0;
   gridData.myGlobalIDs = globalIds.get_shared_ptr();
   gridData.myX = X.get_shared_ptr();
@@ -245,6 +261,8 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
   gridData.cellVolume = V.get_shared_ptr();
   gridData.neighborhood = neighborhoodList.get_shared_ptr();
   gridData.neighborhoodPtr = neighborhoodPtr.get_shared_ptr();
+  gridData.topology = topologyList.get_shared_ptr();
+  gridData.topologyPtr = topologyPtr.get_shared_ptr();
   gridData.exportFlag = exportFlag.get_shared_ptr();
   gridData.unPack = true;
 
