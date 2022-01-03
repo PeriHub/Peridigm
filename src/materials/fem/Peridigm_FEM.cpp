@@ -119,6 +119,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
 {
   // Zero out the forces and partial stress
 
+  //elementNodalList = {4,1,2,3,4};
   
   computeCauchyStress(dt, numOwnedPoints, numElements, elementNodalList, dataManager);
  
