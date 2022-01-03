@@ -173,6 +173,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   vector<double> angles;
   vector<int> elementTopo;
   int numOfFiniteElements = 0;
+  int lenDecompElementNodes = 0;
   // Read the text file on the root processor
   if(myPID == 0){
     ifstream inFile(textFileName.c_str());
@@ -218,7 +219,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
     }
     inFile.close();
     std::string testString = "";
-    
+
     if (meshFileName.compare(testString) != 0){
       ifstream inFile(meshFileName.c_str());
       TEUCHOS_TEST_FOR_EXCEPT_MSG(!inFile.is_open(), "**** Error opening topology text file.\n");
@@ -237,8 +238,12 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
               back_inserter<vector<int> >(topo));
           
           elementTopo.push_back(static_cast<int>(topo.size()));
+          lenDecompElementNodes += static_cast<int>(topo.size()) + 1;
           for (unsigned int n = 0; n<topo.size(); n++){
-            elementTopo.push_back(static_cast<int>(topo[n]));
+            int GID = static_cast<int>(topo[n]);
+            // local point ID is stored to provide, because this is needed on the processors
+            elementTopo.push_back(oneDimensionalOverlapMap->LID(GID));
+            
           } 
         }
       }
@@ -280,9 +285,11 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
     globalIds[i] = i;
   // Create list of global elements ids
   // if no elements exist, the list length is zero
-  vector<int> globalElementIds(numOfFiniteElements);
-  for(unsigned int i=0 ; i<globalElementIds.size() ; ++i)
-    globalElementIds[i] = i;
+  if (numOfFiniteElements>0){
+    vector<int> globalElementIds(numOfFiniteElements);
+    for(unsigned int i=0 ; i<globalElementIds.size() ; ++i)
+      globalElementIds[i] = i;
+    }
   // Copy data into a decomp object
   int dimension = 3;
   QUICKGRID::Data decomp = QUICKGRID::allocatePdGridData(numElements, dimension);
@@ -291,6 +298,10 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   memcpy(decomp.cellVolume.get(), &volumes[0], numElements*sizeof(double)); 
   memcpy(decomp.myX.get(), &coordinates[0], 3*numElements*sizeof(double));
   memcpy(decomp.myAngle.get(), &angles[0], 3*numElements*sizeof(double));
+  //if (lenDecompElementNodes > 0)
+  //  lenDecompElementNodes = 1;
+  //memcpy(decomp.elementNodes.get(), &elementTopo[0], lenDecompElementNodes*sizeof(int));
+  
   //memcpy(decomp.elementNodal.get(), &elementTopo[0], static_cast<int>(elementTopo.size())*sizeof(int));
                                                           
   // Create a blockID vector in the current configuration
@@ -327,6 +338,8 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   }
 
   // Create the element list for each block
+
+  // hier muss die Topologie noch mit rein, um sicherzustellen, dass die Punkte existieren
   for(int i=0 ; i<rebalancedBlockID.MyLength() ; ++i){
     stringstream blockName;
     blockName << "block_" << rebalancedBlockID[i];
@@ -368,33 +381,20 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
       }
     }
   }
-  /*
-   execute neighbor search and update the decomp to include resulting ghosts
-   CW
-   if topo exists, this search must not be done. The neighborhoodlist is then the topology list.
-   The difference between neighborhoodlist and elementtopology is the sorting
-   This allows an arbitrary neighborhood for PD using the mesh topology input without
-   the reference to the element topology within the material routines
-  */
+
+  // execute neighbor search and update the decomp to include resulting ghosts
   std::shared_ptr<const Epetra_Comm> commSp(comm.getRawPtr(), NonDeleter<const Epetra_Comm>());
   Teuchos::RCP<PDNEIGH::NeighborhoodList> list;
-  Teuchos::RCP<PDNEIGH::NeighborhoodList> topoList;
   if(bondFilters.size() == 0){
     list = Teuchos::rcp(new PDNEIGH::NeighborhoodList(commSp,decomp.zoltanPtr.get(),decomp.numPoints,decomp.myGlobalIDs,decomp.myX,rebalancedHorizonForEachPoint));
-    topoList = Teuchos::rcp(new PDNEIGH::NeighborhoodList(commSp,decomp.zoltanPtr.get(),decomp.numPoints,decomp.myGlobalIDs,decomp.myX,rebalancedHorizonForEachPoint));
   }
   else{
     list = Teuchos::rcp(new PDNEIGH::NeighborhoodList(commSp,decomp.zoltanPtr.get(),decomp.numPoints,decomp.myGlobalIDs,decomp.myX,rebalancedHorizonForEachPoint,bondFilters));
-      }
+  }
   decomp.neighborhood=list->get_neighborhood();
   decomp.sizeNeighborhoodList=list->get_size_neighborhood_list();
   decomp.neighborhoodPtr=list->get_neighborhood_ptr();
 
-  //decomp.elementNodes=topoList->get_neighborhood();
-  //decomp.numElements=numOfFiniteElements;
-  //decomp.elementNodesPtr=topoList.get_neighborhood_ptr();
-  
- 
   // Create all the maps.
   createMaps(decomp);
 
@@ -452,21 +452,12 @@ PeridigmNS::TextFileDiscretization::createNeighborhoodData(const QUICKGRID::Data
    memcpy(neighborhoodData->NeighborhoodList(),
  		 Discretization::getLocalNeighborList(decomp, *oneDimensionalOverlapMap).get(),
  		 decomp.sizeNeighborhoodList*sizeof(int));
-    memcpy(neighborhoodData->ElementNodalPtr(), 
- 		 decomp.elementNodesPtr.get(),
- 		 decomp.numPoints*sizeof(int));
-   neighborhoodData->SetElementNodalListSize(decomp.sizeElementNodesList);
-   memcpy(neighborhoodData->ElementNodalList(),
- 		 Discretization::getElementNodalList(decomp, *oneDimensionalOverlapMap).get(),
- 		 decomp.sizeElementNodesList*sizeof(int));
    neighborhoodData = filterBonds(neighborhoodData);
 }
 
 Teuchos::RCP<PeridigmNS::NeighborhoodData>
 PeridigmNS::TextFileDiscretization::filterBonds(Teuchos::RCP<PeridigmNS::NeighborhoodData> unfilteredNeighborhoodData)
 {
-  //if neighborhoodData->SetElementNodalListSize
-  
   // Set up a block bonding matrix, which defines whether or not bonds should be formed across blocks
   int numBlocks = getNumBlocks();
   std::vector< std::vector<bool> > blockBondingMatrix(numBlocks);

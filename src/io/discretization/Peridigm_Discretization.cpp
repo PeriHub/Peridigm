@@ -151,23 +151,23 @@ std::shared_ptr<int> PeridigmNS::Discretization::getLocalNeighborList(const QUIC
   return localNeighborList.get_shared_ptr();
 }
 
-std::shared_ptr<int> PeridigmNS::Discretization::getElementNodalList(const QUICKGRID::Data& gridData, const Epetra_BlockMap& overlapMap){
-  UTILITIES::Array<int> elementList(gridData.sizeElementNodesList);
-  int *localNeig = elementList.get();
-  int *neighPtr = gridData.elementNodesPtr.get();
-  int *neigh = gridData.elementNodes.get();
-  for(size_t p=0;p<gridData.numElements;p++){
-    int ptr = neighPtr[p];
-    int numNeigh = neigh[ptr];
-    localNeig[ptr]=numNeigh;
-    for(int n=1;n<=numNeigh;n++){
-      int gid = neigh[ptr+n];
-      int localId = overlapMap.LID(gid);
-      localNeig[ptr+n] = localId;
-    }
-  }
-  return elementList.get_shared_ptr();
-}
+//std::shared_ptr<int> PeridigmNS::Discretization::getElementNodalList(const QUICKGRID::Data& gridData, const Epetra_BlockMap& overlapMap){
+//  UTILITIES::Array<int> elementList(gridData.sizeElementNodesList);
+//  int *localNeig = elementList.get();
+//  int *neighPtr = gridData.elementNodesPtr.get();
+//  int *neigh = gridData.elementNodes.get();
+//  for(size_t p=0;p<gridData.numElements;p++){
+//    int ptr = neighPtr[p];
+//    int numNeigh = neigh[ptr];
+//    localNeig[ptr]=numNeigh;
+//    for(int n=1;n<=numNeigh;n++){
+//      int gid = neigh[ptr+n];
+//      int localId = overlapMap.LID(gid);
+//      localNeig[ptr+n] = localId;
+//    }
+//  }
+//  return elementList.get_shared_ptr();
+//}
 
 Epetra_BlockMap PeridigmNS::Discretization::getOwnedMap(const Epetra_Comm& comm,const QUICKGRID::Data& gridData, int ndf) {
   int numShared=0;
