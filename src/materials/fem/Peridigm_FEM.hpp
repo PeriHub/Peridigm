@@ -83,23 +83,24 @@ namespace PeridigmNS {
 
     //! Initialize the material model.
     virtual void initialize(const double dt,
-                            const int numElements,
+                            const int numOwnedPoints,
                             const int* ownedIDs,
-                            const int* elementNodalList,
-                            PeridigmNS::DataManager& dataManager);
+                            const int* topology,
+                            PeridigmNS::DataManager& dataManager,
+                            const int numElements);
 
     //! Evaluate the Cauchy stress (pure virtual function, must be implemented by derived correspondence material models).
     virtual void computeCauchyStress(const double dt,
                                      const int numOwnedPoints,
                                      const int numElements,
-                                     const int* elementNodalList,
+                                     const int* topology,
                                      PeridigmNS::DataManager& dataManager) const = 0;
 
     //! Evaluate the internal force.
     virtual void computeForce(const double dt,
                               const int numOwnedPoints,
                               const int* ownedIDs,
-                              const int* elementNodalList,
+                              const int* topology,
                               PeridigmNS::DataManager& dataManager,
                               const int numElements) const;
 //////////////////////////////////////////////////////////////////////////////////

@@ -101,8 +101,9 @@ void
 PeridigmNS::FEMMaterial::initialize(const double dt,
                             const int numOwnedPoints,
                             const int* ownedIDs,
-                            const int* elementNodalList,
-                            PeridigmNS::DataManager& dataManager)
+                            const int* topology,
+                            PeridigmNS::DataManager& dataManager,
+                            const int numElements)
 {
   
  // FEM::createLumbedMassesSomeHow()
@@ -113,7 +114,7 @@ void
 PeridigmNS::FEMMaterial::computeForce(const double dt,
                               const int numOwnedPoints,
                               const int* ownedIDs,
-                              const int* elementNodalList,
+                              const int* topology,
                               PeridigmNS::DataManager& dataManager,
                               const int numElements) const
 {
@@ -121,7 +122,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
 
   //elementNodalList = {4,1,2,3,4};
   
-  computeCauchyStress(dt, numOwnedPoints, numElements, elementNodalList, dataManager);
+  computeCauchyStress(dt, numOwnedPoints, numElements, topology, dataManager);
  
 // brauchen wir vielleicht nicht
 // FEM::computeForcesAndStresses(
