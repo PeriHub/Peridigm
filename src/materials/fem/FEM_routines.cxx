@@ -184,7 +184,7 @@ void derivativeShapeFunctionsLagrangeRecursive
 
     for(int k=0;k<order+1;k++){
         for(int i=0;i<order+1;i++){
-            if (i/=k){
+            if (i!=k){
                 B[k] = 1.0/(elCoor-xi[i])*N[k];
             }
         }
@@ -297,7 +297,7 @@ void shapeFunctionsLagrangeRecursive
     for(int k=0;k<order+1;k++){
         N[k] = 1;
         for(int i=0;i<order+1;i++){
-            if (i/=k){
+            if (i!=k){
                 N[k] = N[k] * (elCoor-xi[i]) / (xi[k]-xi[i]);
             }
         }
