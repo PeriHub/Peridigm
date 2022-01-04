@@ -110,31 +110,30 @@ int topo[][3]
 {
     int count = 0;
     if (twoD){
-        for (int kID=0 ; kID<order[2]+1 ; ++kID){
-            for (int jID=0 ; jID<order[1]+1 ; ++jID){
-                for (int iID=0 ; iID<order[0]+1 ; ++iID){
+        for (int jID=0 ; jID<order[1]+1 ; ++jID){
+            for (int iID=0 ; iID<order[0]+1 ; ++iID){
                 
                 topo[count][0] = iID;
                 topo[count][1] = jID;
-                topo[count][2] = kID;
                 count += 1;
-        
-                }
+                       
             }
         }
     }
     else{
-        
-        for (int jID=0 ; jID<order[1]+1 ; ++jID){
-            for (int iID=0 ; iID<order[0]+1 ; ++iID){
+              for (int kID=0 ; kID<order[2]+1 ; ++kID){
+            for (int jID=0 ; jID<order[1]+1 ; ++jID){
+                for (int iID=0 ; iID<order[0]+1 ; ++iID){
                 
-            topo[count][0] = iID;
-            topo[count][1] = jID;
-            count += 1;
+                    topo[count][0] = iID;
+                    topo[count][1] = jID;
+                    topo[count][2] = kID;
+                    count += 1;
         
-                
+                }
             }
-        }
+        }  
+        
 
 
     }
@@ -151,8 +150,7 @@ double* Bxi
 
 // --> EQ (2.25) Willberg Diss; Differential Operator
 // B is stored rowise Bxx, Byy, Bzz, Bxz, Bzx, Byz, Bzy, Bxy, Byx
-// coor is added later --> issue
-// testcase
+
 //Eq 9.12 Zienkiewicz
     std::vector<double> xiVector(order+1);
     double* xi = &xiVector[0];
