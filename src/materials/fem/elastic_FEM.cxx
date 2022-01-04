@@ -86,7 +86,7 @@ namespace FEM {
     bool rotation = false;
     const double* nodalCoor = modelCoordinates;
     const double* disp = displacements;
-   // double* force = globalForce;
+    double* force = globalForce;
     double* sigmaNP1 = unrotatedCauchyStressNP1;
     double strain[3][3];
     double rotMat[3][3], rotMatT[3][3], temp[3][3];
@@ -200,19 +200,22 @@ namespace FEM {
           MATRICES::MatrixMultiply3x3toVector(temp,rotMatT,sigmaInt);
         }
         FEM::getNodelForce(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,topo, sigmaInt, ndof, abs(detJ), Jinv, twoD, elNodalForces);
-
-              // gemittelte Spannungen
+        // has to be done for each integration point
+        // it adds up the different parts of each integration point resulting element force
+        for(int n=0 ; n<numNeigh ; ++n){
+          localId = *elemNodalPtr;
+          force[localId]   += elNodalForces[3*n];      
+          force[localId+1] += elNodalForces[3*n+1];
+          force[localId+2] += elNodalForces[3*n+2];
+          elemNodalPtr++;
+        }
+        elemNodalPtr -= numNeigh;
+              // avarage stresses
               // sigmaNP1 /= numInt;
               //globForce(topo) += force; ??
       }
 
-      for(int n=0 ; n<numNeigh ; ++n){
-        localId = *elemNodalPtr;
-        globalForce[localId]   += elNodalForces[3*n];      
-        globalForce[localId+1] += elNodalForces[3*n+1];
-        globalForce[localId+2] += elNodalForces[3*n+2];
-        elemNodalPtr++;
-      }
+
 
 
 
