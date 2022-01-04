@@ -156,19 +156,9 @@ double* Bxi
 //Eq 9.12 Zienkiewicz
     std::vector<double> xiVector(order+1);
     double* xi = &xiVector[0];
-    //std::vector<double> etaVector(order[1]+1);
-    //double* eta = &etaVector[0];
-    //std::vector<double> psiVector(order[2]+1);
-    //double* psi = &psiVector[0];
     FEM::defineLagrangianGridSpace(order, xi);
-    //FEM::defineLagrangianGridSpace(order[1], eta);
-    //FEM::defineLagrangianGridSpace(order[2], psi);
     FEM::shapeFunctionsLagrangeRecursive(Nxi,  order, xi, elCoor);
-    //FEM::shapeFunctionsLagrangeRecursive(Neta, order[1], eta,elCoory);
-    //FEM::shapeFunctionsLagrangeRecursive(Npsi, order[2], psi,elCoorz);
     FEM::derivativeShapeFunctionsLagrangeRecursive(Bxi,  Nxi,  order, xi, elCoor);
-    //FEM::derivativeShapeFunctionsLagrangeRecursive(Beta, Neta, order[1], eta,elCoory);
-    //FEM::derivativeShapeFunctionsLagrangeRecursive(Bpsi, Npsi, order[2], psi,elCoorz);
 
 }
 
