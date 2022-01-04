@@ -180,7 +180,19 @@ TEUCHOS_UNIT_TEST(FEM, getDisplacements) {
     }
     
 }
+TEUCHOS_UNIT_TEST(FEM, getNumberOfIntegrationPoints) {
+    bool A = true;
+    int B[3] = [1,1,1];
 
+    int Ctest = FEM::getNumberOfIntegrationPoints(A, B);
+    int C = 8
+    TEST_FLOATING_EQUALITY(C, Ctest, 0); 
+
+    A = false;   
+    Ctest = FEM::getNumberOfIntegrationPoints(A, B);
+    C = 4; 
+    TEST_FLOATING_EQUALITY(C, Ctest, 0); 
+}
 int main
 (int argc, char* argv[])
 {
