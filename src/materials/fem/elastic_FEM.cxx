@@ -101,7 +101,15 @@ namespace FEM {
     // it is a full integration
     // reduced integration is not included yet
     /////////////////////////////////////////////////////////////////////
-    int numInt = (order[0]+1) * (order[1]+1) * (order[2]+1);
+    int numInt;
+    bool twoD = false;
+    if (type!=0) twoD = true;
+    if  (twoD){
+      numInt = (order[0]+1) * (order[1]+1) ;
+    }
+    else{
+      numInt = (order[0]+1) * (order[1]+1) * (order[2]+1);
+    }
     int ndof = numInt * 3;
     std::vector<double> dispNodalVector(ndof);
     double* dispNodal = &dispNodalVector[0];
@@ -169,8 +177,7 @@ namespace FEM {
         elNodalForces[3*n+2]   = 0.0;
         
       }
-      bool twoD = false;
-      if (type!=0) twoD = true;
+      
       for (int jID=0 ; jID<numInt ; ++jID){
         // only if nodes and integration points are equal the topology is suitable here.
         
