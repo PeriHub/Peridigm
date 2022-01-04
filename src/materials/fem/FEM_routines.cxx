@@ -103,22 +103,40 @@ else
 
 void getElementTopo
 (
+const bool twoD,
 const int order[3], 
 int topo[][3]
 )
 {
     int count = 0;
-    for (int kID=0 ; kID<order[2]+1 ; ++kID){
-      for (int jID=0 ; jID<order[1]+1 ; ++jID){
-        for (int iID=0 ; iID<order[0]+1 ; ++iID){
-          
-          topo[count][0] = iID;
-          topo[count][1] = jID;
-          topo[count][2] = kID;
-          count += 1;
-   
+    if (twoD){
+        for (int kID=0 ; kID<order[2]+1 ; ++kID){
+            for (int jID=0 ; jID<order[1]+1 ; ++jID){
+                for (int iID=0 ; iID<order[0]+1 ; ++iID){
+                
+                topo[count][0] = iID;
+                topo[count][1] = jID;
+                topo[count][2] = kID;
+                count += 1;
+        
+                }
+            }
         }
-      }
+    }
+    else{
+        
+        for (int jID=0 ; jID<order[1]+1 ; ++jID){
+            for (int iID=0 ; iID<order[0]+1 ; ++iID){
+                
+            topo[count][0] = iID;
+            topo[count][1] = jID;
+            count += 1;
+        
+                
+            }
+        }
+
+
     }
 
 }
@@ -190,6 +208,23 @@ void derivativeShapeFunctionsLagrangeRecursive
         }
     }
 }
+
+int getNumberOfIntegrationPoints
+(
+const bool twoD, 
+const int order[3]
+)
+{
+    int numInt;
+    if  (twoD){
+      numInt = (order[0]+1) * (order[1]+1) ;
+    }
+    else{
+      numInt = (order[0]+1) * (order[1]+1) * (order[2]+1);
+    }
+    return numInt;
+}
+
 void getNodelForce
 (
 const double* Nxi,

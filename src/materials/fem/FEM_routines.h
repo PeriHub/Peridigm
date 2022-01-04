@@ -93,6 +93,12 @@ double* Nxi,
 double* Bxi
 );
 
+int getNumberOfIntegrationPoints
+(
+const bool twoD, 
+const int order[3]
+);
+
 void getNodelForce
 (
 const double* Nxi,
@@ -118,8 +124,9 @@ double* xi
 );
 void getElementTopo
 (
+const bool twoD, 
 const int order[3], 
-const int topo[][3]
+int topo[][3]
 );
 void shapeFunctionsLagrange
 (
