@@ -86,7 +86,7 @@ namespace FEM {
     bool rotation = false;
     const double* nodalCoor = modelCoordinates;
     const double* disp = displacements;
-    double* force = globalForce;
+   // double* force = globalForce;
     double* sigmaNP1 = unrotatedCauchyStressNP1;
     double strain[3][3];
     double rotMat[3][3], rotMatT[3][3], temp[3][3];
@@ -101,15 +101,12 @@ namespace FEM {
     // it is a full integration
     // reduced integration is not included yet
     /////////////////////////////////////////////////////////////////////
-    int numInt;
+  
     bool twoD = false;
-    if (type!=0) twoD = true;
-    if  (twoD){
-      numInt = (order[0]+1) * (order[1]+1) ;
-    }
-    else{
-      numInt = (order[0]+1) * (order[1]+1) * (order[2]+1);
-    }
+    if (type!=0) {twoD = true;}
+
+    int numInt = FEM::getNumberOfIntegrationPoints(twoD, order);
+
     int ndof = numInt * 3;
     std::vector<double> dispNodalVector(ndof);
     double* dispNodal = &dispNodalVector[0];
@@ -117,11 +114,11 @@ namespace FEM {
     double* elNodalCoor = &elNodalCoorVector[0];
     std::vector<double> elNodalForceVector(ndof);
     double* elNodalForces = &elNodalForceVector[0];
-    std::vector<double> NxiVector(numInt * (order[0]+1)), NetaVector(numInt * (order[1]+1) ), NpsiVector(numInt * (order[2]+1) );
+    std::vector<double> NxiVector(order[0]+1), NetaVector(order[1]+1), NpsiVector(order[2]+1);
     double* Nxi = &NxiVector[0];
     double* Neta = &NetaVector[0];
     double* Npsi = &NpsiVector[0];
-    std::vector<double> BxiVector(numInt * (order[0]+1)), BetaVector(numInt * (order[1]+1)), BpsiVector(numInt * (order[2]+1));
+    std::vector<double> BxiVector(order[0]+1), BetaVector(order[1]+1), BpsiVector(order[2]+1);
     double* Bxi = &BxiVector[0];
     double* Beta = &BetaVector[0];
     double* Bpsi = &BpsiVector[0];
@@ -148,7 +145,7 @@ namespace FEM {
     FEM::weightsAndIntegrationPoints(order[0], elCoorx, weightsx);
     FEM::weightsAndIntegrationPoints(order[1], elCoory, weightsy);
     if (type == 0) FEM::weightsAndIntegrationPoints(order[2], elCoorz, weightsz);
-    FEM::getElementTopo(order, topo);
+    FEM::getElementTopo(twoD, order, topo);
     
     for (int iID=0 ; iID<order[0]+1 ; ++iID){
       FEM::getLagrangeElementData(order[0],elCoorx[iID],Nxi,Bxi);
@@ -156,15 +153,16 @@ namespace FEM {
     for (int iID=0 ; iID<order[1]+1 ; ++iID){
       FEM::getLagrangeElementData(order[1],elCoory[iID],Neta,Beta);
     }  
-    if (type == 0){
+    if (twoD == false){
       for (int iID=0 ; iID<order[2]+1 ; ++iID){
         FEM::getLagrangeElementData(order[2],elCoorz[iID],Npsi,Bpsi);
       }  
     }
     for(int iID=0 ; iID<numElements ; ++iID, sigmaNP1+=9, angles+=3){
-      numNeigh = *elemNodalPtr; 
+      numNeigh = *elemNodalPtr;
+      elemNodalPtr++;
       for(int n=0 ; n<numNeigh ; ++n){
-        elemNodalPtr++;
+
         localId = *elemNodalPtr;
         elNodalCoor[3*n]   = nodalCoor[localId];
         elNodalCoor[3*n+1] = nodalCoor[localId+1];
@@ -175,9 +173,10 @@ namespace FEM {
         elNodalForces[3*n]     = 0.0;
         elNodalForces[3*n+1]   = 0.0;
         elNodalForces[3*n+2]   = 0.0;
-        
+        elemNodalPtr++;
       }
-      
+
+      elemNodalPtr -= numNeigh; // needed for the second loop to write forces in the global vector
       for (int jID=0 ; jID<numInt ; ++jID){
         // only if nodes and integration points are equal the topology is suitable here.
         
@@ -207,51 +206,19 @@ namespace FEM {
               //globForce(topo) += force; ??
       }
 
-      numNeigh = *elemNodalPtr; 
       for(int n=0 ; n<numNeigh ; ++n){
-        elemNodalPtr++;
         localId = *elemNodalPtr;
-        force[localId]   += elNodalForces[3*n];      
-        force[localId+1] += elNodalForces[3*n+1];
-        force[localId+2] += elNodalForces[3*n+2];
-
+        globalForce[localId]   += elNodalForces[3*n];      
+        globalForce[localId+1] += elNodalForces[3*n+1];
+        globalForce[localId+2] += elNodalForces[3*n+2];
+        elemNodalPtr++;
       }
 
- 
+
 
     }
-    
+ 
   }
-  //template void updateElasticCauchyStressFEM<Sacado::Fad::DFad<double>>
-  //(
-  //const Sacado::Fad::DFad<double>* modelCoordinates,
-  //const Sacado::Fad::DFad<double>* deformedCoordinates, 
-  //Sacado::Fad::DFad<double>* unrotatedCauchyStressNP1, 
-  //int numPoints, 
-  //int* neighborhoodList,
-  //const Sacado::Fad::DFad<double> Cstiff[][6],
-  //double* angles,
-  //int type,
-  //double dt,
-  //int order[3]
-  //);
-  //template void updateElasticCauchyStressFEM<double>
-  //(
-  //const double* modelCoordinates,
-  //const double* deformedCoordinates, 
-  //double* unrotatedCauchyStressNP1, 
-  //int numPoints, 
-  //int* neighborhoodList,
-  //const double Cstiff[][6],
-  //double* angles,
-  //int type,
-  //double dt,
-  //int order[3]
-  //);
-
-
-
-
 
 
 
