@@ -99,7 +99,7 @@ const bool twoD,
 const int order[3]
 );
 
-void getNodelForce
+void getNodalForce
 (
 const double* Nxi,
 const double* Neta,
@@ -116,7 +116,20 @@ const bool twoD,
 double* elNodalForces
 );
 
-
+void tensorRotation
+(
+const double* angles,
+const double tensorIn[3][3],
+const bool globToLoc,
+double tensorOut[3][3]
+);
+void tensorRotationWithVector
+(
+    const double* angles,
+    const double* tensorIn,
+    const bool globToLoc,
+    double* tensorOut
+);
 void defineLagrangianGridSpace
 (
 const int order,
@@ -172,6 +185,9 @@ const double* Npsi,
 const double* Bxi,
 const double* Beta,
 const double* Bpsi,
+const double* weightsx,
+const double* weightsy,
+const double* weightsz,
 const int dof, 
 const int topo[][3],
 const double* coor,

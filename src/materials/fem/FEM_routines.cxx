@@ -51,6 +51,7 @@
 //@HEADER
 
 #include "matrices.h"
+#include "elastic_correspondence.h"
 #include <Sacado.hpp>
 #include <math.h>
 #include <cmath> 
@@ -213,7 +214,7 @@ const int order[3]
     return numInt;
 }
 
-void getNodelForce
+void getNodalForce
 (
 const double* Nxi,
 const double* Neta,
@@ -245,7 +246,7 @@ double* elNodalForces
             BpsiTemp = Nxi[topo[iID][0]]*Neta[topo[iID][1]]*Bpsi[topo[iID][2]] * detJ;
         }
         // determined by python sympy
-        // Bxi_i*J00*s11 + s12*(Beta_i*J00 + Bxi_i*J01) + s23*(Bpsi_i*J00 + Bxi_i*J02)
+        // Bxi_i*J00*s11  + s12*(Beta_i*J00 + Bxi_i*J01) + s23*(Bpsi_i*J00 + Bxi_i*J02)
         // Beta_i*J11*s22 + s12*(Beta_i*J10 + Bxi_i*J11) + s13*(Beta_i*J12 + Bpsi_i*J11)
         // Bpsi_i*J22*s33 + s13*(Beta_i*J22 + Bpsi_i*J21) + s23*(Bpsi_i*J20 + Bxi_i*J22)
         elNodalForces[3*iID]   = *(Jinv) * *(sigmaInt)*BxiTemp + *(sigmaInt+1)*(*(Jinv)*BetaTemp + *(Jinv+1)*BxiTemp) + *(sigmaInt+5)*(*(Jinv)*BpsiTemp + *(Jinv+2)*BxiTemp);
@@ -254,9 +255,49 @@ double* elNodalForces
     }
 
 }
-
-
-
+void tensorRotation
+(
+    const double* angles,
+    const double tensorIn[3][3],
+    const bool globToLoc,
+    double tensorOut[3][3]
+)
+{   
+    double rotMat[3][3], rotMatT[3][3], temp[3][3];
+    CORRESPONDENCE::createRotationMatrix(angles,rotMat);
+    MATRICES::TransposeMatrix(rotMat,rotMatT);
+    // geomNL
+    if (globToLoc){
+        MATRICES::MatrixMultiply3x3(rotMatT,tensorIn, temp);
+        MATRICES::MatrixMultiply3x3(temp,rotMat,tensorOut);
+    }
+    else{
+        MATRICES::MatrixMultiply3x3(rotMat,tensorIn, temp);
+        MATRICES::MatrixMultiply3x3(temp,rotMatT,tensorOut);
+    }
+}
+void tensorRotationWithVector
+(
+    const double* angles,
+    const double* tensorIn,
+    const bool globToLoc,
+    double* tensorOut
+)
+{   
+    double rotMat[3][3], rotMatT[3][3], temp[3][3];
+    CORRESPONDENCE::createRotationMatrix(angles,rotMat);
+    MATRICES::TransposeMatrix(rotMat,rotMatT);
+    // geomNL
+    if (globToLoc){
+        MATRICES::MatrixMultiply3x3fromVector(rotMatT,tensorIn, temp);
+        MATRICES::MatrixMultiply3x3toVector(temp,rotMat,tensorOut);
+    }
+    else{
+        MATRICES::MatrixMultiply3x3fromVector(rotMat,tensorIn, temp);
+        MATRICES::MatrixMultiply3x3toVector(temp,rotMatT,tensorOut);
+    }
+}
+        
 
 void getJacobian
 (
@@ -266,6 +307,9 @@ void getJacobian
     const double* Bxi,
     const double* Beta,
     const double* Bpsi,
+    const double* weightsx,
+    const double* weightsy,
+    const double* weightsz,
     const int dof, 
     const int topo[][3],
     const double* coor,
@@ -290,6 +334,7 @@ void getJacobian
             *(J+8) += 0.0;
         }
         returnCode = MATRICES::Invert2by2Matrix(J, detJ, Jinv);
+        //detJ *= weightsx*weightsy;
     }
     else{
         for(int i=0;i<dof/3;i++){
@@ -302,9 +347,11 @@ void getJacobian
             *(J+6) += Nxi[topo[i][0]]*Neta[topo[i][1]]*Bpsi[topo[i][2]]*coor[3*i+2];
             *(J+7) += Nxi[topo[i][0]]*Neta[topo[i][1]]*Bpsi[topo[i][2]]*coor[3*i+2];
             *(J+8) += Nxi[topo[i][0]]*Neta[topo[i][1]]*Bpsi[topo[i][2]]*coor[3*i+2];
+            
         }
        
         returnCode = MATRICES::Invert3by3Matrix(J, detJ, Jinv);
+        //detJ *= weightsx*weightsy*weightsz;
     }
 }
 
