@@ -1,4 +1,5 @@
-//! \file matrices.h
+//! \file Peridigm_ElasticBondAssociatedCorrespondenceMaterial.hpp
+
 //@HEADER
 // ************************************************************************
 //
@@ -42,103 +43,52 @@
 // Stewart A. Silling    sasilli@sandia.gov
 //
 // ************************************************************************
-// Author of this Routine
-// Jan-Timo Hesse   Jan-Timo.Hesse@dlr.de
-// German Aerospace Center
 //@HEADER
-#ifndef MATRICES_H
-#define MATRICES_H
+
+#ifndef PERIDIGM_ELASTICBONDASSOCIATEDCORRESPONDENCEMATERIAL_HPP
+#define PERIDIGM_ELASTICBONDASSOCIATEDCORRESPONDENCEMATERIAL_HPP
+
+#include "Peridigm_BondAssociatedCorrespondenceMaterial.hpp"
+
+namespace PeridigmNS {
+
+  class ElasticBondAssociatedCorrespondenceMaterial : public BondAssociatedCorrespondenceMaterial{
+  public:
+
+    //! Constructor.
+    ElasticBondAssociatedCorrespondenceMaterial(const Teuchos::ParameterList & params);
+
+    //! Destructor.
+    virtual ~ElasticBondAssociatedCorrespondenceMaterial();
+
+    //! Return name of material type
+    virtual std::string Name() const { return("Elastic Bond Associated Correspondence"); }
+
+    //! Initialize the derived class
+    virtual void initialize(const double dt, 
+                            const int numOwnedPoints, 
+                            const int* ownedIDs,
+                            const int* neighborhoodList,
+                            PeridigmNS::DataManager& dataManager);
+
+    //! Evaluate the Cauchy stress.
+    virtual void computeCauchyStress(const double dt,
+                                     const int numOwnedPoints,
+                                     const int* neighborhoodList,
+                                     PeridigmNS::DataManager& dataManager) const;
+
+    //! Returns the requested material property
+    //! A dummy method here.
+    virtual double lookupMaterialProperty(const std::string keyname) const {return 0.0;}
 
 
-namespace MATRICES {
+  protected:
 
-//! Invert a single 2-by-2 matrix; returns zero of successful, one if not successful (e.g., singular matrix).
-template<typename ScalarT>
-int Invert2by2Matrix
-(
-const ScalarT* matrix,
-ScalarT& determinant,
-ScalarT* inverse
-);
-
-//! Invert a single 3-by-3 matrix; returns zero of successful, one if not successful (e.g., singular matrix).
-template<typename ScalarT>
-int Invert3by3Matrix
-(
-const ScalarT* matrix,
-ScalarT& determinant,
-ScalarT* inverse
-);
-
-//! Inner product of two 3-by-3 matrices.
-template<typename ScalarT>
-void MatrixMultiply
-(
-bool transA,
-bool transB,
-ScalarT alpha,
-const ScalarT* a,
-const ScalarT* b,
-ScalarT* result
-);
-
-template<typename ScalarT>
-void MatrixMultiply3x3
-(
-const ScalarT A[][3],
-const ScalarT B[][3],
-ScalarT C[][3]
-);
-
-template<typename ScalarT>
-void MatrixMultiply3x3fromVector
-(
- const ScalarT  A[][3],
- const ScalarT* B,
- ScalarT C[][3]
-);
-
-template<typename ScalarT>
-void MatrixMultiply3x3toVector
-(
- const ScalarT A[][3],
- const ScalarT B[][3],
- ScalarT* C
-);
-
-template<typename ScalarT>
-void MatMul
-(
-int n,
-const ScalarT A[][6],
-const ScalarT B[][6],
-ScalarT C[][6],
-bool transpose
-);
-
-template<typename ScalarT>
-void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints);
-
-template<typename ScalarT>
-void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints);
-
-//! Transpose matrix; if both arguments are the same pointer then the matrix is transposed in place.
-template<typename ScalarT>
-void TransposeMatrix
-(
-const ScalarT* matrix,
-ScalarT* transpose
- );
-
-//! Invert a single N-by-N symmetric matrix; returns zero of successful, one if not successful (e.g., singular matrix).
-template<typename ScalarT>
-int invertAndCond
-(
-    const ScalarT* Min,
-    ScalarT *Mout,
-    const int size,
-    const double thresVal
-);
-
+    // field spec ids for all relevant data
+    int m_vonMisesStressFieldId;
+    
+    int m_bondLevelVonMisesStressFieldId;
+  };
 }
-#endif // MATRICES_H
+
+#endif // PERIDIGM_ELASTICBONDASSOCIATEDCORRESPONDENCEMATERIAL_HPP

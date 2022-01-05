@@ -209,7 +209,7 @@ PeridigmNS::ElasticPlasticHypoelasticCorrespondenceMaterial::computeCauchyStress
   double *cauchyStressPlastic;
   dataManager.getData(m_unrotatedCauchyStressPlasticFieldId, PeridigmField::STEP_NONE)->ExtractView(&cauchyStressPlastic);
 
-  CORRESPONDENCE::updateElasticPerfectlyPlasticCauchyStress(unrotatedRateOfDeformation,
+  CORRESPONDENCE::updateElasticPerfectlyPlasticCauchyStressNew(unrotatedRateOfDeformation,
                                                             unrotatedCauchyStressN, 
                                                             unrotatedCauchyStressNP1,
                                                             cauchyStressPlastic,
