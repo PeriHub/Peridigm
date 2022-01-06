@@ -51,28 +51,17 @@
 //@HEADER
 #include "FEM_ElasticMaterial.hpp"
 #include "Peridigm_Field.hpp"
-#include "elastic_FEM.h"
+#include "elastic_correspondence.h"
 #include "FEM_routines.h"
 #include <Teuchos_Assert.hpp>
 
 using namespace std;
 
 PeridigmNS::FEMElasticMaterial::FEMElasticMaterial(const Teuchos::ParameterList& params)
-  : FEMMaterial(params),
-    m_modelAnglesId(-1),
-    m_deformationGradientFieldId(-1),
-    m_cauchyStressFieldId(-1),
-    m_displacementFieldId(-1),
-    m_forceDensityFieldId(-1)
+  : FEMMaterial(params)
 {
-  bool m_planeStrain = false, m_planeStress = false;
+  bool m_planeStrain = false, m_planeStress = false, m_plane = false;
   m_type = 0;
-  m_density = params.get<double>("Density");
-  order[0] = params.get<int>("Order");
-  order[1] = params.get<int>("Order");
-  order[2] = params.get<int>("Order");
-  if (params.isParameter("Order_Y")) order[1] = params.get<int>("Order_Y");
-  if (params.isParameter("Order_Z")) order[2] = params.get<int>("Order_Z");
   if (params.isParameter("Plane Strain")){
     m_planeStrain = params.get<bool>("Plane Strain");
     }
@@ -133,7 +122,7 @@ PeridigmNS::FEMElasticMaterial::FEMElasticMaterial(const Teuchos::ParameterList&
        C55 = params.get<double>("C55");
        C56 = params.get<double>("C56");
        C66 = params.get<double>("C66");
-       //std::cout<<"??"<<std::endl;
+
    }
   }
   else{
@@ -198,20 +187,6 @@ PeridigmNS::FEMElasticMaterial::FEMElasticMaterial(const Teuchos::ParameterList&
     }
     
   
-  PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
-
-  m_cauchyStressFieldId                 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Unrotated_Cauchy_Stress");
-  m_modelCoordinatesFieldId             = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR,      PeridigmField::CONSTANT, "Model_Coordinates");
-  m_displacementFieldId                 = fieldManager.getFieldId(PeridigmField::NODE   , PeridigmField::VECTOR, PeridigmField::TWO_STEP     , "Displacements");
-  m_coordinatesFieldId                  = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR,      PeridigmField::TWO_STEP, "Coordinates");
-  m_modelAnglesId                       = fieldManager.getFieldId(PeridigmField::NODE   , PeridigmField::VECTOR, PeridigmField::CONSTANT     , "Local_Angles");
-  m_forceDensityFieldId                 = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Force_Density");
-  m_fieldIds.push_back(m_cauchyStressFieldId);
-  m_fieldIds.push_back(m_modelCoordinatesFieldId);
-  m_fieldIds.push_back(m_displacementFieldId);
-  m_fieldIds.push_back(m_coordinatesFieldId);
-  m_fieldIds.push_back(m_modelAnglesId);
-  m_fieldIds.push_back(m_forceDensityFieldId);
 
 }
 
@@ -221,58 +196,27 @@ PeridigmNS::FEMElasticMaterial::~FEMElasticMaterial()
 
 void
 PeridigmNS::FEMElasticMaterial::initialize(const double dt,
-                                                             const int numOwnedPoints,
-                                                             const int* ownedIDs,
-                                                             const int* elementNodalList,
-                                                             PeridigmNS::DataManager& dataManager)
+                                          const int numOwnedPoints,
+                                          const int* ownedIDs,
+                                          const int* topology,
+                                          PeridigmNS::DataManager& dataManager,
+                                          const int numElements)
+
 {
-      PeridigmNS::FEMElasticMaterial::initialize(dt,
-                                                      numOwnedPoints,
-                                                      ownedIDs,
-                                                      elementNodalList,
-                                                      dataManager);
+      
 
                              
 }
 
 void
-PeridigmNS::FEMElasticMaterial::computeCauchyStress(const double dt,
-                                                    const int numElements,
-                                                    const int numNodes,
-                                                    const int* elementNodalList,
-                                                    PeridigmNS::DataManager& dataManager) const
+PeridigmNS::FEMElasticMaterial::computeCauchyStress(const double* strain,                                                  
+                                                    double* sigmaInt
+                                                    ) const
 {
 
   
-
-  double *CauchyStressNP1, *coor, *angles, *displacements, *deformedCoor, *force;
- 
-
-  dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&CauchyStressNP1);
-
-  dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
-  dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&coor);
-  dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&deformedCoor);
-  dataManager.getData(m_displacementFieldId, PeridigmField::STEP_NP1)->ExtractView(&displacements);
-  dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&force);
-  // numowned muss aus modeleval übergeben
-  //FEM::getDisplacements(numOwnedPoints,coor,deformedCoor,displacements);
-  
-  
-  FEM::elasticFEM(coor, 
-                  displacements,
-                  CauchyStressNP1,
-                  numElements,
-                  elementNodalList,
-                  C,
-                  angles,
-                  m_type,
-                  dt,
-                  order,
-                  force); // --> ruft updateElasticCauchyStressAnisotropicCode auf
-                                            
-                                            
-                                     
+  CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(strain, sigmaInt, C, m_type);                        
+                                         
                                             
                                            
 }

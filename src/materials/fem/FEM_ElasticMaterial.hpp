@@ -70,15 +70,13 @@ namespace PeridigmNS {
 
     //! Evaluate the Cauchy stress. --> call from Peridigm_CorrespondenceMaterial.cpp
     virtual void initialize(const double dt, 
-                            const int numElements, 
+                            const int numOwnedPoints, 
                             const int* ownedIDs,
-                            const int* elementNodalList,
-                            PeridigmNS::DataManager& dataManager);
-    virtual void computeCauchyStress(const double dt,
-                                     const int numElements,
-                                     const int numNodes,
-                                     const int* elementNodalList,
-                                     PeridigmNS::DataManager& dataManager) const;
+                            const int* topology,
+                            PeridigmNS::DataManager& dataManager,
+                            const int numElement);
+    virtual void computeCauchyStress(const double* strain,                                                  
+                                     double* sigmaInt) const;
     //! Returns the requested material property
     //! A dummy method here.
     virtual double lookupMaterialProperty(const std::string keyname) const {return 0.0;}
@@ -89,15 +87,7 @@ namespace PeridigmNS {
     // field spec ids for all relevant data
     double C[6][6];
     int m_type;
-    int m_stabilizationType;
-    int m_modelAnglesId;
-    int m_displacementFieldId;
-    int m_deformationGradientFieldId;
-    int m_cauchyStressFieldId;
-    int m_forceDensityFieldId;
-    int order[3];
-    bool m_plane;
-  };
+    };
 }
 
 #endif // FEM_ELASTICMATERIAL_HPP
