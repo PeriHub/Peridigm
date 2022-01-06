@@ -349,32 +349,41 @@ template<typename ScalarT>
 void createRotationMatrix
 (
 const double* alpha,
-ScalarT rotMat[][3]
+ScalarT* rotMat
 ){
     const double PI  = 3.141592653589793238463;
     double rad[3];
-    
+    std::vector<double> rotMatYVec(9);
+    double* rotMatX = &rotMatYVec[0];
+    std::vector<double> rotMatYVec(9);
+    double* rotMatY = &rotMatYVec[0];
+    std::vector<double> rotMatZVec(9);
+    double* rotMatZ = &rotMatZVec[0];    
+    std::vector<double> tempVec(9);
+    double* temp = &tempVec[0];
+
+
     rad[0] = alpha[0]*(PI)/180.;
     rad[1] = alpha[1]*(PI)/180.;
     rad[2] = alpha[2]*(PI)/180.;
     ScalarT rotMatX[3][3], rotMatY[3][3], rotMatZ[3][3], temp[3][3];
 
     // x - direction
-    rotMatX[0][0] = 1; rotMatX[0][1] = 0;           rotMatX[0][2] = 0;
-    rotMatX[1][0] = 0; rotMatX[1][1] = cos(rad[0]); rotMatX[1][2] = -sin(rad[0]);
-    rotMatX[2][0] = 0; rotMatX[2][1] = sin(rad[0]); rotMatX[2][2] =  cos(rad[0]);
+    *(rotMatX) = 1;   *(rotMatX+1) = 0;           *(rotMatX+2) = 0;
+    *(rotMatX+3) = 0; *(rotMatX+4) = cos(rad[0]); *(rotMatX+5) = -sin(rad[0]);
+    *(rotMatX+6) = 0; *(rotMatX+7) = sin(rad[0]); *(rotMatX+8) =  cos(rad[0]);
     // y - direction
-    rotMatY[0][0] =  cos(rad[1]); rotMatY[0][1] = 0; rotMatY[0][2] = sin(rad[1]);
-    rotMatY[1][0] = 0;            rotMatY[1][1] = 1; rotMatY[1][2] = 0;
-    rotMatY[2][0] = -sin(rad[1]); rotMatY[2][1] = 0; rotMatY[2][2] = cos(rad[1]);
+    *(rotMatY)   =  cos(rad[1]); *(rotMatY+1) = 0; *(rotMatY+2) = sin(rad[1]);
+    *(rotMatY+3) = 0;            *(rotMatY+4) = 1; *(rotMatY+5) = 0;
+    *(rotMatY+6) = -sin(rad[1]); *(rotMatY+7) = 0; *(rotMatY+8) = cos(rad[1]);
     // z - direction
-    rotMatZ[0][0] = cos(rad[2]); rotMatZ[0][1] = -sin(rad[2]); rotMatZ[0][2] = 0;
-    rotMatZ[1][0] = sin(rad[2]); rotMatZ[1][1] =  cos(rad[2]); rotMatZ[1][2] = 0;
-    rotMatZ[2][0] = 0;           rotMatZ[2][1] = 0;            rotMatZ[2][2] = 1;
+    *(rotMatZ) = cos(rad[2]);   *(rotMatZ+1) = -sin(rad[2]); *(rotMatZ+2) = 0;
+    *(rotMatZ+3) = sin(rad[2]); *(rotMatZ+4) =  cos(rad[2]); *(rotMatZ+5) = 0;
+    *(rotMatZ+6) = 0;           *(rotMatZ+7) = 0;            *(rotMatZ+8) = 1;
     
             
-    MATRICES::MatrixMultiply3x3(rotMatX, rotMatY, temp);
-    MATRICES::MatrixMultiply3x3(temp, rotMatZ, rotMat);
+    MATRICES::MatrixMultiply(false, false, 1, rotMatX, rotMatY, temp);
+    MATRICES::MatrixMultiply(false, false, 1, temp, rotMatZ, rotMat);
 }
 
 
@@ -382,12 +391,12 @@ ScalarT rotMat[][3]
 template void createRotationMatrix<double>
 (
 const double* alpha,
-double rotMat[][3]
+double* rotMat
 );
 template void createRotationMatrix<Sacado::Fad::DFad<double> >
 (
 const double* alpha,
-Sacado::Fad::DFad<double> rotMat[][3]
+Sacado::Fad::DFad<double>* rotMat
 );
 
 

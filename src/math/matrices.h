@@ -65,7 +65,7 @@ template<typename ScalarT>
 void createRotationMatrix
 (
 const double* alpha,
-ScalarT rotMat[][3]
+ScalarT* rotMat
 );
 //! Invert a single 3-by-3 matrix; returns zero of successful, one if not successful (e.g., singular matrix).
 template<typename ScalarT>
