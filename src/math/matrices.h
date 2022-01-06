@@ -75,7 +75,15 @@ const ScalarT* matrix,
 ScalarT& determinant,
 ScalarT* inverse
 );
-
+// rotates a second order tensor in a new configuration or back
+template<typename ScalarT>
+void tensorRotation
+(
+    const double* angles,
+    const ScalarT* tensorIn,
+    const bool globToLoc,
+    ScalarT* tensorOut
+);
 //! Inner product of two 3-by-3 matrices.
 template<typename ScalarT>
 void MatrixMultiply

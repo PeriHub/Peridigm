@@ -343,6 +343,32 @@ void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints){
       *(tens+8) = 1.0;
   }  
 }
+template<typename ScalarT>
+void tensorRotation
+(
+    const double* angles,
+    const ScalarT* tensorIn,
+    const bool globToLoc,
+    ScalarT* tensorOut
+)
+{   
+    std::vector<ScalarT> rotMatVec(9);
+    ScalarT* rotMat = &rotMatVec[0];
+    std::vector<ScalarT> tempVec(9);
+    ScalarT* temp = &tempVec[0];
+    ScalarT A = 1;
+    MATRICES::createRotationMatrix(angles,rotMat);
+    //MATRICES::TransposeMatrix(rotMat,rotMatT);
+    // geomNL
+    if (globToLoc){
+        MATRICES::MatrixMultiply(true,  false, A, rotMat,tensorIn, temp);
+        MATRICES::MatrixMultiply(false, false, A, temp,rotMat,tensorOut);
+    }
+    else{
+        MATRICES::MatrixMultiply(false, false, A, rotMat,tensorIn, temp);
+        MATRICES::MatrixMultiply(false, true,  A, temp,rotMat,tensorOut);
+    }
+}
 
 /** Explicit template instantiation for Sacado::Fad::DFad<double>. */
 template<typename ScalarT>
@@ -353,20 +379,20 @@ ScalarT* rotMat
 ){
     const double PI  = 3.141592653589793238463;
     double rad[3];
-    std::vector<double> rotMatYVec(9);
-    double* rotMatX = &rotMatYVec[0];
-    std::vector<double> rotMatYVec(9);
-    double* rotMatY = &rotMatYVec[0];
-    std::vector<double> rotMatZVec(9);
-    double* rotMatZ = &rotMatZVec[0];    
-    std::vector<double> tempVec(9);
-    double* temp = &tempVec[0];
-
+    std::vector<ScalarT> rotMatXVec(9);
+    ScalarT* rotMatX = &rotMatXVec[0];
+    std::vector<ScalarT> rotMatYVec(9);
+    ScalarT* rotMatY = &rotMatYVec[0];
+    std::vector<ScalarT> rotMatZVec(9);
+    ScalarT* rotMatZ = &rotMatZVec[0];    
+    std::vector<ScalarT> tempVec(9);
+    ScalarT* temp = &tempVec[0];
+    ScalarT A = 1.0;
 
     rad[0] = alpha[0]*(PI)/180.;
     rad[1] = alpha[1]*(PI)/180.;
     rad[2] = alpha[2]*(PI)/180.;
-    ScalarT rotMatX[3][3], rotMatY[3][3], rotMatZ[3][3], temp[3][3];
+ 
 
     // x - direction
     *(rotMatX) = 1;   *(rotMatX+1) = 0;           *(rotMatX+2) = 0;
@@ -382,8 +408,8 @@ ScalarT* rotMat
     *(rotMatZ+6) = 0;           *(rotMatZ+7) = 0;            *(rotMatZ+8) = 1;
     
             
-    MATRICES::MatrixMultiply(false, false, 1, rotMatX, rotMatY, temp);
-    MATRICES::MatrixMultiply(false, false, 1, temp, rotMatZ, rotMat);
+    MATRICES::MatrixMultiply(false, false, A, rotMatX, rotMatY, temp);
+    MATRICES::MatrixMultiply(false, false, A, temp, rotMatZ, rotMat);
 }
 
 
@@ -550,4 +576,23 @@ template void TransposeMatrix<Sacado::Fad::DFad<double> >
  const Sacado::Fad::DFad<double>* matrix,
  Sacado::Fad::DFad<double>* transpose
 );
+
+template void tensorRotation<double>
+(
+    const double* angles,
+    const double* tensorIn,
+    const bool globToLoc,
+    double* tensorOut
+);
+
+template void tensorRotation<Sacado::Fad::DFad<double> >
+(
+    const double* angles,
+    const Sacado::Fad::DFad<double>* tensorIn,
+    const bool globToLoc,
+    Sacado::Fad::DFad<double>* tensorOut
+);
+
+
+
 }

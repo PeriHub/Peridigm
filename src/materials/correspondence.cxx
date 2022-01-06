@@ -233,7 +233,7 @@ template<typename ScalarT>
 int computeLogStrain
 (
  const ScalarT* defGrad,
- ScalarT strain[][3]
+ ScalarT* strain
 )
 {
   // Hencky-Strain E = 0.5*ln(C)
@@ -308,10 +308,10 @@ int computeLogStrain
   
   MATRICES::MatrixMultiply(false,false,OneHalf,A_log_temp, V_inv, strainTemp);
 
-  strain[0][0] = *(strainTemp+0);
-  strain[1][0] = *(strainTemp+1);
-  strain[0][1] = *(strainTemp+3);
-  strain[1][1] = *(strainTemp+4);
+  *(strain)   = *(strainTemp);
+  *(strain+1) = *(strainTemp+1);
+  *(strain+3) = *(strainTemp+3);
+  *(strain+4) = *(strainTemp+4);
 
   return returnCode;
 }
@@ -1561,11 +1561,12 @@ ScalarT* hourglassStiff
 {
     const ScalarT* shapeTensorInv = shapeTensorInverse;
     ScalarT C[6][6];
-    
-    ScalarT rotationMat[3][3];
-    CORRESPONDENCE::createRotationMatrix(alpha,rotationMat);    
-    CORRESPONDENCE::createRotatedStiff(Cstiff,rotationMat,C);
-    //CORRESPONDENCE::createRotatedPythonBasedStiff(Cstiff,alpha,C); 
+    std::vector<ScalarT> rotMatVec(9);
+    ScalarT* rotMat = &rotMatVec[0];
+
+    MATRICES::createRotationMatrix(alpha,rotMat);
+    CORRESPONDENCE::createRotatedStiff(Cstiff,rotMat,C);
+  
     // to be checked for 2D
     hourglassStiff[0] =  *(shapeTensorInv)*C[0][0] + *(shapeTensorInv+1)*C[0][5] + *(shapeTensorInv+2)*C[0][4] + *(shapeTensorInv+3)*C[0][5] + *(shapeTensorInv+4)*C[0][1] + *(shapeTensorInv+5)*C[0][3] + *(shapeTensorInv+6)*C[0][4] + *(shapeTensorInv+7)*C[0][3] + *(shapeTensorInv+8)*C[0][2];
     hourglassStiff[1] =  *(shapeTensorInv)*C[0][5] + *(shapeTensorInv+1)*C[5][5] + *(shapeTensorInv+2)*C[3][5] + *(shapeTensorInv+3)*C[5][5] + *(shapeTensorInv+4)*C[1][5] + *(shapeTensorInv+5)*C[3][4] + *(shapeTensorInv+6)*C[3][5] + *(shapeTensorInv+7)*C[3][4] + *(shapeTensorInv+8)*C[2][3];
@@ -2316,32 +2317,32 @@ void updateDeformationGradient
 template<typename ScalarT>
 void computeGreenLagrangeStrain
 (const ScalarT* defGrad,
-ScalarT strain[][3]
+ScalarT* strain
 )
 {
 
-  strain[0][0] = 0.5 * ( *(defGrad)   * *(defGrad)   + *(defGrad+3) * *(defGrad+3) + *(defGrad+6) * *(defGrad+6)  - 1.0 );
-  strain[0][1] = 0.5 * ( *(defGrad)   * *(defGrad+1) + *(defGrad+3) * *(defGrad+4) + *(defGrad+6) * *(defGrad+7)  );
-  strain[0][2] = 0.5 * ( *(defGrad)   * *(defGrad+2) + *(defGrad+3) * *(defGrad+5) + *(defGrad+6) * *(defGrad+8)  );
-  strain[1][0] = 0.5 * ( *(defGrad)   * *(defGrad+1) + *(defGrad+3) * *(defGrad+4) + *(defGrad+6) * *(defGrad+7)  );
-  strain[1][1] = 0.5 * ( *(defGrad+1) * *(defGrad+1) + *(defGrad+4) * *(defGrad+4) + *(defGrad+7) * *(defGrad+7)  - 1.0 );
-  strain[1][2] = 0.5 * ( *(defGrad+1) * *(defGrad+2) + *(defGrad+4) * *(defGrad+5) + *(defGrad+7) * *(defGrad+8)  );
-  strain[2][0] = 0.5 * ( *(defGrad)   * *(defGrad+2) + *(defGrad+3) * *(defGrad+5) + *(defGrad+6) * *(defGrad+8)  );
-  strain[2][1] = 0.5 * ( *(defGrad+1) * *(defGrad+2) + *(defGrad+4) * *(defGrad+5) + *(defGrad+7) * *(defGrad+8)  );
-  strain[2][2] = 0.5 * ( *(defGrad+2) * *(defGrad+2) + *(defGrad+5) * *(defGrad+5) + *(defGrad+8) * *(defGrad+8)  - 1.0 );
+  *(strain  ) = 0.5 * ( *(defGrad)   * *(defGrad)   + *(defGrad+3) * *(defGrad+3) + *(defGrad+6) * *(defGrad+6)  - 1.0 );
+  *(strain+1) = 0.5 * ( *(defGrad)   * *(defGrad+1) + *(defGrad+3) * *(defGrad+4) + *(defGrad+6) * *(defGrad+7)  );
+  *(strain+2) = 0.5 * ( *(defGrad)   * *(defGrad+2) + *(defGrad+3) * *(defGrad+5) + *(defGrad+6) * *(defGrad+8)  );
+  *(strain+3) = 0.5 * ( *(defGrad)   * *(defGrad+1) + *(defGrad+3) * *(defGrad+4) + *(defGrad+6) * *(defGrad+7)  );
+  *(strain+4) = 0.5 * ( *(defGrad+1) * *(defGrad+1) + *(defGrad+4) * *(defGrad+4) + *(defGrad+7) * *(defGrad+7)  - 1.0 );
+  *(strain+5) = 0.5 * ( *(defGrad+1) * *(defGrad+2) + *(defGrad+4) * *(defGrad+5) + *(defGrad+7) * *(defGrad+8)  );
+  *(strain+6) = 0.5 * ( *(defGrad)   * *(defGrad+2) + *(defGrad+3) * *(defGrad+5) + *(defGrad+6) * *(defGrad+8)  );
+  *(strain+7) = 0.5 * ( *(defGrad+1) * *(defGrad+2) + *(defGrad+4) * *(defGrad+5) + *(defGrad+7) * *(defGrad+8)  );
+  *(strain+8) = 0.5 * ( *(defGrad+2) * *(defGrad+2) + *(defGrad+5) * *(defGrad+5) + *(defGrad+8) * *(defGrad+8)  - 1.0 );
 }
 
 
 template void computeGreenLagrangeStrain<Sacado::Fad::DFad<double>>
 (
 const Sacado::Fad::DFad<double>* defGrad, 
-Sacado::Fad::DFad<double> strain[][3]
+Sacado::Fad::DFad<double>* strain
 
 );
 template void computeGreenLagrangeStrain<double>
 (
 const double* defGrad, 
-double strain[][3]
+double* strain
 
 );
 
@@ -3266,12 +3267,12 @@ template void rotateCauchyStress<double>
 template int computeLogStrain<double>
 (
  const double* defGrad,
- double strain[][3]
+ double* strain
 );
 template int computeLogStrain<Sacado::Fad::DFad<double> >
 (
  const Sacado::Fad::DFad<double>* defGrad,
- Sacado::Fad::DFad<double>  strain[][3]
+ Sacado::Fad::DFad<double>*  strain
 );
 
 template int computeShapeTensorInverseAndApproximateDeformationGradient<double>

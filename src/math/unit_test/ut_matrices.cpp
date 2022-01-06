@@ -191,7 +191,7 @@ TEUCHOS_UNIT_TEST(correspondence, createRotationMatrix) {
     A[0] = 0;A[1] = 70;A[2] = 0;
     MATRICES::createRotationMatrix(A,Btest);
     
-    double By[3][3] = {0.34202014, 0, 0.93969262, 0, 1, 0, -0.93969262, 0, 0.34202014};
+    double By[9] = {0.34202014, 0, 0.93969262, 0, 1, 0, -0.93969262, 0, 0.34202014};
 
     for (n=0; n<9; n++){
         TEST_FLOATING_EQUALITY(By[n],Btest[n],tolerance);        
@@ -200,7 +200,7 @@ TEUCHOS_UNIT_TEST(correspondence, createRotationMatrix) {
     A[0] = 0;A[1] = 0;A[2] = 30;
     MATRICES::createRotationMatrix(A,Btest);
     
-    double Bz[3][3] = {0.8660254, -0.5, 0, 0.5, 0.8660254, 0, 0, 0, 1};
+    double Bz[9] = {0.8660254, -0.5, 0, 0.5, 0.8660254, 0, 0, 0, 1};
 
     for (n=0; n<9; n++){
         TEST_FLOATING_EQUALITY(Bz[n],Btest[n],tolerance);        
