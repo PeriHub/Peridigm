@@ -122,7 +122,8 @@ namespace PeridigmNS {
                const int numOwnedPoints,
                const int* ownedIDs,
                const int* neighborhoodList,
-               PeridigmNS::DataManager& dataManager) {}
+               PeridigmNS::DataManager& dataManager,
+               const int numElements = 0) {}
 
     //! Run calculations at each time step prior to evaulating the internal force.
     virtual void

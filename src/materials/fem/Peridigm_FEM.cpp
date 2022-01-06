@@ -133,7 +133,7 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
   m_fieldIds.push_back(m_coordinatesFieldId);
   m_fieldIds.push_back(m_forceDensityFieldId);
   m_fieldIds.push_back(m_displacementFieldId);
-  
+
   m_fieldIds.push_back(m_unrotatedCauchyStressFieldId);
   m_fieldIds.push_back(m_cauchyStressFieldId);
 
@@ -154,7 +154,7 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
                             PeridigmNS::DataManager& dataManager,
                             const int numElements)
 {
-  
+  std::cout<<"init FEM"<<std::endl;
  // FEM::createLumbedMassesSomeHow()
   double* Nxi  = &NxiVector[0];
   double* Neta = &NetaVector[0];
@@ -171,14 +171,12 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
   double* weightsx = &weightxVector[0];
   double* weightsy = &weightyVector[0];
   double* weightsz = &weightzVector[0];
-
+  int* elTopo = &localELtopo[0];
 
   FEM::weightsAndIntegrationPoints(order[0], elCoorx, weightsx);
   FEM::weightsAndIntegrationPoints(order[1], elCoory, weightsy);
-  if (twoD == false) 
-
-  
-  FEM::getElementTopo(twoD, order, localELtopo);
+ 
+  FEM::getElementTopo(twoD, order, elTopo);
     
   for (int iID=0 ; iID<order[0]+1 ; ++iID){
     FEM::getLagrangeElementData(order[0],elCoorx[iID],Nxi,Bxi);
@@ -263,7 +261,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     double* weightsx = &weightxVector[0];
     double* weightsy = &weightyVector[0];
     double* weightsz = &weightzVector[0];
-
+    int* elTopo = &localELtopo[0];
     int topoPtr = 0;
     std::vector<double> JMat(9);
     double* J = &JMat[0];
@@ -337,8 +335,8 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         if (rotation){  
           MATRICES::tensorRotation(angles,sigmaInt,false,sigmaInt);
         }
-        detJw = FEM::addWeights(detJ, twoD, jID, localELtopo, weightsx,weightsy,weightsz);
-        FEM::getNodalForce(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,localELtopo, sigmaInt, ndof, detJw, Jinv, twoD, elNodalForces);
+        detJw = FEM::addWeights(detJ, twoD, jID, elTopo, weightsx,weightsy,weightsz);
+        FEM::getNodalForce(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,elTopo, sigmaInt, ndof, detJw, Jinv, twoD, elNodalForces);
         // has to be done for each integration point
         // it adds up the different parts of each integration point resulting element force
         for(int n=0 ; n<numElemNodes ; ++n){

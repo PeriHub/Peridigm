@@ -204,6 +204,12 @@ PeridigmNS::FEMElasticMaterial::initialize(const double dt,
 
 {
       
+  PeridigmNS::FEMMaterial::initialize(dt,
+                                      numOwnedPoints,
+                                      ownedIDs,
+                                      topology,
+                                      dataManager,
+                                      numElements);
 
                              
 }

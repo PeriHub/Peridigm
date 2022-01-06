@@ -106,7 +106,7 @@ void getElementTopo
 (
 const bool twoD,
 const int order[3], 
-int topo[]
+int *topo
 )
 {
     int count = 0;
@@ -222,7 +222,7 @@ const double* Npsi,
 const double* Bxi,
 const double* Beta,
 const double* Bpsi,
-const int topo[],
+const int *topo,
 const double* sigmaInt, 
 const int dof,
 const double detJ,
@@ -267,7 +267,7 @@ void getJacobian
     const double* Beta,
     const double* Bpsi,
     const int dof, 
-    const int topo[],
+    const int *topo,
     const double* coor,
     const bool twoD,
     double* J,
@@ -317,7 +317,7 @@ double addWeights
     const double detJ, 
     const bool twoD, 
     const int intNum, 
-    const int topo[],
+    const int *topo,
     const double weightsx[],
     const double weightsy[],
     const double weightsz[]
@@ -382,7 +382,7 @@ const double* Npsi,
 const double* Bxi,
 const double* Beta,
 const double* Bpsi,
-const int topo[],
+const int *topo,
 const double* u, 
 const int dof,
 const double* Jinv,
