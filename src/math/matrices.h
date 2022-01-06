@@ -60,7 +60,13 @@ const ScalarT* matrix,
 ScalarT& determinant,
 ScalarT* inverse
 );
-
+// create a 3x3 rotation matrix with 3 input angles
+template<typename ScalarT>
+void createRotationMatrix
+(
+const double* alpha,
+ScalarT rotMat[][3]
+);
 //! Invert a single 3-by-3 matrix; returns zero of successful, one if not successful (e.g., singular matrix).
 template<typename ScalarT>
 int Invert3by3Matrix

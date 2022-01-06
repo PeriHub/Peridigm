@@ -344,6 +344,54 @@ void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints){
   }  
 }
 
+/** Explicit template instantiation for Sacado::Fad::DFad<double>. */
+template<typename ScalarT>
+void createRotationMatrix
+(
+const double* alpha,
+ScalarT rotMat[][3]
+){
+    const double PI  = 3.141592653589793238463;
+    double rad[3];
+    
+    rad[0] = alpha[0]*(PI)/180.;
+    rad[1] = alpha[1]*(PI)/180.;
+    rad[2] = alpha[2]*(PI)/180.;
+    ScalarT rotMatX[3][3], rotMatY[3][3], rotMatZ[3][3], temp[3][3];
+
+    // x - direction
+    rotMatX[0][0] = 1; rotMatX[0][1] = 0;           rotMatX[0][2] = 0;
+    rotMatX[1][0] = 0; rotMatX[1][1] = cos(rad[0]); rotMatX[1][2] = -sin(rad[0]);
+    rotMatX[2][0] = 0; rotMatX[2][1] = sin(rad[0]); rotMatX[2][2] =  cos(rad[0]);
+    // y - direction
+    rotMatY[0][0] =  cos(rad[1]); rotMatY[0][1] = 0; rotMatY[0][2] = sin(rad[1]);
+    rotMatY[1][0] = 0;            rotMatY[1][1] = 1; rotMatY[1][2] = 0;
+    rotMatY[2][0] = -sin(rad[1]); rotMatY[2][1] = 0; rotMatY[2][2] = cos(rad[1]);
+    // z - direction
+    rotMatZ[0][0] = cos(rad[2]); rotMatZ[0][1] = -sin(rad[2]); rotMatZ[0][2] = 0;
+    rotMatZ[1][0] = sin(rad[2]); rotMatZ[1][1] =  cos(rad[2]); rotMatZ[1][2] = 0;
+    rotMatZ[2][0] = 0;           rotMatZ[2][1] = 0;            rotMatZ[2][2] = 1;
+    
+            
+    MATRICES::MatrixMultiply3x3(rotMatX, rotMatY, temp);
+    MATRICES::MatrixMultiply3x3(temp, rotMatZ, rotMat);
+}
+
+
+//// Explicit template instantiation for double
+template void createRotationMatrix<double>
+(
+const double* alpha,
+double rotMat[][3]
+);
+template void createRotationMatrix<Sacado::Fad::DFad<double> >
+(
+const double* alpha,
+Sacado::Fad::DFad<double> rotMat[][3]
+);
+
+
+
 template<typename ScalarT>
 void TransposeMatrix
 (
