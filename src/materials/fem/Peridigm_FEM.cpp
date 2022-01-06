@@ -55,6 +55,8 @@
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
+#include "FEM_routines.h"
+#include "matrices.h"
 using namespace std;
 
 PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
@@ -63,11 +65,57 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
     
 {
      
-  //! \todo Add meaningful asserts on material properties.
-  m_bulkModulus = calculateBulkModulus(params);
-  m_shearModulus = calculateShearModulus(params);
   m_density = params.get<double>("Density");
-  
+
+  bool m_planeStrain = false, m_planeStress = false;
+  m_type = 0;
+  order[0] = params.get<int>("Order");
+  order[1] = params.get<int>("Order");
+  order[2] = params.get<int>("Order");
+  if (params.isParameter("Order_Y")) order[1] = params.get<int>("Order_Y");
+  if (params.isParameter("Order_Z")) order[2] = params.get<int>("Order_Z");
+
+  delete NxiVector;
+  delete NetaVector;
+  delete NpsiVector;
+  NxiVector  = new double[order[0]+1];
+  NetaVector = new double[order[1]+1];
+  NpsiVector = new double[order[2]+1];
+  delete BxiVector;
+  delete BetaVector;
+  delete BpsiVector;
+  BxiVector  = new double[order[0]+1];
+  BetaVector = new double[order[1]+1];
+  BpsiVector = new double[order[2]+1];
+  delete elCoorxVector;
+  delete elCooryVector;
+  delete elCoorzVector;
+  elCoorxVector = new double[order[0]+1];
+  elCooryVector = new double[order[1]+1];
+  elCoorzVector = new double[order[2]+1];
+  delete weightxVector;
+  delete weightyVector; 
+  delete weightzVector;
+  weightxVector = new double[order[0]+1];
+  weightyVector = new double[order[1]+1];
+  weightzVector = new double[order[2]+1];
+
+
+
+
+  if (params.isParameter("Plane Strain")){
+    m_planeStrain = params.get<bool>("Plane Strain");
+    }
+  if (params.isParameter("Plane Stress")){
+    m_planeStress = params.get<bool>("Plane Stress");
+    }
+  if (m_planeStrain==true)m_type=1;
+  if (m_planeStress==true)m_type=2;
+  twoD = false;
+  if (m_type != 0)twoD = true;
+  numInt = FEM::getNumberOfIntegrationPoints(twoD, order);
+  delete localELtopo;
+  localELtopo = new int[3*numInt];
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   m_modelCoordinatesFieldId           = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::CONSTANT, "Model_Coordinates");
@@ -107,6 +155,43 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
 {
   
  // FEM::createLumbedMassesSomeHow()
+  double* Nxi  = &NxiVector[0];
+  double* Neta = &NetaVector[0];
+  double* Npsi = &NpsiVector[0];
+  
+  double* Bxi  = &BxiVector[0];
+  double* Beta = &BetaVector[0];
+  double* Bpsi = &BpsiVector[0];
+  
+  double* elCoorx = &elCoorxVector[0];
+  double* elCoory = &elCooryVector[0];
+  double* elCoorz = &elCoorzVector[0];
+  
+  double* weightsx = &weightxVector[0];
+  double* weightsy = &weightyVector[0];
+  double* weightsz = &weightzVector[0];
+
+
+  FEM::weightsAndIntegrationPoints(order[0], elCoorx, weightsx);
+  FEM::weightsAndIntegrationPoints(order[1], elCoory, weightsy);
+  if (twoD == false) 
+
+  
+  FEM::getElementTopo(twoD, order, localELtopo);
+    
+  for (int iID=0 ; iID<order[0]+1 ; ++iID){
+    FEM::getLagrangeElementData(order[0],elCoorx[iID],Nxi,Bxi);
+  }  
+  for (int iID=0 ; iID<order[1]+1 ; ++iID){
+    FEM::getLagrangeElementData(order[1],elCoory[iID],Neta,Beta);
+  }  
+  if (twoD == false){
+    FEM::weightsAndIntegrationPoints(order[2],elCoorz,weightsz);
+    for (int iID=0 ; iID<order[2]+1 ; ++iID){
+      FEM::getLagrangeElementData(order[2],elCoorz[iID],Npsi,Bpsi);
+    }  
+  }
+
 
 }
 
@@ -114,24 +199,173 @@ void
 PeridigmNS::FEMMaterial::computeForce(const double dt,
                               const int numOwnedPoints,
                               const int* ownedIDs,
-                              const int* topology,
+                              const int* topologyTemporaryNotUsed,
                               PeridigmNS::DataManager& dataManager,
-                              const int numElements) const
+                              const int numElementsTemporaryNotUsed) const
 {
-  // Zero out the forces and partial stress
-
-  //elementNodalList = {4,1,2,3,4};
   
-  computeCauchyStress(dt, numOwnedPoints, numElements, topology, dataManager);
+  double *CauchyStressNP1, *modelCoordinates, *nodeAngles, *displacements, *deformedCoor, *globalForce;
  
-// brauchen wir vielleicht nicht
-// FEM::computeForcesAndStresses(
-//                                       numOwnedPoints,
-//                                       neighborhoodList,
-//                                       );
-                                          
- //     std::cout<<numOwnedPoints<< " "<< *(deformationGradient)<<" "<<*(partialStress)<<std::endl;
+
+  dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&CauchyStressNP1);
+
+  dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&nodeAngles);
+  dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&modelCoordinates);
+  dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&deformedCoor);
+  dataManager.getData(m_displacementFieldId, PeridigmField::STEP_NP1)->ExtractView(&displacements);
+  dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&globalForce);
+
+
+
+    bool rotation = false;
+    const double* nodalCoor = modelCoordinates;
+    const double* disp = displacements;
+    double* force = globalForce;
+    double* sigmaNP1 = CauchyStressNP1;
+    std::vector<double> strainVector(9);
+
+    double* strain = &strainVector[0];
+    double angles[3];
+    //int defGradLogReturnCode(0);
+
+    std::vector<double> sigmaIntVector(9);
+    double* sigmaInt = &sigmaIntVector[0];
+    //int* topoPtr = &topology[0];
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    // for higher order it has to be adapted
+    // it is a full integration
+    // reduced integration is not included yet
+    /////////////////////////////////////////////////////////////////////
+  
+    bool twoD = false;
+    if (m_type!=0) {twoD = true;}
+
     
 
+    int ndof = numInt * 3;
+    std::vector<double> dispNodalVector(ndof);
+    double* dispNodal = &dispNodalVector[0];
+    std::vector<double> elNodalCoorVector(ndof);
+    double* elNodalCoor = &elNodalCoorVector[0];
+    std::vector<double> elNodalForceVector(ndof);
+    double* elNodalForces = &elNodalForceVector[0];
+    
+    double* Nxi  = &NxiVector[0];
+    double* Neta = &NetaVector[0];
+    double* Npsi = &NpsiVector[0];
+    
+    double* Bxi  = &BxiVector[0];
+    double* Beta = &BetaVector[0];
+    double* Bpsi = &BpsiVector[0];
+    
+    double* weightsx = &weightxVector[0];
+    double* weightsy = &weightyVector[0];
+    double* weightsz = &weightzVector[0];
+
+    int topoPtr = 0;
+    std::vector<double> JMat(9);
+    double* J = &JMat[0];
+    std::vector<double> JinvMat(9);
+    double* Jinv = &JinvMat[0];
+    double detJ = 0.0, detJw = 0.0;
+    int localId, numElemNodes;
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // irgendwie in die init?
+    // das wäre der Austausch für verschiedene Elementtypen
+    // falsch
+    int numElements = 3;
+    bool test = true;
+    std::vector<int> topology(15);
+    if (test){
+      topology[0] = 4;
+      topology[1] = 0;
+      topology[2] = 1;
+      topology[3] = 3;
+      topology[4] = 5;
+      topology[5] = 4;
+      topology[6] = 1;
+      topology[7] = 2;
+      topology[8] = 5;
+      topology[9] = 6;
+      topology[10] = 4;
+      topology[11] = 2;
+      topology[12] = 3;
+      topology[13] = 6;
+      topology[14] = 7;
+    }
+
+
+    for(int iID=0 ; iID<numElements ; ++iID){
+      // for averaging the element number to which the node is connected has to be known
+
+      numElemNodes = topology[topoPtr];
+      topoPtr++;
+      angles[0] = 0.0;angles[1] = 0.0;angles[2] = 0.0;
+      for(int n=0 ; n<numElemNodes ; ++n){
+        localId = topology[topoPtr + n];
+        elNodalCoor[3*n]   = nodalCoor[3*localId];
+        elNodalCoor[3*n+1] = nodalCoor[3*localId+1];
+        elNodalCoor[3*n+2] = nodalCoor[3*localId+2];
+        dispNodal[3*n]     = disp[3*localId];
+        dispNodal[3*n+1]   = disp[3*localId+1];
+        dispNodal[3*n+2]   = disp[3*localId+2];
+        elNodalForces[3*n]     = 0.0;
+        elNodalForces[3*n+1]   = 0.0;
+        elNodalForces[3*n+2]   = 0.0;
+        sigmaNP1[9*localId  ] = 0.0;sigmaNP1[9*localId+1] = 0.0; sigmaNP1[9*localId+2] = 0.0;
+        sigmaNP1[9*localId+3] = 0.0;sigmaNP1[9*localId+4] = 0.0; sigmaNP1[9*localId+5] = 0.0;
+        sigmaNP1[9*localId+6] = 0.0;sigmaNP1[9*localId+7] = 0.0; sigmaNP1[9*localId+8] = 0.0;
+        angles[0] += nodeAngles[3*localId]/numElemNodes;angles[1] += nodeAngles[3*localId+1]/numElemNodes;angles[2] += nodeAngles[3*localId+2]/numElemNodes;
+      }
+
+      for (int jID=0 ; jID<numInt ; ++jID){
+        // only if nodes and integration points are equal the topology is suitable here.
+        
+        FEM::getJacobian(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,ndof,localELtopo,elNodalCoor, twoD, J, detJ, Jinv);
+        FEM::computeStrain(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,localELtopo,dispNodal, ndof, Jinv, twoD, strain); 
+        
+        //https://www.continuummechanics.org/stressxforms.html
+        // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
+        if (rotation){  
+          MATRICES::tensorRotation(angles,strain,true,strain);
+        }
+        //CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(strain, sigmaInt, Cstiff, type);
+        computeCauchyStress(strain, sigmaInt);
+        // rotation back
+        if (rotation){  
+          MATRICES::tensorRotation(angles,sigmaInt,false,sigmaInt);
+        }
+        detJw = FEM::addWeights(detJ, twoD, jID, localELtopo, weightsx,weightsy,weightsz);
+        FEM::getNodalForce(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,localELtopo, sigmaInt, ndof, detJw, Jinv, twoD, elNodalForces);
+        // has to be done for each integration point
+        // it adds up the different parts of each integration point resulting element force
+        for(int n=0 ; n<numElemNodes ; ++n){
+          localId = topology[topoPtr + n];
+          std::cout<< iID<< " " << jID<<" "<<localId<<" "<< numElemNodes<<std::endl;
+          force[3*localId]   += elNodalForces[3*n]; 
+          force[3*localId+1] += elNodalForces[3*n+1];
+          force[3*localId+2] += elNodalForces[3*n+2];
+          // for averaging connected nodes must be determined (to how much elements is the node connected?)
+          sigmaNP1[9*localId  ] = sigmaInt[0]/numInt;sigmaNP1[9*localId+1] = sigmaInt[1]/numInt; sigmaNP1[9*localId+2] = sigmaInt[2]/numInt;
+          sigmaNP1[9*localId+3] = sigmaInt[3]/numInt;sigmaNP1[9*localId+4] = sigmaInt[4]/numInt; sigmaNP1[9*localId+5] = sigmaInt[5]/numInt;
+          sigmaNP1[9*localId+6] = sigmaInt[6]/numInt;sigmaNP1[9*localId+7] = sigmaInt[7]/numInt; sigmaNP1[9*localId+8] = sigmaInt[8]/numInt;
+
+
+          
+        }
+        //topology -= numNeigh;
+              // avarage stresses
+              // sigmaNP1 /= numInt;
+              //globForce(topo) += force; ??
+ 
+      }
+
+      topoPtr+=numElemNodes;
+ 
+ 
+
+    }
+  
  }
 

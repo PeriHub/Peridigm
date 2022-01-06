@@ -107,7 +107,7 @@ const double* Npsi,
 const double* Bxi,
 const double* Beta,
 const double* Bpsi,
-const int topo[][3],
+const int topo[],
 const double* sigmaInt, 
 const int dof,
 const double detJ,
@@ -119,17 +119,11 @@ double* elNodalForces
 void tensorRotation
 (
 const double* angles,
-const double tensorIn[3][3],
+const double* tensorIn,
 const bool globToLoc,
-double tensorOut[3][3]
+double* tensorOut
 );
-void tensorRotationWithVector
-(
-    const double* angles,
-    const double* tensorIn,
-    const bool globToLoc,
-    double* tensorOut
-);
+
 void defineLagrangianGridSpace
 (
 const int order,
@@ -139,7 +133,7 @@ void getElementTopo
 (
 const bool twoD, 
 const int order[3], 
-int topo[][3]
+int topo[]
 );
 void shapeFunctionsLagrange
 (
@@ -165,18 +159,14 @@ const double* Npsi,
 const double* Bxi,
 const double* Beta,
 const double* Bpsi,
-const int topo[][3],
+const int topo[],
 const double* u, 
 const int dof,
 const double* Jinv,
 const bool twoD,
-double strain[3][3]
+double* strain
 );
-void getElementTopo
-(
-const int order[3], 
-int topo[][3]
-);
+
 void getJacobian
 (
 const double* Nxi,
@@ -185,16 +175,23 @@ const double* Npsi,
 const double* Bxi,
 const double* Beta,
 const double* Bpsi,
-const double* weightsx,
-const double* weightsy,
-const double* weightsz,
 const int dof, 
-const int topo[][3],
+const int topo[],
 const double* coor,
 const bool twoD,
 double* J,
 double detJ,
 double* Jinv
+);
+double addWeights
+(
+    const double detJ, 
+    const bool twoD, 
+    const int intNum, 
+    const int topo[],
+    const double weightsx[],
+    const double weightsy[],
+    const double weightsz[]
 );
 void getDisplacements
 (

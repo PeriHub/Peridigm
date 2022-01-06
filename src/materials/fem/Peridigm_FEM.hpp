@@ -90,11 +90,8 @@ namespace PeridigmNS {
                             const int numElements);
 
     //! Evaluate the Cauchy stress (pure virtual function, must be implemented by derived correspondence material models).
-    virtual void computeCauchyStress(const double dt,
-                                     const int numOwnedPoints,
-                                     const int numElements,
-                                     const int* topology,
-                                     PeridigmNS::DataManager& dataManager) const = 0;
+    virtual void computeCauchyStress(const double* strain,
+                                     double* stress) const = 0;
 
     //! Evaluate the internal force.
     virtual void computeForce(const double dt,
@@ -107,15 +104,23 @@ namespace PeridigmNS {
 
 
   protected:
-
-    // material parameters
+    double m_density;
     double m_bulkModulus;
     double m_shearModulus;
-    double m_density;
-    bool m_applyAutomaticDifferentiationJacobian;
-    bool m_applyThermalStrains;
-    double D;
-
+    int numInt;
+    double *NxiVector = new double;
+    double *NetaVector = new double;
+    double *NpsiVector = new double;
+    double *BxiVector = new double;
+    double *BetaVector = new double;
+    double *BpsiVector = new double;
+    double *elCoorxVector = new double;
+    double *elCooryVector = new double;
+    double *elCoorzVector = new double;
+    double *weightxVector = new double;
+    double *weightyVector = new double;
+    double *weightzVector = new double;
+    int *localELtopo = new int;
     // field spec ids for all relevant data
     std::vector<int> m_fieldIds;
 
@@ -126,6 +131,11 @@ namespace PeridigmNS {
     int m_unrotatedCauchyStressFieldId;
     int m_partialStressFieldId;
     int m_modelAnglesId;
+    int m_type;
+    int m_displacementFieldId;
+    int m_deformationGradientFieldId;
+    int order[3];
+    bool twoD;
 
   };
 }
