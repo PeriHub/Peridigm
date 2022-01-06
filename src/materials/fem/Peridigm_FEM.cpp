@@ -341,7 +341,6 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         // it adds up the different parts of each integration point resulting element force
         for(int n=0 ; n<numElemNodes ; ++n){
           localId = topology[topoPtr + n];
-          std::cout<< iID<< " " << jID<<" "<<localId<<" "<< numElemNodes<<std::endl;
           force[3*localId]   += elNodalForces[3*n]; 
           force[3*localId+1] += elNodalForces[3*n+1];
           force[3*localId+2] += elNodalForces[3*n+2];
