@@ -5,7 +5,6 @@
 #add_subdirectory (unit_test)
 # Collection of libs that we need to link with
 set(FEM_SOURCES
-    elastic_FEM.cxx    
     FEM_routines.cxx     
 )
 
