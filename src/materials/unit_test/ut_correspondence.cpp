@@ -66,16 +66,16 @@ TEUCHOS_UNIT_TEST(correspondence, updateElasticCauchyStressAnisotropicCode) {
              }
      }   
 
-    double B[3][3];
+    std::vector<double> BVector(9);
+    double* B = &BVector[0];
     std::vector<double> testVector(9);
     double* Ctest = &testVector[0];
 
     num = 9;
-    for (m=0; m<3; m++){
-             for (n=0; n<3; n++){
-             B[m][n] = num;
-             num++;
-             }
+    for (m=0; m<9; m++){
+        B[m] = num;
+        num++;
+             
      }   
      //updateElasticCauchyStressAnisotropicCode
      //   const ScalarT strain[][3],
