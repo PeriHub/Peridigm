@@ -162,7 +162,7 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
     invalidMaterial += "\"LCM\" or ";
     invalidMaterial += "\"Vector Poisson\" or ";
     invalidMaterial += "\"User Correspondence\" or ";
-    invalidMaterial += "\"FEM Material\" or ";
+    invalidMaterial += "\"FEM Elastic Material\" or ";
     invalidMaterial += "\"Linear Elastic Correspondence\".\n";
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, invalidMaterial);
   }
