@@ -126,7 +126,7 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
   else if (materialModelName == "Linear Elastic Correspondence")
     materialModel = Teuchos::rcp( new ElasticLinearCorrespondenceMaterial(materialParams) );    
   else if (materialModelName == "FEM Elastic Material")
-    materialModel = Teuchos::rcp( new FEMElasticMaterial(materialParams) );    
+    materialModel = Teuchos::rcp( new FEMElasticMaterial(materialParams));
   else if (materialModelName == "User Correspondence")
     materialModel = Teuchos::rcp( new UserCorrespondenceMaterial(materialParams) );    
   else if (materialModelName == "Elastic Partial Volume"){
