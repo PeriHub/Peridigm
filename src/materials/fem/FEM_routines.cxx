@@ -326,10 +326,10 @@ double addWeights
 {
     double detJw;
     if (twoD){
-        detJw = weightsx[topo[3*intNum]]*weightsy[topo[3*intNum+1]]*detJ;
+        detJw = weightsx[topo[3*intNum]]*weightsy[topo[3*intNum+1]]*abs(detJ);
     }
     else{
-        detJw = weightsx[topo[3*intNum]]*weightsy[topo[3*intNum+1]]*weightsz[topo[3*intNum+2]]*detJ;
+        detJw = weightsx[topo[3*intNum]]*weightsy[topo[3*intNum+1]]*weightsz[topo[3*intNum+2]]*abs(detJ);
     }
     return detJw;
 
