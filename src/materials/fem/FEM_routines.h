@@ -167,7 +167,7 @@ const bool twoD,
 double* strain
 );
 
-void getJacobian
+double getJacobian
 (
 const double* Nxi,
 const double* Neta,
@@ -180,7 +180,6 @@ const int *topo,
 const double* coor,
 const bool twoD,
 double* J,
-double detJ,
 double* Jinv
 );
 double addWeights

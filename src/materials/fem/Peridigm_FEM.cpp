@@ -302,6 +302,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
       numElemNodes = topology[topoPtr];
       topoPtr++;
       angles[0] = 0.0;angles[1] = 0.0;angles[2] = 0.0;
+
       for(int n=0 ; n<numElemNodes ; ++n){
         localId = topology[topoPtr + n];
         elNodalCoor[3*n]   = nodalCoor[3*localId];
@@ -320,7 +321,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
       for (int jID=0 ; jID<numInt ; ++jID){
         // only if nodes and integration points are equal the topology is suitable here.
         
-        FEM::getJacobian(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,ndof,localELtopo,elNodalCoor, twoD, J, detJ, Jinv);
+        detJ=FEM::getJacobian(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,ndof,localELtopo,elNodalCoor, twoD, J, Jinv);
         FEM::computeStrain(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,localELtopo,dispNodal, ndof, Jinv, twoD, strain); 
         
         //https://www.continuummechanics.org/stressxforms.html

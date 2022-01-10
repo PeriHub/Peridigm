@@ -258,7 +258,7 @@ double* elNodalForces
 
         
 
-void getJacobian
+double getJacobian
 (
     const double* Nxi,
     const double* Neta,
@@ -271,18 +271,18 @@ void getJacobian
     const double* coor,
     const bool twoD,
     double* J,
-    double detJ,
     double* Jinv
 )
-{
+{   
+    double detJ;
     int returnCode;
     // EQ. 9.11 - 9.12 The finite element method. The Basis (2000) Zienkievicz, Taylor
     if (twoD){
         for(int i=0;i<dof/3;i++){
             *(J)   += Bxi[topo[3*i]]*Neta[topo[3*i+1]]*coor[3*i];
-            *(J+1) += Bxi[topo[3*i]]*Neta[topo[3*i+1]]*coor[3*i];
+            *(J+1) += Bxi[topo[3*i]]*Neta[topo[3*i+1]]*coor[3*i+1];
             *(J+2) += 0.0;
-            *(J+3) += Nxi[topo[3*i]]*Beta[topo[3*i+1]]*coor[3*i+1];
+            *(J+3) += Nxi[topo[3*i]]*Beta[topo[3*i+1]]*coor[3*i];
             *(J+4) += Nxi[topo[3*i]]*Beta[topo[3*i+1]]*coor[3*i+1];
             *(J+5) += 0.0;
             *(J+6) += 0.0;
@@ -295,13 +295,13 @@ void getJacobian
     else{
         for(int i=0;i<dof/3;i++){
             *(J)   += Bxi[topo[3*i]]*Neta[topo[3*i+1]]*Npsi[topo[3*i+2]]*coor[3*i];
-            *(J+1) += Bxi[topo[3*i]]*Neta[topo[3*i+1]]*Npsi[topo[3*i+2]]*coor[3*i];
-            *(J+2) += Bxi[topo[3*i]]*Neta[topo[3*i+1]]*Npsi[topo[3*i+2]]*coor[3*i];
-            *(J+3) += Nxi[topo[3*i]]*Beta[topo[3*i+1]]*Npsi[topo[3*i+2]]*coor[3*i+1];
+            *(J+1) += Bxi[topo[3*i]]*Neta[topo[3*i+1]]*Npsi[topo[3*i+2]]*coor[3*i+1];
+            *(J+2) += Bxi[topo[3*i]]*Neta[topo[3*i+1]]*Npsi[topo[3*i+2]]*coor[3*i+2];
+            *(J+3) += Nxi[topo[3*i]]*Beta[topo[3*i+1]]*Npsi[topo[3*i+2]]*coor[3*i];
             *(J+4) += Nxi[topo[3*i]]*Beta[topo[3*i+1]]*Npsi[topo[3*i+2]]*coor[3*i+1];
-            *(J+5) += Nxi[topo[3*i]]*Beta[topo[3*i+1]]*Npsi[topo[3*i+2]]*coor[3*i+1];
-            *(J+6) += Nxi[topo[3*i]]*Neta[topo[3*i+1]]*Bpsi[topo[3*i+2]]*coor[3*i+2];
-            *(J+7) += Nxi[topo[3*i]]*Neta[topo[3*i+1]]*Bpsi[topo[3*i+2]]*coor[3*i+2];
+            *(J+5) += Nxi[topo[3*i]]*Beta[topo[3*i+1]]*Npsi[topo[3*i+2]]*coor[3*i+2];
+            *(J+6) += Nxi[topo[3*i]]*Neta[topo[3*i+1]]*Bpsi[topo[3*i+2]]*coor[3*i];
+            *(J+7) += Nxi[topo[3*i]]*Neta[topo[3*i+1]]*Bpsi[topo[3*i+2]]*coor[3*i+1];
             *(J+8) += Nxi[topo[3*i]]*Neta[topo[3*i+1]]*Bpsi[topo[3*i+2]]*coor[3*i+2];
             
         }
@@ -309,6 +309,7 @@ void getJacobian
         returnCode = MATRICES::Invert3by3Matrix(J, detJ, Jinv);
         //detJ *= weightsx*weightsy*weightsz;
     }
+    return detJ;
 }
 
 
