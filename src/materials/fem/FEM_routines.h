@@ -185,13 +185,24 @@ double* Jinv
 );
 double addWeights
 (
-    const double detJ, 
-    const bool twoD, 
-    const int intNum, 
-    const int *topo,
-    const double weightsx[],
-    const double weightsy[],
-    const double weightsz[]
+const double detJ, 
+const bool twoD, 
+const int intNum, 
+const int *topo,
+const double weightsx[],
+const double weightsy[],
+const double weightsz[]
+);
+void getGlobalForcesAndElementStresses
+(
+const int numElemNodes,
+const int numInt,
+const int topoPtr,
+const int* topology,
+const double* elNodalForces,
+const double* sigmaInt,
+double* force,
+double* sigmaNP1
 );
 void getDisplacements
 (

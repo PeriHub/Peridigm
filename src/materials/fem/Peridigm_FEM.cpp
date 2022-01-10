@@ -190,7 +190,7 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
       FEM::getLagrangeElementData(order[2],elCoorz[iID],Npsi,Bpsi);
     }  
   }
-
+  //ggf. BxiNetaNpsi vektoren erstellen
 
 }
 
@@ -275,7 +275,8 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     // falsch
     int numElements = 3;
     bool test = true;
-    std::vector<int> topology(15);
+    std::vector<int> topologyVector(15);
+    int* topology = &topologyVector[0];
     if (test){
       topology[0] = 4;
       topology[1] = 0;
@@ -309,9 +310,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         dispNodal[3*n]     = disp[3*localId];
         dispNodal[3*n+1]   = disp[3*localId+1];
         dispNodal[3*n+2]   = disp[3*localId+2];
-        elNodalForces[3*n]     = 0.0;
-        elNodalForces[3*n+1]   = 0.0;
-        elNodalForces[3*n+2]   = 0.0;
+
         sigmaNP1[9*localId  ] = 0.0;sigmaNP1[9*localId+1] = 0.0; sigmaNP1[9*localId+2] = 0.0;
         sigmaNP1[9*localId+3] = 0.0;sigmaNP1[9*localId+4] = 0.0; sigmaNP1[9*localId+5] = 0.0;
         sigmaNP1[9*localId+6] = 0.0;sigmaNP1[9*localId+7] = 0.0; sigmaNP1[9*localId+8] = 0.0;
@@ -339,19 +338,9 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         FEM::getNodalForce(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,elTopo, sigmaInt, ndof, detJw, Jinv, twoD, elNodalForces);
         // has to be done for each integration point
         // it adds up the different parts of each integration point resulting element force
-        for(int n=0 ; n<numElemNodes ; ++n){
-          localId = topology[topoPtr + n];
-          force[3*localId]   += elNodalForces[3*n]; 
-          force[3*localId+1] += elNodalForces[3*n+1];
-          force[3*localId+2] += elNodalForces[3*n+2];
-          // for averaging connected nodes must be determined (to how much elements is the node connected?)
-          sigmaNP1[9*localId  ] = sigmaInt[0]/numInt;sigmaNP1[9*localId+1] = sigmaInt[1]/numInt; sigmaNP1[9*localId+2] = sigmaInt[2]/numInt;
-          sigmaNP1[9*localId+3] = sigmaInt[3]/numInt;sigmaNP1[9*localId+4] = sigmaInt[4]/numInt; sigmaNP1[9*localId+5] = sigmaInt[5]/numInt;
-          sigmaNP1[9*localId+6] = sigmaInt[6]/numInt;sigmaNP1[9*localId+7] = sigmaInt[7]/numInt; sigmaNP1[9*localId+8] = sigmaInt[8]/numInt;
+        
+        FEM::getGlobalForcesAndElementStresses(numElemNodes,numInt, topoPtr, topology, elNodalForces, sigmaInt, force, sigmaNP1);
 
-
-          
-        }
         //topology -= numNeigh;
               // avarage stresses
               // sigmaNP1 /= numInt;

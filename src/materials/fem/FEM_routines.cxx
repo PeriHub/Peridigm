@@ -333,7 +333,32 @@ double addWeights
     return detJw;
 
 }
+void getGlobalForcesAndElementStresses
+(
+    const int numElemNodes,
+    const int numInt,
+    const int topoPtr,
+    const int* topology,
+    const double* elNodalForces,
+    const double* sigmaInt,
+    double* force,
+    double* sigmaNP1)
+{
+    int localId;
+    for(int n=0 ; n<numElemNodes ; ++n){
+      localId = topology[topoPtr + n];
+      force[3*localId]   += elNodalForces[3*n]; 
+      force[3*localId+1] += elNodalForces[3*n+1];
+      force[3*localId+2] += elNodalForces[3*n+2];
+      // for averaging connected nodes must be determined (to how much elements is the node connected?)
+      sigmaNP1[9*localId  ] = sigmaInt[0]/numInt;sigmaNP1[9*localId+1] = sigmaInt[1]/numInt; sigmaNP1[9*localId+2] = sigmaInt[2]/numInt;
+      sigmaNP1[9*localId+3] = sigmaInt[3]/numInt;sigmaNP1[9*localId+4] = sigmaInt[4]/numInt; sigmaNP1[9*localId+5] = sigmaInt[5]/numInt;
+      sigmaNP1[9*localId+6] = sigmaInt[6]/numInt;sigmaNP1[9*localId+7] = sigmaInt[7]/numInt; sigmaNP1[9*localId+8] = sigmaInt[8]/numInt;
+    }
 
+
+}
+ 
 void shapeFunctionsLagrangeRecursive
 (
     double* N, 
