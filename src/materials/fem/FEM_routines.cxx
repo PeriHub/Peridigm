@@ -472,10 +472,21 @@ double* strain
     *(strain+6) = *(strain+2);
     *(strain+7) = *(strain+5);
 }
+int getNnode
+(
+    const int order[3], 
+    const bool twoD
+)
+{
+    int nnode;
+    if (twoD)nnode = (order[0]+1)*(order[1]+1);
+    else nnode = (order[0]+1)*(order[1]+1)*(order[2]+1);
+    return nnode;
 
+}
 void getDisplacements
 (
-    int numOwnedPoints,
+    const int numOwnedPoints,
     const double* modelCoordinates,
     const double* coordinatesNP1,
     double* displacements

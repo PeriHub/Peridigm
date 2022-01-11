@@ -205,12 +205,16 @@ double* sigmaNP1
 );
 void getDisplacements
 (
-int numOwnedPoints,
+const int numOwnedPoints,
 const double* modelCoordinates,
 const double* coordinatesNP1,
 double* displacements
 );
-
+int getNnode
+(
+const int order[3], 
+const bool twoD
+);
 }
 
 #endif // FEMROUTINES_H

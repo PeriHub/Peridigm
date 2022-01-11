@@ -191,7 +191,8 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
     }  
   }
   //ggf. BxiNetaNpsi vektoren erstellen
-
+    
+  nnode = FEM::getNnode(order, twoD);
 }
 
 void
@@ -203,26 +204,27 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
                               const int numElementsTemporaryNotUsed) const
 {
   
-  double *CauchyStressNP1, *modelCoordinates, *nodeAngles, *displacements, *deformedCoor, *globalForce;
- 
+    double *CauchyStressNP1, *modelCoordinates, *nodeAngles, *displacements, *deformedCoor, *globalForce;
+  
 
-  dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&CauchyStressNP1);
+    dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&CauchyStressNP1);
 
-  dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&nodeAngles);
-  dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&modelCoordinates);
-  dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&deformedCoor);
-  dataManager.getData(m_displacementFieldId, PeridigmField::STEP_NP1)->ExtractView(&displacements);
-  dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&globalForce);
+    dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&nodeAngles);
+    dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&modelCoordinates);
+    dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&deformedCoor);
+    dataManager.getData(m_displacementFieldId, PeridigmField::STEP_NP1)->ExtractView(&displacements);
+    dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&globalForce);
+
 
 
 
     bool rotation = false;
     const double* nodalCoor = modelCoordinates;
-    const double* disp = displacements;
+    double* disp = displacements;
     double* force = globalForce;
     double* sigmaNP1 = CauchyStressNP1;
     std::vector<double> strainVector(9);
-
+    
     double* strain = &strainVector[0];
     double angles[3];
     //int defGradLogReturnCode(0);
@@ -241,8 +243,8 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     if (m_type!=0) {twoD = true;}
 
     
+    int ndof = 3*nnode;
 
-    int ndof = numInt * 3;
     std::vector<double> dispNodalVector(ndof);
     double* dispNodal = &dispNodalVector[0];
     std::vector<double> elNodalCoorVector(ndof);
@@ -281,7 +283,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
       topology[0] = 4;
       topology[1] = 0;
       topology[2] = 1;
-      topology[3] = 3;
+      topology[3] = 4;
       topology[4] = 5;
       topology[5] = 4;
       topology[6] = 1;
@@ -302,16 +304,19 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
       numElemNodes = topology[topoPtr];
       topoPtr++;
       angles[0] = 0.0;angles[1] = 0.0;angles[2] = 0.0;
-
+      FEM::getDisplacements(nnode,modelCoordinates, deformedCoor,displacements);
       for(int n=0 ; n<numElemNodes ; ++n){
         localId = topology[topoPtr + n];
         elNodalCoor[3*n]   = nodalCoor[3*localId];
         elNodalCoor[3*n+1] = nodalCoor[3*localId+1];
         elNodalCoor[3*n+2] = nodalCoor[3*localId+2];
+        disp[3*localId] = deformedCoor[3*localId]- nodalCoor[3*localId];
+        disp[3*localId+1] = deformedCoor[3*localId+1]- nodalCoor[3*localId+1];
+        disp[3*localId+2] = deformedCoor[3*localId+2]- nodalCoor[3*localId+2];
         dispNodal[3*n]     = disp[3*localId];
         dispNodal[3*n+1]   = disp[3*localId+1];
         dispNodal[3*n+2]   = disp[3*localId+2];
-
+       // std::cout<<"u1 "<< iID<< " "<<dispNodal[3*n]<< " "<<dispNodal[3*n+1]<< " "<<dispNodal[3*n+2] <<" localId "<<localId<<std::endl;
         sigmaNP1[9*localId  ] = 0.0;sigmaNP1[9*localId+1] = 0.0; sigmaNP1[9*localId+2] = 0.0;
         sigmaNP1[9*localId+3] = 0.0;sigmaNP1[9*localId+4] = 0.0; sigmaNP1[9*localId+5] = 0.0;
         sigmaNP1[9*localId+6] = 0.0;sigmaNP1[9*localId+7] = 0.0; sigmaNP1[9*localId+8] = 0.0;
