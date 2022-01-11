@@ -238,7 +238,7 @@ double* elNodalForces
         if (twoD){
             BxiTemp  = Bxi[topo[3*iID]]*Neta[topo[3*iID+1]] * detJ;
             BetaTemp = Nxi[topo[3*iID]]*Beta[topo[3*iID+1]] * detJ;
-            BpsiTemp = Nxi[topo[3*iID]]*Neta[topo[3*iID+1]] * detJ;
+            BpsiTemp = 0.0;
         }
         else{
             BxiTemp  = Bxi[topo[3*iID]]*Neta[topo[3*iID+1]]*Npsi[topo[3*iID+2]] * detJ;
@@ -270,13 +270,17 @@ double getJacobian
     const int *topo,
     const double* coor,
     const bool twoD,
-    double* J,
+    double* J, 
     double* Jinv
 )
 {   
     double detJ;
     int returnCode;
     // EQ. 9.11 - 9.12 The finite element method. The Basis (2000) Zienkievicz, Taylor
+    for(int i=0;i<9;i++){
+        *(J+i) = 0.0;
+    }
+
     if (twoD){
         for(int i=0;i<dof/3;i++){
             *(J)   += Bxi[topo[3*i]]*Neta[topo[3*i+1]]*coor[3*i];
@@ -309,6 +313,7 @@ double getJacobian
         returnCode = MATRICES::Invert3by3Matrix(J, detJ, Jinv);
         //detJ *= weightsx*weightsy*weightsz;
     }
+
     return detJ;
 }
 
@@ -326,10 +331,10 @@ double addWeights
 {
     double detJw;
     if (twoD){
-        detJw = weightsx[topo[3*intNum]]*weightsy[topo[3*intNum+1]]*abs(detJ);
+        detJw = weightsx[topo[3*intNum]]*weightsy[topo[3*intNum+1]]*detJ;
     }
     else{
-        detJw = weightsx[topo[3*intNum]]*weightsy[topo[3*intNum+1]]*weightsz[topo[3*intNum+2]]*abs(detJ);
+        detJw = weightsx[topo[3*intNum]]*weightsy[topo[3*intNum+1]]*weightsz[topo[3*intNum+2]]*detJ;
     }
     return detJw;
 
@@ -433,7 +438,7 @@ double* strain
         if (twoD){
             BxiTemp  = Bxi[topo[3*iID]]*Neta[topo[3*iID+1]];
             BetaTemp = Nxi[topo[3*iID]]*Beta[topo[3*iID+1]];
-            BpsiTemp = Nxi[topo[3*iID]]*Neta[topo[3*iID+1]];
+            BpsiTemp = 0.0;
         }
         else{
             BxiTemp  = Bxi[topo[3*iID]]*Neta[topo[3*iID+1]]*Npsi[topo[3*iID+2]];
@@ -451,7 +456,7 @@ double* strain
         *(strain+4) += *(Jinv+4) * BetaTemp * u[3*iID+1];
         *(strain+8) += *(Jinv+8) * BpsiTemp * u[3*iID+2];
         //u1_i*(Bpsi_i*J00 + Bxi_i*J02) + u3_i*(Bpsi_i*J20 + Bxi_i*J22)
-        
+        //std::cout<<*(Jinv+4)<<" " << BetaTemp <<" "<< u[3*iID+1]<< std::endl;
         *(strain+5) += (*(Jinv) * BpsiTemp + *(Jinv+2) * BxiTemp)  * u[3*iID] + (*(Jinv+6) * BxiTemp  + *(Jinv+8) * BxiTemp) * u[3*iID+2];
         //u2_i*(Beta_i*J12 + Bpsi_i*J11) + u3_i*(Beta_i*J22 + Bpsi_i*J21)
         *(strain+2) += (*(Jinv+5) * BetaTemp + *(Jinv+4) * BpsiTemp) * u[3*iID+1] + (*(Jinv+7) * BpsiTemp + *(Jinv+8) * BetaTemp)* u[3*iID+2];
