@@ -77,22 +77,26 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
   intx = order[0] + 1;
   inty = order[1] + 1;
   intz = order[2] + 1;
-
   if (params.isParameter("Integration Points in X")) intx = params.get<int>("Integration Points in X");
   if (params.isParameter("Integration Points in Y")) inty = params.get<int>("Integration Points in Y");
   if (params.isParameter("Integration Points in Z")) intz = params.get<int>("Integration Points in Z");
+ 
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(intx<1, "**** Error:  Number of integration points in x direction must be greater zero.\n");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(inty<1, "**** Error:  Number of integration points in y direction must be greater zero.\n");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(intz<1, "**** Error:  Number of integration points in z direction must be greater zero.\n");
+  
   delete NxiVector;
   delete NetaVector;
   delete NpsiVector;
-  NxiVector  = new double[order[0]+1]; // je integrationspunkt ; es gibt n funktionen die an m coordinaten ausgewertet werden
-  NetaVector = new double[order[1]+1];
-  NpsiVector = new double[order[2]+1];
+  NxiVector  = new double[(order[0]+1)*intx]; // je integrationspunkt ; es gibt n funktionen die an m coordinaten ausgewertet werden
+  NetaVector = new double[(order[1]+1)*inty];
+  NpsiVector = new double[(order[2]+1)*intz];
   delete BxiVector;
   delete BetaVector;
   delete BpsiVector;
-  BxiVector  = new double[order[0]+1];
-  BetaVector = new double[order[1]+1];
-  BpsiVector = new double[order[2]+1];
+  BxiVector  = new double[(order[0]+1)*intx];
+  BetaVector = new double[(order[1]+1)*inty];
+  BpsiVector = new double[(order[2]+1)*intz];
   delete elCoorxVector;
   delete elCooryVector;
   delete elCoorzVector;
