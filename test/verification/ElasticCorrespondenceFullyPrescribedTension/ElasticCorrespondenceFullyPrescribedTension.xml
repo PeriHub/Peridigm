@@ -12,6 +12,7 @@
       <Parameter name="Young's Modulus" type="double" value="200.0e9"/>
       <Parameter name="Poisson's Ratio" type="double" value="0.0"/>   <!-- One-dimensional simulation -->
 	  <Parameter name="Hourglass Coefficient" type="double" value="0.0"/>
+    <Parameter name="Non linear" type="bool" value="true"/>
 	</ParameterList>
   </ParameterList>
 

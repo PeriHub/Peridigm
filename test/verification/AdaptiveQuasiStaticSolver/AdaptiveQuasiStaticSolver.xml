@@ -13,6 +13,7 @@
       <Parameter name="Poisson's Ratio" type="double" value="0.0"/>   <!-- One-dimensional simulation -->
 	  <Parameter name="Hourglass Coefficient" type="double" value="0.0"/>
 	  <Parameter name="Yield Stress" type="double" value="150.0e6"/>
+    <Parameter name="Non linear" type="bool" value="true"/>
 	</ParameterList>
   </ParameterList>
 

@@ -25,8 +25,9 @@
 	  <Parameter name="Density" type="double" value="7800.0"/>
 	  <Parameter name="Bulk Modulus" type="double" value="130.0e9"/>
 	  <Parameter name="Shear Modulus" type="double" value="78.0e9"/>
-    <Parameter name="Hourglass Coefficient" type="double" value="0.05"/>
+      <Parameter name="Hourglass Coefficient" type="double" value="0.05"/>
 	  <Parameter name="Thermal Expansion Coefficient" type="double" value="10.0e-6"/>
+      <Parameter name="Non linear" type="bool" value="true"/>
 	</ParameterList>
   </ParameterList>
 

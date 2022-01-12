@@ -20,6 +20,7 @@
 	  <Parameter name="Flaw Location Z" type="double" value="0.0"/>
 	  <Parameter name="Flaw Size" type="double" value="0.751"/>
 	  <Parameter name="Flaw Magnitude" type="double" value="0.2"/>
+    <Parameter name="Non linear" type="bool" value="true"/>
 	</ParameterList>
   </ParameterList>
 
