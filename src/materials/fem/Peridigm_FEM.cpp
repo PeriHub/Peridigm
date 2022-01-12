@@ -68,6 +68,16 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
   m_density = params.get<double>("Density");
 
   bool m_planeStrain = false, m_planeStress = false;
+  if (params.isParameter("Plane Strain")){
+    m_planeStrain = params.get<bool>("Plane Strain");
+    }
+  if (params.isParameter("Plane Stress")){
+    m_planeStress = params.get<bool>("Plane Stress");
+    }
+  if (m_planeStrain==true)m_type=1;
+  if (m_planeStress==true)m_type=2;
+  twoD = false;
+  if (m_type != 0)twoD = true;
   m_type = 0;
   order[0] = params.get<int>("Order");
   order[1] = params.get<int>("Order");
@@ -85,35 +95,28 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
   TEUCHOS_TEST_FOR_EXCEPT_MSG(numIntDir[1]<1, "**** Error:  Number of integration points in y direction must be greater zero.\n");
   TEUCHOS_TEST_FOR_EXCEPT_MSG(numIntDir[2]<1, "**** Error:  Number of integration points in z direction must be greater zero.\n");
   
-  
+  // number of element nodes; if under or over integrated this number is not identical with the number
+  // of integration points
   nnode = FEM::getNnode(order, twoD);
+   // Integrationpoint topology maps global int number to x-direction number --> safe
+  numInt = FEM::getNumberOfIntegrationPoints(twoD, numIntDir);
   delete Bx;
   delete By; 
   delete Bz;
   if (twoD){
-    Bx = new double[(order[0]+1)*(order[1]+1)*nnode];
-    By = new double[(order[0]+1)*(order[1]+1)*nnode];
+    Bx = new double[nnode*numInt];
+    By = new double[nnode*numInt];
     Bz = new double[1];
   }
   else
   {
-    Bx = new double[(order[0]+1)*(order[1]+1)*(order[2]+1)*nnode];
-    By = new double[(order[0]+1)*(order[1]+1)*(order[2]+1)*nnode];
-    Bz = new double[(order[0]+1)*(order[1]+1)*(order[2]+1)*nnode];
+    Bx = new double[nnode*numInt];
+    By = new double[nnode*numInt];
+    Bz = new double[nnode*numInt];
   }
 
-  if (params.isParameter("Plane Strain")){
-    m_planeStrain = params.get<bool>("Plane Strain");
-    }
-  if (params.isParameter("Plane Stress")){
-    m_planeStress = params.get<bool>("Plane Stress");
-    }
-  if (m_planeStrain==true)m_type=1;
-  if (m_planeStress==true)m_type=2;
-  twoD = false;
-  if (m_type != 0)twoD = true;
-  // Integrationpoint topology maps global int number to x-direction number --> safe
-  numInt = FEM::getNumberOfIntegrationPoints(twoD, numIntDir);
+
+ 
   
   delete weightVector;
   weightVector = new double[numInt];
@@ -175,7 +178,8 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
   double* weightsy = &weightyVector[0];
   double* weightsz = &weightzVector[0];
   double* weights  = &weightVector[0];
-
+ 
+  int intPointPtr = 0;
   // temporary vector; the length varies depended on the direction, but its max is nnode
   //std::vector<double> NIntVector(nnode), BIntVector(nnode);
   //double* NInt = &NIntVector[0];
@@ -183,19 +187,18 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
   FEM::weightsAndIntegrationPoints(order[0], elCoorx, weightsx);
   FEM::weightsAndIntegrationPoints(order[1], elCoory, weightsy);
 
-  FEM::weightsAndIntegrationPoints(order[0], elCoorx, weightsx);  
-  int intPointPtr;
   if (twoD){
     for (int jID=0 ; jID<numIntDir[1] ; ++jID){
       FEM::getLagrangeElementData(order[1],elCoory[jID],Neta,Beta);
       for (int iID=0 ; iID<numIntDir[0] ; ++iID){
         FEM::getLagrangeElementData(order[0],elCoorx[jID],Nxi,Bxi);
         FEM::setElementMatrices(twoD, intPointPtr, order, Nxi, Neta, Npsi, Bxi, Beta, Bpsi, Bx, By, Bz);
-        intPointPtr += 3*nnode;
+        intPointPtr += nnode;
       }
     }
   }
   else{
+    FEM::weightsAndIntegrationPoints(order[2], elCoorz, weightsz); 
     for (int kID=0 ; kID<numIntDir[2] ; ++kID){
       FEM::getLagrangeElementData(order[2],elCoorz[kID],Npsi,Bpsi);
       for (int jID=0 ; jID<numIntDir[1] ; ++jID){
@@ -208,7 +211,7 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
       }
     }
   }
-  FEM::setWeights(numIntDir,twoD,weightsx,weightsx,weightsx,weights);
+  FEM::setWeights(numIntDir,twoD,weightsx,weightsy,weightsz,weights);
 }
 
 void
@@ -328,11 +331,11 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
       }
       
       for (int jID=0 ; jID<numInt ; ++jID){
-        int intPointPtr = 3*jID*nnode;
+        int intPointPtr = jID*numElemNodes;
         // only if nodes and integration points are equal the topology is suitable here.
-        detJ=FEM::getJacobian(Bx,By,Bz,nnode,intPointPtr,elNodalCoor, weight[jID], twoD, J, Jinv);
+        detJ=FEM::getJacobian(Bx,By,Bz,numElemNodes,intPointPtr,elNodalCoor, weight[jID], twoD, J, Jinv);
         
-        FEM::computeStrain(Bx,By,Bz,dispNodal, intPointPtr, nnode, Jinv, twoD, strain); 
+        FEM::computeStrain(Bx,By,Bz,dispNodal, intPointPtr, numElemNodes, Jinv, twoD, strain); 
         
         //https://www.continuummechanics.org/stressxforms.html
         // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
@@ -352,7 +355,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         
 
       }
-      FEM::setGlobalForces(nnode, topoPtr, topology, elNodalForces, detJ, force);  
+      FEM::setGlobalForces(numElemNodes, topoPtr, topology, elNodalForces, force);  
         //topology -= numNeigh;
               // avarage stresses
               // sigmaNP1 /= numInt;

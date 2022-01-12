@@ -56,7 +56,7 @@
 #include <math.h>
 #include <cmath> 
 #include "FEM_routines.h"
-//#include <Teuchos_Assert.hpp>
+#include <Teuchos_Assert.hpp>
 //#include <Epetra_SerialComm.h>
 
 
@@ -242,11 +242,10 @@ double* elNodalForces
         // Bxi_i*J00*s11  + s12*(Beta_i*J00 + Bxi_i*J01) + s23*(Bpsi_i*J00 + Bxi_i*J02)
         // Beta_i*J11*s22 + s12*(Beta_i*J10 + Bxi_i*J11) + s13*(Beta_i*J12 + Bpsi_i*J11)
         // Bpsi_i*J22*s33 + s13*(Beta_i*J22 + Bpsi_i*J21) + s23*(Bpsi_i*J20 + Bxi_i*J22)
-        for(int nID=0;nID<nnode;nID++){ 
-            elNodalForces[3*nID]   += *(Jinv)   * *(sigmaInt)*  BxiTemp  + *(sigmaInt+1)*(*(Jinv)*BetaTemp   + *(Jinv+1)*BxiTemp)  + *(sigmaInt+5)*(*(Jinv)*BpsiTemp   + *(Jinv+2)*BxiTemp);
-            elNodalForces[3*nID+1] += *(Jinv+4) * *(sigmaInt+4)*BetaTemp + *(sigmaInt+1)*(*(Jinv+3)*BetaTemp + *(Jinv+4)*BxiTemp)  + *(sigmaInt+2)*(*(Jinv+4)*BpsiTemp + *(Jinv+5)*BetaTemp);
-            elNodalForces[3*nID+2] += *(Jinv+8) * *(sigmaInt+8)*BpsiTemp + *(sigmaInt+2)*(*(Jinv+7)*BpsiTemp + *(Jinv+8)*BetaTemp) + *(sigmaInt+5)*(*(Jinv+6)*BpsiTemp + *(Jinv+8)*BxiTemp);
-         }
+        elNodalForces[3*nID]   += (*(Jinv)   * *(sigmaInt)*  BxiTemp  + *(sigmaInt+1)*(*(Jinv)*BetaTemp   + *(Jinv+1)*BxiTemp)  + *(sigmaInt+5)*(*(Jinv)*BpsiTemp   + *(Jinv+2)*BxiTemp) )*detJ;
+        elNodalForces[3*nID+1] += (*(Jinv+4) * *(sigmaInt+4)*BetaTemp + *(sigmaInt+1)*(*(Jinv+3)*BetaTemp + *(Jinv+4)*BxiTemp)  + *(sigmaInt+2)*(*(Jinv+4)*BpsiTemp + *(Jinv+5)*BetaTemp))*detJ;
+        elNodalForces[3*nID+2] += (*(Jinv+8) * *(sigmaInt+8)*BpsiTemp + *(sigmaInt+2)*(*(Jinv+7)*BpsiTemp + *(Jinv+8)*BetaTemp) + *(sigmaInt+5)*(*(Jinv+6)*BpsiTemp + *(Jinv+8)*BxiTemp) )*detJ;
+    
 
     }
 }    
@@ -274,11 +273,11 @@ double getJacobian
     
     if (twoD){
         for(int i=0;i<nnode;i++){
-            *(J)   += Bx[intPointPtr + 3*i]*coor[3*i];
-            *(J+1) += Bx[intPointPtr + 3*i+1]*coor[3*i+1];
+            *(J)   += Bx[intPointPtr + i]*coor[3*i];
+            *(J+1) += Bx[intPointPtr + i]*coor[3*i+1];
             *(J+2) += 0.0;
-            *(J+3) += By[intPointPtr + 3*i]*coor[3*i];
-            *(J+4) += By[intPointPtr + 3*i+1]*coor[3*i+1];
+            *(J+3) += By[intPointPtr + i]*coor[3*i];
+            *(J+4) += By[intPointPtr + i]*coor[3*i+1];
             *(J+5) += 0.0;
             *(J+6) += 0.0;
             *(J+7) += 0.0;
@@ -290,21 +289,23 @@ double getJacobian
     }
     else{
         for(int i=0;i<nnode;i++){
-            *(J)   += Bx[intPointPtr + 3*i]*coor[3*i];
-            *(J+1) += Bx[intPointPtr + 3*i+1]*coor[3*i+1];
-            *(J+2) += Bx[intPointPtr + 3*i+2]*coor[3*i+2];
-            *(J+3) += By[intPointPtr + 3*i]*coor[3*i];
-            *(J+4) += By[intPointPtr + 3*i+1]*coor[3*i+1];
-            *(J+5) += By[intPointPtr + 3*i+2]*coor[3*i+2];
-            *(J+6) += Bz[intPointPtr + 3*i]*coor[3*i];            
-            *(J+7) += Bz[intPointPtr + 3*i+1]*coor[3*i+1]; 
-            *(J+8) += Bz[intPointPtr + 3*i+2]*coor[3*i+2]; 
+            *(J)   += Bx[intPointPtr + i]*coor[3*i];
+            *(J+1) += Bx[intPointPtr + i]*coor[3*i+1];
+            *(J+2) += Bx[intPointPtr + i]*coor[3*i+2];
+            *(J+3) += By[intPointPtr + i]*coor[3*i];
+            *(J+4) += By[intPointPtr + i]*coor[3*i+1];
+            *(J+5) += By[intPointPtr + i]*coor[3*i+2];
+            *(J+6) += Bz[intPointPtr + i]*coor[3*i];            
+            *(J+7) += Bz[intPointPtr + i]*coor[3*i+1]; 
+            *(J+8) += Bz[intPointPtr + i]*coor[3*i+2]; 
             
         }
        
         returnCode = MATRICES::Invert3by3Matrix(J, detJ, Jinv);
         //detJ *= weightsx*weightsy*weightsz;
     }
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(returnCode>0, "**** Jacobi Matrix is not invertable.\n");
+  
 
     return detJ*weight;
 }
@@ -327,20 +328,19 @@ void setElementMatrices
   int count = 0;
   if (twoD){
 
-    for(int j=0;j<order[1];j++){
-        for(int i=0;i<order[0];i++){
+    for(int j=0;j<order[1]+1;j++){
+        for(int i=0;i<order[0]+1;i++){
             Bx[offset + count] = Bxi[i]*Neta[j];
             By[offset + count] = Nxi[i]*Beta[j];
-
             count++;
         }
     }
   }
   else
   {
-    for(int k=0;k<order[2];k++){
-        for(int j=0;j<order[1];j++){
-            for(int i=0;i<order[0];i++){
+    for(int k=0;k<order[2]+1;k++){
+        for(int j=0;j<order[1]+1;j++){
+            for(int i=0;i<order[0]+1;i++){
                 Bx[offset + count] = Bxi[i]*Neta[j]*Npsi[k];
                 By[offset + count] = Nxi[i]*Beta[j]*Npsi[k];
                 Bz[offset + count] = Nxi[i]*Neta[j]*Bpsi[k];
@@ -390,7 +390,6 @@ void setGlobalForces
     const int topoPtr,
     const int* topology,
     const double* elNodalForces,
-    const double detJ,
     double* force
 )
 {
@@ -398,9 +397,9 @@ void setGlobalForces
     
     for(int nID=0 ; nID<nnode ; ++nID){
       localId = topology[topoPtr + nID];
-      force[3*localId]   += elNodalForces[3*nID]*detJ; 
-      force[3*localId+1] += elNodalForces[3*nID+1]*detJ;
-      force[3*localId+2] += elNodalForces[3*nID+2]*detJ;
+      force[3*localId]   += elNodalForces[3*nID]  ;
+      force[3*localId+1] += elNodalForces[3*nID+1];
+      force[3*localId+2] += elNodalForces[3*nID+2];
      }
 
 

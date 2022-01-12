@@ -204,7 +204,6 @@ const int nnode,
 const int topoPtr,
 const int* topology,
 const double* elNodalForces,
-const double detJ,
 double* force
 );
 void getDisplacements
