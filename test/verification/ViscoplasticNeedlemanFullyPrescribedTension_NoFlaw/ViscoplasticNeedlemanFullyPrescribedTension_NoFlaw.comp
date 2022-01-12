@@ -6,7 +6,7 @@ NODAL VARIABLES absolute 1.0E-12
 	DisplacementY             absolute 1.0E-9
 	DisplacementZ             absolute 1.0E-9
 	VelocityX                 absolute 1.0E-9
-	VelocityY                 absolute 1.0E-9
+	VelocityY                 absolute 1.0E-7
 	VelocityZ                 absolute 1.0E-9
 	ForceX                    absolute 1.0E-3
 	ForceY                    absolute 1.0E-3
@@ -55,7 +55,7 @@ ELEMENT VARIABLES absolute 1.E-12
 	Unrotated_Rate_Of_DeformationXY absolute 1.0E-8
 	Unrotated_Rate_Of_DeformationXZ absolute 1.0E-8
 	Unrotated_Rate_Of_DeformationYX absolute 1.0E-8
-	Unrotated_Rate_Of_DeformationYY absolute 1.0E-8
+	Unrotated_Rate_Of_DeformationYY absolute 1.0E-7
 	Unrotated_Rate_Of_DeformationYZ absolute 1.0E-8
 	Unrotated_Rate_Of_DeformationZX absolute 1.0E-8
 	Unrotated_Rate_Of_DeformationZY absolute 1.0E-8
