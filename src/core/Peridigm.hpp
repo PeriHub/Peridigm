@@ -622,8 +622,6 @@ namespace PeridigmNS {
     Teuchos::RCP<Epetra_Vector> velocityGradientY;
     Teuchos::RCP<Epetra_Vector> velocityGradientZ;
 
-    bool analysisHasBondAssociatedHypoelasticModel;
-
     //! Type of tangent to evaluate
     PeridigmNS::Material::JacobianType jacobianType;
 
@@ -692,7 +690,6 @@ namespace PeridigmNS {
     int partialVolumeFieldId;
     int damageFieldId;
     int jacobianDeterminantFieldId;
-    int weightedVolumeFieldId;
     int velocityGradientXFieldId;
     int velocityGradientYFieldId;
     int velocityGradientZFieldId;
