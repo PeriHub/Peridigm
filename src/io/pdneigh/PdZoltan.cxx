@@ -840,6 +840,8 @@ int computeSizeNewNeighborhoodList(int initialValue, int numImport, int *idx, ch
 
     // coordinates
     int numBytes = dimension*sizeof(double);
+    // angles
+    numBytes += dimension*sizeof(double);
     // cell volume
     numBytes += sizeof(double);
     // move pointer
