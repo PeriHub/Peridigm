@@ -96,7 +96,9 @@ double* Bxi
 int getNumberOfIntegrationPoints
 (
 const bool twoD, 
-const int order[3]
+const int intx,
+const int inty,
+const int intz
 );
 
 void getNodalForce
@@ -109,7 +111,8 @@ const double* Beta,
 const double* Bpsi,
 const int *topo,
 const double* sigmaInt, 
-const int dof,
+const int iID,
+const int nnode,
 const double detJ,
 const double* Jinv, 
 const bool twoD,
@@ -161,7 +164,8 @@ const double* Beta,
 const double* Bpsi,
 const int *topo,
 const double* u, 
-const int dof,
+const int iID,
+const int nnode,
 const double* Jinv,
 const bool twoD,
 double* strain
@@ -175,7 +179,7 @@ const double* Npsi,
 const double* Bxi,
 const double* Beta,
 const double* Bpsi,
-const int dof, 
+const int nnode, 
 const int *topo,
 const double* coor,
 const bool twoD,
@@ -184,7 +188,6 @@ double* Jinv
 );
 double addWeights
 (
-const double detJ, 
 const bool twoD, 
 const int intNum, 
 const int *topo,
@@ -192,16 +195,14 @@ const double weightsx[],
 const double weightsy[],
 const double weightsz[]
 );
-void getGlobalForcesAndElementStresses
+void setGlobalForces
 (
-const int numElemNodes,
-const int numInt,
+const int nnode,
 const int topoPtr,
 const int* topology,
 const double* elNodalForces,
-const double* sigmaInt,
-double* force,
-double* sigmaNP1
+const double detJ,
+double* force
 );
 void getDisplacements
 (

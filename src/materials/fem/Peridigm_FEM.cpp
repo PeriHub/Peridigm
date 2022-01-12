@@ -74,11 +74,17 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
   order[2] = params.get<int>("Order");
   if (params.isParameter("Order_Y")) order[1] = params.get<int>("Order_Y");
   if (params.isParameter("Order_Z")) order[2] = params.get<int>("Order_Z");
+  intx = order[0] + 1;
+  inty = order[1] + 1;
+  intz = order[2] + 1;
 
+  if (params.isParameter("Integration Points in X")) intx = params.get<int>("Integration Points in X");
+  if (params.isParameter("Integration Points in Y")) inty = params.get<int>("Integration Points in Y");
+  if (params.isParameter("Integration Points in Z")) intz = params.get<int>("Integration Points in Z");
   delete NxiVector;
   delete NetaVector;
   delete NpsiVector;
-  NxiVector  = new double[order[0]+1];
+  NxiVector  = new double[order[0]+1]; // je integrationspunkt ; es gibt n funktionen die an m coordinaten ausgewertet werden
   NetaVector = new double[order[1]+1];
   NpsiVector = new double[order[2]+1];
   delete BxiVector;
@@ -113,7 +119,7 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
   if (m_planeStress==true)m_type=2;
   twoD = false;
   if (m_type != 0)twoD = true;
-  numInt = FEM::getNumberOfIntegrationPoints(twoD, order);
+  numInt = FEM::getNumberOfIntegrationPoints(twoD, intx, inty, intz);
   delete localELtopo;
   localELtopo = new int[3*numInt];
 
@@ -204,15 +210,15 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
                               const int numElementsTemporaryNotUsed) const
 {
   
-    double *CauchyStressNP1, *modelCoordinates, *nodeAngles, *displacements, *deformedCoor, *globalForce;
-  
+    double *CauchyStressNP1, *modelCoordinates, *nodeAngles, *deformedCoor, *globalForce;
+    //double *displacements;
 
     dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&CauchyStressNP1);
 
     dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&nodeAngles);
     dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&modelCoordinates);
     dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&deformedCoor);
-    dataManager.getData(m_displacementFieldId, PeridigmField::STEP_NP1)->ExtractView(&displacements);
+   // dataManager.getData(m_displacementFieldId, PeridigmField::STEP_NP1)->ExtractView(&displacements);
     dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&globalForce);
 
 
@@ -220,7 +226,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
 
     bool rotation = false;
     const double* nodalCoor = modelCoordinates;
-    double* disp = displacements;
+   // double* disp = displacements;
     double* force = globalForce;
     double* sigmaNP1 = CauchyStressNP1;
     std::vector<double> strainVector(9);
@@ -263,13 +269,14 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     double* weightsx = &weightxVector[0];
     double* weightsy = &weightyVector[0];
     double* weightsz = &weightzVector[0];
+    double weight;
     int* elTopo = &localELtopo[0];
     int topoPtr = 0;
     std::vector<double> JMat(9);
     double* J = &JMat[0];
     std::vector<double> JinvMat(9);
     double* Jinv = &JinvMat[0];
-    double detJ = 0.0, detJw = 0.0;
+    double detJ = 0.0;
     int localId, numElemNodes;
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     // irgendwie in die init?
@@ -304,56 +311,57 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
       numElemNodes = topology[topoPtr];
       topoPtr++;
       angles[0] = 0.0;angles[1] = 0.0;angles[2] = 0.0;
-      FEM::getDisplacements(nnode,modelCoordinates, deformedCoor,displacements);
+      FEM::getDisplacements(nnode,modelCoordinates, deformedCoor,dispNodal);
       for(int n=0 ; n<numElemNodes ; ++n){
         localId = topology[topoPtr + n];
         elNodalCoor[3*n]   = nodalCoor[3*localId];
         elNodalCoor[3*n+1] = nodalCoor[3*localId+1];
         elNodalCoor[3*n+2] = nodalCoor[3*localId+2];
-        disp[3*localId] = deformedCoor[3*localId]- nodalCoor[3*localId];
-        disp[3*localId+1] = deformedCoor[3*localId+1]- nodalCoor[3*localId+1];
-        disp[3*localId+2] = deformedCoor[3*localId+2]- nodalCoor[3*localId+2];
-        dispNodal[3*n]     = disp[3*localId];
-        dispNodal[3*n+1]   = disp[3*localId+1];
-        dispNodal[3*n+2]   = disp[3*localId+2];
+        elNodalForces[3*n]   = 0.0;
+        elNodalForces[3*n+1] = 0.0;
+        elNodalForces[3*n+2] = 0.0;
+        //disp[3*localId] = deformedCoor[3*localId]- nodalCoor[3*localId];
+        //disp[3*localId+1] = deformedCoor[3*localId+1]- nodalCoor[3*localId+1];
+        //disp[3*localId+2] = deformedCoor[3*localId+2]- nodalCoor[3*localId+2];
+        //dispNodal[3*n]     = disp[3*localId];
+        //dispNodal[3*n+1]   = disp[3*localId+1];
+        //dispNodal[3*n+2]   = disp[3*localId+2];
        // std::cout<<"u1 "<< iID<< " "<<dispNodal[3*n]<< " "<<dispNodal[3*n+1]<< " "<<dispNodal[3*n+2] <<" localId "<<localId<<std::endl;
         sigmaNP1[9*localId  ] = 0.0;sigmaNP1[9*localId+1] = 0.0; sigmaNP1[9*localId+2] = 0.0;
         sigmaNP1[9*localId+3] = 0.0;sigmaNP1[9*localId+4] = 0.0; sigmaNP1[9*localId+5] = 0.0;
         sigmaNP1[9*localId+6] = 0.0;sigmaNP1[9*localId+7] = 0.0; sigmaNP1[9*localId+8] = 0.0;
         angles[0] += nodeAngles[3*localId]/numElemNodes;angles[1] += nodeAngles[3*localId+1]/numElemNodes;angles[2] += nodeAngles[3*localId+2]/numElemNodes;
       }
-
+      detJ=FEM::getJacobian(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,nnode,localELtopo,elNodalCoor, twoD, J, Jinv);
       for (int jID=0 ; jID<numInt ; ++jID){
         // only if nodes and integration points are equal the topology is suitable here.
-        
-        detJ=FEM::getJacobian(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,ndof,localELtopo,elNodalCoor, twoD, J, Jinv);
-        FEM::computeStrain(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,localELtopo,dispNodal, ndof, Jinv, twoD, strain); 
+
+        FEM::computeStrain(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,localELtopo,dispNodal, jID, nnode, Jinv, twoD, strain); 
         
         //https://www.continuummechanics.org/stressxforms.html
         // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
         if (rotation){  
           MATRICES::tensorRotation(angles,strain,true,strain);
         }
-        //CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(strain, sigmaInt, Cstiff, type);
+        
         computeCauchyStress(strain, sigmaInt);
+        
         // rotation back
         if (rotation){  
           MATRICES::tensorRotation(angles,sigmaInt,false,sigmaInt);
         }
-        detJw = FEM::addWeights(detJ, twoD, jID, elTopo, weightsx,weightsy,weightsz);
-        FEM::getNodalForce(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,elTopo, sigmaInt, ndof, detJw, Jinv, twoD, elNodalForces);
+        weight = FEM::addWeights(twoD, jID, elTopo, weightsx,weightsy,weightsz);
+        FEM::getNodalForce(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,elTopo, sigmaInt, jID, nnode, weight, Jinv, twoD, elNodalForces);
         // has to be done for each integration point
         // it adds up the different parts of each integration point resulting element force
         
-        FEM::getGlobalForcesAndElementStresses(numElemNodes,numInt, topoPtr, topology, elNodalForces, sigmaInt, force, sigmaNP1);
 
+      }
+      FEM::setGlobalForces(nnode, topoPtr, topology, elNodalForces, detJ, force);  
         //topology -= numNeigh;
               // avarage stresses
               // sigmaNP1 /= numInt;
-              //globForce(topo) += force; ??
- 
-      }
-
+      
       topoPtr+=numElemNodes;
  
  

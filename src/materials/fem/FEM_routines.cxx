@@ -120,7 +120,9 @@ int *topo
                        
             }
         }
+
     }
+    
     else{
               for (int kID=0 ; kID<order[2]+1 ; ++kID){
             for (int jID=0 ; jID<order[1]+1 ; ++jID){
@@ -201,15 +203,17 @@ void derivativeShapeFunctionsLagrangeRecursive
 int getNumberOfIntegrationPoints
 (
 const bool twoD, 
-const int order[3]
+const int intx,
+const int inty,
+const int intz
 )
 {
     int numInt;
     if  (twoD){
-      numInt = (order[0]+1) * (order[1]+1) ;
+      numInt = intx * inty ;
     }
     else{
-      numInt = (order[0]+1) * (order[1]+1) * (order[2]+1);
+      numInt = intx * inty * intz;
     }
     return numInt;
 }
@@ -224,7 +228,8 @@ const double* Beta,
 const double* Bpsi,
 const int *topo,
 const double* sigmaInt, 
-const int dof,
+const int iID,
+const int nnode,
 const double detJ,
 const double* Jinv, 
 const bool twoD,
@@ -234,7 +239,7 @@ double* elNodalForces
 
 
     double BxiTemp, BetaTemp, BpsiTemp;
-    for(int iID=0 ; iID < dof/3 ; ++iID){
+    //for(int iID=0 ; iID < dof/3 ; ++iID){
         if (twoD){
             BxiTemp  = Bxi[topo[3*iID]]*Neta[topo[3*iID+1]] * detJ;
             BetaTemp = Nxi[topo[3*iID]]*Beta[topo[3*iID+1]] * detJ;
@@ -249,10 +254,11 @@ double* elNodalForces
         // Bxi_i*J00*s11  + s12*(Beta_i*J00 + Bxi_i*J01) + s23*(Bpsi_i*J00 + Bxi_i*J02)
         // Beta_i*J11*s22 + s12*(Beta_i*J10 + Bxi_i*J11) + s13*(Beta_i*J12 + Bpsi_i*J11)
         // Bpsi_i*J22*s33 + s13*(Beta_i*J22 + Bpsi_i*J21) + s23*(Bpsi_i*J20 + Bxi_i*J22)
-        elNodalForces[3*iID]   = *(Jinv) * *(sigmaInt)*BxiTemp + *(sigmaInt+1)*(*(Jinv)*BetaTemp + *(Jinv+1)*BxiTemp) + *(sigmaInt+5)*(*(Jinv)*BpsiTemp + *(Jinv+2)*BxiTemp);
-        elNodalForces[3*iID+1] = *(Jinv+4) * *(sigmaInt+4)*BetaTemp + *(sigmaInt+1)*(*(Jinv+3)*BetaTemp + *(Jinv+4)*BxiTemp) + *(sigmaInt+2)*(*(Jinv+4)*BpsiTemp + *(Jinv+5)*BetaTemp);
-        elNodalForces[3*iID+2] = *(Jinv+8) * *(sigmaInt+8)*BpsiTemp + *(sigmaInt+2)*(*(Jinv+7)*BpsiTemp + *(Jinv+8)*BetaTemp) + *(sigmaInt+5)*(*(Jinv+6)*BpsiTemp + *(Jinv+8)*BxiTemp);
-    }
+        for(int nID=0;nID<nnode;nID++){ 
+            elNodalForces[3*nID]   += *(Jinv)   * *(sigmaInt)*BxiTemp    + *(sigmaInt+1)*(*(Jinv)*BetaTemp   + *(Jinv+1)*BxiTemp)  + *(sigmaInt+5)*(*(Jinv)*BpsiTemp   + *(Jinv+2)*BxiTemp);
+            elNodalForces[3*nID+1] += *(Jinv+4) * *(sigmaInt+4)*BetaTemp + *(sigmaInt+1)*(*(Jinv+3)*BetaTemp + *(Jinv+4)*BxiTemp)  + *(sigmaInt+2)*(*(Jinv+4)*BpsiTemp + *(Jinv+5)*BetaTemp);
+            elNodalForces[3*nID+2] += *(Jinv+8) * *(sigmaInt+8)*BpsiTemp + *(sigmaInt+2)*(*(Jinv+7)*BpsiTemp + *(Jinv+8)*BetaTemp) + *(sigmaInt+5)*(*(Jinv+6)*BpsiTemp + *(Jinv+8)*BxiTemp);
+         }
 
 }
 
@@ -266,7 +272,7 @@ double getJacobian
     const double* Bxi,
     const double* Beta,
     const double* Bpsi,
-    const int dof, 
+    const int nnode, 
     const int *topo,
     const double* coor,
     const bool twoD,
@@ -282,7 +288,7 @@ double getJacobian
     }
 
     if (twoD){
-        for(int i=0;i<dof/3;i++){
+        for(int i=0;i<nnode;i++){
             *(J)   += Bxi[topo[3*i]]*Neta[topo[3*i+1]]*coor[3*i];
             *(J+1) += Bxi[topo[3*i]]*Neta[topo[3*i+1]]*coor[3*i+1];
             *(J+2) += 0.0;
@@ -294,10 +300,11 @@ double getJacobian
             *(J+8) += 0.0;
         }
         returnCode = MATRICES::Invert2by2Matrix(J, detJ, Jinv);
+        
         //detJ *= weightsx*weightsy;
     }
     else{
-        for(int i=0;i<dof/3;i++){
+        for(int i=0;i<nnode;i++){
             *(J)   += Bxi[topo[3*i]]*Neta[topo[3*i+1]]*Npsi[topo[3*i+2]]*coor[3*i];
             *(J+1) += Bxi[topo[3*i]]*Neta[topo[3*i+1]]*Npsi[topo[3*i+2]]*coor[3*i+1];
             *(J+2) += Bxi[topo[3*i]]*Neta[topo[3*i+1]]*Npsi[topo[3*i+2]]*coor[3*i+2];
@@ -320,7 +327,6 @@ double getJacobian
 
 double addWeights
 (
-    const double detJ, 
     const bool twoD, 
     const int intNum, 
     const int *topo,
@@ -329,38 +335,34 @@ double addWeights
     const double weightsz[]
 )
 {
-    double detJw;
+    double weight;
     if (twoD){
-        detJw = weightsx[topo[3*intNum]]*weightsy[topo[3*intNum+1]]*detJ;
+        weight = weightsx[topo[3*intNum]]*weightsy[topo[3*intNum+1]];
     }
     else{
-        detJw = weightsx[topo[3*intNum]]*weightsy[topo[3*intNum+1]]*weightsz[topo[3*intNum+2]]*detJ;
+        weight = weightsx[topo[3*intNum]]*weightsy[topo[3*intNum+1]]*weightsz[topo[3*intNum+2]];
     }
-    return detJw;
+    return weight;
 
 }
-void getGlobalForcesAndElementStresses
+void setGlobalForces
 (
-    const int numElemNodes,
-    const int numInt,
+    const int nnode,
     const int topoPtr,
     const int* topology,
     const double* elNodalForces,
-    const double* sigmaInt,
-    double* force,
-    double* sigmaNP1)
+    const double detJ,
+    double* force
+)
 {
     int localId;
-    for(int n=0 ; n<numElemNodes ; ++n){
-      localId = topology[topoPtr + n];
-      force[3*localId]   += elNodalForces[3*n]; 
-      force[3*localId+1] += elNodalForces[3*n+1];
-      force[3*localId+2] += elNodalForces[3*n+2];
-      // for averaging connected nodes must be determined (to how much elements is the node connected?)
-      sigmaNP1[9*localId  ] = sigmaInt[0]/numInt;sigmaNP1[9*localId+1] = sigmaInt[1]/numInt; sigmaNP1[9*localId+2] = sigmaInt[2]/numInt;
-      sigmaNP1[9*localId+3] = sigmaInt[3]/numInt;sigmaNP1[9*localId+4] = sigmaInt[4]/numInt; sigmaNP1[9*localId+5] = sigmaInt[5]/numInt;
-      sigmaNP1[9*localId+6] = sigmaInt[6]/numInt;sigmaNP1[9*localId+7] = sigmaInt[7]/numInt; sigmaNP1[9*localId+8] = sigmaInt[8]/numInt;
-    }
+    
+    for(int nID=0 ; nID<nnode ; ++nID){
+      localId = topology[topoPtr + nID];
+      force[3*localId]   += elNodalForces[3*nID]*detJ; 
+      force[3*localId+1] += elNodalForces[3*nID+1]*detJ;
+      force[3*localId+2] += elNodalForces[3*nID+2]*detJ;
+     }
 
 
 }
@@ -415,7 +417,8 @@ const double* Beta,
 const double* Bpsi,
 const int *topo,
 const double* u, 
-const int dof,
+const int iID,
+const int nnode,
 const double* Jinv,
 const bool twoD,
 double* strain
@@ -431,39 +434,33 @@ double* strain
 
 {
     double BxiTemp, BetaTemp, BpsiTemp;
-    for (int iID = 0; iID < 9; ++iID){
-        *(strain+iID) = 0.0;
+
+    if (twoD){
+        BxiTemp  = Bxi[topo[3*iID]]*Neta[topo[3*iID+1]];
+        BetaTemp = Nxi[topo[3*iID]]*Beta[topo[3*iID+1]];
+        BpsiTemp = 0.0;
     }
-    for(int iID=0 ; iID < dof/3 ; ++iID){
-        if (twoD){
-            BxiTemp  = Bxi[topo[3*iID]]*Neta[topo[3*iID+1]];
-            BetaTemp = Nxi[topo[3*iID]]*Beta[topo[3*iID+1]];
-            BpsiTemp = 0.0;
-        }
-        else{
-            BxiTemp  = Bxi[topo[3*iID]]*Neta[topo[3*iID+1]]*Npsi[topo[3*iID+2]];
-            BetaTemp = Nxi[topo[3*iID]]*Beta[topo[3*iID+1]]*Npsi[topo[3*iID+2]];
-            BpsiTemp = Nxi[topo[3*iID]]*Neta[topo[3*iID+1]]*Bpsi[topo[3*iID+2]];
-        }
+    else{
+        BxiTemp  = Bxi[topo[3*iID]]*Neta[topo[3*iID+1]]*Npsi[topo[3*iID+2]];
+        BetaTemp = Nxi[topo[3*iID]]*Beta[topo[3*iID+1]]*Npsi[topo[3*iID+2]];
+        BpsiTemp = Nxi[topo[3*iID]]*Neta[topo[3*iID+1]]*Bpsi[topo[3*iID+2]];
+    }
         // determined with python sympy
         //J00*(Bxi_i*u1_i)
         //J11*(Beta_i*u2_i)
         //J22*(Bpsi_i*u3_i)
-        
-        
-        
-        *(strain)   += *(Jinv)   * BxiTemp  * u[3*iID];
-        *(strain+4) += *(Jinv+4) * BetaTemp * u[3*iID+1];
-        *(strain+8) += *(Jinv+8) * BpsiTemp * u[3*iID+2];
-        //u1_i*(Bpsi_i*J00 + Bxi_i*J02) + u3_i*(Bpsi_i*J20 + Bxi_i*J22)
-        //std::cout<<*(Jinv+4)<<" " << BetaTemp <<" "<< u[3*iID+1]<< std::endl;
-        *(strain+5) += (*(Jinv) * BpsiTemp + *(Jinv+2) * BxiTemp)  * u[3*iID] + (*(Jinv+6) * BxiTemp  + *(Jinv+8) * BxiTemp) * u[3*iID+2];
-        //u2_i*(Beta_i*J12 + Bpsi_i*J11) + u3_i*(Beta_i*J22 + Bpsi_i*J21)
-        *(strain+2) += (*(Jinv+5) * BetaTemp + *(Jinv+4) * BpsiTemp) * u[3*iID+1] + (*(Jinv+7) * BpsiTemp + *(Jinv+8) * BetaTemp)* u[3*iID+2];
+    for(int i=0 ; i<9 ; ++i)*(strain+i) = 0.0;   
+    
+    for(int nID=0 ; nID<nnode ; ++nID){ 
+        *(strain)   += *(Jinv)   * BxiTemp  * u[3*nID];
+        *(strain+4) += *(Jinv+4) * BetaTemp * u[3*nID+1];
+        *(strain+8) += *(Jinv+8) * BpsiTemp * u[3*nID+2];
         //u1_i*(Beta_i*J00 + Bxi_i*J01) + u2_i*(Beta_i*J10 + Bxi_i*J11)
-        *(strain+1) += (*(Jinv) * BetaTemp + *(Jinv+1) * BxiTemp)  * u[3*iID] + (*(Jinv+3) * BetaTemp + *(Jinv+4) * BxiTemp) * u[3*iID+1];
-      
-        
+        *(strain+1) += (*(Jinv) * BetaTemp + *(Jinv+1) * BxiTemp)  * u[3*nID] + (*(Jinv+3) * BetaTemp + *(Jinv+4) * BxiTemp) * u[3*nID+1];
+        //u2_i*(Beta_i*J12 + Bpsi_i*J11) + u3_i*(Beta_i*J22 + Bpsi_i*J21)
+        *(strain+2) += (*(Jinv+5) * BetaTemp + *(Jinv+4) * BpsiTemp) * u[3*nID+1] + (*(Jinv+7) * BpsiTemp + *(Jinv+8) * BetaTemp)* u[3*nID+2];
+        //u1_i*(Bpsi_i*J00 + Bxi_i*J02) + u3_i*(Bpsi_i*J20 + Bxi_i*J22)
+        *(strain+5) += (*(Jinv) * BpsiTemp + *(Jinv+2) * BxiTemp)  * u[3*nID] + (*(Jinv+6) * BxiTemp  + *(Jinv+8) * BxiTemp) * u[3*nID+2];
     }
     // 0 1 2
     // 3 4 5

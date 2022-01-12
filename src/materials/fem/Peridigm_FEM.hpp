@@ -108,6 +108,7 @@ namespace PeridigmNS {
     double m_bulkModulus;
     double m_shearModulus;
     int numInt;
+    int intx, inty, intz;
     int nnode;
     double *NxiVector = new double;
     double *NetaVector = new double;
