@@ -39,9 +39,12 @@ if __name__ == "__main__":
         result = return_code
 
     # compare output files against gold files
-    command = ["../../../../scripts/MergeFiles.py", base_name+"1", "2"]
+    command = ["../../../../scripts/epu", "-p", "2", base_name+"1"]
     p = Popen(command, stdout=logfile, stderr=logfile)
     return_code = p.wait()
+    # command = ["python ../../../../scripts/MergeFiles.py", base_name+"1", "2"]
+    # p = Popen(command, stdout=logfile, stderr=logfile)
+    # return_code = p.wait()
     if return_code != 0:
         result = return_code
     command = ["../../../../scripts/exodiff", \
