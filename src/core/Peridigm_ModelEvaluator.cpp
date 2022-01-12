@@ -112,7 +112,7 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset, bool damage
   PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Precompute");
 
   // ---- Synchronize data computed in precompute ----
- // PeridigmNS::DataManagerSynchronizer::self().synchronizeDataAfterPrecompute(workset->blocks);
+ PeridigmNS::DataManagerSynchronizer::self().synchronizeDataAfterPrecompute(workset->blocks);
 
  // PeridigmNS::DataManagerSynchronizer::self().synchronizeDataAfterPrecompute(workset->blocks);
 
