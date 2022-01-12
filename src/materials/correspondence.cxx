@@ -671,14 +671,14 @@ double* detachedNodes
         
         if(*(shapeTensor) == 0 or inversionReturnCode > 0){
            
-           //returnCode = inversionReturnCode;
-                *(shapeTensorInv)   = 0.0 ; *(shapeTensorInv+1) = 0.0 ; *(shapeTensorInv+2) = 0.0 ;
-                *(shapeTensorInv+3) = 0.0 ; *(shapeTensorInv+4) = 0.0 ; *(shapeTensorInv+5) = 0.0 ;
-                *(shapeTensorInv+6) = 0.0 ; *(shapeTensorInv+7) = 0.0 ; *(shapeTensorInv+8) = 0.0 ;
-                *(defGrad)   = 1.0 ;     *(defGrad+1) = 0.0 ;     *(defGrad+2) = 0.0 ;
-                *(defGrad+3) = 0.0 ;     *(defGrad+4) = 1.0 ;     *(defGrad+5) = 0.0 ;
-                *(defGrad+6) = 0.0 ;     *(defGrad+7) = 0.0 ;     *(defGrad+8) = 1.0 ;
-           }
+          returnCode = inversionReturnCode;
+          *(shapeTensorInv)   = 0.0 ; *(shapeTensorInv+1) = 0.0 ; *(shapeTensorInv+2) = 0.0 ;
+          *(shapeTensorInv+3) = 0.0 ; *(shapeTensorInv+4) = 0.0 ; *(shapeTensorInv+5) = 0.0 ;
+          *(shapeTensorInv+6) = 0.0 ; *(shapeTensorInv+7) = 0.0 ; *(shapeTensorInv+8) = 0.0 ;
+          *(defGrad)   = 1.0 ;     *(defGrad+1) = 0.0 ;     *(defGrad+2) = 0.0 ;
+          *(defGrad+3) = 0.0 ;     *(defGrad+4) = 1.0 ;     *(defGrad+5) = 0.0 ;
+          *(defGrad+6) = 0.0 ;     *(defGrad+7) = 0.0 ;     *(defGrad+8) = 1.0 ;
+        }
         
 
 

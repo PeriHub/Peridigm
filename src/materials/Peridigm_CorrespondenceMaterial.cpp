@@ -120,7 +120,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
       m_plast = true; // does not work. we have to check
       
   }
-  m_applyAutomaticDifferentiationJacobian = true;
+  m_applyAutomaticDifferentiationJacobian = false;
   if (params.isParameter("Accumulated Plastic")) m_plast = params.get<bool>("Accumulated Plastic");
   
   if(params.isParameter("Apply Automatic Differentiation Jacobian"))
@@ -566,9 +566,9 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
       string rotationTensorErrorMessage3 =
         "**** Error:  CorrespondenceMaterial::computeForce() failed to invert temp.\n";
 
-      //TEUCHOS_TEST_FOR_EXCEPT_MSG(rotationTensorReturnCode == 1, rotationTensorErrorMessage);
-      //TEUCHOS_TEST_FOR_EXCEPT_MSG(rotationTensorReturnCode == 2, rotationTensorErrorMessage2);
-      //TEUCHOS_TEST_FOR_EXCEPT_MSG(rotationTensorReturnCode == 3, rotationTensorErrorMessage3);
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(rotationTensorReturnCode == 1, rotationTensorErrorMessage);
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(rotationTensorReturnCode == 2, rotationTensorErrorMessage2);
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(rotationTensorReturnCode == 3, rotationTensorErrorMessage3);
                                     
      }  
     else{
@@ -910,6 +910,12 @@ PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian(cons
                                                                                        tempNumOwnedPoints,
                                                                                        m_plane,
                                                                                        detachedNodes);
+                                                                           
+    string shapeTensorErrorMessage =
+        "**** Error:  MATRICES::Invert2by2Matrix() failed to invert.\n";
+
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(shapeTensorReturnCode == 1, shapeTensorErrorMessage);                                                                       
+                                                                           
     double *cauchyStress, *cauchyStressNP1, *cauchyStressPlastic;
     tempDataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_N)->ExtractView(&cauchyStress);
     tempDataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_N)->ExtractView(&cauchyStressNP1);
