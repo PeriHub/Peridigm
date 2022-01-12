@@ -74,44 +74,33 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
   order[2] = params.get<int>("Order");
   if (params.isParameter("Order_Y")) order[1] = params.get<int>("Order_Y");
   if (params.isParameter("Order_Z")) order[2] = params.get<int>("Order_Z");
-  intx = order[0] + 1;
-  inty = order[1] + 1;
-  intz = order[2] + 1;
-  if (params.isParameter("Integration Points in X")) intx = params.get<int>("Integration Points in X");
-  if (params.isParameter("Integration Points in Y")) inty = params.get<int>("Integration Points in Y");
-  if (params.isParameter("Integration Points in Z")) intz = params.get<int>("Integration Points in Z");
+  numIntDir[0] = order[0] + 1;
+  numIntDir[1] = order[1] + 1;
+  numIntDir[2] = order[2] + 1;
+  if (params.isParameter("Integration Points in X")) numIntDir[0] = params.get<int>("Integration Points in X");
+  if (params.isParameter("Integration Points in Y")) numIntDir[1] = params.get<int>("Integration Points in Y");
+  if (params.isParameter("Integration Points in Z")) numIntDir[2] = params.get<int>("Integration Points in Z");
  
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(intx<1, "**** Error:  Number of integration points in x direction must be greater zero.\n");
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(inty<1, "**** Error:  Number of integration points in y direction must be greater zero.\n");
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(intz<1, "**** Error:  Number of integration points in z direction must be greater zero.\n");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(numIntDir[0]<1, "**** Error:  Number of integration points in x direction must be greater zero.\n");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(numIntDir[1]<1, "**** Error:  Number of integration points in y direction must be greater zero.\n");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(numIntDir[2]<1, "**** Error:  Number of integration points in z direction must be greater zero.\n");
   
-  delete NxiVector;
-  delete NetaVector;
-  delete NpsiVector;
-  NxiVector  = new double[(order[0]+1)*intx]; // je integrationspunkt ; es gibt n funktionen die an m coordinaten ausgewertet werden
-  NetaVector = new double[(order[1]+1)*inty];
-  NpsiVector = new double[(order[2]+1)*intz];
-  delete BxiVector;
-  delete BetaVector;
-  delete BpsiVector;
-  BxiVector  = new double[(order[0]+1)*intx];
-  BetaVector = new double[(order[1]+1)*inty];
-  BpsiVector = new double[(order[2]+1)*intz];
-  delete elCoorxVector;
-  delete elCooryVector;
-  delete elCoorzVector;
-  elCoorxVector = new double[order[0]+1];
-  elCooryVector = new double[order[1]+1];
-  elCoorzVector = new double[order[2]+1];
-  delete weightxVector;
-  delete weightyVector; 
-  delete weightzVector;
-  weightxVector = new double[order[0]+1];
-  weightyVector = new double[order[1]+1];
-  weightzVector = new double[order[2]+1];
-
-
-
+  
+  nnode = FEM::getNnode(order, twoD);
+  delete Bx;
+  delete By; 
+  delete Bz;
+  if (twoD){
+    Bx = new double[(order[0]+1)*(order[1]+1)*nnode];
+    By = new double[(order[0]+1)*(order[1]+1)*nnode];
+    Bz = new double[1];
+  }
+  else
+  {
+    Bx = new double[(order[0]+1)*(order[1]+1)*(order[2]+1)*nnode];
+    By = new double[(order[0]+1)*(order[1]+1)*(order[2]+1)*nnode];
+    Bz = new double[(order[0]+1)*(order[1]+1)*(order[2]+1)*nnode];
+  }
 
   if (params.isParameter("Plane Strain")){
     m_planeStrain = params.get<bool>("Plane Strain");
@@ -123,9 +112,12 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
   if (m_planeStress==true)m_type=2;
   twoD = false;
   if (m_type != 0)twoD = true;
-  numInt = FEM::getNumberOfIntegrationPoints(twoD, intx, inty, intz);
-  delete localELtopo;
-  localELtopo = new int[3*numInt];
+  // Integrationpoint topology maps global int number to x-direction number --> safe
+  numInt = FEM::getNumberOfIntegrationPoints(twoD, numIntDir);
+  
+  delete weightVector;
+  weightVector = new double[numInt];
+ 
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   m_modelCoordinatesFieldId           = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::CONSTANT, "Model_Coordinates");
@@ -166,43 +158,57 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
 {
   std::cout<<"init FEM"<<std::endl;
  // FEM::createLumbedMassesSomeHow()
+  std::vector<double> NxiVector(order[0]+1), NetaVector(order[1]+1), NpsiVector(order[2]+1);
   double* Nxi  = &NxiVector[0];
   double* Neta = &NetaVector[0];
   double* Npsi = &NpsiVector[0];
-  
+  std::vector<double> BxiVector(order[0]+1), BetaVector(order[1]+1), BpsiVector(order[2]+1);
   double* Bxi  = &BxiVector[0];
   double* Beta = &BetaVector[0];
   double* Bpsi = &BpsiVector[0];
-  
+  std::vector<double> elCoorxVector(numIntDir[0]), elCooryVector(numIntDir[1]), elCoorzVector(numIntDir[2]);
   double* elCoorx = &elCoorxVector[0];
   double* elCoory = &elCooryVector[0];
   double* elCoorz = &elCoorzVector[0];
-  
+  std::vector<double> weightxVector(numIntDir[0]), weightyVector(numIntDir[1]), weightzVector(numIntDir[2]);
   double* weightsx = &weightxVector[0];
   double* weightsy = &weightyVector[0];
   double* weightsz = &weightzVector[0];
-  int* elTopo = &localELtopo[0];
+  double* weights  = &weightVector[0];
 
+  // temporary vector; the length varies depended on the direction, but its max is nnode
+  //std::vector<double> NIntVector(nnode), BIntVector(nnode);
+  //double* NInt = &NIntVector[0];
+  //double* BInt = &BIntVector[0];
   FEM::weightsAndIntegrationPoints(order[0], elCoorx, weightsx);
   FEM::weightsAndIntegrationPoints(order[1], elCoory, weightsy);
- 
-  FEM::getElementTopo(twoD, order, elTopo);
-    
-  for (int iID=0 ; iID<order[0]+1 ; ++iID){
-    FEM::getLagrangeElementData(order[0],elCoorx[iID],Nxi,Bxi);
-  }  
-  for (int iID=0 ; iID<order[1]+1 ; ++iID){
-    FEM::getLagrangeElementData(order[1],elCoory[iID],Neta,Beta);
-  }  
-  if (twoD == false){
-    FEM::weightsAndIntegrationPoints(order[2],elCoorz,weightsz);
-    for (int iID=0 ; iID<order[2]+1 ; ++iID){
-      FEM::getLagrangeElementData(order[2],elCoorz[iID],Npsi,Bpsi);
-    }  
+
+  FEM::weightsAndIntegrationPoints(order[0], elCoorx, weightsx);  
+  int intPointPtr;
+  if (twoD){
+    for (int jID=0 ; jID<numIntDir[1] ; ++jID){
+      FEM::getLagrangeElementData(order[1],elCoory[jID],Neta,Beta);
+      for (int iID=0 ; iID<numIntDir[0] ; ++iID){
+        FEM::getLagrangeElementData(order[0],elCoorx[jID],Nxi,Bxi);
+        FEM::setElementMatrices(twoD, intPointPtr, order, Nxi, Neta, Npsi, Bxi, Beta, Bpsi, Bx, By, Bz);
+        intPointPtr += 3*nnode;
+      }
+    }
   }
-  //ggf. BxiNetaNpsi vektoren erstellen
-    
-  nnode = FEM::getNnode(order, twoD);
+  else{
+    for (int kID=0 ; kID<numIntDir[2] ; ++kID){
+      FEM::getLagrangeElementData(order[2],elCoorz[kID],Npsi,Bpsi);
+      for (int jID=0 ; jID<numIntDir[1] ; ++jID){
+        FEM::getLagrangeElementData(order[1],elCoory[jID],Neta,Beta);
+        for (int iID=0 ; iID<numIntDir[0] ; ++iID){
+          FEM::getLagrangeElementData(order[0],elCoorx[jID],Nxi,Bxi);
+          FEM::setElementMatrices(twoD, intPointPtr, order, Nxi, Neta, Npsi, Bxi, Beta, Bpsi, Bx, By, Bz);
+          intPointPtr += nnode;
+        }
+      }
+    }
+  }
+  FEM::setWeights(numIntDir,twoD,weightsx,weightsx,weightsx,weights);
 }
 
 void
@@ -224,10 +230,6 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&deformedCoor);
    // dataManager.getData(m_displacementFieldId, PeridigmField::STEP_NP1)->ExtractView(&displacements);
     dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&globalForce);
-
-
-
-
     bool rotation = false;
     const double* nodalCoor = modelCoordinates;
    // double* disp = displacements;
@@ -262,19 +264,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     std::vector<double> elNodalForceVector(ndof);
     double* elNodalForces = &elNodalForceVector[0];
     
-    double* Nxi  = &NxiVector[0];
-    double* Neta = &NetaVector[0];
-    double* Npsi = &NpsiVector[0];
-    
-    double* Bxi  = &BxiVector[0];
-    double* Beta = &BetaVector[0];
-    double* Bpsi = &BpsiVector[0];
-    
-    double* weightsx = &weightxVector[0];
-    double* weightsy = &weightyVector[0];
-    double* weightsz = &weightzVector[0];
-    double weight;
-    int* elTopo = &localELtopo[0];
+    double* weight = &weightVector[0];
     int topoPtr = 0;
     std::vector<double> JMat(9);
     double* J = &JMat[0];
@@ -336,11 +326,13 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         sigmaNP1[9*localId+6] = 0.0;sigmaNP1[9*localId+7] = 0.0; sigmaNP1[9*localId+8] = 0.0;
         angles[0] += nodeAngles[3*localId]/numElemNodes;angles[1] += nodeAngles[3*localId+1]/numElemNodes;angles[2] += nodeAngles[3*localId+2]/numElemNodes;
       }
-      detJ=FEM::getJacobian(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,nnode,localELtopo,elNodalCoor, twoD, J, Jinv);
+      
       for (int jID=0 ; jID<numInt ; ++jID){
+        int intPointPtr = 3*jID*nnode;
         // only if nodes and integration points are equal the topology is suitable here.
-
-        FEM::computeStrain(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,localELtopo,dispNodal, jID, nnode, Jinv, twoD, strain); 
+        detJ=FEM::getJacobian(Bx,By,Bz,nnode,intPointPtr,elNodalCoor, weight[jID], twoD, J, Jinv);
+        
+        FEM::computeStrain(Bx,By,Bz,dispNodal, intPointPtr, nnode, Jinv, twoD, strain); 
         
         //https://www.continuummechanics.org/stressxforms.html
         // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
@@ -354,8 +346,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         if (rotation){  
           MATRICES::tensorRotation(angles,sigmaInt,false,sigmaInt);
         }
-        weight = FEM::addWeights(twoD, jID, elTopo, weightsx,weightsy,weightsz);
-        FEM::getNodalForce(Nxi,Neta,Npsi,Bxi,Beta,Bpsi,elTopo, sigmaInt, jID, nnode, weight, Jinv, twoD, elNodalForces);
+        FEM::getNodalForce(Bx, By, Bz, intPointPtr, nnode, detJ, Jinv, twoD, sigmaInt, elNodalForces);
         // has to be done for each integration point
         // it adds up the different parts of each integration point resulting element force
         

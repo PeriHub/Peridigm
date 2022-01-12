@@ -108,21 +108,13 @@ namespace PeridigmNS {
     double m_bulkModulus;
     double m_shearModulus;
     int numInt;
-    int intx, inty, intz;
     int nnode;
-    double *NxiVector = new double;
-    double *NetaVector = new double;
-    double *NpsiVector = new double;
-    double *BxiVector = new double;
-    double *BetaVector = new double;
-    double *BpsiVector = new double;
-    double *elCoorxVector = new double;
-    double *elCooryVector = new double;
-    double *elCoorzVector = new double;
-    double *weightxVector = new double;
-    double *weightyVector = new double;
-    double *weightzVector = new double;
-    int *localELtopo = new int;
+
+    double *Bx = new double;
+    double *By = new double;
+    double *Bz = new double;
+
+    double *weightVector  = new double;
     // field spec ids for all relevant data
     std::vector<int> m_fieldIds;
 
@@ -137,6 +129,7 @@ namespace PeridigmNS {
     int m_displacementFieldId;
     int m_deformationGradientFieldId;
     int order[3];
+    int numIntDir[3];
     bool twoD;
 
   };

@@ -96,26 +96,34 @@ double* Bxi
 int getNumberOfIntegrationPoints
 (
 const bool twoD, 
-const int intx,
-const int inty,
-const int intz
+const int numIntDir[3]
 );
-
-void getNodalForce
+void setElementMatrices
 (
+const bool twoD,
+const int offset,
+const int order[3],
 const double* Nxi,
 const double* Neta,
 const double* Npsi,
 const double* Bxi,
 const double* Beta,
 const double* Bpsi,
-const int *topo,
-const double* sigmaInt, 
-const int iID,
+double* Bx,
+double* By,
+double* Bz
+);
+void getNodalForce
+(
+const double* Bx,
+const double* By,
+const double* Bz,
+const int intPointPtr,
 const int nnode,
 const double detJ,
 const double* Jinv, 
 const bool twoD,
+const double* sigmaInt, 
 double* elNodalForces
 );
 
@@ -156,15 +164,11 @@ double* weights
 
 void computeStrain
 (
-const double* Nxi,
-const double* Neta,
-const double* Npsi,
-const double* Bxi,
-const double* Beta,
-const double* Bpsi,
-const int *topo,
+const double* Bx,
+const double* By,
+const double* Bz,
 const double* u, 
-const int iID,
+const int intPointPtr,
 const int nnode,
 const double* Jinv,
 const bool twoD,
@@ -173,27 +177,26 @@ double* strain
 
 double getJacobian
 (
-const double* Nxi,
-const double* Neta,
-const double* Npsi,
-const double* Bxi,
-const double* Beta,
-const double* Bpsi,
+const double* Bx,
+const double* By,
+const double* Bz,
 const int nnode, 
-const int *topo,
+const int intPointPtr,
 const double* coor,
 const bool twoD,
-double* J,
+const double weight,
+double* J, 
 double* Jinv
 );
-double addWeights
+
+void setWeights
 (
+const int numIntDir[3],
 const bool twoD, 
-const int intNum, 
-const int *topo,
-const double weightsx[],
-const double weightsy[],
-const double weightsz[]
+const double* weightsx,
+const double* weightsy,
+const double* weightsz,
+double* weights
 );
 void setGlobalForces
 (

@@ -203,79 +203,64 @@ void derivativeShapeFunctionsLagrangeRecursive
 int getNumberOfIntegrationPoints
 (
 const bool twoD, 
-const int intx,
-const int inty,
-const int intz
+const int numIntDir[3]
 )
 {
     int numInt;
     if  (twoD){
-      numInt = intx * inty ;
+      numInt = numIntDir[0] * numIntDir[1] ;
     }
     else{
-      numInt = intx * inty * intz;
+      numInt = numIntDir[0] * numIntDir[1] * numIntDir[2] ;
     }
     return numInt;
 }
 
 void getNodalForce
 (
-const double* Nxi,
-const double* Neta,
-const double* Npsi,
-const double* Bxi,
-const double* Beta,
-const double* Bpsi,
-const int *topo,
-const double* sigmaInt, 
-const int iID,
+const double* Bx,
+const double* By,
+const double* Bz,
+const int intPointPtr,
 const int nnode,
 const double detJ,
 const double* Jinv, 
 const bool twoD,
+const double* sigmaInt, 
 double* elNodalForces
 )
 {   
-
-
-    double BxiTemp, BetaTemp, BpsiTemp;
-    //for(int iID=0 ; iID < dof/3 ; ++iID){
-        if (twoD){
-            BxiTemp  = Bxi[topo[3*iID]]*Neta[topo[3*iID+1]] * detJ;
-            BetaTemp = Nxi[topo[3*iID]]*Beta[topo[3*iID+1]] * detJ;
-            BpsiTemp = 0.0;
-        }
-        else{
-            BxiTemp  = Bxi[topo[3*iID]]*Neta[topo[3*iID+1]]*Npsi[topo[3*iID+2]] * detJ;
-            BetaTemp = Nxi[topo[3*iID]]*Beta[topo[3*iID+1]]*Npsi[topo[3*iID+2]] * detJ;
-            BpsiTemp = Nxi[topo[3*iID]]*Neta[topo[3*iID+1]]*Bpsi[topo[3*iID+2]] * detJ;
+    double BxiTemp = 0.0, BetaTemp = 0.0, BpsiTemp = 0.0;
+ 
+    for(int nID=0 ; nID<nnode ; ++nID){ 
+        BxiTemp  = Bx[intPointPtr + nID];
+        BetaTemp = By[intPointPtr + nID];
+        if (twoD==false)  {
+            BpsiTemp = Bz[intPointPtr + 3*nID];
         }
         // determined by python sympy
         // Bxi_i*J00*s11  + s12*(Beta_i*J00 + Bxi_i*J01) + s23*(Bpsi_i*J00 + Bxi_i*J02)
         // Beta_i*J11*s22 + s12*(Beta_i*J10 + Bxi_i*J11) + s13*(Beta_i*J12 + Bpsi_i*J11)
         // Bpsi_i*J22*s33 + s13*(Beta_i*J22 + Bpsi_i*J21) + s23*(Bpsi_i*J20 + Bxi_i*J22)
         for(int nID=0;nID<nnode;nID++){ 
-            elNodalForces[3*nID]   += *(Jinv)   * *(sigmaInt)*BxiTemp    + *(sigmaInt+1)*(*(Jinv)*BetaTemp   + *(Jinv+1)*BxiTemp)  + *(sigmaInt+5)*(*(Jinv)*BpsiTemp   + *(Jinv+2)*BxiTemp);
+            elNodalForces[3*nID]   += *(Jinv)   * *(sigmaInt)*  BxiTemp  + *(sigmaInt+1)*(*(Jinv)*BetaTemp   + *(Jinv+1)*BxiTemp)  + *(sigmaInt+5)*(*(Jinv)*BpsiTemp   + *(Jinv+2)*BxiTemp);
             elNodalForces[3*nID+1] += *(Jinv+4) * *(sigmaInt+4)*BetaTemp + *(sigmaInt+1)*(*(Jinv+3)*BetaTemp + *(Jinv+4)*BxiTemp)  + *(sigmaInt+2)*(*(Jinv+4)*BpsiTemp + *(Jinv+5)*BetaTemp);
             elNodalForces[3*nID+2] += *(Jinv+8) * *(sigmaInt+8)*BpsiTemp + *(sigmaInt+2)*(*(Jinv+7)*BpsiTemp + *(Jinv+8)*BetaTemp) + *(sigmaInt+5)*(*(Jinv+6)*BpsiTemp + *(Jinv+8)*BxiTemp);
          }
 
-}
-
-        
+    }
+}    
 
 double getJacobian
 (
-    const double* Nxi,
-    const double* Neta,
-    const double* Npsi,
-    const double* Bxi,
-    const double* Beta,
-    const double* Bpsi,
+    const double* Bx,
+    const double* By,
+    const double* Bz,
     const int nnode, 
-    const int *topo,
+    const int intPointPtr,
     const double* coor,
     const bool twoD,
+    const double weight,
     double* J, 
     double* Jinv
 )
@@ -286,14 +271,14 @@ double getJacobian
     for(int i=0;i<9;i++){
         *(J+i) = 0.0;
     }
-
+    
     if (twoD){
         for(int i=0;i<nnode;i++){
-            *(J)   += Bxi[topo[3*i]]*Neta[topo[3*i+1]]*coor[3*i];
-            *(J+1) += Bxi[topo[3*i]]*Neta[topo[3*i+1]]*coor[3*i+1];
+            *(J)   += Bx[intPointPtr + 3*i]*coor[3*i];
+            *(J+1) += Bx[intPointPtr + 3*i+1]*coor[3*i+1];
             *(J+2) += 0.0;
-            *(J+3) += Nxi[topo[3*i]]*Beta[topo[3*i+1]]*coor[3*i];
-            *(J+4) += Nxi[topo[3*i]]*Beta[topo[3*i+1]]*coor[3*i+1];
+            *(J+3) += By[intPointPtr + 3*i]*coor[3*i];
+            *(J+4) += By[intPointPtr + 3*i+1]*coor[3*i+1];
             *(J+5) += 0.0;
             *(J+6) += 0.0;
             *(J+7) += 0.0;
@@ -305,15 +290,15 @@ double getJacobian
     }
     else{
         for(int i=0;i<nnode;i++){
-            *(J)   += Bxi[topo[3*i]]*Neta[topo[3*i+1]]*Npsi[topo[3*i+2]]*coor[3*i];
-            *(J+1) += Bxi[topo[3*i]]*Neta[topo[3*i+1]]*Npsi[topo[3*i+2]]*coor[3*i+1];
-            *(J+2) += Bxi[topo[3*i]]*Neta[topo[3*i+1]]*Npsi[topo[3*i+2]]*coor[3*i+2];
-            *(J+3) += Nxi[topo[3*i]]*Beta[topo[3*i+1]]*Npsi[topo[3*i+2]]*coor[3*i];
-            *(J+4) += Nxi[topo[3*i]]*Beta[topo[3*i+1]]*Npsi[topo[3*i+2]]*coor[3*i+1];
-            *(J+5) += Nxi[topo[3*i]]*Beta[topo[3*i+1]]*Npsi[topo[3*i+2]]*coor[3*i+2];
-            *(J+6) += Nxi[topo[3*i]]*Neta[topo[3*i+1]]*Bpsi[topo[3*i+2]]*coor[3*i];
-            *(J+7) += Nxi[topo[3*i]]*Neta[topo[3*i+1]]*Bpsi[topo[3*i+2]]*coor[3*i+1];
-            *(J+8) += Nxi[topo[3*i]]*Neta[topo[3*i+1]]*Bpsi[topo[3*i+2]]*coor[3*i+2];
+            *(J)   += Bx[intPointPtr + 3*i]*coor[3*i];
+            *(J+1) += Bx[intPointPtr + 3*i+1]*coor[3*i+1];
+            *(J+2) += Bx[intPointPtr + 3*i+2]*coor[3*i+2];
+            *(J+3) += By[intPointPtr + 3*i]*coor[3*i];
+            *(J+4) += By[intPointPtr + 3*i+1]*coor[3*i+1];
+            *(J+5) += By[intPointPtr + 3*i+2]*coor[3*i+2];
+            *(J+6) += Bz[intPointPtr + 3*i]*coor[3*i];            
+            *(J+7) += Bz[intPointPtr + 3*i+1]*coor[3*i+1]; 
+            *(J+8) += Bz[intPointPtr + 3*i+2]*coor[3*i+2]; 
             
         }
        
@@ -321,28 +306,82 @@ double getJacobian
         //detJ *= weightsx*weightsy*weightsz;
     }
 
-    return detJ;
+    return detJ*weight;
 }
-
-
-double addWeights
+void setElementMatrices
 (
-    const bool twoD, 
-    const int intNum, 
-    const int *topo,
-    const double weightsx[],
-    const double weightsy[],
-    const double weightsz[]
+    const bool twoD,
+    const int offset,
+    const int order[3],
+    const double* Nxi,
+    const double* Neta,
+    const double* Npsi,
+    const double* Bxi,
+    const double* Beta,
+    const double* Bpsi,
+    double* Bx,
+    double* By,
+    double* Bz
 )
 {
-    double weight;
+  int count = 0;
+  if (twoD){
+
+    for(int j=0;j<order[1];j++){
+        for(int i=0;i<order[0];i++){
+            Bx[offset + count] = Bxi[i]*Neta[j];
+            By[offset + count] = Nxi[i]*Beta[j];
+
+            count++;
+        }
+    }
+  }
+  else
+  {
+    for(int k=0;k<order[2];k++){
+        for(int j=0;j<order[1];j++){
+            for(int i=0;i<order[0];i++){
+                Bx[offset + count] = Bxi[i]*Neta[j]*Npsi[k];
+                By[offset + count] = Nxi[i]*Beta[j]*Npsi[k];
+                Bz[offset + count] = Nxi[i]*Neta[j]*Bpsi[k];
+                count++;
+
+            }
+        }
+    }
+  }
+}
+
+void setWeights
+(
+    const int numIntDir[3],
+    const bool twoD, 
+    const double* weightsx,
+    const double* weightsy,
+    const double* weightsz,
+    double* weights
+)
+{
+    int count = 0;
     if (twoD){
-        weight = weightsx[topo[3*intNum]]*weightsy[topo[3*intNum+1]];
-    }
+        for(int j=0;j<numIntDir[1];j++){
+            for(int i=0;i<numIntDir[0];i++){
+               weights[count] = weightsx[i]*weightsy[j];
+               count++;
+            }
+        }
+
+    }   
     else{
-        weight = weightsx[topo[3*intNum]]*weightsy[topo[3*intNum+1]]*weightsz[topo[3*intNum+2]];
+        for(int k=0;k<numIntDir[2];k++){
+            for(int j=0;j<numIntDir[1];j++){
+                for(int i=0;i<numIntDir[0];i++){
+                    weights[count] = weightsx[i]*weightsy[j]*weightsz[k];
+                    count++;
+                }
+            }
+        }
     }
-    return weight;
 
 }
 void setGlobalForces
@@ -409,15 +448,11 @@ const double elCoor[3]
 }
 void computeStrain
 (
-const double* Nxi,
-const double* Neta,
-const double* Npsi,
-const double* Bxi,
-const double* Beta,
-const double* Bpsi,
-const int *topo,
+const double* Bx,
+const double* By,
+const double* Bz,
 const double* u, 
-const int iID,
+const int intPointPtr,
 const int nnode,
 const double* Jinv,
 const bool twoD,
@@ -433,25 +468,18 @@ double* strain
 //u1_i*(Beta_i*J00 + Bxi_i*J01) + u2_i*(Beta_i*J10 + Bxi_i*J11)
 
 {
-    double BxiTemp, BetaTemp, BpsiTemp;
+    double BxiTemp = 0.0, BetaTemp = 0.0, BpsiTemp = 0.0;
 
-    if (twoD){
-        BxiTemp  = Bxi[topo[3*iID]]*Neta[topo[3*iID+1]];
-        BetaTemp = Nxi[topo[3*iID]]*Beta[topo[3*iID+1]];
-        BpsiTemp = 0.0;
-    }
-    else{
-        BxiTemp  = Bxi[topo[3*iID]]*Neta[topo[3*iID+1]]*Npsi[topo[3*iID+2]];
-        BetaTemp = Nxi[topo[3*iID]]*Beta[topo[3*iID+1]]*Npsi[topo[3*iID+2]];
-        BpsiTemp = Nxi[topo[3*iID]]*Neta[topo[3*iID+1]]*Bpsi[topo[3*iID+2]];
-    }
-        // determined with python sympy
-        //J00*(Bxi_i*u1_i)
-        //J11*(Beta_i*u2_i)
-        //J22*(Bpsi_i*u3_i)
     for(int i=0 ; i<9 ; ++i)*(strain+i) = 0.0;   
     
     for(int nID=0 ; nID<nnode ; ++nID){ 
+        BxiTemp  = Bx[intPointPtr + nID];
+        BetaTemp = By[intPointPtr + nID];
+
+        if (twoD==false)  {
+            BpsiTemp = Bz[intPointPtr + nID];
+ 
+        }
         *(strain)   += *(Jinv)   * BxiTemp  * u[3*nID];
         *(strain+4) += *(Jinv+4) * BetaTemp * u[3*nID+1];
         *(strain+8) += *(Jinv+8) * BpsiTemp * u[3*nID+2];
