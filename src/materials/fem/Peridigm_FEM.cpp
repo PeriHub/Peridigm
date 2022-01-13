@@ -68,6 +68,7 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
   m_density = params.get<double>("Density");
 
   bool m_planeStrain = false, m_planeStress = false;
+  m_type = 0;
   if (params.isParameter("Plane Strain")){
     m_planeStrain = params.get<bool>("Plane Strain");
     }
@@ -78,7 +79,7 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
   if (m_planeStress==true)m_type=2;
   twoD = false;
   if (m_type != 0)twoD = true;
-  m_type = 0;
+ 
   order[0] = params.get<int>("Order");
   order[1] = params.get<int>("Order");
   order[2] = params.get<int>("Order");
@@ -317,13 +318,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         elNodalForces[3*n]   = 0.0;
         elNodalForces[3*n+1] = 0.0;
         elNodalForces[3*n+2] = 0.0;
-        //disp[3*localId] = deformedCoor[3*localId]- nodalCoor[3*localId];
-        //disp[3*localId+1] = deformedCoor[3*localId+1]- nodalCoor[3*localId+1];
-        //disp[3*localId+2] = deformedCoor[3*localId+2]- nodalCoor[3*localId+2];
-        //dispNodal[3*n]     = disp[3*localId];
-        //dispNodal[3*n+1]   = disp[3*localId+1];
-        //dispNodal[3*n+2]   = disp[3*localId+2];
-       // std::cout<<"u1 "<< iID<< " "<<dispNodal[3*n]<< " "<<dispNodal[3*n+1]<< " "<<dispNodal[3*n+2] <<" localId "<<localId<<std::endl;
+
         sigmaNP1[9*localId  ] = 0.0;sigmaNP1[9*localId+1] = 0.0; sigmaNP1[9*localId+2] = 0.0;
         sigmaNP1[9*localId+3] = 0.0;sigmaNP1[9*localId+4] = 0.0; sigmaNP1[9*localId+5] = 0.0;
         sigmaNP1[9*localId+6] = 0.0;sigmaNP1[9*localId+7] = 0.0; sigmaNP1[9*localId+8] = 0.0;
@@ -333,6 +328,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
       for (int jID=0 ; jID<numInt ; ++jID){
         int intPointPtr = jID*numElemNodes;
         // only if nodes and integration points are equal the topology is suitable here.
+
         detJ=FEM::getJacobian(Bx,By,Bz,numElemNodes,intPointPtr,elNodalCoor, weight[jID], twoD, J, Jinv);
         
         FEM::computeStrain(Bx,By,Bz,dispNodal, intPointPtr, numElemNodes, Jinv, twoD, strain); 

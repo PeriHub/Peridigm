@@ -183,8 +183,8 @@ const double* Bz,
 const int nnode, 
 const int intPointPtr,
 const double* coor,
-const bool twoD,
 const double weight,
+const bool twoD,
 double* J, 
 double* Jinv
 );

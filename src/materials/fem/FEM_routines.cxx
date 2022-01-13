@@ -257,9 +257,9 @@ double getJacobian
     const double* Bz,
     const int nnode, 
     const int intPointPtr,
-    const double* coor,
-    const bool twoD,
+    const double* coor,   
     const double weight,
+    const bool twoD,
     double* J, 
     double* Jinv
 )
@@ -304,9 +304,10 @@ double getJacobian
         returnCode = MATRICES::Invert3by3Matrix(J, detJ, Jinv);
         //detJ *= weightsx*weightsy*weightsz;
     }
+    
     TEUCHOS_TEST_FOR_EXCEPT_MSG(returnCode>0, "**** Jacobi Matrix is not invertable.\n");
   
-
+    
     return detJ*weight;
 }
 void setElementMatrices
@@ -325,31 +326,30 @@ void setElementMatrices
     double* Bz
 )
 {
-  int count = 0;
-  if (twoD){
+    int count = 0;
+    if (twoD){
 
-    for(int j=0;j<order[1]+1;j++){
-        for(int i=0;i<order[0]+1;i++){
-            Bx[offset + count] = Bxi[i]*Neta[j];
-            By[offset + count] = Nxi[i]*Beta[j];
-            count++;
-        }
-    }
-  }
-  else
-  {
-    for(int k=0;k<order[2]+1;k++){
         for(int j=0;j<order[1]+1;j++){
             for(int i=0;i<order[0]+1;i++){
-                Bx[offset + count] = Bxi[i]*Neta[j]*Npsi[k];
-                By[offset + count] = Nxi[i]*Beta[j]*Npsi[k];
-                Bz[offset + count] = Nxi[i]*Neta[j]*Bpsi[k];
+                Bx[offset + count] = Bxi[i]*Neta[j];
+                By[offset + count] = Nxi[i]*Beta[j];
                 count++;
-
             }
         }
     }
-  }
+else
+    {
+        for(int k=0;k<order[2]+1;k++){
+            for(int j=0;j<order[1]+1;j++){
+                for(int i=0;i<order[0]+1;i++){
+                    Bx[offset + count] = Bxi[i]*Neta[j]*Npsi[k];
+                    By[offset + count] = Nxi[i]*Beta[j]*Npsi[k];
+                    Bz[offset + count] = Nxi[i]*Neta[j]*Bpsi[k];
+                    count++;
+                }
+            }
+        }
+    }
 }
 
 void setWeights
@@ -367,6 +367,7 @@ void setWeights
         for(int j=0;j<numIntDir[1];j++){
             for(int i=0;i<numIntDir[0];i++){
                weights[count] = weightsx[i]*weightsy[j];
+              
                count++;
             }
         }
