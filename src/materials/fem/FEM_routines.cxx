@@ -223,31 +223,28 @@ const double* By,
 const double* Bz,
 const int intPointPtr,
 const int nnode,
+const int topoPtr, 
+const int* topology,
 const double detJ,
 const double* Jinv, 
 const bool twoD,
 const double* sigmaInt, 
-double* elNodalForces
+double* forces
 )
 {   
     double BxiTemp = 0.0, BetaTemp = 0.0, BpsiTemp = 0.0;
- 
+    int globalID;
     for(int nID=0 ; nID<nnode ; ++nID){ 
         BxiTemp  = Bx[intPointPtr + nID];
         BetaTemp = By[intPointPtr + nID];
         if (twoD==false)  {
-            BpsiTemp = Bz[intPointPtr + 3*nID];
+            BpsiTemp = Bz[intPointPtr + nID];
         }
         // determined by python sympy
-        // Bxi_i*J00*s11  + s12*(Beta_i*J00 + Bxi_i*J01) + s23*(Bpsi_i*J00 + Bxi_i*J02)
-        // Beta_i*J11*s22 + s12*(Beta_i*J10 + Bxi_i*J11) + s13*(Beta_i*J12 + Bpsi_i*J11)
-        // Bpsi_i*J22*s33 + s13*(Beta_i*J22 + Bpsi_i*J21) + s23*(Bpsi_i*J20 + Bxi_i*J22)
-        elNodalForces[3*nID]   += (*(Jinv)   * *(sigmaInt)*  BxiTemp  + *(sigmaInt+1)*(*(Jinv)*BetaTemp   + *(Jinv+1)*BxiTemp)  + *(sigmaInt+5)*(*(Jinv)*BpsiTemp   + *(Jinv+2)*BxiTemp) )*detJ;
-        elNodalForces[3*nID+1] += (*(Jinv+4) * *(sigmaInt+4)*BetaTemp + *(sigmaInt+1)*(*(Jinv+3)*BetaTemp + *(Jinv+4)*BxiTemp)  + *(sigmaInt+2)*(*(Jinv+4)*BpsiTemp + *(Jinv+5)*BetaTemp))*detJ;
-        elNodalForces[3*nID+2] += (*(Jinv+8) * *(sigmaInt+8)*BpsiTemp + *(sigmaInt+2)*(*(Jinv+7)*BpsiTemp + *(Jinv+8)*BetaTemp) + *(sigmaInt+5)*(*(Jinv+6)*BpsiTemp + *(Jinv+8)*BxiTemp) )*detJ;
-    
-
-    }
+        globalID = topology[topoPtr+nID];
+        forces[3*globalID]  +=( *(sigmaInt)  *(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) + *(sigmaInt+1)*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp) + *(sigmaInt+2)*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp) )*detJ;
+        forces[3*globalID+1]+=( *(sigmaInt+1)*(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) + *(sigmaInt+4)*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp) + *(sigmaInt+5)*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp) )*detJ;
+        forces[3*globalID+2]+=( *(sigmaInt+2)*(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) + *(sigmaInt+5)*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp) + *(sigmaInt+8)*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp) )*detJ;    }
 }    
 
 double getJacobian
@@ -350,6 +347,7 @@ else
             }
         }
     }
+ 
 }
 
 void setWeights
@@ -394,13 +392,13 @@ void setGlobalForces
     double* force
 )
 {
-    int localId;
+    int globalId;
     
     for(int nID=0 ; nID<nnode ; ++nID){
-      localId = topology[topoPtr + nID];
-      force[3*localId]   += elNodalForces[3*nID]  ;
-      force[3*localId+1] += elNodalForces[3*nID+1];
-      force[3*localId+2] += elNodalForces[3*nID+2];
+      globalId = topology[topoPtr + nID];
+      force[3*globalId]   += elNodalForces[3*nID]  ;
+      force[3*globalId+1] += elNodalForces[3*nID+1];
+      force[3*globalId+2] += elNodalForces[3*nID+2];
      }
 
 
@@ -460,12 +458,6 @@ double* strain
 )
 // zienkiewicz Basics EQ 6.11 with different Voigt notation
 // determined with python sympy
-//J00*(Bxi_i*u1_i)
-//J11*(Beta_i*u2_i)
-//J22*(Bpsi_i*u3_i)
-//u1_i*(Bpsi_i*J00 + Bxi_i*J02) + u3_i*(Bpsi_i*J20 + Bxi_i*J22)
-//u2_i*(Beta_i*J12 + Bpsi_i*J11) + u3_i*(Beta_i*J22 + Bpsi_i*J21)
-//u1_i*(Beta_i*J00 + Bxi_i*J01) + u2_i*(Beta_i*J10 + Bxi_i*J11)
 
 {
     double BxiTemp = 0.0, BetaTemp = 0.0, BpsiTemp = 0.0;
@@ -480,22 +472,21 @@ double* strain
             BpsiTemp = Bz[intPointPtr + nID];
  
         }
-        *(strain)   += *(Jinv)   * BxiTemp  * u[3*nID];
-        *(strain+4) += *(Jinv+4) * BetaTemp * u[3*nID+1];
-        *(strain+8) += *(Jinv+8) * BpsiTemp * u[3*nID+2];
-        //u1_i*(Beta_i*J00 + Bxi_i*J01) + u2_i*(Beta_i*J10 + Bxi_i*J11)
-        *(strain+1) += (*(Jinv) * BetaTemp + *(Jinv+1) * BxiTemp)  * u[3*nID] + (*(Jinv+3) * BetaTemp + *(Jinv+4) * BxiTemp) * u[3*nID+1];
-        //u2_i*(Beta_i*J12 + Bpsi_i*J11) + u3_i*(Beta_i*J22 + Bpsi_i*J21)
-        *(strain+2) += (*(Jinv+5) * BetaTemp + *(Jinv+4) * BpsiTemp) * u[3*nID+1] + (*(Jinv+7) * BpsiTemp + *(Jinv+8) * BetaTemp)* u[3*nID+2];
-        //u1_i*(Bpsi_i*J00 + Bxi_i*J02) + u3_i*(Bpsi_i*J20 + Bxi_i*J22)
-        *(strain+5) += (*(Jinv) * BpsiTemp + *(Jinv+2) * BxiTemp)  * u[3*nID] + (*(Jinv+6) * BxiTemp  + *(Jinv+8) * BxiTemp) * u[3*nID+2];
-    }
-    // 0 1 2
+    *(strain)   +=  u[3*nID]*(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) ;
+    *(strain+4) +=  u[3*nID+1]*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp) ;
+    *(strain+8) +=  u[3*nID+2]*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp) ;
+    *(strain+5) +=  0.5*(u[3*nID+1]*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp) + u[3*nID+2]*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp)) ;
+    *(strain+2) +=  0.5*(u[3*nID+2]*(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) + u[3*nID]*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp)) ;
+    *(strain+1) +=  0.5*(u[3*nID+1]*(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) + u[3*nID]*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp)) ;       // 0 1 2
     // 3 4 5
     // 6 7 8
     *(strain+3) = *(strain+1);
     *(strain+6) = *(strain+2);
     *(strain+7) = *(strain+5);
+    std::cout<<u[3*nID] <<" "<< u[3*nID+1]<< " "<< u[3*nID+2] << " " <<*(Jinv+4)<<std::endl;
+
+}
+
 }
 int getNnode
 (
@@ -520,8 +511,8 @@ void getDisplacements
     const double* modelCoord = modelCoordinates;
     const double* coorNP1 = coordinatesNP1;
     double* disp = displacements;
-    for(int i=0 ; i<numOwnedPoints ; ++i){
-        *(disp+i) = *(coorNP1+i)-*(modelCoord+i);
+    for(int i=0 ; i<3*numOwnedPoints ; ++i){
+        *(disp+i) = *(coorNP1+i)-*(modelCoord+i);    
     }
 }
 

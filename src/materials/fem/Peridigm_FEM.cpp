@@ -91,7 +91,7 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
   if (params.isParameter("Integration Points in X")) numIntDir[0] = params.get<int>("Integration Points in X");
   if (params.isParameter("Integration Points in Y")) numIntDir[1] = params.get<int>("Integration Points in Y");
   if (params.isParameter("Integration Points in Z")) numIntDir[2] = params.get<int>("Integration Points in Z");
- 
+
   TEUCHOS_TEST_FOR_EXCEPT_MSG(numIntDir[0]<1, "**** Error:  Number of integration points in x direction must be greater zero.\n");
   TEUCHOS_TEST_FOR_EXCEPT_MSG(numIntDir[1]<1, "**** Error:  Number of integration points in y direction must be greater zero.\n");
   TEUCHOS_TEST_FOR_EXCEPT_MSG(numIntDir[2]<1, "**** Error:  Number of integration points in z direction must be greater zero.\n");
@@ -192,8 +192,9 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
     for (int jID=0 ; jID<numIntDir[1] ; ++jID){
       FEM::getLagrangeElementData(order[1],elCoory[jID],Neta,Beta);
       for (int iID=0 ; iID<numIntDir[0] ; ++iID){
-        FEM::getLagrangeElementData(order[0],elCoorx[jID],Nxi,Bxi);
+        FEM::getLagrangeElementData(order[0],elCoorx[iID],Nxi,Bxi);
         FEM::setElementMatrices(twoD, intPointPtr, order, Nxi, Neta, Npsi, Bxi, Beta, Bpsi, Bx, By, Bz);
+        
         intPointPtr += nnode;
       }
     }
@@ -205,7 +206,7 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
       for (int jID=0 ; jID<numIntDir[1] ; ++jID){
         FEM::getLagrangeElementData(order[1],elCoory[jID],Neta,Beta);
         for (int iID=0 ; iID<numIntDir[0] ; ++iID){
-          FEM::getLagrangeElementData(order[0],elCoorx[jID],Nxi,Bxi);
+          FEM::getLagrangeElementData(order[0],elCoorx[iID],Nxi,Bxi);
           FEM::setElementMatrices(twoD, intPointPtr, order, Nxi, Neta, Npsi, Bxi, Beta, Bpsi, Bx, By, Bz);
           intPointPtr += nnode;
         }
@@ -265,8 +266,8 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     double* dispNodal = &dispNodalVector[0];
     std::vector<double> elNodalCoorVector(ndof);
     double* elNodalCoor = &elNodalCoorVector[0];
-    std::vector<double> elNodalForceVector(ndof);
-    double* elNodalForces = &elNodalForceVector[0];
+    //std::vector<double> elNodalForceVector(ndof);
+    //double* elNodalForces = &elNodalForceVector[0];
     
     double* weight = &weightVector[0];
     int topoPtr = 0;
@@ -275,7 +276,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     std::vector<double> JinvMat(9);
     double* Jinv = &JinvMat[0];
     double detJ = 0.0;
-    int localId, numElemNodes;
+    int globalId, numElemNodes;
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     // irgendwie in die init?
     // das wäre der Austausch für verschiedene Elementtypen
@@ -302,27 +303,30 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
       topology[14] = 7;
     }
 
-
+    //FEM::getDisplacements(nnode,modelCoordinates, deformedCoor,dispNodal);
+    
     for(int iID=0 ; iID<numElements ; ++iID){
       // for averaging the element number to which the node is connected has to be known
 
       numElemNodes = topology[topoPtr];
       topoPtr++;
       angles[0] = 0.0;angles[1] = 0.0;angles[2] = 0.0;
-      FEM::getDisplacements(nnode,modelCoordinates, deformedCoor,dispNodal);
+      
       for(int n=0 ; n<numElemNodes ; ++n){
-        localId = topology[topoPtr + n];
-        elNodalCoor[3*n]   = nodalCoor[3*localId];
-        elNodalCoor[3*n+1] = nodalCoor[3*localId+1];
-        elNodalCoor[3*n+2] = nodalCoor[3*localId+2];
-        elNodalForces[3*n]   = 0.0;
-        elNodalForces[3*n+1] = 0.0;
-        elNodalForces[3*n+2] = 0.0;
-
-        sigmaNP1[9*localId  ] = 0.0;sigmaNP1[9*localId+1] = 0.0; sigmaNP1[9*localId+2] = 0.0;
-        sigmaNP1[9*localId+3] = 0.0;sigmaNP1[9*localId+4] = 0.0; sigmaNP1[9*localId+5] = 0.0;
-        sigmaNP1[9*localId+6] = 0.0;sigmaNP1[9*localId+7] = 0.0; sigmaNP1[9*localId+8] = 0.0;
-        angles[0] += nodeAngles[3*localId]/numElemNodes;angles[1] += nodeAngles[3*localId+1]/numElemNodes;angles[2] += nodeAngles[3*localId+2]/numElemNodes;
+        globalId = topology[topoPtr + n];
+        elNodalCoor[3*n]   = nodalCoor[3*globalId];
+        elNodalCoor[3*n+1] = nodalCoor[3*globalId+1];
+        elNodalCoor[3*n+2] = nodalCoor[3*globalId+2];
+        //elNodalForces[3*n]   = 0.0;
+        //elNodalForces[3*n+1] = 0.0;
+        //elNodalForces[3*n+2] = 0.0;
+        dispNodal[3*n]   = deformedCoor[3*globalId]   - elNodalCoor[3*n]  ;  
+        dispNodal[3*n+1] = deformedCoor[3*globalId+1] - elNodalCoor[3*n+1];
+        dispNodal[3*n+2] = deformedCoor[3*globalId+2] - elNodalCoor[3*n+2];
+        sigmaNP1[9*globalId  ] = 0.0;sigmaNP1[9*globalId+1] = 0.0; sigmaNP1[9*globalId+2] = 0.0;
+        sigmaNP1[9*globalId+3] = 0.0;sigmaNP1[9*globalId+4] = 0.0; sigmaNP1[9*globalId+5] = 0.0;
+        sigmaNP1[9*globalId+6] = 0.0;sigmaNP1[9*globalId+7] = 0.0; sigmaNP1[9*globalId+8] = 0.0;
+        angles[0] += nodeAngles[3*globalId]/numElemNodes;angles[1] += nodeAngles[3*globalId+1]/numElemNodes;angles[2] += nodeAngles[3*globalId+2]/numElemNodes;
       }
       
       for (int jID=0 ; jID<numInt ; ++jID){
@@ -345,13 +349,13 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         if (rotation){  
           MATRICES::tensorRotation(angles,sigmaInt,false,sigmaInt);
         }
-        FEM::getNodalForce(Bx, By, Bz, intPointPtr, nnode, detJ, Jinv, twoD, sigmaInt, elNodalForces);
+        FEM::getNodalForce(Bx, By, Bz, intPointPtr, numElemNodes, topoPtr, topology, abs(detJ), Jinv, twoD, sigmaInt, force);
         // has to be done for each integration point
         // it adds up the different parts of each integration point resulting element force
         
 
       }
-      FEM::setGlobalForces(numElemNodes, topoPtr, topology, elNodalForces, force);  
+      //FEM::setGlobalForces(numElemNodes, topoPtr, topology, elNodalForces, force);  
         //topology -= numNeigh;
               // avarage stresses
               // sigmaNP1 /= numInt;

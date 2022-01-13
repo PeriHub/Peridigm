@@ -120,11 +120,13 @@ const double* By,
 const double* Bz,
 const int intPointPtr,
 const int nnode,
+const int topoPtr, 
+const int* topology,
 const double detJ,
 const double* Jinv, 
 const bool twoD,
 const double* sigmaInt, 
-double* elNodalForces
+double* forces
 );
 
 void tensorRotation
