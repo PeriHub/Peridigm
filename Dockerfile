@@ -1,4 +1,4 @@
-FROM registry.gitlab-test.dlr.de/hess_ja/images/trilinos  
+FROM harbor.fa-services.intra.dlr.de/hess_ja/trilinos
 MAINTAINER Jan-Timo Hesse <jan-timo.hesse@dlr.de>
 
 ENV HOME /root
