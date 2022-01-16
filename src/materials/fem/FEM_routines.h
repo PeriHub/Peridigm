@@ -126,6 +126,7 @@ const double detJ,
 const double* Jinv, 
 const bool twoD,
 const double* sigmaInt, 
+const double* volume,
 double* forces
 );
 

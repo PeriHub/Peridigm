@@ -229,11 +229,12 @@ const double detJ,
 const double* Jinv, 
 const bool twoD,
 const double* sigmaInt, 
+const double* volume, //needed for PD solver
 double* forces
 )
 {   
     double BxiTemp = 0.0, BetaTemp = 0.0, BpsiTemp = 0.0;
-    int globalID;
+    int globalId;
     for(int nID=0 ; nID<nnode ; ++nID){ 
         BxiTemp  = Bx[intPointPtr + nID];
         BetaTemp = By[intPointPtr + nID];
@@ -241,10 +242,14 @@ double* forces
             BpsiTemp = Bz[intPointPtr + nID];
         }
         // determined by python sympy
-        globalID = topology[topoPtr+nID];
-        forces[3*globalID]  +=( *(sigmaInt)  *(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) + *(sigmaInt+1)*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp) + *(sigmaInt+2)*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp) )*detJ;
-        forces[3*globalID+1]+=( *(sigmaInt+1)*(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) + *(sigmaInt+4)*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp) + *(sigmaInt+5)*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp) )*detJ;
-        forces[3*globalID+2]+=( *(sigmaInt+2)*(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) + *(sigmaInt+5)*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp) + *(sigmaInt+8)*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp) )*detJ;    }
+        globalId = topology[topoPtr+nID];
+        
+        forces[3*globalId]  -=( *(sigmaInt)  *(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) + *(sigmaInt+1)*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp) + *(sigmaInt+2)*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp) )*detJ*volume[globalId];
+        forces[3*globalId+1]-=( *(sigmaInt+1)*(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) + *(sigmaInt+4)*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp) + *(sigmaInt+5)*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp) )*detJ*volume[globalId];
+        forces[3*globalId+2]-=( *(sigmaInt+2)*(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) + *(sigmaInt+5)*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp) + *(sigmaInt+8)*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp) )*detJ*volume[globalId];   
+        
+    }
+      
 }    
 
 double getJacobian
@@ -483,7 +488,7 @@ double* strain
     *(strain+3) = *(strain+1);
     *(strain+6) = *(strain+2);
     *(strain+7) = *(strain+5);
-    std::cout<<u[3*nID] <<" "<< u[3*nID+1]<< " "<< u[3*nID+2] << " " <<*(Jinv+4)<<std::endl;
+
 
 }
 

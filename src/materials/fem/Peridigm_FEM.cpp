@@ -124,6 +124,7 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
  
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
+  m_volumeFieldId                     = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume");
   m_modelCoordinatesFieldId           = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::CONSTANT, "Model_Coordinates");
   m_modelAnglesId                     = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::CONSTANT, "Local_Angles");
   m_coordinatesFieldId                = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Coordinates");
@@ -235,6 +236,8 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&deformedCoor);
    // dataManager.getData(m_displacementFieldId, PeridigmField::STEP_NP1)->ExtractView(&displacements);
     dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&globalForce);
+    double *volume;
+    dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&volume);
     bool rotation = false;
     const double* nodalCoor = modelCoordinates;
    // double* disp = displacements;
@@ -321,6 +324,8 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         //elNodalForces[3*n+1] = 0.0;
         //elNodalForces[3*n+2] = 0.0;
         dispNodal[3*n]   = deformedCoor[3*globalId]   - elNodalCoor[3*n]  ;  
+    
+        
         dispNodal[3*n+1] = deformedCoor[3*globalId+1] - elNodalCoor[3*n+1];
         dispNodal[3*n+2] = deformedCoor[3*globalId+2] - elNodalCoor[3*n+2];
         sigmaNP1[9*globalId  ] = 0.0;sigmaNP1[9*globalId+1] = 0.0; sigmaNP1[9*globalId+2] = 0.0;
@@ -349,7 +354,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         if (rotation){  
           MATRICES::tensorRotation(angles,sigmaInt,false,sigmaInt);
         }
-        FEM::getNodalForce(Bx, By, Bz, intPointPtr, numElemNodes, topoPtr, topology, abs(detJ), Jinv, twoD, sigmaInt, force);
+        FEM::getNodalForce(Bx, By, Bz, intPointPtr, numElemNodes, topoPtr, topology, detJ, Jinv, twoD, sigmaInt, volume, force);
         // has to be done for each integration point
         // it adds up the different parts of each integration point resulting element force
         

@@ -100,6 +100,37 @@ TEUCHOS_UNIT_TEST(FEM, weightsAndIntegrationPoints) {
     } 
 
 }
+
+TEUCHOS_UNIT_TEST(FEM, setElementMatrices) {
+    double tolerance = 1e-14;
+    std::vector<int> orderVector(3);
+    int* order = &orderVector[0];
+    order[0] = 1;order[1] = 1;order[2] = 1;
+    std::vector<double> AVector(4);
+    double* A = &AVector[0];
+    A[0] = 1;A[1] = 1;A[2] = 1; A[3] = -1.2;
+    std::vector<double> BVector(4);
+    double* B = &BVector[0];
+    B[0] = 1;B[1] = 1;B[2] = 1;B[3] = 5;
+    std::vector<double> CVector(4);
+    double* C = &CVector[0];
+    C[0] = 1;C[1] = 1;C[2] = 1;C[3] = 5;
+    std::vector<double> BxTestVector(8), ByTestVector(8), BzTestVector(8);
+    double* BxTest = &BxTestVector[0];
+    double* ByTest = &ByTestVector[0];
+    double* BzTest = &BzTestVector[0];
+
+    bool twoD = true;
+    //to be filled;
+    double Bx[8] ={1,1,1,1,1,1,0,0}, By[8] ={0,0,0,0,0,0,0,0}, Bz[8] ={0,0,0,0,0,0,0,0};
+    for (int iID=0 ; iID<2 ; ++iID){
+        FEM::setElementMatrices(twoD, 4*iID, order, A, B, C, B, C, A, BxTest, BzTest, BzTest);
+    }
+      for (int n=0; n<8; n++){
+          TEST_FLOATING_EQUALITY(BxTest[n],Bx[n],tolerance);
+    }
+    twoD = false;
+}
 TEUCHOS_UNIT_TEST(FEM, shapeFunctionsLagrange) {
         const double tolerance = 1.0e-15;
         std::vector<double> NmatrixTestVector(8);
