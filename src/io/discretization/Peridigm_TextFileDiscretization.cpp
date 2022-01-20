@@ -314,14 +314,22 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   memcpy(decomp.cellVolume.get(), &volumes[0], numElements*sizeof(double)); 
   memcpy(decomp.myX.get(), &coordinates[0], 3*numElements*sizeof(double));
   memcpy(decomp.myAngle.get(), &angles[0], 3*numElements*sizeof(double));
-  
+
+  if (elementTopo.size()>1){
+    QUICKGRID::Data decompFE = QUICKGRID::allocateFEMGridData(numElements, dimension);
+    decompFE.globalNumElements = numOfFiniteElements;
+    //check if needed
+    decompFE.globalNumPoints = numGlobalElements;
+
+    memcpy(decompFE.myGlobalIDs.get(), &globalIds[0], numElements*sizeof(int)); 
+    memcpy(decompFE.cellVolume.get(), &volumes[0], numElements*sizeof(double)); 
+    memcpy(decompFE.myX.get(), &coordinates[0], 3*numElements*sizeof(double));
+    memcpy(decompFE.myAngle.get(), &angles[0], 3*numElements*sizeof(double));
+
+  }
   // Create list of global elements ids
   // if no elements exist, the list length is zero
-  
-  if (numOfFiniteElements<1){
-    numOfFiniteElements=1; 
-    lenDecompElementNodes = 1;
-  }
+
   //vector<int> globalElementIds(numOfFiniteElements);
   //for(unsigned int i=0 ; i<globalElementIds.size() ; ++i)
   //    globalElementIds[i] = i;
