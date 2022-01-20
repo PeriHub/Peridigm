@@ -358,8 +358,8 @@ const int type
     *(sigmaNP1+3)= *(sigmaNP1+1) ;
     *(sigmaNP1+4)= (*(strain+1)+*(strain+3))*C[1][5] + C[1][0]**(strain) + C[1][1]**(strain+4)  ;
     *(sigmaNP1+5)= 0.0 ;
-    *(sigmaNP1+6)= *(sigmaNP1+2) ;
-    *(sigmaNP1+7)= *(sigmaNP1+5) ;
+    *(sigmaNP1+6)= 0.0 ;
+    *(sigmaNP1+7)= 0.0 ;
     *(sigmaNP1+8)= 0.0 ;
 
   }  
