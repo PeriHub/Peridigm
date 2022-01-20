@@ -173,7 +173,6 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   vector<double> angles;
   vector<int> elementTopo;
   vector<int> elementBlockID;
-  vector<int> elementTypeID;
   int numOfFiniteElements = 0;
   int lenDecompElementNodes = 0;
   // Read the text file on the root processor
@@ -239,16 +238,22 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
               istream_iterator<int>(),
               back_inserter<vector<int> >(topo));
           
-          elementTopo.push_back(static_cast<int>(topo.size()-2));
-          lenDecompElementNodes += static_cast<int>(topo.size()-2) + 1;
-          elementBlockID.push_back(topo[0]);
-          /*
-          tbd if multiple element types could exist in one block
-          */
-          elementTypeID.push_back(topo[1]);
-          for (unsigned int n = 2; n<topo.size(); n++){
-            elementTopo.push_back(static_cast<int>(topo[n]));
-          } 
+          if (topo.size()==1){
+            // defines the block where the elements are in
+            elementBlockID.push_back(topo[0]);
+          }
+          else{
+            elementTopo.push_back(static_cast<int>(topo.size()));
+            lenDecompElementNodes += static_cast<int>(topo.size()) + 1;
+          
+            /*
+            tbd if multiple element types could exist in one block
+            */
+            
+            for (unsigned int n = 0; n<topo.size(); n++){
+              elementTopo.push_back(static_cast<int>(topo[n]));
+            } 
+          }
         }
       }
       inFile.close();
