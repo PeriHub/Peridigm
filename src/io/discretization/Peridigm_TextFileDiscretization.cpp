@@ -172,6 +172,8 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   vector<int> blockIds;
   vector<double> angles;
   vector<int> elementTopo;
+  vector<int> elementBlockID;
+  vector<int> elementTypeID;
   int numOfFiniteElements = 0;
   int lenDecompElementNodes = 0;
   // Read the text file on the root processor
@@ -237,20 +239,35 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
               istream_iterator<int>(),
               back_inserter<vector<int> >(topo));
           
-          elementTopo.push_back(static_cast<int>(topo.size()));
-          lenDecompElementNodes += static_cast<int>(topo.size()) + 1;
-          for (unsigned int n = 0; n<topo.size(); n++){
-            int GID = static_cast<int>(topo[n]);
-            // local point ID is stored to provide, because this is needed on the processors
-            elementTopo.push_back(oneDimensionalOverlapMap->LID(GID));
-            
+          elementTopo.push_back(static_cast<int>(topo.size()-2));
+          lenDecompElementNodes += static_cast<int>(topo.size()-2) + 1;
+          elementBlockID.push_back(topo[0]);
+          /*
+          tbd if multiple element types could exist in one block
+          */
+          elementTypeID.push_back(topo[1]);
+          for (unsigned int n = 2; n<topo.size(); n++){
+            elementTopo.push_back(static_cast<int>(topo[n]));
           } 
         }
       }
       inFile.close();
     }
   }
+  /*
+    - um über nachbarschaft zu gehen / in der Logik von Peridigm
+    - P1 --> E1 --> P2, P3, P4, P5
+         --> E2 --> P2, P3, P6, P7
+    --> Elemente werden mehrfach aufgebaut und das führt zu Problemen
+    Implementierung
+    -> wie bekomme ich eine verteilte Elementliste hin?
+    -> wie stelle ich die shared nodes sicher?
+    Idee: 
+      - zweite Nachbarschaftliste ohne vorherige Suche
+      - ID entspricht dann dem Element; der Rest ist faktisch gleich
+        
 
+  */
   int numElements = static_cast<int>(blockIds.size());
   TEUCHOS_TEST_FOR_EXCEPT_MSG(myPID == 0 && numElements < 1, "**** Error reading discretization text file, no data found.\n");
 
@@ -283,13 +300,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   vector<int> globalIds(numElements);
   for(unsigned int i=0 ; i<globalIds.size() ; ++i)
     globalIds[i] = i;
-  // Create list of global elements ids
-  // if no elements exist, the list length is zero
-  if (numOfFiniteElements>0){
-    vector<int> globalElementIds(numOfFiniteElements);
-    for(unsigned int i=0 ; i<globalElementIds.size() ; ++i)
-      globalElementIds[i] = i;
-    }
+  
   // Copy data into a decomp object
   int dimension = 3;
   QUICKGRID::Data decomp = QUICKGRID::allocatePdGridData(numElements, dimension);
@@ -298,9 +309,20 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   memcpy(decomp.cellVolume.get(), &volumes[0], numElements*sizeof(double)); 
   memcpy(decomp.myX.get(), &coordinates[0], 3*numElements*sizeof(double));
   memcpy(decomp.myAngle.get(), &angles[0], 3*numElements*sizeof(double));
-  if (lenDecompElementNodes > 0)
+  
+  // Create list of global elements ids
+  // if no elements exist, the list length is zero
+  
+  if (numOfFiniteElements<1){
+    numOfFiniteElements=1; 
     lenDecompElementNodes = 1;
-  memcpy(decomp.topology.get(), &elementTopo[0], lenDecompElementNodes*sizeof(int));
+  }
+  //vector<int> globalElementIds(numOfFiniteElements);
+  //for(unsigned int i=0 ; i<globalElementIds.size() ; ++i)
+  //    globalElementIds[i] = i;
+  //
+  //  memcpy(decomp.topology.get(), &elementTopo[0], lenDecompElementNodes*sizeof(int));
+    //memcpy(decomp.myGlobalElementIDs.get(), &globalElementIds[0], numOfFiniteElements*sizeof(int));
   
   //memcpy(decomp.elementNodal.get(), &elementTopo[0], static_cast<int>(elementTopo.size())*sizeof(int));
                                                           
@@ -317,7 +339,8 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   tempBlockID.ExtractView(&tempBlockIDPtr);
   for(unsigned int i=0 ; i<blockIds.size() ; ++i)
     tempBlockIDPtr[i] = blockIds[i];
-
+            // local point ID is stored to provide, because this is needed on the processors
+            //elementTopo.push_back(oneDimensionalOverlapMap->LID(GID));
   // call the rebalance function on the current-configuration decomp
   decomp = PDNEIGH::getLoadBalancedDiscretization(decomp);
 
@@ -384,10 +407,11 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
 
   // execute neighbor search and update the decomp to include resulting ghosts
   std::shared_ptr<const Epetra_Comm> commSp(comm.getRawPtr(), NonDeleter<const Epetra_Comm>());
+
   Teuchos::RCP<PDNEIGH::NeighborhoodList> list;
   if(bondFilters.size() == 0){
     list = Teuchos::rcp(new PDNEIGH::NeighborhoodList(commSp,decomp.zoltanPtr.get(),decomp.numPoints,decomp.myGlobalIDs,decomp.myX,rebalancedHorizonForEachPoint));
-  }
+  }// filter??
   else{
     list = Teuchos::rcp(new PDNEIGH::NeighborhoodList(commSp,decomp.zoltanPtr.get(),decomp.numPoints,decomp.myGlobalIDs,decomp.myX,rebalancedHorizonForEachPoint,bondFilters));
   }
@@ -442,6 +466,7 @@ PeridigmNS::TextFileDiscretization::createNeighborhoodData(const QUICKGRID::Data
 {
    neighborhoodData = Teuchos::rcp(new PeridigmNS::NeighborhoodData);
    neighborhoodData->SetNumOwned(decomp.numPoints);
+  // neighborhoodData->SetElementsOwned(decomp.numElements);
    memcpy(neighborhoodData->OwnedIDs(), 
  		 Discretization::getLocalOwnedIds(decomp, *oneDimensionalOverlapMap).get(),
  		 decomp.numPoints*sizeof(int));
@@ -496,6 +521,8 @@ PeridigmNS::TextFileDiscretization::filterBonds(Teuchos::RCP<PeridigmNS::Neighbo
   // Apply the block bonding matrix and create a new NeighborhoodData
   Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData = Teuchos::rcp(new PeridigmNS::NeighborhoodData);
   neighborhoodData->SetNumOwned(unfilteredNeighborhoodData->NumOwnedPoints());
+  //neighborhoodData->SetElementsOwned(unfilteredNeighborhoodData->NumOwnedElements());
+  
   memcpy(neighborhoodData->OwnedIDs(), unfilteredNeighborhoodData->OwnedIDs(), neighborhoodData->NumOwnedPoints()*sizeof(int));
   vector<int> neighborhoodListVec;
   neighborhoodListVec.reserve(unfilteredNeighborhoodData->NeighborhoodListSize());
