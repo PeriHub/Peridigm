@@ -185,9 +185,6 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
   // array in indices that point to neighborhood for a given localId
   Array<int> neighborhoodPtr(numCells);
 
-  // array in indices that point to topology for a given elementId
-  Array<int> topologyPtr(numCells);
-
   // Flag for marking points that get exported during load balance
   Array<char> exportFlag(numCells);
 
@@ -198,8 +195,7 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
   double *vPtr = V.get();
   int *gIdsPtr = globalIds.get();
   int *nPtr = neighborhoodPtr.get();
-  int *ePtr = topologyPtr.get();
-  char *exportFlagPtr = exportFlag.get();
+   char *exportFlagPtr = exportFlag.get();
   for(size_t p=0;p<numCells;p++){
 
     for(size_t d=0;d<dimension;d++){
@@ -208,7 +204,6 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
     vPtr[p]=0;
     gIdsPtr[p]=0;
     nPtr[p]=0;
-    ePtr[p]=0;
     exportFlagPtr[p]=0;
   }
 
@@ -232,6 +227,72 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
    * number of neighbors for every point is zero
    */
   *neighborhood = 0;
+ 
+  gridData.dimension = dimension;
+  gridData.globalNumPoints = 0;
+  gridData.numPoints = numCells;
+  gridData.sizeNeighborhoodList = sizeNeighborhoodList;
+  gridData.numExport=0;
+  gridData.myGlobalIDs = globalIds.get_shared_ptr();
+  gridData.myX = X.get_shared_ptr();
+  gridData.myAngle = Angles.get_shared_ptr();
+  gridData.cellVolume = V.get_shared_ptr();
+  gridData.neighborhood = neighborhoodList.get_shared_ptr();
+  gridData.neighborhoodPtr = neighborhoodPtr.get_shared_ptr();
+  gridData.exportFlag = exportFlag.get_shared_ptr();
+  gridData.unPack = true;
+
+  return gridData;
+}
+
+
+QuickGridData allocateFEMGridData(size_t numCells, size_t dimension){
+
+  // coordinates
+  Array<double> X(numCells*dimension);  
+  // angles
+  Array<double> Angles(numCells*dimension);
+  // volume
+  Array<double> V(numCells);
+
+  // Global ids for cells on this processor
+  Array<int> globalIds(numCells);
+
+  // array in indices that point to topology for a given elementId
+  Array<int> topologyPtr(numCells);
+
+  // Flag for marking points that get exported during load balance
+  Array<char> exportFlag(numCells);
+  /* 
+    cells and elements are not equal;
+    element number is lower than corresponded nodes, therefor for the initialisation it does not matter.
+  */
+
+  // Initialize all the above data to zero
+  double *xPtr = X.get();
+  double *anglesPtr = Angles.get();
+  double *vPtr = V.get();
+  int *gIdsPtr = globalIds.get();
+  int *ePtr = topologyPtr.get();
+  char *exportFlagPtr = exportFlag.get();
+  for(size_t p=0;p<numCells;p++){
+
+    for(size_t d=0;d<dimension;d++){
+      xPtr[p*dimension+d]=0;
+      anglesPtr[p*dimension+d]=0;}
+    vPtr[p]=0;
+    gIdsPtr[p]=0;
+    ePtr[p]=0;
+    exportFlagPtr[p]=0;
+  }
+
+  /*
+   * Neighborhood data is consistent but essentially empty.
+   * Points, Ids, volume are allocated but need to be filled with
+   * correct values
+   */
+  QuickGridData gridData;
+
   /*
    * Initialize finite element nodes list to a consistent state
    * 1) Set sizeElementNodesList=1
@@ -246,21 +307,14 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
    */
   *topology = 0;
 
-
-
-
   gridData.dimension = dimension;
   gridData.globalNumPoints = 0;
   gridData.numPoints = numCells;
-  gridData.sizeNeighborhoodList = sizeNeighborhoodList;
-  gridData.sizeTopologyList = sizeTopologyList;
   gridData.numExport=0;
   gridData.myGlobalIDs = globalIds.get_shared_ptr();
   gridData.myX = X.get_shared_ptr();
   gridData.myAngle = Angles.get_shared_ptr();
   gridData.cellVolume = V.get_shared_ptr();
-  gridData.neighborhood = neighborhoodList.get_shared_ptr();
-  gridData.neighborhoodPtr = neighborhoodPtr.get_shared_ptr();
   gridData.topology = topologyList.get_shared_ptr();
   gridData.topologyPtr = topologyPtr.get_shared_ptr();
   gridData.exportFlag = exportFlag.get_shared_ptr();
@@ -268,7 +322,6 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
 
   return gridData;
 }
-
 
 Array<double> getDiscretization(const Spec1D& spec){
   size_t numCells = spec.getNumCells();

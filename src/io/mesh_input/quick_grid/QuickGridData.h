@@ -57,6 +57,8 @@ typedef struct Data {
   int dimension;
   size_t globalNumPoints;
   size_t numPoints;
+  size_t globalNumElements;
+  size_t numElements;
   int sizeNeighborhoodList;
   int sizeTopologyList;
   int numExport;
@@ -68,11 +70,12 @@ typedef struct Data {
   std::shared_ptr<int> neighborhood;
   std::shared_ptr<int> neighborhoodPtr;
   std::shared_ptr<int> topology;
+  std::shared_ptr<int> myGlobalElementIDs;
   std::shared_ptr<int> topologyPtr;
   std::shared_ptr<char> exportFlag;
   std::shared_ptr<struct Zoltan_Struct> zoltanPtr;
-  Data() : dimension(-1), globalNumPoints(-1), numPoints(-1), sizeNeighborhoodList(-1), sizeTopologyList(-1), numExport(0) {}
-  Data(int d, int numPoints, int myNumPts) : dimension(d), globalNumPoints(numPoints), numPoints(myNumPts) {}
+  Data() : dimension(-1), globalNumPoints(-1), numPoints(-1), globalNumElements(-1), numElements(-1), sizeNeighborhoodList(-1), sizeTopologyList(-1), numExport(0) {}
+  Data(int d, int numPoints, int myNumPts, int numElements, int myNumEl) : dimension(d), globalNumPoints(numPoints), numPoints(myNumPts), globalNumElements(numElements), numElements(myNumEl) {}
 } QuickGridData;
 
 typedef struct {
@@ -81,23 +84,25 @@ typedef struct {
    * numPoints = num_master + num_slave_on_processor_masters + num_slave_off_processor_masters
    */
   size_t numPoints;
-
+  
   /*
    * number of master points owned by this processor
    */
   size_t num_master;
-
+  size_t numElements; // for elements master does not exist
   /*
    * num_slave = num_slave_on_processor_masters + num_slave_off_processor_masters
    */
   size_t num_slave_on_processor_masters, num_slave_off_processor_masters;
-
+ 
   /*
    * GIDs that are owned; note that some of these are slaves whose master
    * is owned by another processor;
    * myGlobalIds.length=numPoints
    */
   std::shared_ptr<int> myGlobalIDs;
+
+  std::shared_ptr<int> myGlobalElementIDs;
   /*
    * On processor indices to masters.
    * Since we own some slaves who have masters on other processors, the
@@ -105,7 +110,7 @@ typedef struct {
    *    local_master_ids.length=num_master+num_slave_on_processor_masters
    */
   std::shared_ptr<int> local_master_ids;
-
+  std::shared_ptr<int> local_elements_ids;
   /*
    * Length of the following arrays: numPoints;
    *
@@ -117,7 +122,7 @@ typedef struct {
    *
    * myX: cell coordinates
      
-     * myAngle: Point Angles
+   * myAngle: Point Angles
    */
   std::shared_ptr<double> theta, cellVolume, myX, myAngle;
 } AxisSymmetricWedgeData;
