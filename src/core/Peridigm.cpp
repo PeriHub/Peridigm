@@ -1896,8 +1896,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
     // Check for NaNs in force evaluation
     // We'd like to know now because a NaN will likely cause a difficult-to-unravel crash downstream.
-    //for(int i=0 ; i<force->MyLength() ; ++i)
-    //  TEUCHOS_TEST_FOR_EXCEPT_MSG(!boost::math::isfinite((*force)[i]), "**** NaN returned by force evaluation.\n");
+    for(int i=0 ; i<force->MyLength() ; ++i)
+     TEUCHOS_TEST_FOR_EXCEPT_MSG(!std::isfinite((*force)[i]), "**** NaN returned by force evaluation.\n");
 
     // Check for NaNs in force evaluation
     // We'd like to know now because a NaN will likely cause a difficult-to-unravel crash downstream.
