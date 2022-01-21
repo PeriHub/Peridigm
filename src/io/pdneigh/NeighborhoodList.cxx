@@ -375,7 +375,7 @@ shared_ptr<Epetra_BlockMap> getOverlap(int ndf, int numShared, const int* shared
 }
 
 void NeighborhoodList::createAndAddNeighborhood(){
-
+// hier muss die Topolgieliste rein
   enum {COMM_CREATE=9,COMM_DO=10};
 
   // Find the maximum horizon and use this to create the frame set
@@ -775,81 +775,131 @@ void NeighborhoodList::buildNeighborhoodList(int numOverlapPoints,std::shared_pt
   delete searchTree;
 }
 
-//
-//void NeighborhoodList::buildTopologyList(int numOverlapPoints,std::shared_ptr<double> xOverlapPtr)
-//{
-//
-//  const double* xOverlap = xOverlapPtr.get();
-//
-//  size_t sizeList = 0;
-//  size_t max=0;
-//  
-//  /*
-//   * Second pass to populate neighborhood list
-//   */
-//  neighborhood_ptr = Array<int>(num_owned_points);
-//  neighborhood     = Array<int>(sizeList);
-//  Array<bool> markForExclusion(max);
-//
-//  {
-//    /*
-//     * Loop over owned points and determine number of points in horizon
-//     */
-//    int *ptr = neighborhood_ptr.get();
-//    int neighPtr = 0;
-//    int *list = neighborhood.get();
-//    int *elementList = elements.get();
-//  
-//    for(size_t p=0;p<num_elements;p++,ptr++){
-//      *ptr = neighPtr;
-//      std::vector<int> treeList[numNodes];
-//      /*
-//       * Note that list returned includes this point * but at start of list
-//       */
-//      
-//      numNodes = elementTopo;
-//      elementTopo++;
-//      for(int itopo=0;itopo<numNodes; numNodes++)
-//        treeList[itopo] = *(elementTopo+itopo);
-//        }
-//      
-//
-//      /*
-//       * Save address for number of neighbors; will assign later
-//       */
-//      int *numNeighPtr = list; list++;
-//      /*
-//       * Loop over flags and save neighbors as appropriate; also accumulate number of neighbors
-//       */
-//      size_t numNeigh=0;
-//      for(unsigned int n=0;n<treeList.size();n++){
-//
-//        int uid = treeList[n]; // global Uid
-//        *list = uid;
-//        list++;
-//        numNeigh++; // local Uid
-//      }
-//
-//      /*
-//       * Now save number of neighbors
-//       */
-//      *numElemNodesPtr = topo;
-//      /*
-//       * increment neighborhood pointer
-//       */
-//      elemNodesPtr += (topo+1);
-//      /*
-//      *numNeighPtr = numNeigh;
-//      /*
-//       * increment neighborhood pointer
-//       */
-//      neighPtr += (numNeigh+1);
-//      /*
-//       * Delete list
-//       */
-//    }
-//  }
-//  */
-//}
+void NeighborhoodList::buildTopologyList(int numOverlapPoints,std::shared_ptr<double> xOverlapPtr)
+{
+  /*
+   * Create KdTree
+   * There are two implemenations available:  JAM and Zoltan
+   */
+    //PeridigmNS::SearchTree* searchTree = new PeridigmNS::JAMSearchTree(numOverlapPoints, xOverlapPtr.get());
+    PeridigmNS::SearchTree* searchTree = new PeridigmNS::ZoltanSearchTree(numOverlapPoints, xOverlapPtr.get());
+
+  /*
+   * this is used by bond filters
+   */
+  const double* xOverlap = xOverlapPtr.get();
+
+  size_t sizeList = 0;
+  size_t max=0;
+  {
+    /*
+     * Loop over owned points and determine number of points in horizon
+     */
+    double *x = owned_x.get();
+    double *h;
+    horizons->ExtractView(&h);
+    const double *x_end = x+3*num_owned_points;
+    size_t localId=0;
+    for(;x!=x_end;x+=3, h+=1, localId++){
+
+      std::vector<int> treeList;
+      /*
+       * Note that list returned includes this point *
+       */
+      searchTree->FindPointsWithinRadius(x, *h, treeList);
+
+      if(0==treeList.size()){
+        /*
+         * Houston, we have a problem
+         */
+        std::stringstream sstr;
+        sstr << "\nERROR-->NeighborhoodList::buildNeighborhoodList(..)\n";
+        sstr << "\tKdTree search failed to find any points in its neighborhood including itself!\n\tThis is probably a problem.\n";
+        sstr << "\tLocal point id = " << localId << "\n"
+             << "\tSearch horizon = " << *h << "\n"
+             << "\tx,y,z = " << *(x) << ", " << *(x+1) << ", " << *(x+2) << std::endl;
+        std::string message=sstr.str();
+        throw std::runtime_error(message);
+      }
+
+      size_t ptListSize = treeList.size()+1;
+      sizeList += ptListSize;
+
+      /*
+       * Determine maximum possible number of neighbors over all points
+       */
+      {
+        size_t numIds = treeList.size();
+        if(numIds>max) max=numIds;
+      }
+    }
+  }
+  /*
+   * Second pass to populate neighborhood list
+   */
+  neighborhood_ptr = Array<int>(num_owned_points);
+  neighborhood     = Array<int>(sizeList);
+  Array<bool> markForExclusion(max);
+
+  {
+    /*
+     * Loop over owned points and determine number of points in horizon
+     */
+    int *ptr = neighborhood_ptr.get();
+    int neighPtr = 0;
+    int *list = neighborhood.get();
+
+    for(size_t p=0;p<num_owned_points;p++,ptr++){
+      *ptr = neighPtr;
+            std::vector<int> treeList;
+      /*
+       * Note that list returned includes this point * but at start of list
+       */
+      topology->GetTopoElements(p, treeList); //--> global vs. local element ID?
+                                              // topo[i].LID()
+
+      // sort(treeList.begin(), treeList.end());
+     
+      /*
+       * Determine number of neighbors from flags
+       * Save start of list so that number of neighbors can be assigned after it
+       * has been calculated; Then increment pointer to first neighbor
+       */
+
+      /*
+       * Save address for number of neighbors; will assign later
+       */
+      int *numNeighPtr = list; list++;
+      /*
+       * Loop over flags and save neighbors as appropriate; also accumulate number of neighbors
+       */
+      size_t numNeigh=0;
+      for(unsigned int n=0;n<treeList.size();n++){
+        int uid = treeList[n];
+        *list = uid;
+        list++;
+        numNeigh++;
+      }
+
+      /*
+       * Now save number of neighbors
+       */
+      *numNeighPtr = numNeigh;
+      /*
+       * increment neighborhood pointer
+       */
+      neighPtr += (numNeigh+1);
+      /*
+       * Delete list
+       */
+    }
+  }
+
+  // output some memory statistics from here:
+  PeridigmNS::Memstat * memstat = PeridigmNS::Memstat::Instance();
+  memstat->addStat("Zoltan Search Tree");
+
+  delete searchTree;
+}
 
 }
