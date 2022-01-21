@@ -519,7 +519,9 @@ int dsvd(double *a,
          double *w,
          double *v)
 {
-  int flag, i, its, j, jj, k, l, nm;
+  int flag, i, its, j, jj, k;
+  int l = 0;
+  int nm = 0;
   double c, f, h, s, x, y, z;
   double anorm = 0.0, g = 0.0, scale = 0.0;
   double *rv1;

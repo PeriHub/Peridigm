@@ -103,7 +103,6 @@ void updateElasticPerfectlyPlasticCauchyStress
   ScalarT sphericalStressN;
   ScalarT sphericalStressNP1;
   ScalarT tempScalar;
-  ScalarT yieldFunction;
   ScalarT reducedYieldStress;
 
   for(int iID=0 ; iID<numPoints ; ++iID, rateOfDef+=9, stressN+=9,modelCoord+=3,

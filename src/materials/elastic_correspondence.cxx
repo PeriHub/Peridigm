@@ -300,14 +300,19 @@ bool hencky
   ScalarT* sigmaNP1 = unrotatedCauchyStressNP1;
   ScalarT strain[3][3];
   ScalarT rotMat[3][3], rotMatT[3][3], temp[3][3];
-  //int defGradLogReturnCode(0);
+  int defGradLogReturnCode(0);
   bool rotation = false;
   for(int iID=0 ; iID<numPoints ; ++iID, 
         defGrad+=9, sigmaNP1+=9, angles+=3){
 
 
-          if (hencky){int defGradLogReturnCode = CORRESPONDENCE::computeLogStrain(defGrad,strain);}
+          if (hencky){defGradLogReturnCode = CORRESPONDENCE::computeLogStrain(defGrad,strain);}
           else       {CORRESPONDENCE::computeGreenLagrangeStrain(defGrad,strain);}
+          
+          std::string logStrainErrorMessage =
+            "**** Error:  CorrespondenceMaterialconst ::updateElasticCauchyStressAnisotropic() failed to compute LogStrain.\n";
+          TEUCHOS_TEST_FOR_TERMINATION(defGradLogReturnCode != 0, logStrainErrorMessage);
+
           //https://www.continuummechanics.org/stressxforms.html
           // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
           if (rotation){  

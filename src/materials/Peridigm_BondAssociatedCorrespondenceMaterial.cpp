@@ -528,7 +528,7 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::initialize(const double dt,
   double *modelCoordinates;
   double *gradientWeightX, *gradientWeightY, *gradientWeightZ;
   double *gradientWeightEvaluationFlag;
-  double *damage, *bondDamage;
+  double *bondDamage; //*damage, 
   double *influenceState;
   dataManager.getData(m_horizonFieldId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
   dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&volume);

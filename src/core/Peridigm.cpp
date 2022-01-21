@@ -3189,8 +3189,8 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
   bool solverFailedToConverge = false;
   bool adaptiveLoadStepping = false;
   bool switchToExplicit = false;
-  int maxSolverFailureInOneStep;
-  int maxTotalSolverFailure;
+  int maxSolverFailureInOneStep = 100;
+  int maxTotalSolverFailure = 1000;
   bool reduceAllSteps = false;
   bool adaptiveOutputFrequency = false;
   Teuchos::RCP< Teuchos::ParameterList > adaptiveQSparams;

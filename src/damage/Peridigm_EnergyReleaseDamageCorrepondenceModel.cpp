@@ -131,7 +131,7 @@ m_hourglassStiffId(-1) {
         if (params.isParameter("Block_87")) {block[7] = params.get<int>("Block_87");}
         
     }
-    m_bondDiffSt = 1e10;
+    m_bondDiffSt = 100000000;
     if (params.isParameter("Stable Bond Difference"))
         m_bondDiffSt  = params.get<int>("Stable Bond Difference");
   //************************************
@@ -467,9 +467,9 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                 }
                 
                 double avgHorizon = 0.5*(horizon[nodeId]+horizon[neighborID]);
-                if (bondEnergyNP1[bondIndex]<0){
-                    std::cout<<TPX<<" "<< labs(TPXN)<<" BE "<<bondEnergyNP1[bondIndex]<<" BD  "<< (1-bondDamageNP1[bondIndex])<<std::endl;
-                }
+                // if (bondEnergyNP1[bondIndex]<0){
+                //     std::cout<<TPX<<" "<< labs(TPXN)<<" BE "<<bondEnergyNP1[bondIndex]<<" BD  "<< (1-bondDamageNP1[bondIndex])<<std::endl;
+                // }
                 ////////////////////////////////////////////////////////////////
                 //--> to check, depth is not included yet. How to handle??
                 ////////////////////////////////////////////////////////////////

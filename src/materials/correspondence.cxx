@@ -190,6 +190,10 @@ double* detachedNodes
             inversionReturnCode = MATRICES::Invert3by3Matrix(defGrad, determinant, Finverse);
             }
 
+        std::string matrixInversionErrorMessage =
+          "**** Error:  Correspondence ::getLinearUnrotatedRateOfDeformation() failed to invert deformation gradient.\n";
+        TEUCHOS_TEST_FOR_TERMINATION(inversionReturnCode != 0, matrixInversionErrorMessage);
+
         // Compute the Eulerian velocity gradient L = Fdot * Finv
         MATRICES::MatrixMultiply(false, false, One, Fdot, Finverse, eulerianVelGrad);
 
@@ -2277,7 +2281,7 @@ void computeVelocityGradient
 
   std::vector<ScalarT> velStateVector(3) ; ScalarT* velState = &velStateVector[0];
 
-  double neighborVolume, omega, temp;
+  double neighborVolume; // temp, omega, 
 
   int neighborIndex, numNeighbors;
   const int *neighborListPtr = neighborhoodList; 
@@ -3822,7 +3826,7 @@ void computeDeformationGradient
   std::vector<ScalarT> dispStateVector(3) ; ScalarT* dispState = &dispStateVector[0];
   std::vector<ScalarT> velStateVector(3) ; ScalarT* velState = &velStateVector[0];
 
-  double neighborVolume, temp;
+  double neighborVolume;//, temp;
 
   int neighborIndex, numNeighbors;
   const int *neighborListPtr = neighborhoodList; 
@@ -3957,7 +3961,7 @@ int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor
   int inversionReturnCode(0);
 
   // placeholder for bond damage
-  double bondDamage = 0.0;
+  // double bondDamage = 0.0;
 
   for(int iID=0 ; iID<numPoints ; ++iID, defGradX+=3, defGradY+=3, defGradZ+=3, 
       defGradDotX+=3, defGradDotY+=3, defGradDotZ+=3, rotTensorN+=9, 

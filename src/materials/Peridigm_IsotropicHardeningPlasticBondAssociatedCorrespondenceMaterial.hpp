@@ -100,7 +100,6 @@ namespace PeridigmNS {
     int m_vonMisesStressFieldId;
     int m_equivalentPlasticStrainFieldId;
     int m_stressTriaxialityFieldId;
-    int m_flyingPointFlagFieldId;
     
     int m_bondLevelUnrotatedRateOfDeformationXXFieldId;
     int m_bondLevelUnrotatedRateOfDeformationXYFieldId;
@@ -123,6 +122,7 @@ namespace PeridigmNS {
     int m_bondLevelVonMisesStressFieldId;
     int m_bondLevelEquivalentPlasticStrainFieldId;
     int m_bondLevelStressTriaxialityFieldId;
+    int m_flyingPointFlagFieldId;
 
   };
 }

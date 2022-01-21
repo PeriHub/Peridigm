@@ -1398,7 +1398,7 @@ void radialReturnPowerlaw
   ScalarT vmStress_trial;
 
   ScalarT dilatationInc;
-  ScalarT sphericalStressN;
+  // ScalarT sphericalStressN;
   ScalarT sphericalStressNP1;
   ScalarT tempScalar;
   ScalarT yieldFunctionVal;
@@ -1559,7 +1559,7 @@ void radialReturnSaturationExponential
   ScalarT vmStress_trial;
 
   ScalarT dilatationInc;
-  ScalarT sphericalStressN;
+  // ScalarT sphericalStressN;
   ScalarT sphericalStressNP1;
   ScalarT tempScalar;
   ScalarT yieldFunctionVal;
