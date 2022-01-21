@@ -152,7 +152,7 @@ void updateElasticPerfectlyPlasticCauchyStress
         deviatoricStressMagnitudeNP1 = std::max(1.0e-20,sqrt(tempScalar));
         //For perfectly plastic deformations we just have a constant factor to 
         //multiply the trial deviatoric stress
-        tempScalar = sqrt(2.0/3.0)*yieldFunction/deviatoricStressMagnitudeNP1;
+        tempScalar = sqrt(2.0/3.0)*reducedYieldStress/deviatoricStressMagnitudeNP1;
 
         // Return the deviatoric stress to the yield surface
         for (int i = 0; i < 9; i++) {
