@@ -94,6 +94,7 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::ElasticPlasticCorrespondenceMa
     }
   if (m_planeStrain==true)m_type=1;
   if (m_planeStress==true)m_type=2;
+  m_isFlaw = false;
   if(params.isParameter("Enable Flaw")){
     m_isFlaw = params.get<bool>("Enable Flaw");
     m_flawLocationX = params.get<double>("Flaw Location X");
@@ -273,34 +274,62 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::computeCauchyStress(const doub
   double *defGrad, *angles;
   // have to be checked if the additional effort is useful or not
   // deactivated for tests with implicit solver
-  bool incremental = false;
-
 
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NP1)->ExtractView(&defGrad);
   dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
 
-  CORRESPONDENCE::updateElasticCauchyStressAnisotropic(defGrad, 
-                                            unrotatedCauchyStressN,
-                                            unrotatedCauchyStressNP1,
-                                            numOwnedPoints,
-                                            C,
-                                            angles,
-                                            m_type,
-                                            dt,
-                                            incremental,
-                                            m_hencky);
+  // CORRESPONDENCE::updateElasticCauchyStressAnisotropic(defGrad, 
+  //                                           unrotatedCauchyStressN,
+  //                                           unrotatedCauchyStressNP1,
+  //                                           numOwnedPoints,
+  //                                           C,
+  //                                           angles,
+  //                                           m_type,
+  //                                           dt,
+  //                                           incremental,
+  //                                           m_hencky);  
                                             
-  double *vonMisesStress, *equivalentPlasticStrainN, *equivalentPlasticStrainNP1;
+  double *vonMisesStress;
+  dataManager.getData(m_vonMisesStressFieldId, PeridigmField::STEP_NONE)->ExtractView(&vonMisesStress);
+
+  CORRESPONDENCE::updateElasticCauchyStress(unrotatedRateOfDeformation, 
+                                            unrotatedCauchyStressN, 
+                                            unrotatedCauchyStressNP1,
+                                            vonMisesStress,
+                                            numOwnedPoints,
+                                            m_bulkModulus,
+                                            m_shearModulus,
+                                            dt);
+                                            
+  double  *equivalentPlasticStrainN, *equivalentPlasticStrainNP1;
   dataManager.getData(m_vonMisesStressFieldId, PeridigmField::STEP_NONE)->ExtractView(&vonMisesStress);
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_NP1)->ExtractView(&equivalentPlasticStrainNP1);
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_N)->ExtractView(&equivalentPlasticStrainN);
   double *modelCoordinates;
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&modelCoordinates);
-  CORRESPONDENCE::updateElasticPerfectlyPlasticCauchyStress(modelCoordinates,
-                                                            unrotatedRateOfDeformation,
+  // CORRESPONDENCE::updateElasticPerfectlyPlasticCauchyStress(modelCoordinates,
+  //                                                           unrotatedRateOfDeformation,
+  //                                                           unrotatedCauchyStressN, 
+  //                                                           unrotatedCauchyStressNP1, 
+  //                                                           cauchyStressPlastic,
+  //                                                           vonMisesStress,
+  //                                                           equivalentPlasticStrainN, 
+  //                                                           equivalentPlasticStrainNP1, 
+  //                                                           numOwnedPoints, 
+  //                                                           m_bulkModulus, 
+  //                                                           m_shearModulus, 
+  //                                                           m_yieldStress, 
+  //                                                           m_isFlaw,
+  //                                                           m_flawLocationX,
+  //                                                           m_flawLocationY,
+  //                                                           m_flawLocationZ,
+  //                                                           m_flawSize,
+  //                                                           m_flawMagnitude,
+  //                                                           dt);
+
+  CORRESPONDENCE::updateElasticPerfectlyPlasticCauchyStress(unrotatedRateOfDeformation, 
                                                             unrotatedCauchyStressN, 
                                                             unrotatedCauchyStressNP1, 
-                                                            cauchyStressPlastic,
                                                             vonMisesStress,
                                                             equivalentPlasticStrainN, 
                                                             equivalentPlasticStrainNP1, 
@@ -308,11 +337,5 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::computeCauchyStress(const doub
                                                             m_bulkModulus, 
                                                             m_shearModulus, 
                                                             m_yieldStress, 
-                                                            m_isFlaw,
-                                                            m_flawLocationX,
-                                                            m_flawLocationY,
-                                                            m_flawLocationZ,
-                                                            m_flawSize,
-                                                            m_flawMagnitude,
                                                             dt);
 }

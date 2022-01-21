@@ -6,7 +6,7 @@ NODAL VARIABLES absolute 1.0E-12
 	DisplacementY             absolute 1.0E-9
 	DisplacementZ             absolute 1.0E-9
 	VelocityX                 absolute 1.0E-9
-	VelocityY                 absolute 1.0E-9
+	VelocityY                 absolute 1.0E-8
 	VelocityZ                 absolute 1.0E-9
 	ForceX                    absolute 1.0E-3
 	ForceY                    absolute 1.0E-3

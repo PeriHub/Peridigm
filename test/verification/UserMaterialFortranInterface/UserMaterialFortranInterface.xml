@@ -12,7 +12,11 @@
       <Parameter name="Young's Modulus" type="double" value="200.0e9"/>
       <Parameter name="Poisson's Ratio" type="double" value="0.3"/> 
       <Parameter name="Number of Properties" type="int" value="1"/> 
-      <Parameter name="Prop_1" type="double" value="10"/> 
+      <Parameter name="Prop_1" type="double" value="100e9"/> 
+      <Parameter name="Prop_2" type="double" value="10e6"/> 
+      <Parameter name="Prop_3" type="double" value="100e9"/> 
+      <Parameter name="Prop_4" type="double" value="10e6"/> 
+      <Parameter name="Prop_5" type="double" value="0.3"/> 
     </ParameterList>
   </ParameterList>
 
