@@ -132,12 +132,12 @@ PeridigmNS::DataLoader::DataLoader(const Teuchos::ParameterList& contactParams,
   // If there is an auxiliary map provided that has a different name, throw an
   // error because I don't know what to do with it.
   if(numNodeMaps > 0){
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(numNodeMaps > 1,
+    TEUCHOS_TEST_FOR_TERMINATION(numNodeMaps > 1,
                                 "**** Error in DataLoader(), genesis file contains invalid number of auxiliary node maps (>1).\n");
     char mapName[MAX_STR_LENGTH];
     retval = ex_get_name(exodusFileId, EX_NODE_MAP, 1, mapName);
     if (retval != 0) reportExodusError(retval, "DataLoader()", "ex_get_name");
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(std::string(mapName) != std::string("original_global_id_map"),
+    TEUCHOS_TEST_FOR_TERMINATION(std::string(mapName) != std::string("original_global_id_map"),
                                 "**** Error in DataLoader::DataLoader(), unknown exodus EX_NODE_MAP: " + std::string(mapName) + ".\n");
     std::vector<int> auxMap(numNodes);
     retval = ex_get_num_map(exodusFileId, EX_NODE_MAP, 1, &auxMap[0]);
@@ -152,7 +152,7 @@ PeridigmNS::DataLoader::DataLoader(const Teuchos::ParameterList& contactParams,
   for (int i=0 ; i<numNodes; ++i) {
     int epetraMapGlobalId = epetraMap->GID(i);
     int dataFileGlobalId = nodeIdMap[i];
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(epetraMapGlobalId != dataFileGlobalId, "**** Error in DataLoad(), node map in mesh file and node map in data file do not match! (Accidental misuse of SEACAS tools decomp/epu/algebra?)\n");
+    TEUCHOS_TEST_FOR_TERMINATION(epetraMapGlobalId != dataFileGlobalId, "**** Error in DataLoad(), node map in mesh file and node map in data file do not match! (Accidental misuse of SEACAS tools decomp/epu/algebra?)\n");
   }
 
   int numNodalVariables;
@@ -180,14 +180,14 @@ PeridigmNS::DataLoader::DataLoader(const Teuchos::ParameterList& contactParams,
       msg += "****   " + std::string(variableName);
     }
     msg += "\n";
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(exodusVariableIndex_ == -1, msg);
+    TEUCHOS_TEST_FOR_TERMINATION(exodusVariableIndex_ == -1, msg);
   }
 
   // Close the genesis file
   retval = ex_close(exodusFileId);
   if (retval != 0) reportExodusError(retval, "DataLoader()", "ex_close");
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(numNodes != vecLength,
+  TEUCHOS_TEST_FOR_TERMINATION(numNodes != vecLength,
                               "**** Error in DataLoader::DataLoader(), unexpected array length.\n");
 }
 
@@ -279,7 +279,7 @@ void PeridigmNS::DataLoader::waitForData()
   if(time_limit) {
     std::stringstream ss;
     ss << "**** Error in DataLoader::waitForData(), exceeded maximum wait time of " << max_pause_time << " seconds.\n";
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(time_limit, ss.str());
+    TEUCHOS_TEST_FOR_TERMINATION(time_limit, ss.str());
   }
 }
 
@@ -315,7 +315,7 @@ void PeridigmNS::DataLoader::loadDataFromFile()
     }
   }
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG((step_1 == -1 || step_2 == -1), "Error in DataLoader::loadDataFromFile(), requested time is outside the range of times in the data file.\n");
+  TEUCHOS_TEST_FOR_TERMINATION((step_1 == -1 || step_2 == -1), "Error in DataLoader::loadDataFromFile(), requested time is outside the range of times in the data file.\n");
 
   int objId = 0;
   retval = ex_get_var(exodusFileId, step_1, EX_NODAL, exodusVariableIndex_, objId, data_1_.size(), data_1_.data());

@@ -82,7 +82,7 @@ PeridigmNS::DamageModelFactory::create(const Teuchos::ParameterList& damageModel
     string invalidDamageModel("\n**** Unrecognized damage model type: ");
     invalidDamageModel += damageModelName;
     invalidDamageModel += ", must be \"Critical Stretch\", \"Time Dependent Critical Stretch\", \"Interface Aware\", \"Critical Energy\", \"Critical Energy Correspondence\", or \"Initial Damage\".\n";
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, invalidDamageModel);
+    TEUCHOS_TEST_FOR_TERMINATION(true, invalidDamageModel);
   }
 
   return damageModel;

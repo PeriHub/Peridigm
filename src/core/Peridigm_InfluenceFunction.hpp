@@ -112,7 +112,7 @@ public:
       p = &PeridigmInfluenceFunction::gaussian;
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** Error:  InfluenceFunction::getInfluenceFunction(string), invalid influence function\n");
+      TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error:  InfluenceFunction::getInfluenceFunction(string), invalid influence function\n");
     }
     return p;
   }
@@ -140,7 +140,7 @@ public:
       if(!success){
         std::string msg = "\n**** Error in InfluenceFunction::setInfluenceFunction().\n";
         msg += "**** " + rtcFunction.getErrors() + "\n";
-        TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
+        TEUCHOS_TEST_FOR_TERMINATION(!success, msg);
       }    
       m_influenceFunction = &userDefinedInfluenceFunction;
     }
@@ -148,7 +148,7 @@ public:
 
   //! Returns a function pointer to the influence function.
   functionPointer getInfluenceFunction() {
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(m_influenceFunction == NULL,
+    TEUCHOS_TEST_FOR_TERMINATION(m_influenceFunction == NULL,
                                 "**** Error:  InfluenceFunction::getInfluenceFunction() called prior to calling InfluenceFunction::setInfluenceFunction().\n")
     return m_influenceFunction;
   }

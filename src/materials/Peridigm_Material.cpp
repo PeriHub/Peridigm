@@ -99,7 +99,7 @@ void PeridigmNS::Material::computeFiniteDifferenceJacobian(const double dt,
   // Central difference:
   // dF_0x/dx_0 = ( F_0x(positive perturbed x_0) - F_0x(negative perturbed x_0) ) / ( 2.0*epsilon )
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(m_finiteDifferenceProbeLength == DBL_MAX, "**** Finite-difference Jacobian requires that the \"Finite Difference Probe Length\" parameter be set.\n");
+  TEUCHOS_TEST_FOR_TERMINATION(m_finiteDifferenceProbeLength == DBL_MAX, "**** Finite-difference Jacobian requires that the \"Finite Difference Probe Length\" parameter be set.\n");
   double epsilon = m_finiteDifferenceProbeLength;
 
   PeridigmNS::DegreesOfFreedomManager& dofManager = PeridigmNS::DegreesOfFreedomManager::self();
@@ -317,7 +317,7 @@ void PeridigmNS::Material::computeFiniteDifferenceJacobian(const double dt,
     // Check for NaNs
     for(unsigned int row=0 ; row<globalIndices.size() ; ++row){
       for(unsigned int col=0 ; col<globalIndices.size() ; ++col){
-        TEUCHOS_TEST_FOR_EXCEPT_MSG(!std::isfinite(scratchMatrix(row, col)), "**** NaN detected in finite-difference Jacobian.\n");
+        TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(scratchMatrix(row, col)), "**** NaN detected in finite-difference Jacobian.\n");
       }
     }
 
@@ -328,7 +328,7 @@ void PeridigmNS::Material::computeFiniteDifferenceJacobian(const double dt,
       jacobian.addBlockDiagonalValues((int)globalIndices.size(), &globalIndices[0], scratchMatrix.Data());
     }
     else // unknown jacobian type
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** Unknown Jacobian Type\n");
+      TEUCHOS_TEST_FOR_TERMINATION(true, "**** Unknown Jacobian Type\n");
   }
 }
 
@@ -360,7 +360,7 @@ double PeridigmNS::Material::calculateBulkModulus(const Teuchos::ParameterList &
     static_cast<int>(youngsModulusDefined) +
     static_cast<int>(poissonsRatioDefined);
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(numDefinedConstants != 2, "**** Error:  Exactly two elastic constants must be provided.  Allowable constants are \"Bulk Modulus\", \"Shear Modulus\", \"Young's Modulus\", \"Poisson's Ratio\".\n");
+  TEUCHOS_TEST_FOR_TERMINATION(numDefinedConstants != 2, "**** Error:  Exactly two elastic constants must be provided.  Allowable constants are \"Bulk Modulus\", \"Shear Modulus\", \"Young's Modulus\", \"Poisson's Ratio\".\n");
 
   if(bulkModulusDefined)
     computedValue = bulkModulus;
@@ -371,7 +371,7 @@ double PeridigmNS::Material::calculateBulkModulus(const Teuchos::ParameterList &
   else if(shearModulusDefined && poissonsRatioDefined)
     computedValue = (2.0*shearModulus*(1.0 + poissonsRatio)) / (3.0*(1.0 - 2.0*poissonsRatio));
   else
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** Error:  Exactly two elastic constants must be provided.  Allowable constants are \"Bulk Modulus\", \"Shear Modulus\", \"Young's Modulus\", \"Poisson's Ratio\".\n");
+    TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error:  Exactly two elastic constants must be provided.  Allowable constants are \"Bulk Modulus\", \"Shear Modulus\", \"Young's Modulus\", \"Poisson's Ratio\".\n");
 
   return computedValue;
 }
@@ -405,7 +405,7 @@ double PeridigmNS::Material::calculateShearModulus(const Teuchos::ParameterList 
     static_cast<int>(youngsModulusDefined) +
     static_cast<int>(poissonsRatioDefined);
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(numDefinedConstants != 2, "**** Error:  Exactly two elastic constants must be provided.  Allowable constants are \"Bulk Modulus\", \"Shear Modulus\", \"Young's Modulus\", \"Poisson's Ratio\".\n");
+  TEUCHOS_TEST_FOR_TERMINATION(numDefinedConstants != 2, "**** Error:  Exactly two elastic constants must be provided.  Allowable constants are \"Bulk Modulus\", \"Shear Modulus\", \"Young's Modulus\", \"Poisson's Ratio\".\n");
 
   if(shearModulusDefined)
     computedValue = shearModulus;
@@ -416,7 +416,7 @@ double PeridigmNS::Material::calculateShearModulus(const Teuchos::ParameterList 
   else if(youngsModulusDefined && poissonsRatioDefined)
     computedValue = youngsModulus / (2.0*(1.0 + poissonsRatio));
   else
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** Error:  Exactly two elastic constants must be provided.  Allowable constants are \"Bulk Modulus\", \"Shear Modulus\", \"Young's Modulus\", \"Poisson's Ratio\".\n");
+    TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error:  Exactly two elastic constants must be provided.  Allowable constants are \"Bulk Modulus\", \"Shear Modulus\", \"Young's Modulus\", \"Poisson's Ratio\".\n");
 
   return computedValue;
 }

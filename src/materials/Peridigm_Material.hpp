@@ -94,7 +94,7 @@ namespace PeridigmNS {
       std::string errorMsg = "**Error, Material::lookupMaterialProperty() called for ";
       errorMsg += Name();
       errorMsg += " but this function is not implemented.\n";
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(true, errorMsg);
+      TEUCHOS_TEST_FOR_TERMINATION(true, errorMsg);
       return 0.0;
     }
 

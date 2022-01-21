@@ -148,9 +148,9 @@ PeridigmNS::HypoelasticCorrespondenceMaterial::HypoelasticCorrespondenceMaterial
     m_accuracyOrder = params.get<int>("Gradient Order Of Accuracy");
   }
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticHypoelasticCorrespondence material model.\n");
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Apply Shear Correction Factor"), "**** Error:  Shear Correction Factor is not supported for the ElasticHypoelasticCorrespondence material model.\n");
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the ElasticHypoelasticCorrespondence material model.\n");
+  TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticHypoelasticCorrespondence material model.\n");
+  TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Apply Shear Correction Factor"), "**** Error:  Shear Correction Factor is not supported for the ElasticHypoelasticCorrespondence material model.\n");
+  TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the ElasticHypoelasticCorrespondence material model.\n");
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   m_horizonFieldId                    = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Horizon");
@@ -648,7 +648,7 @@ PeridigmNS::HypoelasticCorrespondenceMaterial::computeForce(const double dt,
     "**** Error:  HypoelasticCorrespondenceMaterial::computeForce() failed to compute rotation tensor.\n";
   nodeLevelRotationTensorErrorMessage +=
     "****         Note that all nodes must have a minimum of three neighbors.  Is the horizon too small?\n";
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(nodeLevelRotationTensorReturnCode != 0, nodeLevelRotationTensorErrorMessage);
+  TEUCHOS_TEST_FOR_TERMINATION(nodeLevelRotationTensorReturnCode != 0, nodeLevelRotationTensorErrorMessage);
 
   // Compute bond-level values
   int bondLevelRotationTensorReturnCode = CORRESPONDENCE::computeBondLevelUnrotatedRateOfDeformationAndRotationTensor(bondLevelVelocityGradientXX,
@@ -713,7 +713,7 @@ PeridigmNS::HypoelasticCorrespondenceMaterial::computeForce(const double dt,
     "**** Error:  HypoelasticCorrespondenceMaterial::computeForce() failed to compute rotation tensor.\n";
   bondLevelRotationTensorErrorMessage +=
     "****         Note that all nodes must have a minimum of three neighbors.  Is the horizon too small?\n";
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(bondLevelRotationTensorReturnCode != 0, bondLevelRotationTensorErrorMessage);
+  TEUCHOS_TEST_FOR_TERMINATION(bondLevelRotationTensorReturnCode != 0, bondLevelRotationTensorErrorMessage);
 
   // Evaluate the Cauchy stress using the routine implemented in the derived class (specific correspondence material model)
   // The general idea is to compute the stress based on:
@@ -1001,7 +1001,7 @@ void PeridigmNS::HypoelasticCorrespondenceMaterial::precompute(const double dt,
     "**** Error:  HypoelasticCorrespondenceMaterial::precompute() failed to compute gradient weights.\n";
   gradientWeightErrorMessage +=
     "****         Possible scenarios: 1) The horizon is too small, or 2) Too much damage around some points.\n";
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(gradientWeightReturnCode != 0, gradientWeightErrorMessage);
+  TEUCHOS_TEST_FOR_TERMINATION(gradientWeightReturnCode != 0, gradientWeightErrorMessage);
 
   CORRESPONDENCE::computeVelocityGradient(volume,
                                           jacobianDeterminantN,

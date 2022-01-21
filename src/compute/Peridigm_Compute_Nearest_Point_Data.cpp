@@ -80,7 +80,7 @@ PeridigmNS::Compute_Nearest_Point_Data::Compute_Nearest_Point_Data(Teuchos::RCP<
   else if(length == PeridigmField::VECTOR)
     m_variableLength = 3;
   else
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** Error:  Nearest_Point_Data compute class can be called only for SCALAR or VECTOR data.\n");
+    TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error:  Nearest_Point_Data compute class can be called only for SCALAR or VECTOR data.\n");
 
   if(m_variableLength == 1)
     m_outputFieldId = fieldManager.getFieldId(PeridigmField::GLOBAL, PeridigmField::SCALAR, PeridigmField::CONSTANT, m_outputLabel);

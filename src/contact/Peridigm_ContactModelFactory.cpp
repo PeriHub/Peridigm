@@ -66,7 +66,7 @@ PeridigmNS::ContactModelFactory::create(const Teuchos::ParameterList& contactMod
     string invalidContactModel("\n**** Unrecognized contact model: ");
     invalidContactModel += contactModelName;
     invalidContactModel += ", must be \"Short Range Force\" or \"Time Dependent Short Range Force\".\n";
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, invalidContactModel);
+    TEUCHOS_TEST_FOR_TERMINATION(true, invalidContactModel);
   }
   
   return contactModel;

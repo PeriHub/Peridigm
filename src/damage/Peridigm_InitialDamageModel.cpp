@@ -111,7 +111,7 @@ PeridigmNS::InitialDamageModel::initialize(const double dt,
     else{
       std::string msg = "\n**** Error, invalid bond filter type:  " + type;
       msg += "\n**** Allowable types are:  Rectangular_Plane, Exodus Mesh\n";
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(true, msg);
+      TEUCHOS_TEST_FOR_TERMINATION(true, msg);
     }
   }
 

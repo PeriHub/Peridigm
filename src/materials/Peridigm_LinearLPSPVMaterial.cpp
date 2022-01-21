@@ -116,14 +116,14 @@ PeridigmNS::LinearLPSPVMaterial::LinearLPSPVMaterial(const Teuchos::ParameterLis
   }
 
 #ifndef PERIDIGM_PV
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(m_usePartialVolume, "**** Error:  Partial volumes not available.  Recompile Peridigm with USE_PV:BOOL=ON\n");
+  TEUCHOS_TEST_FOR_TERMINATION(m_usePartialVolume, "**** Error:  Partial volumes not available.  Recompile Peridigm with USE_PV:BOOL=ON\n");
 #endif
 
 #ifndef PERIDIGM_IMPROVED_QUADRATURE
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(m_useImprovedQuadrature, "**** Error:  Improved quadrature not available.  Recompile Peridigm with USE_IMPROVED_QUADRATURE:BOOL=ON\n");
+  TEUCHOS_TEST_FOR_TERMINATION(m_useImprovedQuadrature, "**** Error:  Improved quadrature not available.  Recompile Peridigm with USE_IMPROVED_QUADRATURE:BOOL=ON\n");
 #endif
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(m_usePartialVolume && m_useImprovedQuadrature, "**** Error:  Partial volumes and improved quadrature may not be used together.\n");
+  TEUCHOS_TEST_FOR_TERMINATION(m_usePartialVolume && m_useImprovedQuadrature, "**** Error:  Partial volumes and improved quadrature may not be used together.\n");
 }
 
 PeridigmNS::LinearLPSPVMaterial::~LinearLPSPVMaterial()

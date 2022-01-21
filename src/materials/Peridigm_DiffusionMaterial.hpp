@@ -71,13 +71,13 @@ namespace PeridigmNS {
 
     //! Returns the bulk modulus of the material.
     virtual double BulkModulus() const {
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** Error:  Unexpected call to DiffusionMaterial::BulkModulus().\n");
+      TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error:  Unexpected call to DiffusionMaterial::BulkModulus().\n");
       return 0.0;
     }
 
     //! Returns the shear modulus of the material.
     virtual double ShearModulus() const {
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** Error:  Unexpected call to DiffusionMaterial::ShearModulus().\n");
+      TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error:  Unexpected call to DiffusionMaterial::ShearModulus().\n");
       return 0.0;
     }
 

@@ -394,7 +394,7 @@ PeridigmNS::ElasticMaterial::computeAutomaticDifferentiationJacobian(const doubl
     for(int row=0 ; row<numDof ; ++row){
       for(int col=0 ; col<numDof ; ++col){
 	value = force_AD[row].dx(col) * cellVolume[row/3];
-	//TEUCHOS_TEST_FOR_EXCEPT_MSG(!std::isfinite(value), "**** NaN detected in ElasticMaterial::computeAutomaticDifferentiationJacobian().\n");
+	//TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(value), "**** NaN detected in ElasticMaterial::computeAutomaticDifferentiationJacobian().\n");
         scratchMatrix(row, col) = value;
       }
     }
@@ -406,7 +406,7 @@ PeridigmNS::ElasticMaterial::computeAutomaticDifferentiationJacobian(const doubl
       jacobian.addBlockDiagonalValues((int)globalIndices.size(), &globalIndices[0], scratchMatrix.Data());
     }
     else // unknown jacobian type
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** Unknown Jacobian Type\n");
+      TEUCHOS_TEST_FOR_TERMINATION(true, "**** Unknown Jacobian Type\n");
   }
 }
 void

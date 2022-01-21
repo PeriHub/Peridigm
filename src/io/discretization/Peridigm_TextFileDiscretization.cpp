@@ -77,7 +77,7 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
   numPID(epetra_comm->NumProc()),
   bondFilterCommand("None")
 {
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(params->get<string>("Type") != "Text File", "Invalid Type in TextFileDiscretization");
+  TEUCHOS_TEST_FOR_TERMINATION(params->get<string>("Type") != "Text File", "Invalid Type in TextFileDiscretization");
 
   string meshFileName = params->get<string>("Input Mesh File");
   if(params->isParameter("Omit Bonds Between Blocks"))
@@ -93,7 +93,7 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
   createNeighborhoodData(decomp);
 
   // 3D only
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(decomp.dimension != 3, "Invalid dimension in decomposition (only 3D is supported)");
+  TEUCHOS_TEST_FOR_TERMINATION(decomp.dimension != 3, "Invalid dimension in decomposition (only 3D is supported)");
 
   // fill the x vector with the current positions (owned positions only)
   initialX = Teuchos::rcp(new Epetra_Vector(Copy, *threeDimensionalMap, decomp.myX.get()));
@@ -139,7 +139,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   // Read the text file on the root processor
   if(myPID == 0){
     ifstream inFile(textFileName.c_str());
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(!inFile.is_open(), "**** Error opening discretization text file.\n");
+    TEUCHOS_TEST_FOR_TERMINATION(!inFile.is_open(), "**** Error opening discretization text file.\n");
     while(inFile.good()){
       string str;
       getline(inFile, str);
@@ -155,8 +155,8 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
         // Adapt to coordinate system and without --> to check
         if(data.size() != 5 && data.size() != 8){
           string msg = "\n**** Error parsing text file, invalid line: " + str + "\n";
-          TEUCHOS_TEST_FOR_EXCEPT_MSG(data.size() != 5, msg);
-          TEUCHOS_TEST_FOR_EXCEPT_MSG(data.size() != 8, msg);
+          TEUCHOS_TEST_FOR_TERMINATION(data.size() != 5, msg);
+          TEUCHOS_TEST_FOR_TERMINATION(data.size() != 8, msg);
         }
         bool anglesImport = false;
         if (data.size() == 8) anglesImport = true;
@@ -183,7 +183,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   }
 
   int numElements = static_cast<int>(blockIds.size());
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(myPID == 0 && numElements < 1, "**** Error reading discretization text file, no data found.\n");
+  TEUCHOS_TEST_FOR_TERMINATION(myPID == 0 && numElements < 1, "**** Error reading discretization text file, no data found.\n");
 
   // Record the block ids on the root processor
   set<int> uniqueBlockIds;
@@ -261,7 +261,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   for(int i=0 ; i<rebalancedBlockID.MyLength() ; ++i){
     stringstream blockName;
     blockName << "block_" << rebalancedBlockID[i];
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(elementBlocks->find(blockName.str()) == elementBlocks->end(),
+    TEUCHOS_TEST_FOR_TERMINATION(elementBlocks->find(blockName.str()) == elementBlocks->end(),
                                 "\n**** Error in TextFileDiscretization::getDecomp(), invalid block id.\n");
     int globalID = rebalancedBlockID.Map().GID(i);
     (*elementBlocks)[blockName.str()].push_back(globalID);
@@ -395,7 +395,7 @@ PeridigmNS::TextFileDiscretization::filterBonds(Teuchos::RCP<PeridigmNS::Neighbo
     string msg = "**** Error, unrecognized value for \"Omit Bonds Between Blocks\":  ";
     msg += bondFilterCommand + "\n";
     msg += "**** Valid options are:  All, None\n";
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, msg);
+    TEUCHOS_TEST_FOR_TERMINATION(true, msg);
   }
 
   // Create an overlap vector containing the block IDs of each cell

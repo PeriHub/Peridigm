@@ -86,7 +86,7 @@ PeridigmNS::AlbanyDiscretization::AlbanyDiscretization(const MPI_Comm& mpiComm,
   Teuchos::RCP<Teuchos::ParameterList> discretizationParams = Teuchos::rcpFromRef(params->sublist("Discretization", true));
   Teuchos::RCP<Teuchos::ParameterList> blockParams = Teuchos::rcpFromRef(params->sublist("Blocks", true));
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(discretizationParams->get<string>("Type") != "Albany", "Invalid Type in AlbanyDiscretization");
+  TEUCHOS_TEST_FOR_TERMINATION(discretizationParams->get<string>("Type") != "Albany", "Invalid Type in AlbanyDiscretization");
 
   // Create the owned maps
    oneDimensionalMap = Teuchos::rcp(new Epetra_BlockMap(-1, numGlobalIds, globalIds, 1, 0, *comm));
@@ -344,7 +344,7 @@ void PeridigmNS::AlbanyDiscretization::createBlockElementLists() {
   for(int i=0 ; i<blockID->MyLength() ; ++i){
     stringstream blockName;
     blockName << "block_" << (*blockID)[i];
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(elementBlocks->find(blockName.str()) == elementBlocks->end(),
+    TEUCHOS_TEST_FOR_TERMINATION(elementBlocks->find(blockName.str()) == elementBlocks->end(),
                                 "\n**** Error in AlbanyDiscretization::loadData(), invalid block id.\n");
     int globalID = blockID->Map().GID(i);
     (*elementBlocks)[blockName.str()].push_back(globalID);
@@ -404,7 +404,7 @@ PeridigmNS::AlbanyDiscretization::filterBonds(Teuchos::RCP<PeridigmNS::Neighborh
     string msg = "**** Error, unrecognized value for \"Omit Bonds Between Blocks\":  ";
     msg += bondFilterCommand + "\n";
     msg += "**** Valid options are:  All, None\n";
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, msg);
+    TEUCHOS_TEST_FOR_TERMINATION(true, msg);
   }
 
   // Create an overlap vector containing the block IDs of each cell

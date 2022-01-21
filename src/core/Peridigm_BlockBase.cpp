@@ -288,7 +288,7 @@ void PeridigmNS::BlockBase::initializeDataManager(vector<int> fieldIds)
 {
   // The material model must be set prior to initializing the data manager.
   // Note that not all the maps are strictly required, so these conditions could be relaxed somewhat.
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(ownedScalarPointMap.is_null() ||
+  TEUCHOS_TEST_FOR_TERMINATION(ownedScalarPointMap.is_null() ||
                               ownedVectorPointMap.is_null() ||
                               overlapScalarPointMap.is_null() ||
                               overlapVectorPointMap.is_null() ||

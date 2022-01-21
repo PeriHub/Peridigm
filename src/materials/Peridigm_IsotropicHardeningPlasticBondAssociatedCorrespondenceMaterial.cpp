@@ -83,7 +83,7 @@ PeridigmNS::IsotropicHardeningPlasticBondAssociatedCorrespondenceMaterial::Isotr
     string invalidHardeningRule("\n**** Unrecognized hardening rule type: ");
     invalidHardeningRule += m_hardeningRule;
     invalidHardeningRule += ", must be \"Power-law\", or \"Saturation type exponential.\n";
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, invalidHardeningRule);
+    TEUCHOS_TEST_FOR_TERMINATION(true, invalidHardeningRule);
   }
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();

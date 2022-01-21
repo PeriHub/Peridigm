@@ -70,7 +70,7 @@ void PeridigmNS::Block::initialize(Teuchos::RCP<const Epetra_BlockMap> globalOwn
                         globalBlockIds,
                         globalNeighborhoodData);
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(materialModel.is_null(),
+  TEUCHOS_TEST_FOR_TERMINATION(materialModel.is_null(),
                               "\n**** Material model must be set via Block::setMaterialModel() prior to calling Block::initialize()\n");
 
   // Collect all the required field Ids
@@ -91,11 +91,11 @@ void PeridigmNS::Block::initialize(Teuchos::RCP<const Epetra_BlockMap> globalOwn
 
 void PeridigmNS::Block::initializeMaterialModel(double timeStep)
 {
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(materialModel.is_null(),
+  TEUCHOS_TEST_FOR_TERMINATION(materialModel.is_null(),
                       "\n**** Material model must be set via Block::setMaterialModel() prior to calling Block::initializeMaterialModel()\n");
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(neighborhoodData.is_null(),
+  TEUCHOS_TEST_FOR_TERMINATION(neighborhoodData.is_null(),
                       "\n**** Neighborhood data must be set via Block::setNeighborhoodData() prior to calling Block::initializeMaterialModel()\n");
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(dataManager.is_null(),
+  TEUCHOS_TEST_FOR_TERMINATION(dataManager.is_null(),
                       "\n**** DataManager must be initialized via Block::initializeDataManager() prior to calling Block::initializeMaterialModel()\n");
 
   materialModel->initialize(timeStep,
@@ -110,9 +110,9 @@ void PeridigmNS::Block::initializeDamageModel(double timeStep)
   if(damageModel.is_null())
     return;
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(neighborhoodData.is_null(),
+  TEUCHOS_TEST_FOR_TERMINATION(neighborhoodData.is_null(),
                       "\n**** Neighborhood data must be set via Block::setNeighborhoodData() prior to calling Block::initializeDamageModel()\n");
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(dataManager.is_null(),
+  TEUCHOS_TEST_FOR_TERMINATION(dataManager.is_null(),
                       "\n**** DataManager must be initialized via Block::initializeDataManager() prior to calling Block::initializeDamageModel()\n");
 
   damageModel->initialize(timeStep,
@@ -165,11 +165,11 @@ void PeridigmNS::DataManagerSynchronizer::checkFieldValidity(Teuchos::RCP< std::
     FieldSpec fieldSpec = PeridigmNS::FieldManager::self().getFieldSpec(fieldId);
 
     PeridigmField::Relation relation = fieldSpec.getRelation();
-    TEUCHOS_TEST_FOR_EXCEPT_MSG((relation != PeridigmField::NODE && relation != PeridigmField::ELEMENT),
+    TEUCHOS_TEST_FOR_TERMINATION((relation != PeridigmField::NODE && relation != PeridigmField::ELEMENT),
                                 "**** Error in DataManagerSynchronizer::checkFieldValidity():  Parallel synchronization available only for node and elemet variables.\n");
 
     PeridigmField::Length length = fieldSpec.getLength();
-    TEUCHOS_TEST_FOR_EXCEPT_MSG((length != PeridigmField::SCALAR && length != PeridigmField::VECTOR),
+    TEUCHOS_TEST_FOR_TERMINATION((length != PeridigmField::SCALAR && length != PeridigmField::VECTOR),
                                 "**** Error in DataManagerSynchronizer::checkFieldValidity():  Parallel synchronization available only for scalar and vector variables.\n");
 
     PeridigmField::Temporal temporal = fieldSpec.getTemporal();
@@ -184,7 +184,7 @@ void PeridigmNS::DataManagerSynchronizer::checkFieldValidity(Teuchos::RCP< std::
         std::stringstream ss;
         ss << "**** Error in DataManagerSynchronizer::checkFieldValidity():  Field ";
         ss << fieldSpec.getLabel() << " not present in block " << blockIt->getName() << ".\n";
-        TEUCHOS_TEST_FOR_EXCEPT_MSG(!hasField, ss.str());
+        TEUCHOS_TEST_FOR_TERMINATION(!hasField, ss.str());
       }
     }
   }
@@ -242,7 +242,7 @@ void PeridigmNS::DataManagerSynchronizer::synchronize(Teuchos::RCP< std::vector<
       }
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPT_MSG((length != PeridigmField::SCALAR && length != PeridigmField::VECTOR),
+      TEUCHOS_TEST_FOR_TERMINATION((length != PeridigmField::SCALAR && length != PeridigmField::VECTOR),
                                   "**** Error in DataManagerSynchronizer::synchronize():  Parallel synchronization available only for scalar and vector variables.\n");
     }
   }

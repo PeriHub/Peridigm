@@ -114,7 +114,7 @@ PeridigmNS::ContactManager::ContactManager(const Teuchos::ParameterList& contact
       }
       // Assume that the block names are "block_" + the block ID
       size_t loc = it->find_last_of('_');
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(loc == string::npos, "\n**** Parse error, invalid block name.\n");
+      TEUCHOS_TEST_FOR_TERMINATION(loc == string::npos, "\n**** Parse error, invalid block name.\n");
       stringstream blockIDSS(it->substr(loc+1, it->size()));
       int blockID;
       blockIDSS >> blockID;
@@ -138,7 +138,7 @@ PeridigmNS::ContactManager::ContactManager(const Teuchos::ParameterList& contact
       }
       if (!blockMatch) { // Create new block. Assume block name are "block_" + block ID
         size_t loc = it->find_last_of('_');
-        TEUCHOS_TEST_FOR_EXCEPT_MSG(loc == string::npos, "\n**** Parse error, invalid block name in discretization object.\n");
+        TEUCHOS_TEST_FOR_TERMINATION(loc == string::npos, "\n**** Parse error, invalid block name in discretization object.\n");
         stringstream blockIDSS(it->substr(loc+1, it->size()));
         int blockID;
         blockIDSS >> blockID;
@@ -238,14 +238,14 @@ void PeridigmNS::ContactManager::initialize(Teuchos::RCP<const Epetra_BlockMap> 
     // Obtain the horizon for this block
     PeridigmNS::HorizonManager& horizonManager = PeridigmNS::HorizonManager::self();
     string blockName = contactBlockIt->getName();
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(!horizonManager.blockHasConstantHorizon(blockName) , "\n**** Error, variable horizon not supported by contact!\n");
+    TEUCHOS_TEST_FOR_TERMINATION(!horizonManager.blockHasConstantHorizon(blockName) , "\n**** Error, variable horizon not supported by contact!\n");
     double blockHorizon = horizonManager.getBlockConstantHorizonValue(blockName);
 
     // For the initial implementation, assume that there is only one contact model
     // \todo Refactor contact!
     Teuchos::ParameterList contactModelParams = params.sublist("Models", true);
     Teuchos::ParameterList contactParams = contactModelParams.sublist( contactModelParams.begin()->first );
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(contactParams.isParameter("Horizon") , "\n**** Error, Horizon is an invalid contact model parameter.\n");
+    TEUCHOS_TEST_FOR_TERMINATION(contactParams.isParameter("Horizon") , "\n**** Error, Horizon is an invalid contact model parameter.\n");
     contactParams.set("Horizon", blockHorizon);
     if(!contactParams.isParameter("Friction Coefficient"))
       contactParams.set("Friction Coefficient", 0.0);

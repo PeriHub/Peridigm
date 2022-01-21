@@ -71,10 +71,10 @@ PeridigmNS::ComputeManager::ComputeManager( Teuchos::RCP<Teuchos::ParameterList>
   if (params->isSublist("Compute Class Parameters")) {
     Teuchos::RCP<Teuchos::ParameterList> computeClassParameters = sublist(params, "Compute Class Parameters");
     for (Teuchos::ParameterList::ConstIterator it = computeClassParameters->begin(); it != computeClassParameters->end(); ++it) {
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(!computeClassParameters->isSublist(it->first),
+      TEUCHOS_TEST_FOR_TERMINATION(!computeClassParameters->isSublist(it->first),
         "**** Error processing compute class parameters, expected ParameterList but found single entry.\n");
       const Teuchos::ParameterList& params = computeClassParameters->sublist(it->first);
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(!params.isParameter("Compute Class"),
+      TEUCHOS_TEST_FOR_TERMINATION(!params.isParameter("Compute Class"),
         "**** Error processing compute class parameters, expected \"Compute Class\" entry in ParameterList.\n");
       string computeClassName = params.get<string>("Compute Class");
       // Replace spaces with underscores

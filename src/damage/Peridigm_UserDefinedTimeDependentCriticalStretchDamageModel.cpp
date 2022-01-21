@@ -102,7 +102,7 @@ void PeridigmNS::UserDefinedTimeDependentCriticalStretchDamageModel::evaluatePar
   if(!success){
     string msg = "\n**** Error:  rtcFunction->addBody(functiondmg) returned nonzero error code in UserDefinedTimeDependentCriticalStretchDamageModel::evaluateParserDmg().\n";
     msg += "**** " + rtcFunction->getErrors() + "\n";
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
+    TEUCHOS_TEST_FOR_TERMINATION(!success, msg);
   }
 
   // set the return value to 0.0
@@ -125,7 +125,7 @@ void PeridigmNS::UserDefinedTimeDependentCriticalStretchDamageModel::evaluatePar
   if(!success){
     string msg = "\n**** Error in UserDefinedTimeDependentCriticalStretchDamageModel::evaluateParserDmg().\n";
     msg += "**** " + rtcFunction->getErrors() + "\n";
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(!success, msg);
+    TEUCHOS_TEST_FOR_TERMINATION(!success, msg);
   }
 
   m_criticalStretch = currentValue;

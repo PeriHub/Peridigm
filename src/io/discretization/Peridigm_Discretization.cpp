@@ -196,7 +196,7 @@ void PeridigmNS::Discretization::createBondFilters(const Teuchos::RCP<Teuchos::P
       else{
         string msg = "\n**** Error, invalid bond filter type:  " + type;
         msg += "\n**** Allowable types are:  Rectangular_Plane, Exodus Mesh\n";
-        TEUCHOS_TEST_FOR_EXCEPT_MSG(true, msg);
+        TEUCHOS_TEST_FOR_TERMINATION(true, msg);
       }
     }
   }
@@ -226,7 +226,7 @@ int PeridigmNS::Discretization::blockNameToBlockId(string blockName) const {
     blockIDSS >> bID;
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(underscore_loc == string::npos, "\n**** Parse error, invalid block name: " + blockName + "\n");
+    TEUCHOS_TEST_FOR_TERMINATION(underscore_loc == string::npos, "\n**** Parse error, invalid block name: " + blockName + "\n");
   }
 
   return bID;

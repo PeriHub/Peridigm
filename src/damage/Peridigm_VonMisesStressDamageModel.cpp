@@ -76,7 +76,7 @@ PeridigmNS::VonMisesStressDamageModel::VonMisesStressDamageModel(const Teuchos::
     m_criticalDamage = params.get<double>("Critical Damage");
   if(params.isParameter("Threshold Damage"))
     m_thresholdDamage = params.get<double>("Threshold Damage");
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(m_criticalDamage < m_thresholdDamage, "**** Error: Threshold Damage cannot be greater than Critical Damage");
+  TEUCHOS_TEST_FOR_TERMINATION(m_criticalDamage < m_thresholdDamage, "**** Error: Threshold Damage cannot be greater than Critical Damage");
 
   if(params.isParameter("Critical Damage To Neglect Material Point")) 
     m_criticalDamageToNeglectMaterialPoint = params.get<double>("Critical Damage To Neglect Material Point"); // default value is 95%

@@ -75,7 +75,7 @@ PeridigmNS::Compute_Node_Set_Data::Compute_Node_Set_Data(Teuchos::RCP<const Teuc
   for(std::map< std::string, std::vector<int> >::iterator it=nodeSets->begin() ; it!=nodeSets->end() ; it++)
     msg += " " + it->first;
   msg += "\n";
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(nodeSets->find(m_nodeSetName) == nodeSets->end(), msg);
+  TEUCHOS_TEST_FOR_TERMINATION(nodeSets->find(m_nodeSetName) == nodeSets->end(), msg);
 
   std::vector<int> nodeSet = (*nodeSets)[m_nodeSetName];
   for(unsigned int i=0 ; i<nodeSet.size() ; ++i)
@@ -92,7 +92,7 @@ PeridigmNS::Compute_Node_Set_Data::Compute_Node_Set_Data(Teuchos::RCP<const Teuc
     m_calculationType = SUM;
   }
   else{
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, 
+    TEUCHOS_TEST_FOR_TERMINATION(true, 
      "**** Error:  invalid \"Calculation Type\" in Node_Set_Data compute class, must be \"Minimum\", \"Maximum\", or \"Sum\".\n");
   }
 
@@ -106,7 +106,7 @@ PeridigmNS::Compute_Node_Set_Data::Compute_Node_Set_Data(Teuchos::RCP<const Teuc
   else if(length == PeridigmField::VECTOR)
     m_variableLength = 3;
   else
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "**** Error:  Node_Set_Data compute class can be called only for SCALAR or VECTOR data.\n");
+    TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error:  Node_Set_Data compute class can be called only for SCALAR or VECTOR data.\n");
 
   if(m_variableLength == 1)
     m_outputFieldId = fieldManager.getFieldId(PeridigmField::GLOBAL, PeridigmField::SCALAR, PeridigmField::CONSTANT, m_outputLabel);

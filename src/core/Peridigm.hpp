@@ -172,17 +172,17 @@ namespace PeridigmNS {
 
     //! Returns the global tangent stiffness matrix (intended for use when calling Peridigm as a library).
     Teuchos::RCP<const Epetra_FECrsMatrix> getTangentStiffnessMatrix(){
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(tangent.is_null(), "**** PeridigmNS::Peridigm::getTangentStiffnessMatrix(), tangent has not been allocated!\n");
+      TEUCHOS_TEST_FOR_TERMINATION(tangent.is_null(), "**** PeridigmNS::Peridigm::getTangentStiffnessMatrix(), tangent has not been allocated!\n");
       return tangent;
     }
 
     //! Evaluate the tangent stiffness matrix (intended for use when calling Peridigm as a library).
     void evaluateTangentStiffnessMatrix(){
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(tangent.is_null(), "**** PeridigmNS::Peridigm::evaluateTangentStiffnessMatrix(), tangent has not been allocated!\n");
+      TEUCHOS_TEST_FOR_TERMINATION(tangent.is_null(), "**** PeridigmNS::Peridigm::evaluateTangentStiffnessMatrix(), tangent has not been allocated!\n");
       tangent->PutScalar(0.0);
       modelEvaluator->evalJacobian(workset);
       int err = tangent->GlobalAssemble();
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(err != 0, "**** PeridigmNS::Peridigm::evaluateTangentStiffnessMatrix(), GlobalAssemble() returned nonzero error code.\n");
+      TEUCHOS_TEST_FOR_TERMINATION(err != 0, "**** PeridigmNS::Peridigm::evaluateTangentStiffnessMatrix(), GlobalAssemble() returned nonzero error code.\n");
       // Note:  Peridigm expects the tangent to be scaled using tangent->Scale(-1.0);
       //        but Albany does not.
     }
@@ -221,7 +221,7 @@ namespace PeridigmNS {
           continue;
         }
       }
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(!found, "**** Error, Peridigm::getBlockData(), block " + blockName + " not found!\n");
+      TEUCHOS_TEST_FOR_TERMINATION(!found, "**** Error, Peridigm::getBlockData(), block " + blockName + " not found!\n");
 
       PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
 
@@ -255,7 +255,7 @@ namespace PeridigmNS {
           continue;
         }
       }
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(!found, "**** Error, Peridigm::getBlockData(), block " + blockName + " not found!\n");
+      TEUCHOS_TEST_FOR_TERMINATION(!found, "**** Error, Peridigm::getBlockData(), block " + blockName + " not found!\n");
 
       // \todo Keep a map of field name to field id in Albany and avoid the loop below.
       PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();

@@ -60,7 +60,7 @@ PeridigmNS::IsotropicHardeningPlasticCorrespondenceMaterial::IsotropicHardeningP
     m_modelCoordinatesFieldId(-1), m_unrotatedRateOfDeformationFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_vonMisesStressFieldId(-1), 
     m_equivalentPlasticStrainFieldId(-1)
 {
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the selected correspondence material model.\n");
+  TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the selected correspondence material model.\n");
 
   m_yieldStress = params.get<double>("Yield Stress");
   m_hardMod = params.get<double>("Hardening Modulus");

@@ -66,9 +66,9 @@ PeridigmNS::PdQuickGridDiscretization::PdQuickGridDiscretization(const Teuchos::
   myPID(epetra_comm->MyPID()),
   numPID(epetra_comm->NumProc())
 {
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(params->get<std::string>("Type") != "PdQuickGrid", "Invalid Type in PdQuickGridDiscretization");
+  TEUCHOS_TEST_FOR_TERMINATION(params->get<std::string>("Type") != "PdQuickGrid", "Invalid Type in PdQuickGridDiscretization");
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(params->isSublist("Bond Filters"), "**** Error: Bond filters not supported for PdQuickGrid discretizations.\n");
+  TEUCHOS_TEST_FOR_TERMINATION(params->isSublist("Bond Filters"), "**** Error: Bond filters not supported for PdQuickGrid discretizations.\n");
 
   QUICKGRID::Data decomp = getDiscretization(params);
 
@@ -76,7 +76,7 @@ PeridigmNS::PdQuickGridDiscretization::PdQuickGridDiscretization(const Teuchos::
   createNeighborhoodData(decomp);
 
   // 3D only
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(decomp.dimension != 3, "Invalid dimension in decomposition (only 3D is supported)");
+  TEUCHOS_TEST_FOR_TERMINATION(decomp.dimension != 3, "Invalid dimension in decomposition (only 3D is supported)");
 
   // There is only one block and it is called "block_1"
   std::string blockName = "block_1";
@@ -89,7 +89,7 @@ PeridigmNS::PdQuickGridDiscretization::PdQuickGridDiscretization(const Teuchos::
 
   // fill the vector of horizon values for each point
   PeridigmNS::HorizonManager& horizonManager = PeridigmNS::HorizonManager::self();
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(!horizonManager.blockHasConstantHorizon(blockName), "\n**** Error, variable horizon not supported for QuickGrid discretizations!\n");
+  TEUCHOS_TEST_FOR_TERMINATION(!horizonManager.blockHasConstantHorizon(blockName), "\n**** Error, variable horizon not supported for QuickGrid discretizations!\n");
   double horizon = horizonManager.getBlockConstantHorizonValue(blockName);
   horizonForEachPoint = Teuchos::rcp(new Epetra_Vector(*oneDimensionalMap));
   horizonForEachPoint->PutScalar(horizon);
@@ -122,7 +122,7 @@ PeridigmNS::PdQuickGridDiscretization::PdQuickGridDiscretization(const Teuchos::
   createNeighborhoodData(*decomp);
 
   // 3D only
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(decomp->dimension != 3, "Invalid dimension in decomposition (only 3D is supported)");
+  TEUCHOS_TEST_FOR_TERMINATION(decomp->dimension != 3, "Invalid dimension in decomposition (only 3D is supported)");
 
   // fill the x vector with the current positions (owned positions only)
   initialX = Teuchos::rcp(new Epetra_Vector(Copy, *threeDimensionalMap, decomp->myX.get()) );
@@ -151,7 +151,7 @@ QUICKGRID::Data PeridigmNS::PdQuickGridDiscretization::getDiscretization(const T
   // There is only one block for QuickGrid discretizations, block_1
   PeridigmNS::HorizonManager& horizonManager = PeridigmNS::HorizonManager::self();
   string blockName = "block_1";
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(!horizonManager.blockHasConstantHorizon(blockName), "\n**** Error, variable horizon not supported for QuickGrid discretizations!\n");
+  TEUCHOS_TEST_FOR_TERMINATION(!horizonManager.blockHasConstantHorizon(blockName), "\n**** Error, variable horizon not supported for QuickGrid discretizations!\n");
   double horizon = horizonManager.getBlockConstantHorizonValue(blockName);
 
   // param list should have a "sublist" with different types that we switch on here
@@ -226,7 +226,7 @@ QUICKGRID::Data PeridigmNS::PdQuickGridDiscretization::getDiscretization(const T
 //     maxElementDimension = sqrt((xLength/nx)*(xLength/nx) + (yLength/ny)*(yLength/ny) + (zLength/nz)*(zLength/nz));
   } 
   else { // ERROR
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Invalid Type in PdQuickGridDiscretization");
+    TEUCHOS_TEST_FOR_TERMINATION(true, "Invalid Type in PdQuickGridDiscretization");
   }
 
   return decomp;

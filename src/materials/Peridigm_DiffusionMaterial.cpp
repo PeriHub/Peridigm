@@ -89,7 +89,7 @@ PeridigmNS::DiffusionMaterial::DiffusionMaterial(const Teuchos::ParameterList& p
   }
 
 #ifndef PERIDIGM_IMPROVED_QUADRATURE
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(m_useImprovedQuadrature, "**** Error:  Improved quadrature not available.  Recompile Peridigm with USE_IMPROVED_QUADRATURE:BOOL=ON\n");
+  TEUCHOS_TEST_FOR_TERMINATION(m_useImprovedQuadrature, "**** Error:  Improved quadrature not available.  Recompile Peridigm with USE_IMPROVED_QUADRATURE:BOOL=ON\n");
 #endif
 }
 
@@ -191,7 +191,7 @@ PeridigmNS::DiffusionMaterial::computeFluxDivergence(const double dt,
       kernel = 6.0/(pi*m_horizon*m_horizon*m_horizon*m_horizon*initialDistance);
       temperatureDifference = temperature[neighborID] - nodeTemperature;
       nodeFluxDivergence = m_coefficient*kernel*temperatureDifference*quadWeight;
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(!std::isfinite(nodeFluxDivergence), "**** NaN detected in DiffusionMaterial::computeFluxDivergence().\n");
+      TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(nodeFluxDivergence), "**** NaN detected in DiffusionMaterial::computeFluxDivergence().\n");
       fluxDivergence[iID] += nodeFluxDivergence;
     }
   }

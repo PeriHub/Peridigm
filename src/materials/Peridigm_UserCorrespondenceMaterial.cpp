@@ -106,7 +106,7 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
     // FULL_TENSOR is used. Therefore, nine entries will be inialized at ones. 
     int nstat = int(ceil(nstatev / 9.0));
     if (nstat > 0) {
-    //TEUCHOS_TEST_FOR_EXCEPT_MSG(nstate>5, 
+    //TEUCHOS_TEST_FOR_TERMINATION(nstate>5, 
     // ****         The maximum numer of state variables is limited to 45\n";);
       delete m_state;
       m_state = new int[nstat];

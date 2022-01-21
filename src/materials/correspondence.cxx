@@ -1145,7 +1145,7 @@ void computeForcesAndStresses
              MATRICES::Invert3by3Matrix(defGrad, jacobianDeterminant, defGradInv);
             }
     }
-    //TEUCHOS_TEST_FOR_EXCEPT_MSG(matrixInversionReturnCode != 0, matrixInversionErrorMessage);
+    //TEUCHOS_TEST_FOR_TERMINATION(matrixInversionReturnCode != 0, matrixInversionErrorMessage);
     
     //P = J * \sigma * F^(-T)
      MATRICES::MatrixMultiply(false, true, jacobianDeterminant, stress, defGradInv, piolaStress);
