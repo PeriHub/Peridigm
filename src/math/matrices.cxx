@@ -802,6 +802,7 @@ int invertAndCond(const ScalarT* Min,
                   const double thresVal)
 {
   //    double conditioning;
+  // tbd: use std::vector
   double v[size*size];
   double w[size];
   double u[size*size];
