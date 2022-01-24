@@ -153,7 +153,20 @@ PeridigmNS::UserCorrespondenceMaterial::initialize(const double dt,
       dataManager.getData(m_flyingPointFlagFieldId, PeridigmField::STEP_N)->PutScalar(-1.0);
       dataManager.getData(m_flyingPointFlagFieldId, PeridigmField::STEP_NP1)->PutScalar(-1.0);
       dataManager.getData(m_rotationTensorFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
-      dataManager.getData(m_rotationTensorFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);                         
+      dataManager.getData(m_rotationTensorFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
+      double *angles;
+      dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
+      m_coorTrafo = false;
+      /*
+       check if local coordinates exists; CW
+       tbd bool field to perform transformation if needed
+      */
+      for (int iID=0 ; iID<3*numOwnedPoints; ++iID){
+        if (*(angles+iID)!=0){
+          m_coorTrafo = true;
+          break;
+        }
+      }
 }
 
 void
@@ -231,6 +244,7 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
                                         m_planeStress,
                                         m_planeStrain,
                                         matName,
+                                        m_coorTrafo,
                                         m_hencky);
    if (nstat > 0) {
       double *stat;

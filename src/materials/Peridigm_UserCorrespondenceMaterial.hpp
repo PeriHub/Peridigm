@@ -78,7 +78,7 @@ namespace PeridigmNS {
     //! A dummy method here.
     virtual double lookupMaterialProperty(const std::string keyname) const {return 0.0;}
 
-
+    bool m_coorTrafo;
   protected:
 
     // field spec ids for all relevant data
