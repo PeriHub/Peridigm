@@ -53,6 +53,7 @@
 using namespace std;
 using namespace Teuchos;
 
+/*
 TEUCHOS_UNIT_TEST(correspondence, updateElasticCauchyStressAnisotropicCode) {
     const double tolerance = 1.0e-15;
     double A[6][6] ;
@@ -104,53 +105,8 @@ TEUCHOS_UNIT_TEST(correspondence, updateElasticCauchyStressAnisotropicCode) {
         }
 
 }
+*/
 
-TEUCHOS_UNIT_TEST(correspondence, createRotationMatrix) {
-    const double tolerance = 2.0e-8;
-        
-    int m,n;
-    double Btest[3][3];
-    double A[3];
-    // x-rotation
-    A[0] = 14;A[1] = 0;A[2] = 0;
-    CORRESPONDENCE::createRotationMatrix(A,Btest);
-    
-    double Bx[3][3] = {{1,  0, 0}, 
-                  {0, 0.97029573, -0.2419219}, 
-                  {0, 0.2419219, 0.97029573}};
-
-    for (n=0; n<3; n++){
-            for (m=0; m<3; m++){
-                TEST_FLOATING_EQUALITY(Bx[n][m],Btest[n][m],tolerance); 
-            }
-    }
-    // x-rotation
-    A[0] = 0;A[1] = 70;A[2] = 0;
-    CORRESPONDENCE::createRotationMatrix(A,Btest);
-    
-    double By[3][3] = {{0.34202014,  0, 0.93969262}, 
-         {   0, 1, 0}, 
-         {  -0.93969262, 0, 0.34202014}};
-
-    for (n=0; n<3; n++){
-            for (m=0; m<3; m++){
-                TEST_FLOATING_EQUALITY(By[n][m], Btest[n][m],tolerance); 
-            }
-    }
-    // z-rotation
-    A[0] = 0;A[1] = 0;A[2] = 30;
-    CORRESPONDENCE::createRotationMatrix(A,Btest);
-    
-    double Bz[3][3] = {{0.8660254,  -0.5, 0}, 
-         {  0.5, 0.8660254, 0}, 
-         {  0, 0, 1}};
-
-    for (n=0; n<3; n++){
-            for (m=0; m<3; m++){
-                TEST_FLOATING_EQUALITY(Bz[n][m],Btest[n][m],tolerance); 
-            }
-    }
-}
 
 int main
 (int argc, char* argv[])

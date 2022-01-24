@@ -60,7 +60,13 @@ const ScalarT* matrix,
 ScalarT& determinant,
 ScalarT* inverse
 );
-
+// create a 3x3 rotation matrix with 3 input angles
+template<typename ScalarT>
+void createRotationMatrix
+(
+const double* alpha,
+ScalarT* rotMat
+);
 //! Invert a single 3-by-3 matrix; returns zero of successful, one if not successful (e.g., singular matrix).
 template<typename ScalarT>
 int Invert3by3Matrix
@@ -69,6 +75,18 @@ const ScalarT* matrix,
 ScalarT& determinant,
 ScalarT* inverse
 );
+// rotates a second order tensor in a new configuration or back
+template<typename ScalarT>
+void tensorRotation
+(
+const double* angles,
+const ScalarT* tensorIn,
+const bool globToLoc,
+ScalarT* tensorOut
+);
+
+
+//! Invert a single N-by-N symmetric matrix; returns zero of successful, one if not successful (e.g., singular matrix).
 
 //! Inner product of two 3-by-3 matrices.
 template<typename ScalarT>
@@ -128,17 +146,14 @@ void TransposeMatrix
 (
 const ScalarT* matrix,
 ScalarT* transpose
- );
-
-//! Invert a single N-by-N symmetric matrix; returns zero of successful, one if not successful (e.g., singular matrix).
+);
 template<typename ScalarT>
 int invertAndCond
 (
-    const ScalarT* Min,
-    ScalarT *Mout,
-    const int size,
-    const double thresVal
+const ScalarT* Min,
+ScalarT *Mout,
+const int size,
+const double thresVal
 );
-
 }
 #endif // MATRICES_H
