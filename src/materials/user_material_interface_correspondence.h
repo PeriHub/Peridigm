@@ -74,14 +74,30 @@ const double* RotationN,
 const double* RotationNP1,
 const bool plane_stress,
 const bool plane_strain,
-const std::string matname
+const std::string matname,
+bool hencky
 );
+
 template<typename ScalarT>
 void DIFFTENSOR
 (
 const ScalarT* TENSORN,
 const ScalarT* TENSORNP1, 
 ScalarT* DTENSOR
+);
+
+template<typename ScalarT>
+void GetVoigt
+(
+const ScalarT* TENSOR,
+ScalarT* VOIGT
+);
+
+template<typename ScalarT>
+void GetTensorFromVoigt
+(
+const ScalarT* VOIGT,
+ScalarT* TENSOR
 );
 
 extern "C" void UPERMAT(double stressnew[], double statenew[], 

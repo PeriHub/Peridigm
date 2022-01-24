@@ -74,6 +74,10 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
     }
   if (m_planeStrain==true)m_type=1;
   if (m_planeStress==true)m_type=2;
+  m_hencky = false;
+  if (params.isParameter("Hencky Strain")){
+      m_hencky = params.get<bool>("Hencky Strain");
+  }
 
   std::string var =params.name();
   std::string delimiter = "->";
@@ -226,8 +230,8 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
                                         RotationNP1,
                                         m_planeStress,
                                         m_planeStrain,
-                                        matName
-                                        );
+                                        matName,
+                                        m_hencky);
    if (nstat > 0) {
       double *stat;
       int tensorLen = 9;

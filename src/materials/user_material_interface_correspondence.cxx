@@ -45,6 +45,8 @@
 #include "user_material_interface_correspondence.h"
 #include "user_material.h"
 #include "correspondence.h"
+#include "elastic_correspondence.h"
+#include "matrices.h"
 #include <Sacado.hpp>
 #include <string>
 
@@ -77,7 +79,8 @@ const double* RotationN,
 const double* RotationNP1,
 const bool plane_stress,
 const bool plane_strain,
-const std::string matname
+const std::string matname,
+bool hencky
 )
 {
   // Hooke's law
@@ -87,13 +90,16 @@ const std::string matname
   ScalarT* GLStrainNP1 = strainNP1;
   const ScalarT* sigmaN = strainN;
   ScalarT* sigmaNP1 = unrotatedCauchyStressNP1;
+  ScalarT* sigmaNP1Voigt;
+  ScalarT* GLStrainNVoigt;
+  double* depsVoigt;
   char matnameArray[80];
   int nname;
   double deps[9], drot[9];
   // double* deps; 
   // double* drot;
 
-  CORRESPONDENCE::computeGreenLagrangeStrain(defGradNP1,GLStrainNP1,flyingPointFlag ,numPoints);
+  // CORRESPONDENCE::computeGreenLagrangeStrain(defGradNP1,GLStrainNP1,flyingPointFlag ,numPoints);
 
   int nshr = 3;
   int nnormal = 3;
@@ -114,9 +120,20 @@ const std::string matname
   double SSE = -1,SPD = -1,SCD = -1,RPL = -1;
   //
   
+  int defGradLogReturnCode(0);
+  bool rotation = true;
+  ScalarT strain[3][3];
+  ScalarT rotMat[3][3], rotMatT[3][3], tempA[3][3];
+  
   for(int iID=0 ; iID<numPoints ; ++iID, 
         coords+=3, defGradN+=9, defGradNP1+=9, sigmaN+=9, GLStrainN+=9,GLStrainNP1+=9,sigmaNP1+=9, angles+=3){
           NOEL = iID;
+
+          CORRESPONDENCE::computeGreenLagrangeStrain(defGradNP1,GLStrainNP1,flyingPointFlag ,numPoints);
+          
+          std::string logStrainErrorMessage =
+            "**** Error:  CorrespondenceMaterialconst ::updateElasticCauchyStressAnisotropic() failed to compute LogStrain.\n";
+          TEUCHOS_TEST_FOR_TERMINATION(defGradLogReturnCode != 0, logStrainErrorMessage);
 
           CORRESPONDENCE::DIFFTENSOR(GLStrainN, GLStrainNP1, deps);
           CORRESPONDENCE::DIFFTENSOR(RotationN, RotationNP1, drot);
@@ -129,13 +146,33 @@ const std::string matname
           }
 
           // Rotationstransformation
-          CORRESPONDENCE::UMATINT(sigmaNP1,statev,DSDDE,&SSE,&SPD,&SCD,&RPL,
-          DDSDDT, DRPLDE,&DRPLDT,GLStrainN,deps,&time,&dtime,temp,dtemp,
+          //https://www.continuummechanics.org/stressxforms.html
+          // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
+          if (rotation){  
+            CORRESPONDENCE::createRotationMatrix(angles,rotMat);
+            MATRICES::TransposeMatrix(rotMat,rotMatT);
+            // geomNL
+            MATRICES::MatrixMultiply3x3fromVector(rotMatT,GLStrainN, tempA);
+            MATRICES::MatrixMultiply3x3toVector(tempA,rotMat,GLStrainN);
+          }
+
+          CORRESPONDENCE::GetVoigt(sigmaNP1, sigmaNP1Voigt);
+          CORRESPONDENCE::GetVoigt(GLStrainN, GLStrainNVoigt);
+          CORRESPONDENCE::GetVoigt(deps, depsVoigt);
+
+          CORRESPONDENCE::UMATINT(sigmaNP1Voigt,statev,DSDDE,&SSE,&SPD,&SCD,&RPL,
+          DDSDDT, DRPLDE,&DRPLDT,GLStrainNVoigt,depsVoigt,&time,&dtime,temp,dtemp,
           &PREDEF,&DPRED,matnameArray,&nnormal,&nshr,&nstresscomp,&nstatev,props,
           &nprops,coords,drot,&PNEWDT,&CELENT,defGradN,defGradNP1,
           &NOEL,&NPT,&KSLAY,&KSPT,&JSTEP,&KINC,&nname); 
 
+          CORRESPONDENCE::GetTensorFromVoigt(sigmaNP1Voigt, sigmaNP1);
+
           // Rotationstransformation 
+          if (rotation){  
+            MATRICES::MatrixMultiply3x3fromVector(rotMat,sigmaNP1, tempA);
+            MATRICES::MatrixMultiply3x3toVector(tempA,rotMatT,sigmaNP1);
+          }
 
         }
 
@@ -160,6 +197,51 @@ template void DIFFTENSOR<double>
 const double* TENSORN,
 const double* TENSORNP1, 
 double* DTENSOR
+);
+
+template<typename ScalarT>
+void GetVoigt
+(
+const ScalarT* TENSOR,
+ScalarT* VOIGT
+)
+{
+  *(VOIGT) = *(TENSOR);
+  *(VOIGT+1) = *(TENSOR+4);
+  *(VOIGT+2) = *(TENSOR+8);
+  *(VOIGT+3) = *(TENSOR+5);
+  *(VOIGT+4) = *(TENSOR+2);
+  *(VOIGT+5) = *(TENSOR+1);
+}
+
+template void GetVoigt<double>
+(
+const double* TENSOR,
+double* VOIGT
+);
+
+template<typename ScalarT>
+void GetTensorFromVoigt
+(
+const ScalarT* VOIGT,
+ScalarT* TENSOR
+)
+{
+  *(TENSOR) = *(VOIGT);
+  *(TENSOR+1) = *(VOIGT+5);
+  *(TENSOR+2) = *(VOIGT+4);
+  *(TENSOR+3) = *(VOIGT+5);
+  *(TENSOR+4) = *(VOIGT+1);
+  *(TENSOR+5) = *(VOIGT+3);
+  *(TENSOR+6) = *(VOIGT+4);
+  *(TENSOR+7) = *(VOIGT+3);
+  *(TENSOR+8) = *(VOIGT+2);
+}
+
+template void GetTensorFromVoigt<double>
+(
+const double* VOIGT,
+double* TENSOR
 );
 
 /* 
@@ -201,7 +283,8 @@ const double* RotationN,
 const double* RotationNP1,
 const bool plane_stress,
 const bool plane_strain,
-const std::string matname
+const std::string matname,
+bool hencky
 );
 
 

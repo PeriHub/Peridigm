@@ -153,11 +153,9 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
              back_inserter<vector<double> >(data));
         // Check for obvious problems with the data
         // Adapt to coordinate system and without --> to check
-        if(data.size() != 5 && data.size() != 8){
-          string msg = "\n**** Error parsing text file, invalid line: " + str + "\n";
-          TEUCHOS_TEST_FOR_TERMINATION(data.size() != 5, msg);
-          TEUCHOS_TEST_FOR_TERMINATION(data.size() != 8, msg);
-        }
+        string msg = "\n**** Error parsing text file, invalid line: " + str + "\n";
+        TEUCHOS_TEST_FOR_TERMINATION(data.size() != 5 && data.size() != 8, msg);
+        
         bool anglesImport = false;
         if (data.size() == 8) anglesImport = true;
         // Store the coordinates, block id, volumes and angles
