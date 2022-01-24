@@ -101,13 +101,15 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset, bool damage
     
     Teuchos::RCP<PeridigmNS::DataManager> dataManager = blockIt->getDataManager();
     Teuchos::RCP<const PeridigmNS::Material> materialModel = blockIt->getMaterialModel();
-    if (materialModel->Name().find("FEM")!=std::string::npos){
-      const int* elementNodalList = neighborhoodData->ElementNodalList();
+    if (materialModel->Name().find("FEM")!=std::string::npos){     
+      const int* topology = neighborhoodData->Topology();
+      const int numElements = neighborhoodData->TopologyListSize();
       materialModel->precompute(dt,
                           numOwnedPoints,
                           ownedIDs,
-                          elementNodalList,
-                          *dataManager);
+                          topology,
+                          *dataManager,
+                          numElements);
     }
     else{
       const int* neighborhoodList = neighborhoodData->NeighborhoodList();
@@ -121,7 +123,7 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset, bool damage
   PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Precompute");
 
   // ---- Synchronize data computed in precompute ----
- // PeridigmNS::DataManagerSynchronizer::self().synchronizeDataAfterPrecompute(workset->blocks);
+  PeridigmNS::DataManagerSynchronizer::self().synchronizeDataAfterPrecompute(workset->blocks);
 
  // PeridigmNS::DataManagerSynchronizer::self().synchronizeDataAfterPrecompute(workset->blocks);
 
@@ -145,12 +147,12 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset, bool damage
     if(runEval){
       PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Compute Force");
       if (materialModel->Name().find("FEM")!=std::string::npos){
-        const int* elementNodalList = neighborhoodData->ElementNodalList();
-        const int numElements =0;//= neighborhoodData->ElementNodes();
+        const int* topology = neighborhoodData->Topology();
+        const int numElements = neighborhoodData->TopologyListSize();
         materialModel->computeForce(dt,
                                 numOwnedPoints,
                                 ownedIDs,
-                                elementNodalList,
+                                topology,
                                 *dataManager,
                                 numElements);
           }

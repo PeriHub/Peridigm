@@ -115,21 +115,35 @@ TEUCHOS_UNIT_TEST(FEM, setElementMatrices) {
     std::vector<double> CVector(4);
     double* C = &CVector[0];
     C[0] = 1;C[1] = 1;C[2] = 1;C[3] = 5;
-    std::vector<double> BxTestVector(8), ByTestVector(8), BzTestVector(8);
+    std::vector<double> BxTestVector(16), ByTestVector(16), BzTestVector(16);
     double* BxTest = &BxTestVector[0];
     double* ByTest = &ByTestVector[0];
     double* BzTest = &BzTestVector[0];
 
     bool twoD = true;
     //to be filled;
-    double Bx[8] ={1,1,1,1,1,1,0,0}, By[8] ={0,0,0,0,0,0,0,0}, Bz[8] ={0,0,0,0,0,0,0,0};
-    for (int iID=0 ; iID<2 ; ++iID){
-        FEM::setElementMatrices(twoD, 4*iID, order, A, B, C, B, C, A, BxTest, BzTest, BzTest);
+    double Bx[16] ={1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0}, By[16] ={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, Bz[16] ={0,0,0,0,0,0,0,0},0,0,0,0,0,0,0,0;
+    if (twoD){
+        for (int iID=0 ; iID<2 ; ++iID){
+            FEM::setElementMatrices(twoD, 4*iID, order, A, B, C, B, C, A, BxTest, BzTest, BzTest);
+        }
+        for (int n=0; n<8; n++){
+            TEST_FLOATING_EQUALITY(BxTest[n],Bx[n],tolerance);
+            TEST_FLOATING_EQUALITY(ByTest[n],By[n],tolerance);
+        }
     }
-      for (int n=0; n<8; n++){
-          TEST_FLOATING_EQUALITY(BxTest[n],Bx[n],tolerance);
+    else
+    {
+        for (int iID=0 ; iID<2 ; ++iID){
+            FEM::setElementMatrices(twoD, 8*iID, order, A, B, C, B, C, A, BxTest, BzTest, BzTest);
+        }
+        for (int n=0; n<8; n++){
+            TEST_FLOATING_EQUALITY(BxTest[n],Bx[n],tolerance);
+            TEST_FLOATING_EQUALITY(ByTest[n],By[n],tolerance);
+        }
+
     }
-    twoD = false;
+    
 }
 TEUCHOS_UNIT_TEST(FEM, shapeFunctionsLagrange) {
         const double tolerance = 1.0e-15;

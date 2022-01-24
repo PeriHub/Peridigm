@@ -855,7 +855,7 @@ void NeighborhoodList::buildTopologyList(int numOverlapPoints,std::shared_ptr<do
       /*
        * Note that list returned includes this point * but at start of list
        */
-      topology->GetTopoElements(p, treeList); //--> global vs. local element ID?
+      //topology->GetTopoElements(p, treeList); //--> global vs. local element ID?
                                               // topo[i].LID()
 
       // sort(treeList.begin(), treeList.end());
@@ -901,5 +901,34 @@ void NeighborhoodList::buildTopologyList(int numOverlapPoints,std::shared_ptr<do
 
   delete searchTree;
 }
+void GETFENEIGHBORHOOD(
+  const int* elementTopo,
+  const int lenElementTopo,
+  const int numOfFiniteElements,
+  const int maxNode,
+  int numFEnodes,
+  int* feNeigh
+)
+{
+  int list[(maxNode+1)*maxNode];
+  int nnodes = 0;
+  int num = 0;
+  for(int n=0;n<numOfFiniteElements;n++){ 
+    num += nnodes + n;
+    nnodes = elementTopo[num];
+    for (int i=0;i<nnodes;i++){
+      int entryPtr = elementTopo[i]*(maxNode+1);
+      list[elementTopo[i]] = 0;
+      for (int j=0;j<nnodes;j++){
+        if (i!=j){
+          
+          list[elementTopo[i]] = elementTopo[j];
+        }
 
+      }
+    }
+  }
+      
+
+}
 }

@@ -457,6 +457,11 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecompFE(const string& te
           }
         }
       }
+      int *feNeigh;
+      int numFEnodes;
+      // get the maximum node number. Later needed to provide adapat the neighborhood
+      int maxNode = *max_element(elementTopo.begin(), elementTopo.end());
+      //PDNEIGH::GETFENEIGHBORHOOD(&elementTopo[0], elementTopo.size(), numOfFiniteElements,maxNode,numFEnodes, feNeigh);
       inFile.close();
     }
   }

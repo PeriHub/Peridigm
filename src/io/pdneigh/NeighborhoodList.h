@@ -100,7 +100,14 @@ template<class T> struct ArrayDeleter{
     delete [] d;
   }
 };
-
+void GETFENEIGHBORHOOD(
+    int* elementTopo,
+    int lenElementTopo,
+    int numOfFiniteElements,
+    const int maxNode,
+    int numFEnodes,
+    int *feNeigh
+    );
 class NeighborhoodList {
 
 class Epetra_MapTag;
@@ -141,6 +148,7 @@ public:
       double horizon,
       std::vector< shared_ptr<PdBondFilter::BondFilter> > bondFilters = std::vector< shared_ptr<PdBondFilter::BondFilter> >()
       );
+  
   double get_frameset_buffer_size() const;
   size_t get_num_owned_points() const;
   size_t get_num_shared_points() const;
