@@ -45,7 +45,6 @@
 #include "user_material_interface_correspondence.h"
 #include "user_material.h"
 #include "correspondence.h"
-#include "elastic_correspondence.h"
 #include "matrices.h"
 #include <Sacado.hpp>
 #include <string>
