@@ -75,7 +75,8 @@ const double* RotationNP1,
 const bool plane_stress,
 const bool plane_strain,
 const std::string matname,
-bool hencky
+const bool* coordinateTrafo,
+const bool hencky
 );
 
 template<typename ScalarT>
@@ -87,14 +88,19 @@ ScalarT* DTENSOR
 );
 
 template<typename ScalarT>
-void GetVoigt
+void GetVoigtNotation
 (
 const ScalarT* TENSOR,
 ScalarT* VOIGT
 );
-
+//template<typename ScalarT>
+void StoreAsMatrix
+(
+  const double* vector,
+  double matrix[][3]
+);
 template<typename ScalarT>
-void GetTensorFromVoigt
+void GetTensorFromVoigtNotation
 (
 const ScalarT* VOIGT,
 ScalarT* TENSOR
