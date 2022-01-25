@@ -1774,8 +1774,8 @@ ScalarT* hourglassStiff
     const ScalarT* shapeTensorInv = shapeTensorInverse;
     ScalarT C[6][6];
     std::vector<ScalarT> rotMatVector(9);
-    ScalarT* rotMat = &rotMat[0];
-    MATRICES::createRotationMatrix(alpha,rotMat);    
+    ScalarT* rotMat = &rotMatVector[0];
+    MATRICES::createRotationMatrix(alpha,rotMat);
     CORRESPONDENCE::createRotatedStiff(Cstiff,rotMat,C);
     //CORRESPONDENCE::createRotatedPythonBasedStiff(Cstiff,alpha,C); 
     // to be checked for 2D

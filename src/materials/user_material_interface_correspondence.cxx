@@ -43,7 +43,6 @@
 //@HEADER
 
 #include "user_material_interface_correspondence.h"
-#include "user_material.h"
 #include "correspondence.h"
 #include "matrices.h"
 #include <Sacado.hpp>
@@ -145,12 +144,41 @@ const bool* coordinateTrafo
           CORRESPONDENCE::GetVoigtNotation(strainLoc, strainLocVoigt);
           CORRESPONDENCE::GetVoigtNotation(depsLoc, depsLocVoigt);
           
+          *(drot) = 1.0;
+          *(drot+1) = 2.0;
+          *(drot+2) = 3.0;
+          *(drot+3) = 4.0;
+          *(drot+4) = 5.0;
+          *(drot+5) = 6.0;
+          *(drot+6) = 7.0;
+          *(drot+7) = 8.0;
+          *(drot+8) = 9.0;
+          
+          std::cout<<"*(drot)"<<*(drot)<<std::endl;
+          std::cout<<"*(drot+1)"<<*(drot+1)<<std::endl;
+          std::cout<<"*(drot+2)"<<*(drot+2)<<std::endl;
+          std::cout<<"*(drot+3)"<<*(drot+3)<<std::endl;
+          std::cout<<"*(drot+4)"<<*(drot+4)<<std::endl;
+          std::cout<<"*(drot+5)"<<*(drot+5)<<std::endl;
+          std::cout<<"*(drot+6)"<<*(drot+6)<<std::endl;
+          std::cout<<"*(drot+7)"<<*(drot+7)<<std::endl;
+          std::cout<<"*(drot+8)"<<*(drot+8)<<std::endl;
 
           CORRESPONDENCE::UMATINT(sigmaNP1LocVoigt,statev,DSDDE,&SSE,&SPD,&SCD,&RPL,
           DDSDDT, DRPLDE,&DRPLDT,strainLocVoigt,depsLocVoigt,&time,&dtime,temp,dtemp,
           &PREDEF,&DPRED,matnameArray,&nnormal,&nshr,&nstresscomp,&nstatev,props,
           &nprops,coords,drot,&PNEWDT,&CELENT,defGradN,defGradNP1,
           &NOEL,&NPT,&KSLAY,&KSPT,&JSTEP,&KINC,&nname); 
+
+          std::cout<<"*(sigmaNP1LocVoigt)"<<*(sigmaNP1LocVoigt)<<std::endl;
+          std::cout<<"*(sigmaNP1LocVoigt+1)"<<*(sigmaNP1LocVoigt+1)<<std::endl;
+          std::cout<<"*(sigmaNP1LocVoigt+2)"<<*(sigmaNP1LocVoigt+2)<<std::endl;
+          std::cout<<"*(sigmaNP1LocVoigt+3)"<<*(sigmaNP1LocVoigt+3)<<std::endl;
+          std::cout<<"*(sigmaNP1LocVoigt+4)"<<*(sigmaNP1LocVoigt+4)<<std::endl;
+          std::cout<<"*(sigmaNP1LocVoigt+5)"<<*(sigmaNP1LocVoigt+5)<<std::endl;
+          std::cout<<"*(sigmaNP1LocVoigt+6)"<<*(sigmaNP1LocVoigt+6)<<std::endl;
+          std::cout<<"*(sigmaNP1LocVoigt+7)"<<*(sigmaNP1LocVoigt+7)<<std::endl;
+          std::cout<<"*(sigmaNP1LocVoigt+8)"<<*(sigmaNP1LocVoigt+8)<<std::endl;
 
           CORRESPONDENCE::GetTensorFromVoigtNotation(sigmaNP1LocVoigt, sigmaNP1Loc);
 

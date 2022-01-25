@@ -144,6 +144,12 @@ extern "C" void UMATINT(double *stress, double *statev, double *ddsdde, double *
           const int *nprops, const double *coords, double *drot, double *PNEWDT, double *CELENT, const double *defGradN, const double *defGradNP1,
           int *NOEL, int *NPT, int *KSLAY, int *KSPT, int *JSTEP, int *KINC, int *nname);
 
+extern "C" void UMATINTTEST(double *stress, double *statev, double *ddsdde, double *sse, double *spd,
+		double *scd, double *rpl, double *ddsddt, double *drplde, double *drpldt,
+		const double *GLStrainN, double *deps, const double *time, const double *dtime, const double *temp, const double *dtemp,
+          double *PREDEF, double *DPRED, char *matnameArray, int *nnormal, int *nshr, int *nstresscomp, const int *nstatev, const double *props,
+          const int *nprops, const double *coords, double *drot, double *PNEWDT, double *CELENT, const double *defGradN, const double *defGradNP1,
+          int *NOEL, int *NPT, int *KSLAY, int *KSPT, int *JSTEP, int *KINC, int *nname);
 }
 
 #endif // USER_MATERIAL_INTERFACE_CORRESPONDENCE_H
