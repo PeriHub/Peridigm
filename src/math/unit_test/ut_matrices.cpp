@@ -52,6 +52,34 @@
 
 using namespace std;
 using namespace Teuchos;
+
+
+TEUCHOS_UNIT_TEST(matrices, tensorRotation) {
+    const double tolerance = 2.0e-8;
+        
+    int n;
+    std::vector<double> AVector(3);
+    double* A = &AVector[0];
+    std::vector<double> BVector(9);
+    double* B = &BVector[0];
+    std::vector<double> CVector(9);
+    double* C = &CVector[0];
+    std::vector<double> CtestVector(9);
+    double* Ctest = &CtestVector[0];
+    // x-rotation
+    A[0] = 14;A[1] = 0;A[2] = 0;
+    for (n=0; n<9; n++){
+        B[n] = (n+1) + 0.33*n*n;
+    }
+
+    MATRICES::tensorRotation(A,B,true,C);
+    MATRICES::tensorRotation(A,C,false,Ctest);
+    
+    for (n=0; n<9; n++){
+        TEST_FLOATING_EQUALITY(B[n],Ctest[n],tolerance); 
+    }
+    
+}
 TEUCHOS_UNIT_TEST(matrices, createRotationMatrix) {
     const double tolerance = 2.0e-8;
         
