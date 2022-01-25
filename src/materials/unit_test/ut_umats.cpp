@@ -1,4 +1,4 @@
-/*! \file ut_correspondence.cpp */
+/*! \file ut_umats.cpp */
 
 //@HEADER
 // ************************************************************************
@@ -48,65 +48,93 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include "Teuchos_UnitTestRepository.hpp"
-#include "elastic_correspondence.h"
-
+#include "user_material_interface_correspondence.h"
+#include "user_material.h"
 using namespace std;
 using namespace Teuchos;
 
-/*
-TEUCHOS_UNIT_TEST(correspondence, updateElasticCauchyStressAnisotropicCode) {
+
+TEUCHOS_UNIT_TEST(correspondence, DIFFTENSOR) {
     const double tolerance = 1.0e-15;
-    double A[6][6] ;
-
-     int m, n, num;
-     num = 1;
-     for (m=0; m<6; m++){
-             for (n=0; n<6; n++){
-             A[m][n] = num;
-             num++;
-             }
-     }   
-
-    double B[3][3];
+    std::vector<double> AVector(9);
+    double* A = &AVector[0];
+    std::vector<double> BVector(9);
+    double* B = &BVector[0];
+    std::vector<double> CVector(9);
+    double* C = &CVector[0];
     std::vector<double> testVector(9);
     double* Ctest = &testVector[0];
-
-    num = 9;
-    for (m=0; m<3; m++){
-             for (n=0; n<3; n++){
-             B[m][n] = num;
-             num++;
-             }
-     }   
-     //updateElasticCauchyStressAnisotropicCode
-     //   const ScalarT strain[][3],
-     //   ScalarT* sigmaNP1,
-     //   const ScalarT C[][6],
-     //   int type
-    CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(B, Ctest, A, 0);
+    int num = 9;
+    for (int n=0; n<9; n++){
+        A[n] = num*num-2;
+        B[n] = num;
+        C[n] = B[n]-A[n];
+        num++;
+        }
+      
+    CORRESPONDENCE::DIFFTENSOR(A, B, Ctest);
     
-    double C[] =      { 468.0  ,3978.0, 3276.0,
-                        3978.0 ,1170.0, 2574.0,
-                        3276.0 ,2574.0, 1872.0,};
-
-    for (n=0; n<9; n++){
-
-            TEST_FLOATING_EQUALITY(C[n],Ctest[n],tolerance);
-        
-    }
-    double C2D[] = {167, 1487, 0, 
-                    1487, 431., 0, 
-                    0,   0,   0};   
-    
-    CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(B, Ctest, A, 1);
-    
-    for (n=0; n<9; n++){
-        TEST_FLOATING_EQUALITY(C2D[n],Ctest[n],tolerance);
+     for (int n=0; n<9; n++){
+        TEST_FLOATING_EQUALITY(C[n],Ctest[n],tolerance);
         }
 
 }
-*/
+TEUCHOS_UNIT_TEST(correspondence, GetVoigtNotation) {
 
+    const double tolerance = 1.0e-15;
+    std::vector<double> AVector(9);
+    double* A = &AVector[0];
+    std::vector<double> BVector(6);
+    double* B = &BVector[0];
+    std::vector<double> testVector(6);
+    double* Btest = &testVector[0];
+    int num = 9;
+    for (int n=0; n<9; n++){
+        A[n] = num*num-2;
+        B[n] = A[n];
+        num++;
+        }
+    for (int n=0; n<3; n++){
+        B[n] = A[n];
+        }
+    B[3] = 0.5*(A[5]+A[7]);
+    B[4] = 0.5*(A[2]+A[6]);
+    B[5] = 0.5*(A[1]+A[3]);
+    CORRESPONDENCE::GetVoigtNotation(A, Btest);
+    
+     for (int n=0; n<6; n++){
+        TEST_FLOATING_EQUALITY(B[n],Btest[n],tolerance);
+        }
+
+}
+TEUCHOS_UNIT_TEST(correspondence, GetTensorFromVoigtNotation) {
+    const double tolerance = 1.0e-15;
+    std::vector<double> AVector(6);
+    double* A = &AVector[0];
+    std::vector<double> BVector(9);
+    double* B = &BVector[0];
+    std::vector<double> testVector(9);
+    double* Btest = &testVector[0];
+    int num = 9;
+    for (int n=0; n<6; n++){
+        A[n] = num*num-2;
+        num++;
+        }
+    B[0]= A[0];
+    B[1]= A[5];
+    B[2]= A[4];
+    B[3]= A[5];
+    B[4]= A[1];
+    B[5]= A[3];
+    B[6]= A[4];
+    B[7]= A[3];
+    B[8]= A[2];
+    CORRESPONDENCE::GetTensorFromVoigtNotation(A, Btest);
+    
+    for (int n=0; n<9; n++){
+        TEST_FLOATING_EQUALITY(B[n],B[n],tolerance);
+        }
+}
 
 int main
 (int argc, char* argv[])

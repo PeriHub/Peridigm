@@ -1,4 +1,5 @@
-//! \file matrices.h
+/*! \file ut_elasticcorrespondence.cpp */
+
 //@HEADER
 // ************************************************************************
 //
@@ -42,102 +43,74 @@
 // Stewart A. Silling    sasilli@sandia.gov
 //
 // ************************************************************************
-// Author of this Routine
-// Jan-Timo Hesse   Jan-Timo.Hesse@dlr.de
-// German Aerospace Center
 //@HEADER
-#ifndef MATRICES_H
-#define MATRICES_H
+
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+#include "Teuchos_UnitTestRepository.hpp"
+#include "elastic_correspondence.h"
+
+using namespace std;
+using namespace Teuchos;
 
 
-namespace MATRICES {
+TEUCHOS_UNIT_TEST(correspondence, updateElasticCauchyStressAnisotropicCode) {
+    const double tolerance = 1.0e-15;
+    double A[6][6] ;
 
-//! Invert a single 2-by-2 matrix; returns zero of successful, one if not successful (e.g., singular matrix).
-template<typename ScalarT>
-int Invert2by2Matrix
-(
-const ScalarT* matrix,
-ScalarT& determinant,
-ScalarT* inverse
-);
-// create a 3x3 rotation matrix with 3 input angles
-template<typename ScalarT>
-void createRotationMatrix
-(
-const double* alpha,
-ScalarT* rotMat
-);
-//! Invert a single 3-by-3 matrix; returns zero of successful, one if not successful (e.g., singular matrix).
-template<typename ScalarT>
-int Invert3by3Matrix
-(
-const ScalarT* matrix,
-ScalarT& determinant,
-ScalarT* inverse
-);
-// rotates a second order tensor in a new configuration or back
-template<typename ScalarT>
-void tensorRotation
-(
-const double* angles,
-const ScalarT* tensorIn,
-const bool globToLoc,
-ScalarT* tensorOut
-);
+     int m, n, num;
+     num = 1;
+     for (m=0; m<6; m++){
+             for (n=0; n<6; n++){
+             A[m][n] = num;
+             num++;
+             }
+     }   
 
+    
+    std::vector<double> BVector(9);
+    double* B = &BVector[0];
+    std::vector<double> testVector(9);
+    double* Ctest = &testVector[0];
 
-//! Invert a single N-by-N symmetric matrix; returns zero of successful, one if not successful (e.g., singular matrix).
+    num = 9;
+    for (n=0; n<9; n++){
+        B[n] = num;
+        num++;
+        }
+      
+     //updateElasticCauchyStressAnisotropicCode
+     //   const ScalarT strain[][3],
+     //   ScalarT* sigmaNP1,
+     //   const ScalarT C[][6],
+     //   int type
+    CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(B, Ctest, A, 0);
+    
+    double C[] =      { 468.0  ,3978.0, 3276.0,
+                        3978.0 ,1170.0, 2574.0,
+                        3276.0 ,2574.0, 1872.0};
 
-//! Inner product of two 3-by-3 matrices.
-template<typename ScalarT>
-void MatrixMultiply
-(
-bool transA,
-bool transB,
-ScalarT alpha,
-const ScalarT* a,
-const ScalarT* b,
-ScalarT* result
-);
+    for (n=0; n<9; n++){
 
-template<typename ScalarT>
-void MatrixMultiply3x3
-(
-const ScalarT A[][3],
-const ScalarT B[][3],
-ScalarT C[][3]
-);
+            TEST_FLOATING_EQUALITY(C[n],Ctest[n],tolerance);
+        
+    }
+    double C2D[] = {167, 1487, 0, 
+                    1487, 431., 0, 
+                    0,   0,   0};   
+    
+    CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(B, Ctest, A, 1);
+    
+    for (n=0; n<9; n++){
+        TEST_FLOATING_EQUALITY(C2D[n],Ctest[n],tolerance);
+        }
 
-template<typename ScalarT>
-void MatMul
-(
-int n,
-const ScalarT A[][6],
-const ScalarT B[][6],
-ScalarT C[][6],
-bool transpose
-);
-
-template<typename ScalarT>
-void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints);
-
-template<typename ScalarT>
-void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints);
-
-//! Transpose matrix; if both arguments are the same pointer then the matrix is transposed in place.
-template<typename ScalarT>
-void TransposeMatrix
-(
-const ScalarT* matrix,
-ScalarT* transpose
-);
-template<typename ScalarT>
-int invertAndCond
-(
-const ScalarT* Min,
-ScalarT *Mout,
-const int size,
-const double thresVal
-);
 }
-#endif // MATRICES_H
+
+
+
+int main
+(int argc, char* argv[])
+{
+  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+}

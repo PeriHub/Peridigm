@@ -52,6 +52,34 @@
 
 using namespace std;
 using namespace Teuchos;
+
+
+TEUCHOS_UNIT_TEST(matrices, tensorRotation) {
+    const double tolerance = 2.0e-8;
+        
+    int n;
+    std::vector<double> AVector(3);
+    double* A = &AVector[0];
+    std::vector<double> BVector(9);
+    double* B = &BVector[0];
+    std::vector<double> CVector(9);
+    double* C = &CVector[0];
+    std::vector<double> CtestVector(9);
+    double* Ctest = &CtestVector[0];
+    // x-rotation
+    A[0] = 14;A[1] = 0;A[2] = 0;
+    for (n=0; n<9; n++){
+        B[n] = (n+1) + 0.33*n*n;
+    }
+
+    MATRICES::tensorRotation(A,B,true,C);
+    MATRICES::tensorRotation(A,C,false,Ctest);
+    
+    for (n=0; n<9; n++){
+        TEST_FLOATING_EQUALITY(B[n],Ctest[n],tolerance); 
+    }
+    
+}
 TEUCHOS_UNIT_TEST(matrices, createRotationMatrix) {
     const double tolerance = 2.0e-8;
         
@@ -265,57 +293,6 @@ TEUCHOS_UNIT_TEST(matrices, MatrixMultiply3x3) {
         }
 }
 
-TEUCHOS_UNIT_TEST(matrices, MatrixMultiply3x3toVector) {
-
-    double A[3][3];
-    double B[3][3];
-    double C[9] = {30, 36, 42, 66, 81, 96,102, 126, 150};
-    std::vector<double> testVector(9);
-    double* Ctest = &testVector[0];
-    int n, m, x;
-    x=1;
-
-    for (n=0; n<3; n++)
-        for (m=0; m<3; m++)
-        {
-            A[n][m]=x;
-            B[n][m]=x;
-            x++;
-        }
-
-    MATRICES::MatrixMultiply3x3toVector(A,B,Ctest);
-    for (n=0; n<9; n++){
-            TEST_FLOATING_EQUALITY(Ctest[n],C[n],0);
-        }
-}
-
-TEUCHOS_UNIT_TEST(matrices, MatrixMultiply3x3fromVector) {
-
-    double A[3][3];
-    double C[3][3] = {{30, 36, 42},
-                     {66, 81, 96},
-                     {102, 126, 150}};
-    std::vector<double> BVector(9);
-    double* B = &BVector[0];
-    double Ctest[3][3];
-    int n, m, x;
-    x=1;
-
-    for (n=0; n<3; n++){
-        for (m=0; m<3; m++)
-        {
-            A[n][m]=x;
-            B[x-1]=x;
-            x++;
-        }
-    }
-    MATRICES::MatrixMultiply3x3fromVector(A,B,Ctest);
-    for (n=0; n<3; n++){
-        for (m=0; m<3; m++){
-            TEST_FLOATING_EQUALITY(Ctest[n][m],C[n][m],0);
-        }
-        }
-}
 
 TEUCHOS_UNIT_TEST(matrices, MatrixMultiply) {
 
