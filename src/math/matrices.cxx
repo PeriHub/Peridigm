@@ -888,14 +888,11 @@ int invertAndCond(const ScalarT* Min,
                   const int size,
                   const double thresVal)
 {
-  //    double conditioning;
-  // tbd: use std::vector
-  double v[size*size];
-  double w[size];
-  double u[size*size];
-  //double *v=(double*)calloc(size*size,sizeof(double));
-  //double *w=(double*)calloc(size,sizeof(double));
-  //double *u=(double*)calloc(size*size,sizeof(double));
+  
+  double *v = new double[size*size];
+  double *w = new double[size];
+  double *u = new double[size*size];  
+  
 
   int i,j,k;
 
