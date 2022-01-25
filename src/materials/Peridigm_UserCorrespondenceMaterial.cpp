@@ -48,6 +48,7 @@
 #include "Peridigm_UserCorrespondenceMaterial.hpp"
 #include "Peridigm_Field.hpp"
 #include "user_material_interface_correspondence.h"
+#include "correspondence.h"
 #include "math.h"
 #include <Teuchos_Assert.hpp>
 
@@ -74,11 +75,7 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
     }
   if (m_planeStrain==true)m_type=1;
   if (m_planeStress==true)m_type=2;
-  m_hencky = false;
-  if (params.isParameter("Hencky Strain")){
-      m_hencky = params.get<bool>("Hencky Strain");
-  }
-
+ 
   std::string var =params.name();
   std::string delimiter = "->";
   matName = var.substr(var.find_last_of(delimiter)+1,var.length());
@@ -164,7 +161,6 @@ PeridigmNS::UserCorrespondenceMaterial::initialize(const double dt,
         coorTrafo[iID/3] = false;
         if (*(angles+iID)!=0){
           coorTrafo[iID/3] = true;
-          break;
         }
       }
 }
@@ -185,7 +181,7 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
   double *angles, *modelCoordinates;
   double *defGradN, *defGradNP1;
   double *GLStrainN, *GLStrainNP1;
-  double *CauchyStressN, *CauchyStressNP1;
+  double *CauchyStressNP1;
   double *RotationN, *RotationNP1;
   // have to be checked if the additional effort is useful or not
   // deactivated for tests with implicit solver
@@ -196,7 +192,6 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NP1)->ExtractView(&defGradNP1);
   dataManager.getData(m_strainFieldId,              PeridigmField::STEP_N)->ExtractView(&GLStrainN);
   dataManager.getData(m_strainFieldId,              PeridigmField::STEP_NP1)->ExtractView(&GLStrainNP1);
-  dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_N)->ExtractView(&CauchyStressN);
   dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&CauchyStressNP1);
   dataManager.getData(m_rotationTensorFieldId, PeridigmField::STEP_N)->ExtractView(&RotationN);
   dataManager.getData(m_rotationTensorFieldId, PeridigmField::STEP_NP1)->ExtractView(&RotationNP1);
@@ -219,6 +214,7 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
         }
       }
   }
+  CORRESPONDENCE::computeGreenLagrangeStrain(defGradNP1,GLStrainNP1,flyingPointFlag,numOwnedPoints);
   double* props = new double[nprops]; //temp;
   for(int iID=0 ; iID<nprops ; ++iID){props[iID] = userProperties[iID];}
   CORRESPONDENCE::userMaterialInterface(modelCoordinates,
@@ -226,7 +222,6 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
                                         defGradNP1, 
                                         GLStrainN,
                                         GLStrainNP1,
-                                        CauchyStressN,
                                         CauchyStressNP1,
                                         numOwnedPoints,
                                         nstatev,
@@ -234,7 +229,6 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
                                         nprops,
                                         props,
                                         angles,
-                                        flyingPointFlag,
                                         time,
                                         dt,
                                         temperature,
@@ -244,8 +238,7 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
                                         m_planeStress,
                                         m_planeStrain,
                                         matName,
-                                        coorTrafo,
-                                        m_hencky);
+                                        coorTrafo);
    if (nstat > 0) {
       double *stat;
       int tensorLen = 9;

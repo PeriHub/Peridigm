@@ -97,7 +97,6 @@ namespace PeridigmNS {
     int m_flyingPointFlagFieldId;
     int m_rotationTensorFieldId;
     std::string matName;
-    bool m_hencky;
   };
 }
 

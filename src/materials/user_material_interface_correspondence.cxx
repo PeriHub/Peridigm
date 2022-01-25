@@ -61,7 +61,6 @@ const ScalarT* DeformationGradientN,
 ScalarT* DeformationGradientNP1, 
 const ScalarT* strainN, 
 ScalarT* strainNP1, 
-const ScalarT* unrotatedCauchyStressN, 
 ScalarT* unrotatedCauchyStressNP1, 
 const int numPoints, 
 const int nstatev,
@@ -69,7 +68,6 @@ ScalarT* statev,
 const int nprops,
 const ScalarT* props,
 const double* angles,
-const double* flyingPointFlag,
 const double time,
 const double dtime,
 const double* temp,
@@ -79,18 +77,15 @@ const double* RotationNP1,
 const bool plane_stress,
 const bool plane_strain,
 const std::string matname,
-const bool* coordinateTrafo,
-const bool hencky
+const bool* coordinateTrafo
 )
 {
   // Hooke's law
   const ScalarT* defGradN = DeformationGradientN;
   ScalarT* defGradNP1 = DeformationGradientNP1;
-  const ScalarT* GLStrainN = unrotatedCauchyStressN;
+  const ScalarT* GLStrainN = strainN;
   ScalarT* GLStrainNP1 = strainNP1;
-  const ScalarT* sigmaN = strainN;
   ScalarT* sigmaNP1 = unrotatedCauchyStressNP1;
-  ScalarT* GLStrainNVoigt;
   char matnameArray[80];
   int nname;
 
@@ -113,35 +108,29 @@ const bool hencky
   double DRPLDT = -1;
   double SSE = -1,SPD = -1,SCD = -1,RPL = -1;
   //
-  
-  int defGradLogReturnCode(0);
 
-  std::vector<ScalarT> strainVector(9),depsVector(9), sigmaNRotVector(9), drotVector(9);
-  ScalarT* strain = &strainVector[0];
+  std::vector<ScalarT> strainLocVector(9),depsVector(9), drotVector(9), depsLocVector(9), sigmaNP1LocVector(9);
+  ScalarT* strainLoc = &strainLocVector[0];
   ScalarT* deps = &depsVector[0];
-  ScalarT* sigmaNRot = &sigmaNRotVector[0];
+  ScalarT* depsLoc = &depsLocVector[0];
   ScalarT* drot = &drotVector[0];
-  //ScalarT* drot[3][3];
-  // Voigt Notation
-  std::vector<ScalarT> strainVoigtVector(6),depsVoigtVector(6), sigmaNRotVoigtVector(6), sigmaNP1VoigtVector(6);
-  ScalarT* strainVoigt = &strainVoigtVector[0];
-  ScalarT* depsVoigt = &depsVoigtVector[0];
-  ScalarT* sigmaNRotVoigt = &sigmaNRotVoigtVector[0];
-  ScalarT* sigmaNP1Voigt = &sigmaNP1VoigtVector[0];
-  
-  for(int iID=0 ; iID<numPoints ; ++iID, 
-        coords+=3, defGradN+=9, defGradNP1+=9, sigmaN+=9, GLStrainN+=9,GLStrainNP1+=9,sigmaNP1+=9, angles+=3){
-          NOEL = iID;
+  ScalarT* sigmaNP1Loc = &sigmaNP1LocVector[0];
+   // Voigt Notation
+  std::vector<ScalarT> strainLocVoigtVector(6),depsLocVoigtVector(6), sigmaNP1LocVoigtVector(6);
+  ScalarT* strainLocVoigt = &strainLocVoigtVector[0];
+  ScalarT* depsLocVoigt = &depsLocVoigtVector[0];
+  ScalarT* sigmaNP1LocVoigt = &sigmaNP1LocVoigtVector[0];
 
-          CORRESPONDENCE::computeGreenLagrangeStrain(defGradNP1,GLStrainNP1,flyingPointFlag ,numPoints);
-          
+  for(int iID=0 ; iID<numPoints ; ++iID, 
+        coords+=3, defGradN+=9, defGradNP1+=9, GLStrainN+=9,GLStrainNP1+=9,sigmaNP1+=9, angles+=3){
+          NOEL = iID;
+    
           CORRESPONDENCE::DIFFTENSOR(GLStrainN, GLStrainNP1, deps);
           CORRESPONDENCE::DIFFTENSOR(RotationN, RotationNP1, drot);
           //CORRESPONDENCE::StoreAsMatrix(drotV, drot);
           nname = matname.length();
 
-          for(unsigned int i=0; i<matname.length(); ++i)
-          {
+          for(unsigned int i=0; i<matname.length(); ++i){
             matnameArray[i] = matname[i];
           }
 
@@ -149,27 +138,25 @@ const bool hencky
           //https://www.continuummechanics.org/stressxforms.html
           // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
           if (coordinateTrafo[iID]==true){  
-            MATRICES::tensorRotation(angles,GLStrainN,true,strain);
-            MATRICES::tensorRotation(angles,sigmaN,true,sigmaNRot);
-            MATRICES::tensorRotation(angles,sigmaN,true,sigmaNRot);
+            MATRICES::tensorRotation(angles,GLStrainN,true,strainLoc);
+            MATRICES::tensorRotation(angles,deps,true,depsLoc);
           }
 
-          CORRESPONDENCE::GetVoigtNotation(sigmaNP1, sigmaNP1Voigt);
-          CORRESPONDENCE::GetVoigtNotation(GLStrainN, GLStrainNVoigt);
-          CORRESPONDENCE::GetVoigtNotation(deps, depsVoigt);
+          CORRESPONDENCE::GetVoigtNotation(strainLoc, strainLocVoigt);
+          CORRESPONDENCE::GetVoigtNotation(depsLoc, depsLocVoigt);
           
 
-          CORRESPONDENCE::UMATINT(sigmaNP1Voigt,statev,DSDDE,&SSE,&SPD,&SCD,&RPL,
-          DDSDDT, DRPLDE,&DRPLDT,GLStrainNVoigt,depsVoigt,&time,&dtime,temp,dtemp,
+          CORRESPONDENCE::UMATINT(sigmaNP1LocVoigt,statev,DSDDE,&SSE,&SPD,&SCD,&RPL,
+          DDSDDT, DRPLDE,&DRPLDT,strainLocVoigt,depsLocVoigt,&time,&dtime,temp,dtemp,
           &PREDEF,&DPRED,matnameArray,&nnormal,&nshr,&nstresscomp,&nstatev,props,
           &nprops,coords,drot,&PNEWDT,&CELENT,defGradN,defGradNP1,
           &NOEL,&NPT,&KSLAY,&KSPT,&JSTEP,&KINC,&nname); 
 
-          CORRESPONDENCE::GetTensorFromVoigtNotation(sigmaNP1Voigt, sigmaNP1);
+          CORRESPONDENCE::GetTensorFromVoigtNotation(sigmaNP1LocVoigt, sigmaNP1Loc);
 
           // Rotationstransformation 
           if (coordinateTrafo[iID]==true){  
-            MATRICES::tensorRotation(angles,strain,false,strain);
+            MATRICES::tensorRotation(angles,sigmaNP1Loc,false,sigmaNP1);
           }
 
         }
@@ -220,8 +207,9 @@ const double* TENSORNP1,
 double* DTENSOR
 );
 
+
 template<typename ScalarT>
-void GetVoigt
+void GetVoigtNotation
 (
 const ScalarT* TENSOR,
 ScalarT* VOIGT
@@ -235,14 +223,14 @@ ScalarT* VOIGT
   *(VOIGT+5) = 0.5*(*(TENSOR+1) + *(TENSOR+3));
 }
 
-template void GetVoigt<double>
+template void GetVoigtNotation<double>
 (
 const double* TENSOR,
 double* VOIGT
 );
 
 template<typename ScalarT>
-void GetTensorFromVoigt
+void GetTensorFromVoigtNotation
 (
 const ScalarT* VOIGT,
 ScalarT* TENSOR
@@ -259,7 +247,7 @@ ScalarT* TENSOR
   *(TENSOR+8) = *(VOIGT+2);
 }
 
-template void GetTensorFromVoigt<double>
+template void GetTensorFromVoigtNotation<double>
 (
 const double* VOIGT,
 double* TENSOR
@@ -287,7 +275,6 @@ const double* DeformationGradientN,
 double* DeformationGradientNP1, 
 const double* strainN, 
 double* strainNP1, 
-const double* unrotatedCauchyStressN, 
 double* unrotatedCauchyStressNP1, 
 const int numPoints, 
 const int nstatev,
@@ -295,7 +282,6 @@ double* statev,
 const int nprops,
 const double* props,
 const double* angles,
-const double* flyingPointFlag,
 const double time,
 const double dtime,
 const double* temp,
@@ -305,8 +291,7 @@ const double* RotationNP1,
 const bool plane_stress,
 const bool plane_strain,
 const std::string matname,
-const bool* coordinateTrafo,
-bool hencky
+const bool* coordinateTrafo
 );
 
 

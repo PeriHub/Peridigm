@@ -57,7 +57,6 @@ const ScalarT* DeformationGradientN,
 ScalarT* DeformationGradientNP1, 
 const ScalarT* strainN, 
 ScalarT* strainNP1, 
-const ScalarT* unrotatedCauchyStressN, 
 ScalarT* unrotatedCauchyStressNP1, 
 const int numPoints, 
 const int nstatev,
@@ -65,7 +64,6 @@ ScalarT* statev,
 const int nprops,
 const ScalarT* props,
 const double* angles,
-const double* flyingPointFlag,
 const double time,
 const double dtime,
 const double* temp,
@@ -75,8 +73,7 @@ const double* RotationNP1,
 const bool plane_stress,
 const bool plane_strain,
 const std::string matname,
-const bool* coordinateTrafo,
-const bool hencky
+const bool* coordinateTrafo
 );
 
 template<typename ScalarT>
