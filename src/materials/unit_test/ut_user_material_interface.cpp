@@ -57,6 +57,7 @@ TEUCHOS_UNIT_TEST(correspondence, ut_user_material_interface) {
     const double tolerance = 1.0e-15;
     
     std::vector<double> strainLocVoigtVector(6), statevVector(9), depsLocVoigtVector(6), sigmaNP1LocVoigtVector(6), sigmaNP1LocVoigtTestVector(6), coordsVector(6), drotVector(9), drotTestVector(9), defGradNVector(9), defGradNP1Vector(9);
+    std::vector<double> defGradNTestVector(9), defGradNP1TestVector(9);;
     double* strainLocVoigt = &strainLocVoigtVector[0];
     double* depsLocVoigt = &depsLocVoigtVector[0];
     double* sigmaNP1LocVoigt = &sigmaNP1LocVoigtVector[0];
@@ -67,6 +68,10 @@ TEUCHOS_UNIT_TEST(correspondence, ut_user_material_interface) {
     double* drotTest = &drotTestVector[0];
     double* defGradN = &defGradNVector[0];
     double* defGradNP1 = &defGradNP1Vector[0];
+    double* defGradNTest = &defGradNTestVector[0];
+    double* defGradNP1Test = &defGradNP1TestVector[0];
+    // double* DSDDE = &DSDDEVector[0];
+    // double* DSDDETest = &DSDDETestVector[0];
 
     const double time = 0.1, dtime = 0.1;
     const double* temp;
@@ -98,22 +103,27 @@ TEUCHOS_UNIT_TEST(correspondence, ut_user_material_interface) {
         *(sigmaNP1LocVoigt+m) = m;
         *(sigmaNP1LocVoigtTest+m) = m*2;
     } 
-    for (m=0; m<6; m++){
+    for (m=0; m<9; m++){
         *(drot+m) = m;
+        *(defGradN+m) = m;
+        *(defGradNP1+m) = m;
         *(drotTest+m) = m*2;
+        *(defGradNTest+m) = m*2;
+        *(defGradNP1Test+m) = m*2;
     } 
     for (m=0; m<6; m++){
-        DSDDE[m] = m;
         DRPLDE[m] = m*2;
     }  
-    num = 1;
+    num = 0;
     for (m=0; m<6; m++){
         for (n=0; n<6; n++){
-            DSDDE[m*n] = num;
-            DSDDETest[m*n] = num*2;
+            DSDDE[num] = num;
+            DSDDETest[num] = num*2;
             num++;
-        }
+        } 
     }   
+
+    // CORRESPONDENCE::StoreAsMatrix(drot,drotMat);
 
     CORRESPONDENCE::UMATINTTEST(sigmaNP1LocVoigt,statev,DSDDE,&SSE,&SPD,&SCD,&RPL,
     DDSDDT, DRPLDE,&DRPLDT,strainLocVoigt,depsLocVoigt,&time,&dtime,temp,dtemp,
@@ -126,10 +136,14 @@ TEUCHOS_UNIT_TEST(correspondence, ut_user_material_interface) {
     } 
     for (m=0; m<9; m++){
         TEST_FLOATING_EQUALITY(*(drot+m),*(drotTest+m),tolerance);
+        TEST_FLOATING_EQUALITY(*(defGradN+m),*(defGradNTest+m),tolerance);
+        TEST_FLOATING_EQUALITY(*(defGradNP1+m),*(defGradNP1Test+m),tolerance);
     } 
+    num = 0;
     for (m=0; m<6; m++){
         for (n=0; n<6; n++){
-            TEST_FLOATING_EQUALITY(DSDDE[m*n],DSDDETest[m*n],tolerance);
+            TEST_FLOATING_EQUALITY(DSDDE[num],DSDDETest[num],tolerance);
+            num++;
         }
     } 
 }
