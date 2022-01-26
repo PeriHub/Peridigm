@@ -98,6 +98,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     m_inc = false;
   }
   bool m_planeStrain = false, m_planeStress = false;
+  
   if (params.isParameter("Plane Strain"))
       m_planeStrain = params.get<bool>("Plane Strain");
       

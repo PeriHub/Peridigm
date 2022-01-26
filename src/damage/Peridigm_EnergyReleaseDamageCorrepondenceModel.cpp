@@ -118,20 +118,24 @@ m_hourglassStiffId(-1) {
         m_onlyTension = params.get<bool>("Only Tension");
     m_criticalEnergyInterBlock = m_criticalEnergyTension;
     if (params.isParameter("Interblock damage energy")){
+
+        int nblocks = params.get<int>("Number of Interblocks");
+        string prop = "Block_";
+  
+  // https://docs.microsoft.com/de-de/cpp/cpp/delete-operator-cpp?view=msvc-170
+        delete block;
+        block = new int[2*nblocks];
+
+         for(int iID=0 ; iID<nblocks ; ++iID){
+            block[2*iID]   = params.get<double>(prop + std::to_string(2*iID) + std::to_string(2*iID+1));
+            block[2*iID+1] = params.get<double>(prop + std::to_string(2*iID+1) + std::to_string(2*iID));
+        }
+
+
         m_criticalEnergyInterBlock = params.get<double>("Interblock damage energy");
-        
-        for (int iID = 0; iID < 8; ++iID){ block[iID] = 0;}
-        if (params.isParameter("Block_12")) {block[0] = params.get<int>("Block_12");}
-        if (params.isParameter("Block_21")) {block[1] = params.get<int>("Block_21");}
-        if (params.isParameter("Block_34")) {block[2] = params.get<int>("Block_34");}
-        if (params.isParameter("Block_43")) {block[3] = params.get<int>("Block_43");}
-        if (params.isParameter("Block_56")) {block[4] = params.get<int>("Block_56");}
-        if (params.isParameter("Block_65")) {block[5] = params.get<int>("Block_65");}
-        if (params.isParameter("Block_78")) {block[6] = params.get<int>("Block_78");}
-        if (params.isParameter("Block_87")) {block[7] = params.get<int>("Block_87");}
-        
+      
     }
-    m_bondDiffSt = 100000000;
+    m_bondDiffSt = 2147483647;
     if (params.isParameter("Stable Bond Difference"))
         m_bondDiffSt  = params.get<int>("Stable Bond Difference");
   //************************************
@@ -420,7 +424,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                     
                     criticalEnergyTension = m_criticalEnergyTension;
                     
-                    if (blockNumber[neighborID]==blockInterfaceId)criticalEnergyTension = m_criticalEnergyInterBlock;
+                    if (blockNumber[neighborID]==block[blockInterfaceId])criticalEnergyTension = m_criticalEnergyInterBlock;
                     
                     omegaP1 = MATERIAL_EVALUATION::scalarInfluenceFunction(dX, horizon[nodeId]); 
                     omegaP2 = MATERIAL_EVALUATION::scalarInfluenceFunction(-dX, horizon[neighborID]); 
