@@ -132,6 +132,8 @@ void updateElasticPerfectlyPlasticCauchyStress
       *vmStress = sqrt(3.0/2.0*tempScalar);
     if(isFlaw){
         //Increment the pointer
+        //CORRESPONDENCE::FLAWFUNCTION()
+
         reducedYieldStress = yieldStress * (1.0 - flawMagnitude 
                               * exp( (
                               (- ( *(modelCoord) - flawLocationX)) * (*(modelCoord) - flawLocationX) -

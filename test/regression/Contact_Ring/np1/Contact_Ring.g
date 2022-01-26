@@ -1,1 +1,0 @@
-../Contact_Ring.g
