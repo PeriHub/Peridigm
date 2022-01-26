@@ -158,6 +158,17 @@ void computeGreenLagrangeStrain
 (const ScalarT* defGrad,
 ScalarT* strain
 );
+double FLAWFUNCTION(
+const bool isFlaw,
+const double yieldStress,
+const double flawMagnitude, 
+const double flawSize, 
+const double* modelCoord, 
+const double flawLocationX, 
+const double flawLocationY, 
+const double flawLocationZ, 
+const int type
+);
 template<typename ScalarT>
 void computeHourglassForce
 (

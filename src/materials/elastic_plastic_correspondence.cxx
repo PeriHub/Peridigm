@@ -130,21 +130,10 @@ void updateElasticPerfectlyPlasticCauchyStress
       }
 
       *vmStress = sqrt(3.0/2.0*tempScalar);
-    if(isFlaw){
-        //Increment the pointer
-        //CORRESPONDENCE::FLAWFUNCTION()
+    
+      reducedYieldStress = CORRESPONDENCE::FLAWFUNCTION(isFlaw,yieldStress, flawMagnitude, flawSize, modelCoord, flawLocationX, flawLocationY, flawLocationZ, 1);
+        
 
-        reducedYieldStress = yieldStress * (1.0 - flawMagnitude 
-                              * exp( (
-                              (- ( *(modelCoord) - flawLocationX)) * (*(modelCoord) - flawLocationX) -
-                              (( *(modelCoord+1) - flawLocationY)) * (*(modelCoord+1) - flawLocationY) -
-                              (( *(modelCoord+2) - flawLocationZ)) * (*(modelCoord+2) - flawLocationZ)
-                              ) / flawSize / flawSize
-                              ));
-      } else {
-        //Without flaws the reduced yield stress is the yield stress.
-        reducedYieldStress = yieldStress;
-      } 
       //If true, the step is plastic and we need to return to the yield
       //surface.  
       if(*vmStress > reducedYieldStress){

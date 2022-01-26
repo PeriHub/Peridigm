@@ -2613,6 +2613,36 @@ void updateDeformationGradient
   }
 }
 
+double FLAWFUNCTION(
+  const bool isFlaw,
+  const double yieldStress,
+  const double flawMagnitude, 
+  const double flawSize, 
+  const double* modelCoord, 
+  const double flawLocationX, 
+  const double flawLocationY, 
+  const double flawLocationZ, 
+  const int type
+)
+{
+
+    double reducedYieldStress = yieldStress;
+    if (isFlaw){
+      if (type == 1){
+        reducedYieldStress = yieldStress * (1.0 - flawMagnitude 
+                          * exp( ((- ( *(modelCoord) - flawLocationX)) * (*(modelCoord) - flawLocationX) -
+                          (( *(modelCoord+1) - flawLocationY)) * (*(modelCoord+1) - flawLocationY) -
+                          (( *(modelCoord+2) - flawLocationZ)) * (*(modelCoord+2) - flawLocationZ)
+                          ) / flawSize / flawSize
+                          ));
+      }
+      else{
+        std::cout<<"not implemented yet"<<std::endl;
+      }
+    }
+    return reducedYieldStress;
+}
+
 template<typename ScalarT>
 void computeGreenLagrangeStrain
 (

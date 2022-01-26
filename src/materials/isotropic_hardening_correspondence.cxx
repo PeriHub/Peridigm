@@ -211,19 +211,7 @@ void updateElasticIsotropicHardeningPlasticCauchyStressCode
   *vmStress = sqrt(3.0/2.0*tempScalar);
 
   // Reduce yield stress if flaws are present
-  if(isFlaw){
-    //Increment the pointer
-    reducedYieldStress = yieldStress * (1.0 - flawMagnitude 
-                          * exp( (
-                          (- ( *(modelCoord) - flawLocationX)) * (*(modelCoord) - flawLocationX) -
-                          (( *(modelCoord+1) - flawLocationY)) * (*(modelCoord+1) - flawLocationY) -
-                          (( *(modelCoord+2) - flawLocationZ)) * (*(modelCoord+2) - flawLocationZ)
-                          ) / flawSize / flawSize
-                          ));
-  } else {
-    //Without flaws the reduced yield stress is the yield stress.
-    reducedYieldStress = yieldStress;
-  }
+  reducedYieldStress = CORRESPONDENCE::FLAWFUNCTION(isFlaw,yieldStress, flawMagnitude, flawSize, modelCoord, flawLocationX, flawLocationY, flawLocationZ, 1);
 
   // Elastic or plastic?
   if (*vmStress < reducedYieldStress){
