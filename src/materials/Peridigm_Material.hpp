@@ -97,6 +97,7 @@ namespace PeridigmNS {
       TEUCHOS_TEST_FOR_TERMINATION(true, errorMsg);
       return 0.0;
     }
+    
 
     //! Mechanism allowing material models access to the boundary and initial condition manager
     virtual void setBCManager(Teuchos::RCP<PeridigmNS::BoundaryAndInitialConditionManager> bc_manager) {}
@@ -198,7 +199,8 @@ namespace PeridigmNS {
 
     //! Compute the shear modulus given any two elastic constants from among:  bulk modulus, shear modulus, Young's modulus, Poisson's ratio.
     double calculateShearModulus(const Teuchos::ParameterList & params) const;
-
+    //! Reads all elastic material parameters and provide an elasticity matrix
+    void getStiffnessmatrix(const Teuchos::ParameterList & params, double C[][6], bool pstrain, bool pstress) const;
     enum FiniteDifferenceScheme { FORWARD_DIFFERENCE=0, CENTRAL_DIFFERENCE=1 };
 
     // computeDilatation is needed as function to update the dilatation before the damage routine
