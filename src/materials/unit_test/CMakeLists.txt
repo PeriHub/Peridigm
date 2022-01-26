@@ -50,6 +50,18 @@ target_link_libraries(ut_elasticcorrespondence
 )
 add_test (ut_elasticcorrespondence python ${CMAKE_BINARY_DIR}/scripts/run_unit_test.py ./ut_elasticcorrespondence)
 
+add_executable(ut_user_material_interface ./ut_user_material_interface.cpp)
+target_link_libraries(ut_user_material_interface
+  ${Peridigm_LIBRARY}
+  ${PdMaterialUtilitiesLib}
+  ${PdMathUtilitiesLib}
+  PdField
+  QuickGrid
+  ${REQUIRED_LIBS}
+  ${Trilinos_LIBRARIES}
+)
+add_test (ut_user_material_interface python ${CMAKE_BINARY_DIR}/scripts/run_unit_test.py ./ut_user_material_interface)
+
 add_executable(ut_umats ./ut_umats.cpp)
 target_link_libraries(ut_umats
   ${Peridigm_LIBRARY}
