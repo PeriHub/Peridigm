@@ -141,7 +141,12 @@ const bool* coordinateTrafo
             MATRICES::tensorRotation(angles,GLStrainN,true,strainLoc);
             MATRICES::tensorRotation(angles,deps,true,depsLoc);
           }
-
+          else{
+              for(int i=0; i<9; ++i){
+                strainLoc[i] = *(GLStrainN+i);
+                depsLoc[i] = deps[i];
+              }
+          }
           CORRESPONDENCE::GetVoigtNotation(strainLoc, strainLocVoigt);
           CORRESPONDENCE::GetVoigtNotation(depsLoc, depsLocVoigt);
           
@@ -157,6 +162,12 @@ const bool* coordinateTrafo
           // Rotationstransformation 
           if (coordinateTrafo[iID]==true){  
             MATRICES::tensorRotation(angles,sigmaNP1Loc,false,sigmaNP1);
+          }
+          else
+          {
+            for(int i=0; i<9; ++i){
+              *(sigmaNP1+i) = sigmaNP1Loc[i];
+            }
           }
 
         }
