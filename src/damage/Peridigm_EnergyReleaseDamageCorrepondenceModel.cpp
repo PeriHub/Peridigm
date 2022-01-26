@@ -138,12 +138,6 @@ m_hourglassStiffId(-1) {
     m_bondDiffSt = 2147483647;
     if (params.isParameter("Stable Bond Difference"))
         m_bondDiffSt  = params.get<int>("Stable Bond Difference");
-  //************************************
-  // wie komme ich an den Namen??
-  //************************************
-  //if (params.isParameter("Linear Elastic Correspondence")){
-   
-    //std::cout<<"Use Material: Linear Elastic Correspondence"<<std::endl;
 
     if (m_planeStrain==true){
         //m_plane=true;
@@ -158,11 +152,6 @@ m_hourglassStiffId(-1) {
         //std::cout<<"WRN: Method 2D Plane Stress --> not fully implemented yet"<<std::endl;
     }
    
-// Params anpassen. Irgendwo muss das befuellt werden, da bspw. die thermische Verformung bei Material
-// und Schaden existiert
-//
-//
-
     m_pi = M_PI;
 
     if (params.isParameter("Thermal Expansion Coefficient")) {
@@ -287,19 +276,6 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     dataManager.getData(m_bondEnergyFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondEnergyNP1);
 
     int iID, nodeId;
-    //bool rerun;
-    //rerun = false;
-    //for (iID = 0; iID < numOwnedPoints; ++iID){
-    //    nodeId = ownedIDs[iID];
-    //    if (bondDamageDiff[nodeId]>m_bondDiffSt)
-    //    {
-    //        rerun = true;  
-    //        cout << "rerun2: " << bondDamageDiff[nodeId] << " nodeId: " << nodeId << endl;
-    //        bondDamageDiff[nodeId] = 0;
-    //        break;
-    //    }
-    //}
-
     
     dataManager.getData(m_piolaStressTimesInvShapeTensorXId, PeridigmField::STEP_NP1)->ExtractView(&tempStressX);
     dataManager.getData(m_piolaStressTimesInvShapeTensorYId, PeridigmField::STEP_NP1)->ExtractView(&tempStressY);
@@ -448,20 +424,12 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                     TZN =   omegaP2 * ( tempStressZ[3*neighborID] * X[0] + tempStressZ[3*neighborID+1] * X[1] + tempStressZ[3*neighborID+2] * X[2] + hourglassScaling*TS[2]);
                     //std::cout<< "here2"<<std::endl;
                     // orthogonal projection of T and TN to the relative displacement vector Foster et al. "An energy based .."
-                    // --> die senkrecht zur Projektion stehenden Anteile entsprechen eventuell den Schubanteilen. D.h. man könnte das Kriterium hier splitten.
                     factor = (eta[0]*TX + eta[1]*TY + eta[2]*TZ)/normEtaSq;
                     TPX = factor*eta[0]; TPY = factor*eta[1]; TPZ = factor*eta[2];
-                    
-                    //factor = (Y_dx*TX + Y_dy*TY + Y_dz*TZ)/dYSq;
-                    //TPX = factor*Y_dx; TPY = factor*Y_dy; TPZ = factor*Y_dz;
-                    
+                                
                     factorN = (eta[0]*TXN + eta[1]*TYN + eta[2]*TZN)/normEtaSq;
                     TPXN = factorN*eta[0]; TPYN = factorN*eta[1]; TPZN = factorN*eta[2];
                     
-                    //factorN = (Y_dx*TXN + Y_dy*TYN + Y_dz*TZN)/dYSq;
-                    //TPXN = factorN*Y_dx; TPYN = factorN*Y_dy; TPZN = factorN*Y_dz;
-
-                    // 0.25 oder 0.5
                     bondEnergyNP1[bondIndex] = bondEnergyN[bondIndex] + 0.25*(1-bondDamageNP1[bondIndex])*(abs(TPX*incEta[0])+abs(TPXN*incEta[0])+abs(TPY*incEta[1])+abs(TPYN*incEta[1])+abs(TPZ*incEta[2])+abs(TPZN*incEta[2]));
                     
                 }
@@ -471,12 +439,6 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                 }
                 
                 double avgHorizon = 0.5*(horizon[nodeId]+horizon[neighborID]);
-                // if (bondEnergyNP1[bondIndex]<0){
-                //     std::cout<<TPX<<" "<< labs(TPXN)<<" BE "<<bondEnergyNP1[bondIndex]<<" BD  "<< (1-bondDamageNP1[bondIndex])<<std::endl;
-                // }
-                ////////////////////////////////////////////////////////////////
-                //--> to check, depth is not included yet. How to handle??
-                ////////////////////////////////////////////////////////////////
                 if (m_planeStrain==false&&m_planeStress==false){
                    quadhorizon =  4 /( m_pi * avgHorizon * avgHorizon * avgHorizon * avgHorizon );
                 }
@@ -513,8 +475,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     //  Update the element damage (percent of bonds broken)
     if (detachedNodesCheck == true){
         int check = 1;  //set check = 1 to start the loop
-        //std::cout<< "detached"<<std::endl;
-        while (check != 0){
+         while (check != 0){
             check = checkDetachedNodes(numOwnedPoints, ownedIDs, neighborhoodList, dataManager);
         }
     }
