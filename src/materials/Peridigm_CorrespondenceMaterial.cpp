@@ -84,10 +84,8 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_density = params.get<double>("Density");
   
   m_stabilizationType = 3;
-  m_inc = true;
   m_plane = false;
   nonLin = false;
-  m_hencky = false;
   m_plast = false;
   if (params.isParameter("Non linear")){
       nonLin = params.get<bool>("Non linear");
@@ -95,7 +93,6 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   
   if (params.isParameter("Linear Elastic Correspondence")){
     nonLin = false;
-    m_inc = false;
   }
   bool m_planeStrain = false, m_planeStress = false;
   if (params.isParameter("Plane Strain"))
@@ -103,10 +100,6 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
       
   if (params.isParameter("Plane Stress"))
       m_planeStress = params.get<bool>("Plane Stress");
-
-  if (params.isParameter("Hencky Strain")){
-      m_hencky = params.get<bool>("Hencky Strain");
-  }
   if (m_planeStrain==true){
       m_plane=true;
       
@@ -116,10 +109,10 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
      
   }
 
-  if (params.get<std::string>("Material Model").find("Plastic")!=std::string::npos) {
-      m_plast = true; // does not work. we have to check
-      
-  }
+  //if (params.get<std::string>("Material Model").find("Plastic")!=std::string::npos) {
+  //    m_plast = true; // does not work. we have to check
+  //    
+  //}
   m_applyAutomaticDifferentiationJacobian = false;
   if (params.isParameter("Accumulated Plastic")) m_plast = params.get<bool>("Accumulated Plastic");
   
@@ -136,12 +129,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
         m_stabilizationType = 2;
         m_hourglassCoefficient = params.get<double>("Hourglass Coefficient");
     }
-    //if (params.get<string>("Stabilizaton Type")=="Sub Horizon"){
-    //    m_stabilizationType = 4;
-    //    // works only for linear elastic correspondence first
-    //    // based on: Shubhankar Roy Chowdhury, Pranesh Roy, Debasish Roy and J N Reddy, 
-    //    // "A simple alteration of the peridynamics correspondence principle to eliminate zero-energy deformation"
-    //}
+
     m_adaptHourGlass  = false;
     if (params.get<string>("Stabilizaton Type")=="Global Stiffness"){
         getStiffnessmatrix(params, C, m_planeStrain, m_planeStress);
@@ -468,23 +456,23 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
         //                                                                        m_plane,
         //                                                                        detachedNodes);
 
-        if (m_inc){
-            // needed to create the rate of deformation for the step wise calculation
-            // all rotations are excluded; this speeds up the calculations, but assumes no large rotations
-            CORRESPONDENCE::getLinearUnrotatedRateOfDeformation(volume,
-                                                                horizon,
-                                                                modelCoordinates, 
-                                                                velocities, 
-                                                                deformationGradient,
-                                                                shapeTensorInverse,
-                                                                unrotatedRateOfDeformation,
-                                                                neighborhoodList, 
-                                                                numOwnedPoints, 
-                                                                bondDamageNP1,
-                                                                m_plane,
-                                                                detachedNodes
-                                                                );
-        }
+        
+        // needed to create the rate of deformation for the step wise calculation
+        // all rotations are excluded; this speeds up the calculations, but assumes no large rotations
+        CORRESPONDENCE::getLinearUnrotatedRateOfDeformation(volume,
+                                                            horizon,
+                                                            modelCoordinates, 
+                                                            velocities, 
+                                                            deformationGradient,
+                                                            shapeTensorInverse,
+                                                            unrotatedRateOfDeformation,
+                                                            neighborhoodList, 
+                                                            numOwnedPoints, 
+                                                            bondDamageNP1,
+                                                            m_plane,
+                                                            detachedNodes
+                                                            );
+        
     }
   // Evaluate the Cauchy stress using the routine implemented in the derived class (specific correspondence material model)
   // The general idea is to compute the stress based on:
@@ -592,9 +580,7 @@ if (m_plast){
                                           
  //     std::cout<<numOwnedPoints<< " "<< *(deformationGradient)<<" "<<*(partialStress)<<std::endl;
     
-
-  if (m_incremental == false){
-      if (m_stabilizationType == 1){
+    if (m_stabilizationType == 1){
       CORRESPONDENCE::computeHourglassForce(volume,
                                             horizon,
                                             modelCoordinates,
@@ -609,7 +595,7 @@ if (m_plast){
                                             );
       }
       
-      if (m_stabilizationType == 2){
+    else if (m_stabilizationType == 2){
       
       CORRESPONDENCE::computeCorrespondenceStabilityForce(volume,
                                             horizon,
@@ -623,8 +609,7 @@ if (m_plast){
                                             m_hourglassCoefficient,
                                             bondDamageNP1
                                             );
-      }
-  }
+    }
 }
 
 void

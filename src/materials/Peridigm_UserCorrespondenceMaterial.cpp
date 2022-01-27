@@ -49,8 +49,8 @@
 #include "Peridigm_Field.hpp"
 #include "user_material_interface_correspondence.h"
 #include "correspondence.h"
-#include "math.h"
 #include <Teuchos_Assert.hpp>
+#include <Teuchos_Exceptions.hpp>
 
 //using namespace std;
 
@@ -81,6 +81,8 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
   matName = var.substr(var.find_last_of(delimiter)+1,var.length());
 
   nprops = params.get<int>("Number of Properties");
+  TEUCHOS_TEST_FOR_TERMINATION(nprops<1, 
+     "****         The number properties must be greater than zero.\n");
   string prop = "Prop_";
   
   // https://docs.microsoft.com/de-de/cpp/cpp/delete-operator-cpp?view=msvc-170
@@ -105,10 +107,12 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
   if (params.isParameter("Number of State Vars")){
     nstatev = params.get<int>("Number of State Vars");
     // FULL_TENSOR is used. Therefore, nine entries will be inialized at ones. 
+    TEUCHOS_TEST_FOR_TERMINATION(nstatev<1, 
+     "****         The number of state variables must be greater than zero.\n");
+
     int nstat = int(ceil(nstatev / 9.0));
     if (nstat > 0) {
-    //TEUCHOS_TEST_FOR_TERMINATION(nstate>5, 
-    // ****         The maximum numer of state variables is limited to 45\n";);
+
       delete m_state;
       m_state = new int[nstat];
       prop = "State_Parameter_Field_";
@@ -157,12 +161,9 @@ PeridigmNS::UserCorrespondenceMaterial::initialize(const double dt,
        check if and where local coordinates exists; 
       */
       coorTrafo = new bool[numOwnedPoints];
-      for (int iID=0 ; iID<3*numOwnedPoints; ++iID){
-        coorTrafo[iID/3] = false;
-        if (*(angles+iID)!=0){
-          coorTrafo[iID/3] = true;
-        }
-      }
+      CORRESPONDENCE::CheckCoordinateTransformation(numOwnedPoints, angles, coorTrafo);
+      
+
 }
 
 void

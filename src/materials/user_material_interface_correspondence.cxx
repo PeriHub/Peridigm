@@ -109,12 +109,10 @@ const bool* coordinateTrafo
   double SSE = -1,SPD = -1,SCD = -1,RPL = -1;
   //
 
-  std::vector<ScalarT> strainLocVector(9),depsVector(9), drotVector(9), depsLocVector(9), sigmaNP1LocVector(9);
+  std::vector<ScalarT> strainLocVector(9),depsVector(9), drotVector(9), depsLocVector(9);
   ScalarT* strainLoc = &strainLocVector[0];
   ScalarT* deps = &depsVector[0];
-  ScalarT* depsLoc = &depsLocVector[0];
   ScalarT* drot = &drotVector[0];
-  ScalarT* sigmaNP1Loc = &sigmaNP1LocVector[0];
    // Voigt Notation
   std::vector<ScalarT> strainLocVoigtVector(6),depsLocVoigtVector(6), sigmaNP1LocVoigtVector(6);
   ScalarT* strainLocVoigt = &strainLocVoigtVector[0];
@@ -134,23 +132,18 @@ const bool* coordinateTrafo
             matnameArray[i] = matname[i];
           }
 
-          // Rotationstransformation
+          // Transformation global -> local
           //https://www.continuummechanics.org/stressxforms.html
           // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
           if (coordinateTrafo[iID]==true){  
             MATRICES::tensorRotation(angles,GLStrainN,true,strainLoc);
-            MATRICES::tensorRotation(angles,deps,true,depsLoc);
+            MATRICES::tensorRotation(angles,deps,true,deps);
           }
-          else{
-              for(int i=0; i<9; ++i){
-                strainLoc[i] = *(GLStrainN+i);
-                depsLoc[i] = deps[i];
-              }
+          else{for(int jID=0 ; jID<9 ; ++jID)strainLoc[jID]=*(GLStrainN+jID);}
+         
           }
           CORRESPONDENCE::GetVoigtNotation(strainLoc, strainLocVoigt);
-          CORRESPONDENCE::GetVoigtNotation(depsLoc, depsLocVoigt);
-
-          // CORRESPONDENCE::StoreAsMatrix(drot,drotMat);
+          CORRESPONDENCE::GetVoigtNotation(deps, depsLocVoigt);
 
           CORRESPONDENCE::UMATINT(sigmaNP1LocVoigt,statev,DDSDDE,&SSE,&SPD,&SCD,&RPL,
           DDSDDT, DRPLDE,&DRPLDT,strainLocVoigt,depsLocVoigt,timeArray,&dtime,temp,dtemp,
@@ -158,18 +151,14 @@ const bool* coordinateTrafo
           &nprops,coords,drot,&PNEWDT,&CELENT,defGradN,defGradNP1,
           &NOEL,&NPT,&KSLAY,&KSPT,&JSTEP,&KINC,&nname); 
 
-          CORRESPONDENCE::GetTensorFromVoigtNotation(sigmaNP1LocVoigt, sigmaNP1Loc);
+         
+          CORRESPONDENCE::GetTensorFromVoigtNotation(sigmaNP1LocVoigt, sigmaNP1);
 
-          // Rotationstransformation 
+          // back transformation local -> global 
           if (coordinateTrafo[iID]==true){  
-            MATRICES::tensorRotation(angles,sigmaNP1Loc,false,sigmaNP1);
+            MATRICES::tensorRotation(angles,sigmaNP1,false,sigmaNP1);
           }
-          else
-          {
-            for(int i=0; i<9; ++i){
-              *(sigmaNP1+i) = sigmaNP1Loc[i];
-            }
-          }
+
 
         }
 

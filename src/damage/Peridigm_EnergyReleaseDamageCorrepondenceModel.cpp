@@ -118,28 +118,26 @@ m_hourglassStiffId(-1) {
         m_onlyTension = params.get<bool>("Only Tension");
     m_criticalEnergyInterBlock = m_criticalEnergyTension;
     if (params.isParameter("Interblock damage energy")){
+
+        int nblocks = params.get<int>("Number of Interblocks");
+        string prop = "Block_";
+  
+  // https://docs.microsoft.com/de-de/cpp/cpp/delete-operator-cpp?view=msvc-170
+        delete block;
+        block = new int[2*nblocks];
+
+         for(int iID=0 ; iID<nblocks ; ++iID){
+            block[2*iID]   = params.get<double>(prop + std::to_string(2*iID) + std::to_string(2*iID+1));
+            block[2*iID+1] = params.get<double>(prop + std::to_string(2*iID+1) + std::to_string(2*iID));
+        }
+
+
         m_criticalEnergyInterBlock = params.get<double>("Interblock damage energy");
-        
-        for (int iID = 0; iID < 8; ++iID){ block[iID] = 0;}
-        if (params.isParameter("Block_12")) {block[0] = params.get<int>("Block_12");}
-        if (params.isParameter("Block_21")) {block[1] = params.get<int>("Block_21");}
-        if (params.isParameter("Block_34")) {block[2] = params.get<int>("Block_34");}
-        if (params.isParameter("Block_43")) {block[3] = params.get<int>("Block_43");}
-        if (params.isParameter("Block_56")) {block[4] = params.get<int>("Block_56");}
-        if (params.isParameter("Block_65")) {block[5] = params.get<int>("Block_65");}
-        if (params.isParameter("Block_78")) {block[6] = params.get<int>("Block_78");}
-        if (params.isParameter("Block_87")) {block[7] = params.get<int>("Block_87");}
-        
+      
     }
-    m_bondDiffSt = 100000000;
+    m_bondDiffSt = 2147483647;
     if (params.isParameter("Stable Bond Difference"))
         m_bondDiffSt  = params.get<int>("Stable Bond Difference");
-  //************************************
-  // wie komme ich an den Namen??
-  //************************************
-  //if (params.isParameter("Linear Elastic Correspondence")){
-   
-    //std::cout<<"Use Material: Linear Elastic Correspondence"<<std::endl;
 
     if (m_planeStrain==true){
         //m_plane=true;
@@ -154,11 +152,6 @@ m_hourglassStiffId(-1) {
         //std::cout<<"WRN: Method 2D Plane Stress --> not fully implemented yet"<<std::endl;
     }
    
-// Params anpassen. Irgendwo muss das befuellt werden, da bspw. die thermische Verformung bei Material
-// und Schaden existiert
-//
-//
-
     m_pi = M_PI;
 
     if (params.isParameter("Thermal Expansion Coefficient")) {
@@ -221,32 +214,20 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::initialize(const double dt,
         const int* ownedIDs,
         const int* neighborhoodList,
         PeridigmNS::DataManager& dataManager) const {
-    double *damage, *bondDamage;
+    double *damage, *bondDamage, *vol;
 
 
     dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
     dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
-    
+    dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&vol);
     dataManager.getData(m_piolaStressTimesInvShapeTensorXId, PeridigmField::STEP_NP1)->PutScalar(0.0);
     dataManager.getData(m_piolaStressTimesInvShapeTensorYId, PeridigmField::STEP_NP1)->PutScalar(0.0);
     dataManager.getData(m_piolaStressTimesInvShapeTensorZId, PeridigmField::STEP_NP1)->PutScalar(0.0);
     dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
     // Initialize damage to zero
-    int neighborhoodListIndex(0);
-    int bondIndex(0);
-    int nodeId, numNeighbors;
-    int iID, iNID;
-
-    for (iID = 0; iID < numOwnedPoints; ++iID) {
-        nodeId = ownedIDs[iID];
-        damage[nodeId] = 0.0;
-        numNeighbors = neighborhoodList[neighborhoodListIndex++];
-        neighborhoodListIndex += numNeighbors;
-        for (iNID = 0; iNID < numNeighbors; ++iNID) {
-            bondDamage[bondIndex] = 0.0;
-            bondIndex += 1;
-        }
-    }
+ 
+    DAMAGE_UTILITIES::calculateDamageIndex(numOwnedPoints,ownedIDs,vol,neighborhoodList,bondDamage, damage);
+   
 
 }
 
@@ -283,19 +264,6 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     dataManager.getData(m_bondEnergyFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondEnergyNP1);
 
     int iID, nodeId;
-    //bool rerun;
-    //rerun = false;
-    //for (iID = 0; iID < numOwnedPoints; ++iID){
-    //    nodeId = ownedIDs[iID];
-    //    if (bondDamageDiff[nodeId]>m_bondDiffSt)
-    //    {
-    //        rerun = true;  
-    //        cout << "rerun2: " << bondDamageDiff[nodeId] << " nodeId: " << nodeId << endl;
-    //        bondDamageDiff[nodeId] = 0;
-    //        break;
-    //    }
-    //}
-
     
     dataManager.getData(m_piolaStressTimesInvShapeTensorXId, PeridigmField::STEP_NP1)->ExtractView(&tempStressX);
     dataManager.getData(m_piolaStressTimesInvShapeTensorYId, PeridigmField::STEP_NP1)->ExtractView(&tempStressY);
@@ -420,7 +388,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                     
                     criticalEnergyTension = m_criticalEnergyTension;
                     
-                    if (blockNumber[neighborID]==blockInterfaceId)criticalEnergyTension = m_criticalEnergyInterBlock;
+                    if (blockNumber[neighborID]==block[blockInterfaceId])criticalEnergyTension = m_criticalEnergyInterBlock;
                     
                     omegaP1 = MATERIAL_EVALUATION::scalarInfluenceFunction(dX, horizon[nodeId]); 
                     omegaP2 = MATERIAL_EVALUATION::scalarInfluenceFunction(-dX, horizon[neighborID]); 
@@ -444,20 +412,12 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                     TZN =   omegaP2 * ( tempStressZ[3*neighborID] * X[0] + tempStressZ[3*neighborID+1] * X[1] + tempStressZ[3*neighborID+2] * X[2] + hourglassScaling*TS[2]);
                     //std::cout<< "here2"<<std::endl;
                     // orthogonal projection of T and TN to the relative displacement vector Foster et al. "An energy based .."
-                    // --> die senkrecht zur Projektion stehenden Anteile entsprechen eventuell den Schubanteilen. D.h. man könnte das Kriterium hier splitten.
                     factor = (eta[0]*TX + eta[1]*TY + eta[2]*TZ)/normEtaSq;
                     TPX = factor*eta[0]; TPY = factor*eta[1]; TPZ = factor*eta[2];
-                    
-                    //factor = (Y_dx*TX + Y_dy*TY + Y_dz*TZ)/dYSq;
-                    //TPX = factor*Y_dx; TPY = factor*Y_dy; TPZ = factor*Y_dz;
-                    
+                                
                     factorN = (eta[0]*TXN + eta[1]*TYN + eta[2]*TZN)/normEtaSq;
                     TPXN = factorN*eta[0]; TPYN = factorN*eta[1]; TPZN = factorN*eta[2];
                     
-                    //factorN = (Y_dx*TXN + Y_dy*TYN + Y_dz*TZN)/dYSq;
-                    //TPXN = factorN*Y_dx; TPYN = factorN*Y_dy; TPZN = factorN*Y_dz;
-
-                    // 0.25 oder 0.5
                     bondEnergyNP1[bondIndex] = bondEnergyN[bondIndex] + 0.25*(1-bondDamageNP1[bondIndex])*(abs(TPX*incEta[0])+abs(TPXN*incEta[0])+abs(TPY*incEta[1])+abs(TPYN*incEta[1])+abs(TPZ*incEta[2])+abs(TPZN*incEta[2]));
                     
                 }
@@ -467,12 +427,6 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                 }
                 
                 double avgHorizon = 0.5*(horizon[nodeId]+horizon[neighborID]);
-                // if (bondEnergyNP1[bondIndex]<0){
-                //     std::cout<<TPX<<" "<< labs(TPXN)<<" BE "<<bondEnergyNP1[bondIndex]<<" BD  "<< (1-bondDamageNP1[bondIndex])<<std::endl;
-                // }
-                ////////////////////////////////////////////////////////////////
-                //--> to check, depth is not included yet. How to handle??
-                ////////////////////////////////////////////////////////////////
                 if (m_planeStrain==false&&m_planeStress==false){
                    quadhorizon =  4 /( m_pi * avgHorizon * avgHorizon * avgHorizon * avgHorizon );
                 }
@@ -509,8 +463,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
     //  Update the element damage (percent of bonds broken)
     if (detachedNodesCheck == true){
         int check = 1;  //set check = 1 to start the loop
-        //std::cout<< "detached"<<std::endl;
-        while (check != 0){
+         while (check != 0){
             check = checkDetachedNodes(numOwnedPoints, ownedIDs, neighborhoodList, dataManager);
         }
     }
