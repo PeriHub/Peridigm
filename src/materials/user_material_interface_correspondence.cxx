@@ -141,7 +141,6 @@ const bool* coordinateTrafo
           }
           else{for(int jID=0 ; jID<9 ; ++jID)strainLoc[jID]=*(GLStrainN+jID);}
          
-          }
           CORRESPONDENCE::GetVoigtNotation(strainLoc, strainLocVoigt);
           CORRESPONDENCE::GetVoigtNotation(deps, depsLocVoigt);
 
