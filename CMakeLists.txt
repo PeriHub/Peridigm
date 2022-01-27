@@ -38,6 +38,10 @@ find_library(Fortran_Interface_LIBRARY
   NAMES libinterface.so
   PATHS ${USER_LIBRARY_DIRS}
 )
+find_library(User_Test_LIBRARY
+  NAMES libusertest.so
+  PATHS ${USER_LIBRARY_DIRS}
+)
 find_library(User_LIBRARY
   NAMES libusermat.so
   PATHS ${USER_LIBRARY_DIRS}
@@ -51,7 +55,7 @@ if (NOT User_LIBRARY)
 MESSAGE(SEND_ERROR "Did not find user lib")
 endif(NOT User_LIBRARY)     
 
-set(User_Libraries ${Fortran_Interface_LIBRARY} ${User_LIBRARY})                     
+set(User_Libraries ${Fortran_Interface_LIBRARY} ${User_Test_LIBRARY} ${User_LIBRARY})                     
 
 
 #
