@@ -283,16 +283,16 @@ void updateElasticCauchyStress
 template<typename ScalarT>
 void updateElasticCauchyStressAnisotropic
 (
-ScalarT* DeformationGradient, 
-ScalarT* unrotatedCauchyStressN, 
+const ScalarT* DeformationGradient, 
+const ScalarT* unrotatedCauchyStressN, 
 ScalarT* unrotatedCauchyStressNP1, 
-int numPoints, 
+const int numPoints, 
 const ScalarT Cstiff[][6],
-double* angles,
-int type,
-double dt,
-bool incremental,
-bool hencky
+const double* angles,
+const int type,
+const double dt,
+const bool* coordinateTrafo,
+const bool hencky
 )
 {
   
@@ -303,7 +303,7 @@ bool hencky
   ScalarT* strain = &strainVector[0];
 
   //int defGradLogReturnCode(0);
-  bool rotation = false;
+  
   for(int iID=0 ; iID<numPoints ; ++iID, 
         defGrad+=9, sigmaNP1+=9, angles+=3){
 
@@ -312,14 +312,14 @@ bool hencky
           else       {CORRESPONDENCE::computeGreenLagrangeStrain(defGrad,strain);}
           //https://www.continuummechanics.org/stressxforms.html
           // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
-          if (rotation){  
+          if (coordinateTrafo[iID]==true){
             MATRICES::tensorRotation(angles,strain,true,strain);
           }
 
           CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(strain, sigmaNP1, Cstiff, type);
           // rotation back
-          if (rotation){  
-            MATRICES::tensorRotation(angles,strain,false,strain);
+          if (coordinateTrafo[iID]==true){
+            MATRICES::tensorRotation(angles,sigmaNP1,false,sigmaNP1);
           }
 
         }
@@ -366,29 +366,29 @@ const int type
 }       
 template void updateElasticCauchyStressAnisotropic<Sacado::Fad::DFad<double>>
 (
-Sacado::Fad::DFad<double>* DeformationGradient, 
-Sacado::Fad::DFad<double>* unrotatedCauchyStressN, 
+const Sacado::Fad::DFad<double>* DeformationGradient, 
+const Sacado::Fad::DFad<double>* unrotatedCauchyStressN, 
 Sacado::Fad::DFad<double>* unrotatedCauchyStressNP1, 
-int numPoints, 
+const int numPoints, 
 const Sacado::Fad::DFad<double> Cstiff[][6],
-double* angles,
-int type,
-double dt,
-bool incremental,
-bool hencky
+const double* angles,
+const int type,
+const double dt,
+const bool* coordinateTrafo,
+const bool hencky
 );
 template void updateElasticCauchyStressAnisotropic<double>
 (
-double* DeformationGradient, 
-double* unrotatedCauchyStressN, 
+const double* DeformationGradient, 
+const double* unrotatedCauchyStressN, 
 double* unrotatedCauchyStressNP1, 
-int numPoints, 
+const int numPoints, 
 const double Cstiff[][6],
-double* angles,
-int type,
-double dt,
-bool incremental,
-bool hencky
+const double* angles,
+const int type,
+const double dt,
+const bool* coordinateTrafo,
+const bool hencky
 );
 // Explicit template instantiation for double
 template void updateElasticCauchyStressAnisotropicCode<double>

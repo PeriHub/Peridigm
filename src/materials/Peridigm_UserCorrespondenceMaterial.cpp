@@ -163,12 +163,7 @@ PeridigmNS::UserCorrespondenceMaterial::initialize(const double dt,
       coorTrafo = new bool[numOwnedPoints];
       CORRESPONDENCE::CheckCoordinateTransformation(numOwnedPoints, angles, coorTrafo);
       
-      for (int iID=0 ; iID<3*numOwnedPoints; ++iID){
-        coorTrafo[iID/3] = false;
-        if (*(angles+iID)!=0){
-          coorTrafo[iID/3] = true;
-        }
-      }
+
 }
 
 void

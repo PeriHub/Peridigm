@@ -48,6 +48,7 @@
 #include "Peridigm_ElasticLinearCorrespondenceMaterial.hpp"
 #include "Peridigm_Field.hpp"
 #include "elastic_correspondence.h"
+#include "correspondence.h"
 #include "material_utilities.h"
 #include <Teuchos_Assert.hpp>
 
@@ -70,10 +71,7 @@ PeridigmNS::ElasticLinearCorrespondenceMaterial::ElasticLinearCorrespondenceMate
     }
   if (m_planeStrain==true)m_type=1;
   if (m_planeStress==true)m_type=2;
-  m_incremental = false;
-    if (params.isParameter("Incremental")){
-        m_incremental = params.get<bool>("Incremental");
-    }
+
   m_hencky = false;
   if (params.isParameter("Hencky Strain")){
       m_hencky = params.get<bool>("Hencky Strain");
@@ -108,7 +106,11 @@ PeridigmNS::ElasticLinearCorrespondenceMaterial::initialize(const double dt,
                                                       ownedIDs,
                                                       neighborhoodList,
                                                       dataManager);
-
+      
+      double *angles;
+      dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
+      coorTrafo = new bool[numOwnedPoints];
+      CORRESPONDENCE::CheckCoordinateTransformation(numOwnedPoints, angles, coorTrafo);
                              
 }
 
@@ -124,7 +126,7 @@ PeridigmNS::ElasticLinearCorrespondenceMaterial::computeCauchyStress(const doubl
   double *CauchyStress, *CauchyStressNP1, *defGrad, *angles;
   // have to be checked if the additional effort is useful or not
   // deactivated for tests with implicit solver
-  bool incremental = false;
+
   dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_N)->ExtractView(&CauchyStress);
   dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&CauchyStressNP1);
 
@@ -139,12 +141,10 @@ PeridigmNS::ElasticLinearCorrespondenceMaterial::computeCauchyStress(const doubl
                                             angles,
                                             m_type,
                                             dt,
-                                            incremental,
+                                            coorTrafo,
                                             m_hencky);
                                             
-    if (m_incremental == true){
-        std::cout<<"please choose elastic correspondence. incremental not implemented yet for anisotropic material"<<std::endl;
-    }                                        
+                                  
                                             
                                            
 }
