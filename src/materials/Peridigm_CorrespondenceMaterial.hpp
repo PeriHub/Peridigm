@@ -208,11 +208,8 @@ namespace PeridigmNS {
     int m_netdamageFieldId;
     int m_type;
     int m_modelAnglesId;
-    int m_incremental;
-    bool m_hencky;
     int m_deformationGradientNonIncFieldId;
     bool m_plast;
-    bool m_inc;
     bool m_adaptHourGlass;
   };
 }
