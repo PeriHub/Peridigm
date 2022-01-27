@@ -139,11 +139,14 @@ const bool* coordinateTrafo
             MATRICES::tensorRotation(angles,deps,true,deps);
           }
           else{for(int jID=0 ; jID<9 ; ++jID)strainLoc[jID]=*(GLStrainN+jID);}
-
-          CORRESPONDENCE::GetVoigtNotation(GLStrainN, strainLocVoigt);
-          CORRESPONDENCE::GetVoigtNotation(deps, depsLocVoigt);
-          
          
+          }
+          CORRESPONDENCE::GetVoigtNotation(strainLoc, strainLocVoigt);
+          CORRESPONDENCE::GetVoigtNotation(deps, depsLocVoigt);
+
+          CORRESPONDENCE::GetVoigtNotation(strainLoc, strainLocVoigt);
+          CORRESPONDENCE::GetVoigtNotation(deps, depsLocVoigt);
+     
           CORRESPONDENCE::UMATINT(sigmaNP1LocVoigt,statev,DSDDE,&SSE,&SPD,&SCD,&RPL,
           DDSDDT, DRPLDE,&DRPLDT,strainLocVoigt,depsLocVoigt,&time,&dtime,temp,dtemp,
           &PREDEF,&DPRED,matnameArray,&nnormal,&nshr,&nstresscomp,&nstatev,props,
@@ -162,30 +165,6 @@ const bool* coordinateTrafo
         }
 
 }
-//template<typename double>
-void StoreAsMatrix
-(
-  const double* vector,
-  double matrix[][3]
-)
-{
-  matrix[0][0] = *(vector);
-  matrix[0][1] = *(vector+1);
-  matrix[0][2] = *(vector+2);
-  matrix[1][0] = *(vector+3);
-  matrix[1][1] = *(vector+4);
-  matrix[1][2] = *(vector+5);
-  matrix[2][0] = *(vector+6);
-  matrix[2][1] = *(vector+7);
-  matrix[2][2] = *(vector+8);
-}
-
-
-//template void StoreAsMatrix<double>
-//(
-//  const double* vector,
-//  double matrix[][3]
-//);
 
 template<typename ScalarT>
 void DIFFTENSOR

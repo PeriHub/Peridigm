@@ -90,12 +90,7 @@ void GetVoigtNotation
 const ScalarT* TENSOR,
 ScalarT* VOIGT
 );
-//template<typename ScalarT>
-void StoreAsMatrix
-(
-  const double* vector,
-  double matrix[][3]
-);
+
 template<typename ScalarT>
 void GetTensorFromVoigtNotation
 (

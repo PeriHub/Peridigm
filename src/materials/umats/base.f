@@ -18,15 +18,6 @@ C
 C
 C  EVALUATE NEW STRESS TENSOR
 C
-      STRESS(1)=DROT(1,1)
-      STRESS(2)=DROT(1,2)
-      STRESS(3)=DROT(1,3)
-      STRESS(4)=DROT(2,1)
-      STRESS(5)=DROT(2,2)
-      STRESS(6)=DROT(2,3)
-      STRESS(7)=DROT(3,1)
-      STRESS(8)=DROT(3,2)
-      STRESS(9)=DROT(3,3)
       RETURN
       END
 C
@@ -51,17 +42,23 @@ C
 C
 C  EVALUATE NEW STRESS TENSOR
 C
+      I = 0.0
       DO K1=1,NTENS
             DO K2=1,NTENS
-                  DDSDDE(K1,K2) = DDSDDE(K1,K2)*2
+                  DDSDDE(K1,K2) = I*2
+                  I=I+1
             END DO
       END DO
       DO K1=1,NTENS
             STRESS(K1) = STRESS(K1)*2
       END DO
+      I = 0.0
       DO K1=1,3
             DO K2=1,3
-                  DROT(K1,K2) = DROT(K1,K2)*2
+                  DROT(K1,K2) = I*2
+                  DFGRD0(K1,K2) = I*2
+                  DFGRD1(K1,K2) = I*2
+                  I=I+1
             END DO
       END DO
       RETURN
