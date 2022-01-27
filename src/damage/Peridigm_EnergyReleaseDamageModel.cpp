@@ -64,7 +64,7 @@
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
-
+#include "damage_utilities.h"
 using namespace std;
 
 PeridigmNS::EnergyReleaseDamageModel::EnergyReleaseDamageModel(const Teuchos::ParameterList& params)
@@ -179,28 +179,16 @@ PeridigmNS::EnergyReleaseDamageModel::initialize(const double dt,
         const int* ownedIDs,
         const int* neighborhoodList,
         PeridigmNS::DataManager& dataManager) const {
-        double *damage, *bondDamage;
+        double *damage, *bondDamage, *vol;
 
 
     dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
     dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
 	dataManager.getData(m_damageModelFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
+    dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&vol);
     // Initialize damage to zero
-    int neighborhoodListIndex(0);
-    int bondIndex(0);
-    int nodeId, numNeighbors;
-    int iID, iNID;
+    DAMAGE_UTILITIES::calculateDamageIndex(numOwnedPoints,ownedIDs,vol,neighborhoodList,bondDamage, damage);
 
-    for (iID = 0; iID < numOwnedPoints; ++iID) {
-        nodeId = ownedIDs[iID];
-        damage[nodeId] = 0.0;
-        numNeighbors = neighborhoodList[neighborhoodListIndex++];
-        neighborhoodListIndex += numNeighbors;
-        for (iNID = 0; iNID < numNeighbors; ++iNID) {
-            bondDamage[bondIndex] = 0.0;
-            bondIndex += 1;
-        }
-    }
 
 }
 
@@ -213,7 +201,7 @@ PeridigmNS::EnergyReleaseDamageModel::computeDamage(const double dt,
         int blockInterfaceId = -1) const {
 
     double *x, *y, *damage, *bondDamageNP1, *horizon;
-    double *cellVolume, *weightedVolume, *damageModel;
+    double *vol, *weightedVolume, *damageModel;
     double criticalEnergyTension(-1.0), criticalEnergyCompression(-1.0), criticalEnergyShear(-1.0);
     // for temperature dependencies easy to extent
     double *deltaTemperature = NULL;
@@ -225,7 +213,7 @@ PeridigmNS::EnergyReleaseDamageModel::computeDamage(const double dt,
     dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
     dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&y);
     dataManager.getData(m_weightedVolumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&weightedVolume);
-    dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&cellVolume);
+    dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&vol);
     //////////////////////////////////////////////////////////////
     // transfer of data is done in ComputeDilation --> PeridigmElastic.cpp
     //////////////////////////////////////////////////////////////
@@ -241,7 +229,6 @@ PeridigmNS::EnergyReleaseDamageModel::computeDamage(const double dt,
     double trialDamage(0.0);
     int neighborhoodListIndex(0), bondIndex(0);
     int nodeId, numNeighbors, neighborID, iID, iNID;
-    double totalDamage, totalVol;
     double alphaP1 = 0.0, alphaP2 = 0.0, gammaP1 = 0.0, gammaP2 = 0.0, kappaP1 = 0.0, kappaP2 = 0.0;
     double nodeInitialX[3], nodeCurrentX[3], relativeExtension(0.0);
     double bondEnergyIsotropic(0.0), bondEnergyDeviatoric(0.0);
@@ -468,35 +455,8 @@ PeridigmNS::EnergyReleaseDamageModel::computeDamage(const double dt,
 
     //  Update the element damage (percent of bonds broken)
 
-    neighborhoodListIndex = 0;
-    bondIndex = 0;
-    for (iID = 0; iID < numOwnedPoints; ++iID) {
-        nodeId = ownedIDs[iID];
-        numNeighbors = neighborhoodList[neighborhoodListIndex++];
-        //neighborhoodListIndex += numNeighbors;
-        damageModel[3*nodeId] = 0.0;
-        damageModel[3*nodeId+1] = 0.0;
-        damageModel[3*nodeId+2] = 0.0;
-        totalDamage = 0.0;
-        totalVol = 0.0;
-        for (iNID = 0; iNID < numNeighbors; ++iNID) {
-            
-            neighborID = neighborhoodList[neighborhoodListIndex++];
-            // must be zero to avoid synchronization errors
-            damageModel[3*neighborID] = 0.0;
-            damageModel[3*neighborID+1] = 0.0;
-            damageModel[3*neighborID+2] = 0.0;
-            
-            totalDamage += bondDamageNP1[bondIndex]*weightedVolume[nodeId];
-            totalVol += weightedVolume[nodeId];
-            bondIndex += 1;
-        }
-        if (numNeighbors > 0)
-            totalDamage /= (totalVol);
-        else
-            totalDamage = 0.0;
-        damage[nodeId] = totalDamage;
-    }
+    DAMAGE_UTILITIES::calculateDamageIndex(numOwnedPoints,ownedIDs,vol,neighborhoodList,bondDamageNP1, damage);
+   
 }
 
 

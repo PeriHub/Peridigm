@@ -214,32 +214,20 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::initialize(const double dt,
         const int* ownedIDs,
         const int* neighborhoodList,
         PeridigmNS::DataManager& dataManager) const {
-    double *damage, *bondDamage;
+    double *damage, *bondDamage, *vol;
 
 
     dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
     dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
-    
+    dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&vol);
     dataManager.getData(m_piolaStressTimesInvShapeTensorXId, PeridigmField::STEP_NP1)->PutScalar(0.0);
     dataManager.getData(m_piolaStressTimesInvShapeTensorYId, PeridigmField::STEP_NP1)->PutScalar(0.0);
     dataManager.getData(m_piolaStressTimesInvShapeTensorZId, PeridigmField::STEP_NP1)->PutScalar(0.0);
     dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
     // Initialize damage to zero
-    int neighborhoodListIndex(0);
-    int bondIndex(0);
-    int nodeId, numNeighbors;
-    int iID, iNID;
-
-    for (iID = 0; iID < numOwnedPoints; ++iID) {
-        nodeId = ownedIDs[iID];
-        damage[nodeId] = 0.0;
-        numNeighbors = neighborhoodList[neighborhoodListIndex++];
-        neighborhoodListIndex += numNeighbors;
-        for (iNID = 0; iNID < numNeighbors; ++iNID) {
-            bondDamage[bondIndex] = 0.0;
-            bondIndex += 1;
-        }
-    }
+ 
+    DAMAGE_UTILITIES::calculateDamageIndex(numOwnedPoints,ownedIDs,vol,neighborhoodList,bondDamage, damage);
+   
 
 }
 
