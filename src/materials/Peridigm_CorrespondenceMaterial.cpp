@@ -83,7 +83,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_shearModulus = calculateShearModulus(params);
   m_density = params.get<double>("Density");
   
-  m_stabilizationType = 3;
+  m_stabilizationType = 0;
   m_plane = false;
   nonLin = true;
   linRateOfDeformation = true;
@@ -140,7 +140,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
         m_hourglassCoefficient = params.get<double>("Hourglass Coefficient");
         if (params.isParameter("Adapt Hourglass Stiffness"))
         {
-        m_adaptHourGlass = params.get<bool>("Adapt Hourglass Stiffness");
+          m_adaptHourGlass = params.get<bool>("Adapt Hourglass Stiffness");
         }
        
     }
@@ -180,9 +180,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   if(m_applyThermalStrains){
     m_temperatureFieldId      = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Temperature");
   }
-  //if (nonLin==false)
-  // m_deformationGradientFieldIdTemp        = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient_Temp");
-  
+   
   m_leftStretchTensorFieldId          = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Left_Stretch_Tensor");
   m_rotationTensorFieldId             = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Rotation_Tensor");
   m_shapeTensorInverseFieldId         = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Shape_Tensor_Inverse");
@@ -295,7 +293,7 @@ PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
 
  int shapeTensorReturnCode = 0;
   shapeTensorReturnCode = 
-            CORRESPONDENCE::computeShapeTensorInverseAndApproximateDeformationGradient(volume,
+            CORRESPONDENCE::computeShapeTensorInverseAndApproximateDeformationGradient                                                                                              (volume,
                                                                                    horizon,
                                                                                    modelCoordinates,
                                                                                    coordinatesNP1,
@@ -459,9 +457,8 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   
   // multiple Cauchy stresses will be provided over the datamanager --> Peridigm_ElasticLinearCorrespondence
 
- 
+
   computeCauchyStress(dt, numOwnedPoints, dataManager, currentTime);
- 
 
   // rotate back to the Eulerian frame
   double *unrotatedCauchyStressNP1, *cauchyStressNP1, *plasticStress;
@@ -491,7 +488,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
     dataManager.getData(m_unrotatedCauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&unrotatedCauchyStressNP1);
     *(dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)) = *(dataManager.getData(m_unrotatedCauchyStressFieldId, PeridigmField::STEP_NP1)); 
     }
-    
+   
 
  // }
   //std::cout<<*(cauchyStressNP1+1)<<" corr"<<std::endl;

@@ -125,7 +125,7 @@ const bool* coordinateTrafo
     
     CORRESPONDENCE::DIFFTENSOR(GLStrainN, GLStrainNP1, deps);
     CORRESPONDENCE::DIFFTENSOR(RotationN, RotationNP1, drot);
-    //CORRESPONDENCE::StoreAsMatrix(drotV, drot);
+
     nname = matname.length();
     for(unsigned int i=0; i<matname.length(); ++i){
       matnameArray[i] = matname[i];
@@ -157,6 +157,7 @@ const bool* coordinateTrafo
       MATRICES::tensorRotation(angles,sigmaNP1,false,sigmaNP1);
     }
   }
+  
 }
 
 template<typename ScalarT>
