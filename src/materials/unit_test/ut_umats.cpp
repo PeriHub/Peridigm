@@ -91,12 +91,11 @@ TEUCHOS_UNIT_TEST(correspondence, GetVoigtNotation) {
     int num = 9;
     for (int n=0; n<9; n++){
         A[n] = num*num-2;
-        B[n] = A[n];
         num++;
         }
-    for (int n=0; n<3; n++){
-        B[n] = A[n];
-        }
+    B[0] = A[0];
+    B[1] = A[4];
+    B[2] = A[8];
     B[3] = 0.5*(A[5]+A[7]);
     B[4] = 0.5*(A[2]+A[6]);
     B[5] = 0.5*(A[1]+A[3]);
