@@ -96,11 +96,12 @@ const bool* coordinateTrafo
   if (plane_strain) {nstresscomp = 4; nshr = 1; nnormal = 3;}
   
   int NOEL;
+  const double timeArray[2] = {time,time};
 
   // not supported
   double PREDEF = -1, DPRED = -1, PNEWDT = -1, CELENT = -1;
   int NPT = -1, KSLAY = -1, KSPT = -1, JSTEP = -1, KINC = -1;
-  double DSDDE[6*6];
+  double DDSDDE[6*6];
   double DDSDDT[6], DRPLDE[6];
   // double* DDSDDT;
   // double* DRPLDE;
@@ -144,7 +145,7 @@ const bool* coordinateTrafo
     CORRESPONDENCE::GetVoigtNotation(strainLoc, strainLocVoigt);
     CORRESPONDENCE::GetVoigtNotation(deps, depsLocVoigt);
 
-    CORRESPONDENCE::UMATINT(sigmaNP1LocVoigt,statev,DSDDE,&SSE,&SPD,&SCD,&RPL,
+    CORRESPONDENCE::UMATINT(sigmaNP1LocVoigt,statev,DDSDDE,&SSE,&SPD,&SCD,&RPL,
     DDSDDT, DRPLDE,&DRPLDT,strainLocVoigt,depsLocVoigt,&time,&dtime,temp,dtemp,
     &PREDEF,&DPRED,matnameArray,&nnormal,&nshr,&nstresscomp,&nstatev,props,
     &nprops,coords,drot,&PNEWDT,&CELENT,defGradN,defGradNP1,

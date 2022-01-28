@@ -56,28 +56,31 @@ using namespace Teuchos;
 TEUCHOS_UNIT_TEST(correspondence, ut_user_material_interface) {
     const double tolerance = 1.0e-15;
     
-    std::vector<double> strainLocVoigtVector(6), statevVector(9), depsLocVoigtVector(6), sigmaNP1LocVoigtVector(6), sigmaNP1LocVoigtTestVector(6), coordsVector(6), drotVector(9), drotTestVector(9), defGradNVector(9), defGradNP1Vector(9);
-    std::vector<double> defGradNTestVector(9), defGradNP1TestVector(9);;
-    double* strainLocVoigt = &strainLocVoigtVector[0];
-    double* depsLocVoigt = &depsLocVoigtVector[0];
-    double* sigmaNP1LocVoigt = &sigmaNP1LocVoigtVector[0];
-    double* sigmaNP1LocVoigtTest = &sigmaNP1LocVoigtTestVector[0];
+    std::vector<double> sigmaNP1LocVector(6), strainLocVector(6), depsLocVector(6), statevVector(6), coordsVector(3), drotVector(9), defGradNVector(9), defGradNP1Vector(9);
+    std::vector<double> sigmaNP1LocTestVector(6), strainLocTestVector(6), depsLocTestVector(6), statevTestVector(6), coordsTestVector(3), drotTestVector(9), defGradNTestVector(9), defGradNP1TestVector(9);
+    double* sigmaNP1Loc = &sigmaNP1LocVector[0];
+    double* sigmaNP1LocTest = &sigmaNP1LocTestVector[0];
+    double* strainLoc= &strainLocVector[0];
+    double* strainLocTest = &strainLocTestVector[0];
+    double* depsLoc = &depsLocVector[0];
+    double* depsLocTest = &depsLocTestVector[0];
     double* statev = &statevVector[0];
+    double* statevTest = &statevTestVector[0];
     double* coords = &coordsVector[0];
+    double* coordsTest = &coordsTestVector[0];
     double* drot = &drotVector[0];
     double* drotTest = &drotTestVector[0];
     double* defGradN = &defGradNVector[0];
     double* defGradNP1 = &defGradNP1Vector[0];
     double* defGradNTest = &defGradNTestVector[0];
     double* defGradNP1Test = &defGradNP1TestVector[0];
-    // double* DSDDE = &DSDDEVector[0];
-    // double* DSDDETest = &DSDDETestVector[0];
 
     const double time = 0.1, dtime = 0.1;
+    const double timeArray[2] = {time,time};
     const double* temp;
     const double* dtemp;
-    double DSDDE[6*6], DSDDETest[6*6];
-    double DDSDDT[6], DRPLDE[6];
+    double DDSDDE[6*6], DDSDDETest[6*6];
+    double DDSDDT[6], DRPLDE[6], DDSDDTTest[6], DRPLDETest[6];
     double SSE = -1,SPD = -1,SCD = -1,RPL = -1, DRPLDT = -1;
     double PREDEF = -1, DPRED = -1, PNEWDT = -1, CELENT = -1;
     const std::string matname = "Elastic";
@@ -95,14 +98,10 @@ TEUCHOS_UNIT_TEST(correspondence, ut_user_material_interface) {
     nname = matname.length();
 
     for(unsigned int i=0; i<matname.length(); ++i){
-    matnameArray[i] = matname[i];
+        matnameArray[i] = matname[i];
     }
-    
+
     int m, n, num;
-    for (m=0; m<6; m++){
-        *(sigmaNP1LocVoigt+m) = m;
-        *(sigmaNP1LocVoigtTest+m) = m*2;
-    } 
     for (m=0; m<9; m++){
         *(drot+m) = m;
         *(defGradN+m) = m;
@@ -112,27 +111,48 @@ TEUCHOS_UNIT_TEST(correspondence, ut_user_material_interface) {
         *(defGradNP1Test+m) = m*2;
     } 
     for (m=0; m<6; m++){
-        DRPLDE[m] = m*2;
-    }  
+        *(sigmaNP1Loc+m) = m;
+        *(sigmaNP1LocTest+m) = m*2;
+        *(statev+m) = m;
+        *(statevTest+m) = m*2;
+        *(strainLoc+m) = m;
+        *(strainLocTest+m) = m*2;
+        *(depsLoc+m) = m;
+        *(depsLocTest+m) = m*2;
+        DDSDDT[m] = m;
+        DDSDDTTest[m] = m*2;
+        DRPLDE[m] = m;
+        DRPLDETest[m] = m*2;
+    }
+    for (m=0; m<3; m++){
+        *(coords+m) = m;
+        *(coordsTest+m) = m*2;
+    }
     num = 0;
     for (m=0; m<6; m++){
         for (n=0; n<6; n++){
-            DSDDE[num] = num;
-            DSDDETest[num] = num*2;
+            DDSDDE[num] = num;
+            DDSDDETest[num] = num*2;
             num++;
         } 
     }   
 
-    // CORRESPONDENCE::StoreAsMatrix(drot,drotMat);
-
-    CORRESPONDENCE::UMATINTTEST(sigmaNP1LocVoigt,statev,DSDDE,&SSE,&SPD,&SCD,&RPL,
-    DDSDDT, DRPLDE,&DRPLDT,strainLocVoigt,depsLocVoigt,&time,&dtime,temp,dtemp,
+    CORRESPONDENCE::UMATINTTEST(sigmaNP1Loc,statev,DDSDDE,&SSE,&SPD,&SCD,&RPL,
+    DDSDDT, DRPLDE,&DRPLDT,strainLoc,depsLoc,timeArray,&dtime,temp,dtemp,
     &PREDEF,&DPRED,matnameArray,&nnormal,&nshr,&nstresscomp,&nstatev,props,
     &nprops,coords,drot,&PNEWDT,&CELENT,defGradN,defGradNP1,
     &NOEL,&NPT,&KSLAY,&KSPT,&JSTEP,&KINC,&nname); 
-    
+
+    for (m=0; m<3; m++){
+        TEST_FLOATING_EQUALITY(*(coords+m),*(coordsTest+m),tolerance);
+    } 
     for (m=0; m<6; m++){
-        TEST_FLOATING_EQUALITY(*(sigmaNP1LocVoigt+m),*(sigmaNP1LocVoigtTest+m),tolerance);
+        TEST_FLOATING_EQUALITY(*(sigmaNP1Loc+m),*(sigmaNP1LocTest+m),tolerance);
+        TEST_FLOATING_EQUALITY(*(statev+m),*(statevTest+m),tolerance);
+        TEST_FLOATING_EQUALITY(*(strainLoc+m),*(strainLocTest+m),tolerance);
+        TEST_FLOATING_EQUALITY(*(depsLoc+m),*(depsLocTest+m),tolerance);
+        TEST_FLOATING_EQUALITY(DDSDDT[m],DDSDDTTest[m],tolerance);
+        TEST_FLOATING_EQUALITY(DRPLDE[m],DRPLDETest[m],tolerance);
     } 
     for (m=0; m<9; m++){
         TEST_FLOATING_EQUALITY(*(drot+m),*(drotTest+m),tolerance);
@@ -142,7 +162,7 @@ TEUCHOS_UNIT_TEST(correspondence, ut_user_material_interface) {
     num = 0;
     for (m=0; m<6; m++){
         for (n=0; n<6; n++){
-            TEST_FLOATING_EQUALITY(DSDDE[num],DSDDETest[num],tolerance);
+            TEST_FLOATING_EQUALITY(DDSDDE[num],DDSDDETest[num],tolerance);
             num++;
         }
     } 
