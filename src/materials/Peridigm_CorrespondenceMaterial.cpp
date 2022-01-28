@@ -86,9 +86,11 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_stabilizationType = 3;
   m_plane = false;
   nonLin = true;
+  linRateOfDeformation = true;
   m_plast = false;
   if (params.isParameter("Linear Elastic Correspondence")){
     nonLin = false;
+    linRateOfDeformation = false;
   }
   if (params.isParameter("Non linear")){
     nonLin = params.get<bool>("Non linear");
@@ -346,13 +348,6 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   // The approximate deformation gradient will be used by the derived class (specific correspondence material model)
   // to compute the Cauchy stress.
   // The inverse of the shape tensor is stored for later use after the Cauchy stress calculation
-   ///////////////////////////////////////////////////////////////////////////////////////////// 
-   // non linear with rotation has to be updated!!!
-   // non linear with rotation has to be updated!!!
-   // non linear with rotation has to be updated!!!
-   // non linear with rotation has to be updated!!!
-   // non linear with rotation has to be updated!!!
-   /////////////////////////////////////////////////////////////////////////////////////////////
    int shapeTensorReturnCode = 0;
   // if (lin == true){
     
@@ -438,28 +433,12 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                     
      }  
     else{
-        //double *deformationGradientN;
-        //dataManager.getData(m_deformationGradientFieldIdTemp, PeridigmField::STEP_NONE)->ExtractView(&deformationGradientN);
-        // hier muss ein temp feld rein; so ueberschreibe ich das defgradfeld
-       
-        
-        //shapeTensorReturnCode = 
-        //CORRESPONDENCE::computeShapeTensorInverseAndApproximateDeformationGradient(volume,
-        //                                                                        horizon,
-        //                                                                        modelCoordinates,
-        //                                                                        coordinatesN,
-        //                                                                        shapeTensorInverse,
-        //                                                                        deformationGradientN,
-        //                                                                        bondDamage,
-        //                                                                        neighborhoodList,
-        //                                                                        numOwnedPoints,
-        //                                                                        m_plane,
-        //                                                                        detachedNodes);
-
         
         // needed to create the rate of deformation for the step wise calculation
         // all rotations are excluded; this speeds up the calculations, but assumes no large rotations
-        CORRESPONDENCE::getLinearUnrotatedRateOfDeformation(volume,
+        // is deactivated for linear elastic material, because the rate is not used in that case
+        if (linRateOfDeformation){
+          CORRESPONDENCE::getLinearUnrotatedRateOfDeformation(volume,
                                                             horizon,
                                                             modelCoordinates, 
                                                             velocities, 
@@ -472,7 +451,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                             m_plane,
                                                             detachedNodes
                                                             );
-        
+        }
     }
   // Evaluate the Cauchy stress using the routine implemented in the derived class (specific correspondence material model)
   // The general idea is to compute the stress based on:

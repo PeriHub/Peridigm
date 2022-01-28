@@ -211,6 +211,7 @@ namespace PeridigmNS {
     int m_deformationGradientNonIncFieldId;
     bool m_plast;
     bool m_adaptHourGlass;
+    bool linRateOfDeformation;
   };
 }
 
