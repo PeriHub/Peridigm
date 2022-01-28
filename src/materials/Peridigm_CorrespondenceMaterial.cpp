@@ -85,15 +85,15 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   
   m_stabilizationType = 3;
   m_plane = false;
-  nonLin = false;
+  nonLin = true;
   m_plast = false;
+  if (params.isParameter("Linear Elastic Correspondence")){
+    nonLin = false;
+  }
   if (params.isParameter("Non linear")){
       nonLin = params.get<bool>("Non linear");
   }
   
-  if (params.isParameter("Linear Elastic Correspondence")){
-    nonLin = false;
-  }
   bool m_planeStrain = false, m_planeStress = false;
   if (params.isParameter("Plane Strain"))
       m_planeStrain = params.get<bool>("Plane Strain");
