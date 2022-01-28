@@ -349,11 +349,7 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   // to compute the Cauchy stress.
   // The inverse of the shape tensor is stored for later use after the Cauchy stress calculation
    int shapeTensorReturnCode = 0;
-  // if (lin == true){
-    
-  
- 
-    shapeTensorReturnCode = 
+   shapeTensorReturnCode = 
         CORRESPONDENCE::computeShapeTensorInverseAndApproximateDeformationGradient(volume,
                                                                                 horizon,
                                                                                 modelCoordinates,
@@ -366,10 +362,6 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                                                 m_plane,
                                                                                 detachedNodes);
  
-
-    
-   //}
-
   string shapeTensorErrorMessage =
     "**** Error:  CorrespondenceMaterial::computeForce() failed to compute shape tensor.\n";
   shapeTensorErrorMessage +=
@@ -473,10 +465,9 @@ PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
 
   // rotate back to the Eulerian frame
   double *unrotatedCauchyStressNP1, *cauchyStressNP1, *plasticStress;
-if (m_plast){
-  dataManager.getData(m_unrotatedCauchyStressPlasticFieldId, PeridigmField::STEP_NONE)->ExtractView(&plasticStress);
-
-}
+  if (m_plast){
+    dataManager.getData(m_unrotatedCauchyStressPlasticFieldId, PeridigmField::STEP_NONE)->ExtractView(&plasticStress);
+  }
   if (nonLin == true) {
       dataManager.getData(m_unrotatedCauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&unrotatedCauchyStressNP1);
       dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&cauchyStressNP1);
@@ -493,11 +484,9 @@ if (m_plast){
                                              plasticStress,
                                              numOwnedPoints);
       }
-  
   }
   else
   {
-
     dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&cauchyStressNP1);
     dataManager.getData(m_unrotatedCauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&unrotatedCauchyStressNP1);
     *(dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)) = *(dataManager.getData(m_unrotatedCauchyStressFieldId, PeridigmField::STEP_NP1)); 

@@ -683,8 +683,6 @@ double* detachedNodes
           *(defGrad+3) = 0.0 ;     *(defGrad+4) = 1.0 ;     *(defGrad+5) = 0.0 ;
           *(defGrad+6) = 0.0 ;     *(defGrad+7) = 0.0 ;     *(defGrad+8) = 1.0 ;
         }
-        
-
 
   }
 
@@ -1241,8 +1239,6 @@ void computeForcesAndStresses
          
           neighborVol = volume[neighborIndex];
           vol = volume[iID];
-          
-          //neighborForceDensityPtr = forceDensity + 3*neighborIndex;
           
           *(forceDensityPtr)   += TX * neighborVol;
           *(forceDensityPtr+1) += TY * neighborVol;
