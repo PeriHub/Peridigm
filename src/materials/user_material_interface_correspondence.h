@@ -54,9 +54,9 @@ void userMaterialInterface
 (
 const double* coords,
 const ScalarT* DeformationGradientN, 
-ScalarT* DeformationGradientNP1, 
+const ScalarT* DeformationGradientNP1, 
 const ScalarT* strainN, 
-ScalarT* strainNP1, 
+const ScalarT* strainNP1, 
 ScalarT* unrotatedCauchyStressNP1, 
 const int numPoints, 
 const int nstatev,
