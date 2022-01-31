@@ -130,7 +130,6 @@ const bool* coordinateTrafo
 
     CORRESPONDENCE::DIFFTENSOR(GLStrainN, GLStrainNP1, deps);
     CORRESPONDENCE::DIFFTENSOR(RotationN, RotationNP1, drot);
-    //CORRESPONDENCE::StoreAsMatrix(drotV, drot);
     // Transformation global -> local
     //https://www.continuummechanics.org/stressxforms.html
     // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
@@ -156,6 +155,7 @@ const bool* coordinateTrafo
       MATRICES::tensorRotation(angles,sigmaNP1,false,sigmaNP1);
     }
   }
+  
 }
 
 template<typename ScalarT>
