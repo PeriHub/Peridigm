@@ -144,7 +144,7 @@ const bool* coordinateTrafo
     CORRESPONDENCE::GetVoigtNotation(deps, depsLocVoigt);
 
     CORRESPONDENCE::UMATINT(sigmaNP1LocVoigt,statev,DDSDDE,&SSE,&SPD,&SCD,&RPL,
-    DDSDDT, DRPLDE,&DRPLDT,strainLocVoigt,depsLocVoigt,&time,&dtime,temp,dtemp,
+    DDSDDT, DRPLDE,&DRPLDT,strainLocVoigt,depsLocVoigt,timeArray,&dtime,temp,dtemp,
     &PREDEF,&DPRED,matnameArray,&nnormal,&nshr,&nstresscomp,&nstatev,props,
     &nprops,coords,drot,&PNEWDT,&CELENT,defGradN,defGradNP1,
     &NOEL,&NPT,&KSLAY,&KSPT,&JSTEP,&KINC,&nname);

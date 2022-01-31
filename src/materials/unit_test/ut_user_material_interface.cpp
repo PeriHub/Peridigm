@@ -77,8 +77,8 @@ TEUCHOS_UNIT_TEST(correspondence, ut_user_material_interface) {
 
     const double time = 0.1, dtime = 0.1;
     const double timeArray[2] = {time,time};
-    const double* temp;
-    const double* dtemp;
+    const double temp = 200.0;
+    const double dtemp = 50.0;
     double DDSDDE[6*6], DDSDDETest[6*6];
     double DDSDDT[6], DRPLDE[6], DDSDDTTest[6], DRPLDETest[6];
     double SSE = -1,SPD = -1,SCD = -1,RPL = -1, DRPLDT = -1;
@@ -93,7 +93,7 @@ TEUCHOS_UNIT_TEST(correspondence, ut_user_material_interface) {
     int NPT = -1, KSLAY = -1, KSPT = -1, JSTEP = -1, KINC = -1;
     const int nstatev = 9;
     const int nprops = 1;
-    const double* props;
+    const double props = 3;
     
     nname = matname.length();
 
@@ -106,40 +106,40 @@ TEUCHOS_UNIT_TEST(correspondence, ut_user_material_interface) {
         *(drot+m) = m;
         *(defGradN+m) = m;
         *(defGradNP1+m) = m;
-        *(drotTest+m) = m*2;
-        *(defGradNTest+m) = m*2;
-        *(defGradNP1Test+m) = m*2;
+        *(drotTest+m) = m*props;
+        *(defGradNTest+m) = m*props;
+        *(defGradNP1Test+m) = m*props;
     } 
     for (m=0; m<6; m++){
         *(sigmaNP1Loc+m) = m;
-        *(sigmaNP1LocTest+m) = m*2;
+        *(sigmaNP1LocTest+m) = m*props;
         *(statev+m) = m;
-        *(statevTest+m) = m*2;
+        *(statevTest+m) = m*props;
         *(strainLoc+m) = m;
-        *(strainLocTest+m) = m*2;
+        *(strainLocTest+m) = m*props;
         *(depsLoc+m) = m;
-        *(depsLocTest+m) = m*2;
+        *(depsLocTest+m) = m*props;
         DDSDDT[m] = m;
-        DDSDDTTest[m] = m*2;
+        DDSDDTTest[m] = m*props;
         DRPLDE[m] = m;
-        DRPLDETest[m] = m*2;
+        DRPLDETest[m] = m*props;
     }
     for (m=0; m<3; m++){
         *(coords+m) = m;
-        *(coordsTest+m) = m*2;
+        *(coordsTest+m) = m*props;
     }
     num = 0;
     for (m=0; m<6; m++){
         for (n=0; n<6; n++){
             DDSDDE[num] = num;
-            DDSDDETest[num] = num*2;
+            DDSDDETest[num] = num*props;
             num++;
         } 
     }   
 
     CORRESPONDENCE::UMATINTTEST(sigmaNP1Loc,statev,DDSDDE,&SSE,&SPD,&SCD,&RPL,
-    DDSDDT, DRPLDE,&DRPLDT,strainLoc,depsLoc,timeArray,&dtime,temp,dtemp,
-    &PREDEF,&DPRED,matnameArray,&nnormal,&nshr,&nstresscomp,&nstatev,props,
+    DDSDDT, DRPLDE,&DRPLDT,strainLoc,depsLoc,timeArray,&dtime,&temp,&dtemp,
+    &PREDEF,&DPRED,matnameArray,&nnormal,&nshr,&nstresscomp,&nstatev,&props,
     &nprops,coords,drot,&PNEWDT,&CELENT,defGradN,defGradNP1,
     &NOEL,&NPT,&KSLAY,&KSPT,&JSTEP,&KINC,&nname); 
 

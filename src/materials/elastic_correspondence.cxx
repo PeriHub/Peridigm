@@ -301,15 +301,17 @@ const bool hencky
   std::vector<ScalarT> strainVector(9);
 
   ScalarT* strain = &strainVector[0];
-
-  //int defGradLogReturnCode(0);
+ std::string logStrainErrorMessage = "**** Error:  elastic_correspondence ::updateElasticCauchyStressAnisotropic() failed to compute logStrain.\n";
   
   for(int iID=0 ; iID<numPoints ; ++iID, 
         defGrad+=9, sigmaNP1+=9, angles+=3){
 
 
-          if (hencky&&type!=0){int defGradLogReturnCode = CORRESPONDENCE::computeLogStrain(defGrad,strain);}
-          else       {CORRESPONDENCE::computeGreenLagrangeStrain(defGrad,strain);}
+          if (hencky&&type!=0){
+            int defGradLogReturnCode = CORRESPONDENCE::computeLogStrain(defGrad,strain);
+            TEUCHOS_TEST_FOR_TERMINATION(defGradLogReturnCode != 0, logStrainErrorMessage);
+          }
+          else{CORRESPONDENCE::computeGreenLagrangeStrain(defGrad,strain);}
           //https://www.continuummechanics.org/stressxforms.html
           // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
           if (coordinateTrafo[iID]==true){
