@@ -201,7 +201,7 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
   dataManager.getData(m_flyingPointFlagFieldId, PeridigmField::STEP_N)->ExtractView(&flyingPointFlag);
 
   double *statev = new double[nstatev*numOwnedPoints];
-  // befüllen!!
+  // fill with data
   int nstat = int(ceil(nstatev / 9.0));
   if (nstat > 0) {
       double *stat;
@@ -214,7 +214,9 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
         }
       }
   }
+
   CORRESPONDENCE::computeGreenLagrangeStrain(defGradNP1,GLStrainNP1,flyingPointFlag,numOwnedPoints);
+  dataManager.getData(m_strainFieldId, PeridigmField::STEP_NP1)->ExtractView(&GLStrainNP1);
   double* props = new double[nprops]; //temp;
   for(int iID=0 ; iID<nprops ; ++iID){props[iID] = userProperties[iID];}
   CORRESPONDENCE::userMaterialInterface(modelCoordinates,
@@ -239,6 +241,7 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
                                         m_planeStrain,
                                         matName,
                                         coorTrafo);
+
    if (nstat > 0) {
       double *stat;
       int tensorLen = 9;
