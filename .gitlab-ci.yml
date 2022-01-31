@@ -9,14 +9,16 @@ build_job:
   # only:
   #   - tags
   extends: [.build_before_script_template]
-  allow_failure: true
+  allow_failure: 
+    exit_codes:
+      - 1
   stage: build
   script:
     - docker build -t ${CI_REGISTRY_PATH}peridigm_image .
     - docker run ${CI_REGISTRY_PATH}peridigm_image /opt/cmake/bin/ctest -T Test --test-dir /Peridigm/build || true
     - CONTAINERNAME=$(docker ps -a --format "{{.Names}}")
     - docker cp $CONTAINERNAME:/Peridigm/build/Testing Testing
-    - docker push ${CI_REGISTRY_PATH}peridigm_image
+    - if [ -f Testing/Temporary/LastTestsFailed.log ]; then  exit 1; else docker push ${CI_REGISTRY_PATH}peridigm_image; fi
   artifacts:
     paths:
       - Testing
