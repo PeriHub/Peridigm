@@ -35,7 +35,8 @@ C
       DO K1 =1,6
             STRESS(K1) = 0.D0
             DO K2 = 1, 6
-                  STRESS(K1) = STRESS(K1) + C(K1,K2)*(STRAN(K2) + DSTRAN(K2))
+                  STRESS(K1) = STRESS(K1) + C(K1,K2) *
+     &            (STRAN(K2) + DSTRAN(K2))
             END DO
       END DO 
       RETURN

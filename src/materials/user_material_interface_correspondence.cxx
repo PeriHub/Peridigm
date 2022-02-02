@@ -85,9 +85,6 @@ const bool* coordinateTrafo
   const ScalarT* GLStrainN = strainN;
   const ScalarT* GLStrainNP1 = strainNP1;
   ScalarT* sigmaNP1 = unrotatedCauchyStressNP1;
-  char matnameArray[80];
-  int nname;
-
 
   int nshr = 3;
   int nnormal = 3;
@@ -119,17 +116,20 @@ const bool* coordinateTrafo
   ScalarT* depsLocVoigt = &depsLocVoigtVector[0];
   ScalarT* sigmaNP1LocVoigt = &sigmaNP1LocVoigtVector[0];
 
+  char matnameArray[80];
+  int nname = matname.length();
+  for(unsigned int i=0; i<matname.length(); ++i){
+    matnameArray[i] = matname[i];
+  }
+
   for(int iID=0 ; iID<numPoints ; ++iID, 
           coords+=3, defGradN+=9, defGradNP1+=9, GLStrainN+=9,GLStrainNP1+=9,sigmaNP1+=9, angles+=3){
           NOEL = iID;
     
+    // CORRESPONDENCE::computeGreenLagrangeStrain(defGradNP1,GLStrainNP1);
+
     CORRESPONDENCE::DIFFTENSOR(GLStrainN, GLStrainNP1, deps);
     CORRESPONDENCE::DIFFTENSOR(RotationN, RotationNP1, drot);
-
-    nname = matname.length();
-    for(unsigned int i=0; i<matname.length(); ++i){
-      matnameArray[i] = matname[i];
-    }
     // Transformation global -> local
     //https://www.continuummechanics.org/stressxforms.html
     // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
@@ -142,11 +142,9 @@ const bool* coordinateTrafo
     
     CORRESPONDENCE::GetVoigtNotation(strainLoc, strainLocVoigt);
     CORRESPONDENCE::GetVoigtNotation(deps, depsLocVoigt);
-    CORRESPONDENCE::GetVoigtNotation(strainLoc, strainLocVoigt);
-    CORRESPONDENCE::GetVoigtNotation(deps, depsLocVoigt);
 
     CORRESPONDENCE::UMATINT(sigmaNP1LocVoigt,statev,DDSDDE,&SSE,&SPD,&SCD,&RPL,
-    DDSDDT, DRPLDE,&DRPLDT,strainLocVoigt,depsLocVoigt,&time,&dtime,temp,dtemp,
+    DDSDDT, DRPLDE,&DRPLDT,strainLocVoigt,depsLocVoigt,timeArray,&dtime,temp,dtemp,
     &PREDEF,&DPRED,matnameArray,&nnormal,&nshr,&nstresscomp,&nstatev,props,
     &nprops,coords,drot,&PNEWDT,&CELENT,defGradN,defGradNP1,
     &NOEL,&NPT,&KSLAY,&KSPT,&JSTEP,&KINC,&nname);

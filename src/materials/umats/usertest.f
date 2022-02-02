@@ -18,26 +18,26 @@ C
       I = 0.0
       DO K1=1,NTENS
             DO K2=1,NTENS
-                  DDSDDE(K1,K2) = I*2
+                  DDSDDE(K1,K2) = I*PROPS(1)
                   I=I+1
             END DO
       END DO
       DO K1=1,NTENS
-            STRESS(K1) = STRESS(K1)*2
-            STATEV(K1) = STATEV(K1)*2
-            STRAN(K1) = STRAN(K1)*2
-            DSTRAN(K1) = DSTRAN(K1)*2
-            DDSDDT(K1) = DDSDDT(K1)*2
-            DRPLDE(K1) = DRPLDE(K1)*2
+            STRESS(K1) = STRESS(K1)*PROPS(1)
+            STATEV(K1) = STATEV(K1)*PROPS(1)
+            STRAN(K1) = STRAN(K1)*PROPS(1)
+            DSTRAN(K1) = DSTRAN(K1)*PROPS(1)
+            DDSDDT(K1) = DDSDDT(K1)*PROPS(1)
+            DRPLDE(K1) = DRPLDE(K1)*PROPS(1)
       END DO
       DO K1=1,3
-            COORDS(K1) = COORDS(K1)*2
+            COORDS(K1) = COORDS(K1)*PROPS(1)
       END DO
       DO K1=1,3
             DO K2=1,3
-                  DROT(K1,K2) = DROT(K1,K2)*2
-                  DFGRD0(K1,K2) = DFGRD0(K1,K2)*2
-                  DFGRD1(K1,K2) = DFGRD1(K1,K2)*2
+                  DROT(K1,K2) = DROT(K1,K2)*PROPS(1)
+                  DFGRD0(K1,K2) = DFGRD0(K1,K2)*PROPS(1)
+                  DFGRD1(K1,K2) = DFGRD1(K1,K2)*PROPS(1)
             END DO
       END DO
       RETURN

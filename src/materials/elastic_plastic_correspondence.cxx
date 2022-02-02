@@ -204,7 +204,9 @@ void updateElasticPerfectlyPlasticCauchyStress
 
         for (int i = 0; i < 9; i++) {
           //tempA -- The plastic deviatoric strain increment tensor \Delta e_{plastic} = \Delta e_{total} - \Delta e_{elastic}
-          tempA[i] = deviatoricStrainInc[i] - (deviatoricStressNP1[i] - deviatoricStressN[i]) / 2.0 / shearMod;
+          // tempA[i] = deviatoricStrainInc[i] - (deviatoricStressNP1[i] - deviatoricStressN[i]) / 2.0 / shearMod; 
+          // removed undefined deviatoricStrainInc[i]
+          tempA[i] = (deviatoricStressNP1[i] - deviatoricStressN[i]) / 2.0 / shearMod;
           //tempB -- Deviatoric stress increment.  This is effectively an average of the deviatoric stress 
           //direction unit tensors at the half-step between steps NP1 and N
           tempB[i] = (deviatoricStressNP1[i]/deviatoricStressMagnitudeNP1 + 
