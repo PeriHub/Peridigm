@@ -6,7 +6,8 @@ stages:
   - deploy
 
 build_job:
-  # only:
+  only:
+    - master
   #   - tags
   extends: [.build_before_script_template]
   allow_failure: 
@@ -25,7 +26,8 @@ build_job:
     expire_in: 1 day
 
 deploy_job:
-  # only:
+  only:
+    - master
   #   - tags
   stage: deploy
   script:

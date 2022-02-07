@@ -59,7 +59,7 @@ const double* coords,
 const ScalarT* DeformationGradientN, 
 const ScalarT* DeformationGradientNP1, 
 const ScalarT* strainN, 
-const ScalarT* strainNP1, 
+ScalarT* strainNP1, 
 ScalarT* unrotatedCauchyStressNP1, 
 const int numPoints, 
 const int nstatev,
@@ -83,7 +83,7 @@ const bool* coordinateTrafo
   const ScalarT* defGradN = DeformationGradientN;
   const ScalarT* defGradNP1 = DeformationGradientNP1;
   const ScalarT* GLStrainN = strainN;
-  const ScalarT* GLStrainNP1 = strainNP1;
+  ScalarT* GLStrainNP1 = strainNP1;
   ScalarT* sigmaNP1 = unrotatedCauchyStressNP1;
 
   int nshr = 3;
@@ -126,7 +126,7 @@ const bool* coordinateTrafo
           coords+=3, defGradN+=9, defGradNP1+=9, GLStrainN+=9,GLStrainNP1+=9,sigmaNP1+=9, angles+=3){
           NOEL = iID;
     
-    // CORRESPONDENCE::computeGreenLagrangeStrain(defGradNP1,GLStrainNP1);
+    CORRESPONDENCE::computeGreenLagrangeStrain(defGradNP1,GLStrainNP1);
 
     CORRESPONDENCE::DIFFTENSOR(GLStrainN, GLStrainNP1, deps);
     CORRESPONDENCE::DIFFTENSOR(RotationN, RotationNP1, drot);
@@ -148,7 +148,7 @@ const bool* coordinateTrafo
     &PREDEF,&DPRED,matnameArray,&nnormal,&nshr,&nstresscomp,&nstatev,props,
     &nprops,coords,drot,&PNEWDT,&CELENT,defGradN,defGradNP1,
     &NOEL,&NPT,&KSLAY,&KSPT,&JSTEP,&KINC,&nname);
-    
+
     CORRESPONDENCE::GetTensorFromVoigtNotation(sigmaNP1LocVoigt, sigmaNP1);
     // back transformation local -> global 
     if (coordinateTrafo[iID]==true){  
@@ -245,7 +245,7 @@ const double* coords,
 const double* DeformationGradientN, 
 const double* DeformationGradientNP1, 
 const double* strainN, 
-const double* strainNP1, 
+double* strainNP1, 
 double* unrotatedCauchyStressNP1, 
 const int numPoints, 
 const int nstatev,

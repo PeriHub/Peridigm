@@ -215,8 +215,8 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
       }
   }
 
-  CORRESPONDENCE::computeGreenLagrangeStrain(defGradNP1,GLStrainNP1,flyingPointFlag,numOwnedPoints);
-  dataManager.getData(m_strainFieldId, PeridigmField::STEP_NP1)->ExtractView(&GLStrainNP1);
+  // CORRESPONDENCE::computeGreenLagrangeStrain(defGradNP1,GLStrainNP1,flyingPointFlag,numOwnedPoints);
+  // dataManager.getData(m_strainFieldId, PeridigmField::STEP_NP1)->ExtractView(&GLStrainNP1);
   double* props = new double[nprops]; //temp;
   for(int iID=0 ; iID<nprops ; ++iID){props[iID] = userProperties[iID];}
   CORRESPONDENCE::userMaterialInterface(modelCoordinates,
