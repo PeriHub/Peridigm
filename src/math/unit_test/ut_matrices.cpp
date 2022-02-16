@@ -199,11 +199,26 @@ TEUCHOS_UNIT_TEST(matrices, Invert3by3Matrix) {
     *(C+7)=0;
     *(C+8)=1;
 
-    MATRICES::Invert3by3Matrix(A,determinant,Ctest);
+    int b = MATRICES::Invert3by3Matrix(A,determinant,Ctest);
+
+    TEST_FLOATING_EQUALITY(b,0,0);
     for (n=0; n<9; n++)
     {
         TEST_FLOATING_EQUALITY(*(Ctest+n),*(C+n),0);
     }
+    *(A)  =0;
+    *(A+1)=0;
+    *(A+2)=0;
+    *(A+3)=0;
+    *(A+4)=0;
+    *(A+5)=0;
+    *(A+6)=0;
+    *(A+7)=0;
+    *(A+8)=0;
+
+    b = MATRICES::Invert3by3Matrix(A,determinant,Ctest);
+    TEST_FLOATING_EQUALITY(b,1,0);
+
 }
 
 TEUCHOS_UNIT_TEST(matrices, Invert2by2Matrix) {
@@ -227,11 +242,20 @@ TEUCHOS_UNIT_TEST(matrices, Invert2by2Matrix) {
     *(C+3)=1.5;
     *(C+4)=-0.5;
 
-    MATRICES::Invert2by2Matrix(A,determinant,Ctest);
+    int b = MATRICES::Invert2by2Matrix(A,determinant,Ctest);
+    TEST_FLOATING_EQUALITY(b,0,0);
     for (n=0; n<4; n++)
     {
         TEST_FLOATING_EQUALITY(*(Ctest+n),*(C+n),0);
     }
+    *(A)  =0;
+    *(A+1)=0;
+    *(A+3)=0;
+    *(A+4)=0;
+
+    b = MATRICES::Invert3by3Matrix(A,determinant,Ctest);
+    TEST_FLOATING_EQUALITY(b,1,0);
+
 }
 
 TEUCHOS_UNIT_TEST(matrices, TransposeMatrix) {
