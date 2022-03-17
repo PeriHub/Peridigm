@@ -55,30 +55,34 @@
 // Christian Willberg   christian.willberg@dlr.de
 #include "Peridigm_EnergyReleaseDamageModel.hpp"
 #include "Peridigm_EnergyReleaseDamageCorrepondenceModel.hpp"
+#include "Peridigm_PrintingDamageModel.hpp"
 using namespace std;
 
 Teuchos::RCP<PeridigmNS::DamageModel>
-PeridigmNS::DamageModelFactory::create(const Teuchos::ParameterList& damageModelParams)
+PeridigmNS::DamageModelFactory::create(const Teuchos::ParameterList &damageModelParams)
 {
   Teuchos::RCP<PeridigmNS::DamageModel> damageModel;
 
-  const string& damageModelName = damageModelParams.get<string>("Damage Model");
+  const string &damageModelName = damageModelParams.get<string>("Damage Model");
 
-  if(damageModelName == "Critical Stretch")
-    damageModel = Teuchos::rcp( new CriticalStretchDamageModel(damageModelParams) );
-  else if(damageModelName == "Interface Aware")
-    damageModel = Teuchos::rcp( new InterfaceAwareDamageModel(damageModelParams) );
-  else if(damageModelName == "Time Dependent Critical Stretch")
-    damageModel = Teuchos::rcp( new UserDefinedTimeDependentCriticalStretchDamageModel(damageModelParams) );
-  else if(damageModelName == "Critical Energy")
-    damageModel = Teuchos::rcp( new EnergyReleaseDamageModel(damageModelParams) );
-  else if(damageModelName == "Initial Damage")
-    damageModel = Teuchos::rcp( new InitialDamageModel(damageModelParams) );
-  else if(damageModelName == "Time Dependent Critical Stretch")
-    damageModel = Teuchos::rcp( new UserDefinedTimeDependentCriticalStretchDamageModel(damageModelParams) );  
-  else if(damageModelName == "Critical Energy Correspondence")
-    damageModel = Teuchos::rcp( new EnergyReleaseDamageCorrepondenceModel(damageModelParams) );
-  else {
+  if (damageModelName == "Critical Stretch")
+    damageModel = Teuchos::rcp(new CriticalStretchDamageModel(damageModelParams));
+  else if (damageModelName == "Interface Aware")
+    damageModel = Teuchos::rcp(new InterfaceAwareDamageModel(damageModelParams));
+  else if (damageModelName == "Time Dependent Critical Stretch")
+    damageModel = Teuchos::rcp(new UserDefinedTimeDependentCriticalStretchDamageModel(damageModelParams));
+  else if (damageModelName == "Critical Energy")
+    damageModel = Teuchos::rcp(new EnergyReleaseDamageModel(damageModelParams));
+  else if (damageModelName == "Initial Damage")
+    damageModel = Teuchos::rcp(new InitialDamageModel(damageModelParams));
+  else if (damageModelName == "Time Dependent Critical Stretch")
+    damageModel = Teuchos::rcp(new UserDefinedTimeDependentCriticalStretchDamageModel(damageModelParams));
+  else if (damageModelName == "Critical Energy Correspondence")
+    damageModel = Teuchos::rcp(new EnergyReleaseDamageCorrepondenceModel(damageModelParams));
+  else if (damageModelName == "Printing")
+    damageModel = Teuchos::rcp(new PrintingDamageModel(damageModelParams));
+  else
+  {
     string invalidDamageModel("\n**** Unrecognized damage model type: ");
     invalidDamageModel += damageModelName;
     invalidDamageModel += ", must be \"Critical Stretch\", \"Time Dependent Critical Stretch\", \"Interface Aware\", \"Critical Energy\", \"Critical Energy Correspondence\", or \"Initial Damage\".\n";
