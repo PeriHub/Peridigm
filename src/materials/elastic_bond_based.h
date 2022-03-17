@@ -46,6 +46,7 @@
 //@HEADER
 #ifndef ELASTIC_BOND_BASED_H
 #define ELASTIC_BOND_BASED_H
+#include <Eigen/Core>
 
 namespace MATERIAL_EVALUATION {
 
@@ -62,6 +63,24 @@ void computeInternalForceElasticBondBased
     int numOwnedPoints,
     double BULK_MODULUS,
     double horizon
+);
+
+template<typename ScalarT>
+void computeInternalForceElasticBondBasedCollocation
+(
+    const double* xOverlap,
+    const ScalarT* yOverlap,
+    const double* volumeOverlap,
+    const double* bondDamage,
+    ScalarT* fInternalOverlap,
+    const int* localNeighborList,
+    const int* localCollocationNeighborList,
+    bool* useCollocationNodes,
+    const Eigen::MatrixXd* UpdateMat,
+    int numOwnedPoints,
+    double BULK_MODULUS,
+    double horizon,
+    const double m_criticalStretch
 );
 
 }

@@ -49,100 +49,256 @@
 #include <Sacado.hpp>
 #include "elastic_bond_based.h"
 #include "material_utilities.h"
+#include <Eigen/Core>
 
-namespace MATERIAL_EVALUATION {
-
-template<typename ScalarT>
-void computeInternalForceElasticBondBased
-(
-    const double* xOverlap,
-    const ScalarT* yOverlap,
-    const double* volumeOverlap,
-    const double* bondDamage,
-    ScalarT* fInternalOverlap,
-    const int* localNeighborList,
-    int numOwnedPoints,
-    double BULK_MODULUS,
-    double horizon
-)
+namespace MATERIAL_EVALUATION
 {
-  double volume, neighborVolume, X[3], neighborX[3], initialBondLength, damageOnBond;
-  ScalarT Y[3], neighborY[3], currentBondLength, stretch, t, fx, fy, fz;
-  int neighborhoodIndex(0), bondDamageIndex(0), neighborId;
 
-  const double pi = PeridigmNS::value_of_pi();
-  double constant = 18.0*BULK_MODULUS/(pi*horizon*horizon*horizon*horizon);
+  template <typename ScalarT>
+  void computeInternalForceElasticBondBased(
+      const double *xOverlap,
+      const ScalarT *yOverlap,
+      const double *volumeOverlap,
+      const double *bondDamage,
+      ScalarT *fInternalOverlap,
+      const int *localNeighborList,
+      int numOwnedPoints,
+      double BULK_MODULUS,
+      double horizon)
+  {
+    double volume, neighborVolume, X[3], neighborX[3], initialBondLength, damageOnBond;
+    ScalarT Y[3], neighborY[3], currentBondLength, stretch, t, fx, fy, fz;
+    int neighborhoodIndex(0), bondDamageIndex(0), neighborId;
 
-  for(int p=0 ; p<numOwnedPoints ; p++){
+    const double pi = PeridigmNS::value_of_pi();
+    double constant = 18.0 * BULK_MODULUS / (pi * horizon * horizon * horizon * horizon);
 
-    X[0] = xOverlap[p*3];
-    X[1] = xOverlap[p*3+1];
-    X[2] = xOverlap[p*3+2];
-    Y[0] = yOverlap[p*3];
-    Y[1] = yOverlap[p*3+1];
-    Y[2] = yOverlap[p*3+2];
-    volume = volumeOverlap[p];
+    for (int p = 0; p < numOwnedPoints; p++)
+    {
 
-    int numNeighbors = localNeighborList[neighborhoodIndex++];
-    for(int n=0; n<numNeighbors; n++){
+      X[0] = xOverlap[p * 3];
+      X[1] = xOverlap[p * 3 + 1];
+      X[2] = xOverlap[p * 3 + 2];
+      Y[0] = yOverlap[p * 3];
+      Y[1] = yOverlap[p * 3 + 1];
+      Y[2] = yOverlap[p * 3 + 2];
+      volume = volumeOverlap[p];
 
-      neighborId = localNeighborList[neighborhoodIndex++];
-      neighborX[0] = xOverlap[neighborId*3];
-      neighborX[1] = xOverlap[neighborId*3+1];
-      neighborX[2] = xOverlap[neighborId*3+2];
-      neighborY[0] = yOverlap[neighborId*3];
-      neighborY[1] = yOverlap[neighborId*3+1];
-      neighborY[2] = yOverlap[neighborId*3+2];
-      neighborVolume = volumeOverlap[neighborId];
-      
-      initialBondLength = std::sqrt( (neighborX[0]-X[0])*(neighborX[0]-X[0]) + (neighborX[1]-X[1])*(neighborX[1]-X[1]) + (neighborX[2]-X[2])*(neighborX[2]-X[2]) );
-      currentBondLength = std::sqrt( (neighborY[0]-Y[0])*(neighborY[0]-Y[0]) + (neighborY[1]-Y[1])*(neighborY[1]-Y[1]) + (neighborY[2]-Y[2])*(neighborY[2]-Y[2]) );
-      stretch = (currentBondLength - initialBondLength)/initialBondLength;
+      int numNeighbors = localNeighborList[neighborhoodIndex++];
+      for (int n = 0; n < numNeighbors; n++)
+      {
 
-      damageOnBond = bondDamage[bondDamageIndex++];
+        neighborId = localNeighborList[neighborhoodIndex++];
+        neighborX[0] = xOverlap[neighborId * 3];
+        neighborX[1] = xOverlap[neighborId * 3 + 1];
+        neighborX[2] = xOverlap[neighborId * 3 + 2];
+        neighborY[0] = yOverlap[neighborId * 3];
+        neighborY[1] = yOverlap[neighborId * 3 + 1];
+        neighborY[2] = yOverlap[neighborId * 3 + 2];
+        neighborVolume = volumeOverlap[neighborId];
 
-      t = 0.5*(1.0 - damageOnBond)*stretch*constant;
+        initialBondLength = std::sqrt((neighborX[0] - X[0]) * (neighborX[0] - X[0]) + (neighborX[1] - X[1]) * (neighborX[1] - X[1]) + (neighborX[2] - X[2]) * (neighborX[2] - X[2]));
+        currentBondLength = std::sqrt((neighborY[0] - Y[0]) * (neighborY[0] - Y[0]) + (neighborY[1] - Y[1]) * (neighborY[1] - Y[1]) + (neighborY[2] - Y[2]) * (neighborY[2] - Y[2]));
+        stretch = (currentBondLength - initialBondLength) / initialBondLength;
 
-      fx = t * (neighborY[0] - Y[0]) / currentBondLength;
-      fy = t * (neighborY[1] - Y[1]) / currentBondLength;
-      fz = t * (neighborY[2] - Y[2]) / currentBondLength;
+        damageOnBond = bondDamage[bondDamageIndex++];
 
-      fInternalOverlap[3*p+0] += fx*neighborVolume;
-      fInternalOverlap[3*p+1] += fy*neighborVolume;
-      fInternalOverlap[3*p+2] += fz*neighborVolume;
-      fInternalOverlap[3*neighborId+0] -= fx*volume;
-      fInternalOverlap[3*neighborId+1] -= fy*volume;
-      fInternalOverlap[3*neighborId+2] -= fz*volume;
+        t = 0.5 * (1.0 - damageOnBond) * stretch * constant;
+
+        fx = t * (neighborY[0] - Y[0]) / currentBondLength;
+        fy = t * (neighborY[1] - Y[1]) / currentBondLength;
+        fz = t * (neighborY[2] - Y[2]) / currentBondLength;
+
+        fInternalOverlap[3 * p + 0] += fx * neighborVolume;
+        fInternalOverlap[3 * p + 1] += fy * neighborVolume;
+        fInternalOverlap[3 * p + 2] += fz * neighborVolume;
+        fInternalOverlap[3 * neighborId + 0] -= fx * volume;
+        fInternalOverlap[3 * neighborId + 1] -= fy * volume;
+        fInternalOverlap[3 * neighborId + 2] -= fz * volume;
+      }
     }
   }
-}
 
-/** Explicit template instantiation for double. */
-template void computeInternalForceElasticBondBased<double>
-(
-    const double* xOverlap,
-    const double* yOverlap,
-    const double* volumeOverlap,
-    const double* bondDamage,
-    double* fInternalOverlap,
-    const int*  localNeighborList,
-    int numOwnedPoints,
-    double BULK_MODULUS,
-    double horizon
- );
+  template <typename ScalarT>
+  void computeInternalForceElasticBondBasedCollocation(
+      const double *xOverlap,
+      const ScalarT *yOverlap,
+      const double *volumeOverlap,
+      const double *bondDamage,
+      ScalarT *fInternalOverlap,
+      const int *localNeighborList,
+      const int *localCollocationNeighborList,
+      bool *useCollocationNodes,
+      const Eigen::MatrixXd *UpdateMat,
+      int numOwnedPoints,
+      double BULK_MODULUS,
+      double horizon,
+      const double m_criticalStretch)
+  {
+    double volume, neighborVolume, X[3], neighborX[3], initialBondLength, damageOnBond;
+    ScalarT Y[3], neighborY[3], currentBondLength, stretch, t, fx, fy, fz;
+    int neighborhoodIndex(0), collocationNeighborhoodIndex(0), bondDamageIndex(0), neighborId;
 
-/** Explicit template instantiation for Sacado::Fad::DFad<double>. */
-template void computeInternalForceElasticBondBased<Sacado::Fad::DFad<double> >
-(
-    const double* xOverlap,
-    const Sacado::Fad::DFad<double>* yOverlap,
-    const double* volumeOverlap,
-    const double* bondDamage,
-    Sacado::Fad::DFad<double>* fInternalOverlap,
-    const int*  localNeighborList,
-    int numOwnedPoints,
-    double BULK_MODULUS,
-    double horizon
-);
+    const double pi = PeridigmNS::value_of_pi();
+    double constant = 18.0 * BULK_MODULUS / (pi * horizon * horizon * horizon * horizon);
+
+    for (int p = 0; p < numOwnedPoints; p++)
+    {
+
+      X[0] = xOverlap[p * 3];
+      X[1] = xOverlap[p * 3 + 1];
+      X[2] = xOverlap[p * 3 + 2];
+      Y[0] = yOverlap[p * 3];
+      Y[1] = yOverlap[p * 3 + 1];
+      Y[2] = yOverlap[p * 3 + 2];
+      volume = volumeOverlap[p];
+
+      if (useCollocationNodes[p] == true)
+      {
+
+        int numNeighbors = localCollocationNeighborList[collocationNeighborhoodIndex++];
+        for (int n = 0; n < numNeighbors; n++)
+        {
+
+          neighborId = localCollocationNeighborList[collocationNeighborhoodIndex++];
+          neighborX[0] = xOverlap[neighborId * 3];
+          neighborX[1] = xOverlap[neighborId * 3 + 1];
+          neighborX[2] = xOverlap[neighborId * 3 + 2];
+          neighborY[0] = yOverlap[neighborId * 3];
+          neighborY[1] = yOverlap[neighborId * 3 + 1];
+          neighborY[2] = yOverlap[neighborId * 3 + 2];
+          neighborVolume = volumeOverlap[neighborId];
+
+          initialBondLength = std::sqrt((neighborX[0] - X[0]) * (neighborX[0] - X[0]) + (neighborX[1] - X[1]) * (neighborX[1] - X[1]) + (neighborX[2] - X[2]) * (neighborX[2] - X[2]));
+          currentBondLength = std::sqrt((neighborY[0] - Y[0]) * (neighborY[0] - Y[0]) + (neighborY[1] - Y[1]) * (neighborY[1] - Y[1]) + (neighborY[2] - Y[2]) * (neighborY[2] - Y[2]));
+          stretch = (currentBondLength - initialBondLength) / initialBondLength;
+
+          if (stretch > 0.95 * m_criticalStretch)
+          {
+            useCollocationNodes[p] = false;
+            useCollocationNodes[neighborId] = false;
+          }
+          // std::cout << "numNeighbors: " << numNeighbors << std::endl;
+
+          // std::cout << "p: " << p << std::endl;
+          // std::cout << "n: " << n << std::endl;
+          // std::cout << "length: " << sizeof(UpdateMat[p].row(0)) << std::endl;
+          fx = neighborY[0] * UpdateMat[p].row(0)(n) + neighborY[1] * UpdateMat[p].row(1)(n);
+          // std::cout << "fx: " << fx << std::endl;
+          fy = neighborY[0] * UpdateMat[p].row(2)(n) + neighborY[1] * UpdateMat[p].row(3)(n);
+          // std::cout << "fy: " << fy << std::endl;
+          // fz = neighborY[0] * UpdateMat[p].row(2)(j) + neighborY[1] * UpdateMat[p].row(3)(j);
+          fz = 0.0;
+
+          damageOnBond = bondDamage[bondDamageIndex++];
+
+          // t = 0.5 * (1.0 - damageOnBond) * stretch * constant;
+
+          // fx = t * (neighborY[0] - Y[0]) / currentBondLength;
+          // fy = t * (neighborY[1] - Y[1]) / currentBondLength;
+          // fz = t * (neighborY[2] - Y[2]) / currentBondLength;
+
+          fInternalOverlap[3 * p + 0] += fx * neighborVolume;
+          fInternalOverlap[3 * p + 1] += fy * neighborVolume;
+          fInternalOverlap[3 * p + 2] += fz * neighborVolume;
+          fInternalOverlap[3 * neighborId + 0] -= fx * volume;
+          fInternalOverlap[3 * neighborId + 1] -= fy * volume;
+          fInternalOverlap[3 * neighborId + 2] -= fz * volume;
+        }
+      }
+      else
+      {
+
+        int numNeighbors = localNeighborList[neighborhoodIndex++];
+        for (int n = 0; n < numNeighbors; n++)
+        {
+
+          neighborId = localNeighborList[neighborhoodIndex++];
+          neighborX[0] = xOverlap[neighborId * 3];
+          neighborX[1] = xOverlap[neighborId * 3 + 1];
+          neighborX[2] = xOverlap[neighborId * 3 + 2];
+          neighborY[0] = yOverlap[neighborId * 3];
+          neighborY[1] = yOverlap[neighborId * 3 + 1];
+          neighborY[2] = yOverlap[neighborId * 3 + 2];
+          neighborVolume = volumeOverlap[neighborId];
+
+          initialBondLength = std::sqrt((neighborX[0] - X[0]) * (neighborX[0] - X[0]) + (neighborX[1] - X[1]) * (neighborX[1] - X[1]) + (neighborX[2] - X[2]) * (neighborX[2] - X[2]));
+          currentBondLength = std::sqrt((neighborY[0] - Y[0]) * (neighborY[0] - Y[0]) + (neighborY[1] - Y[1]) * (neighborY[1] - Y[1]) + (neighborY[2] - Y[2]) * (neighborY[2] - Y[2]));
+          stretch = (currentBondLength - initialBondLength) / initialBondLength;
+
+          damageOnBond = bondDamage[bondDamageIndex++];
+
+          t = 0.5 * (1.0 - damageOnBond) * stretch * constant;
+
+          fx = t * (neighborY[0] - Y[0]) / currentBondLength;
+          fy = t * (neighborY[1] - Y[1]) / currentBondLength;
+          fz = t * (neighborY[2] - Y[2]) / currentBondLength;
+
+          fInternalOverlap[3 * p + 0] += fx * neighborVolume;
+          fInternalOverlap[3 * p + 1] += fy * neighborVolume;
+          fInternalOverlap[3 * p + 2] += fz * neighborVolume;
+          fInternalOverlap[3 * neighborId + 0] -= fx * volume;
+          fInternalOverlap[3 * neighborId + 1] -= fy * volume;
+          fInternalOverlap[3 * neighborId + 2] -= fz * volume;
+        }
+      }
+    }
+  }
+
+  /** Explicit template instantiation for double. */
+  template void computeInternalForceElasticBondBased<double>(
+      const double *xOverlap,
+      const double *yOverlap,
+      const double *volumeOverlap,
+      const double *bondDamage,
+      double *fInternalOverlap,
+      const int *localNeighborList,
+      int numOwnedPoints,
+      double BULK_MODULUS,
+      double horizon);
+
+  /** Explicit template instantiation for Sacado::Fad::DFad<double>. */
+  template void computeInternalForceElasticBondBased<Sacado::Fad::DFad<double>>(
+      const double *xOverlap,
+      const Sacado::Fad::DFad<double> *yOverlap,
+      const double *volumeOverlap,
+      const double *bondDamage,
+      Sacado::Fad::DFad<double> *fInternalOverlap,
+      const int *localNeighborList,
+      int numOwnedPoints,
+      double BULK_MODULUS,
+      double horizon);
+
+  /** Explicit template instantiation for double. */
+  template void computeInternalForceElasticBondBasedCollocation<double>(
+      const double *xOverlap,
+      const double *yOverlap,
+      const double *volumeOverlap,
+      const double *bondDamage,
+      double *fInternalOverlap,
+      const int *localNeighborList,
+      const int *localCollocationNeighborList,
+      bool *useCollocationNodes,
+      const Eigen::MatrixXd *UpdateMat,
+      int numOwnedPoints,
+      double BULK_MODULUS,
+      double horizon,
+      const double m_criticalStretch);
+
+  /** Explicit template instantiation for Sacado::Fad::DFad<double>. */
+  template void computeInternalForceElasticBondBasedCollocation<Sacado::Fad::DFad<double>>(
+      const double *xOverlap,
+      const Sacado::Fad::DFad<double> *yOverlap,
+      const double *volumeOverlap,
+      const double *bondDamage,
+      Sacado::Fad::DFad<double> *fInternalOverlap,
+      const int *localNeighborList,
+      const int *localCollocationNeighborList,
+      bool *useCollocationNodes,
+      const Eigen::MatrixXd *UpdateMat,
+      int numOwnedPoints,
+      double BULK_MODULUS,
+      double horizon,
+      const double m_criticalStretch);
 
 }

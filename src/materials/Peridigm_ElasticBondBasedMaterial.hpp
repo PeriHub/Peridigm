@@ -49,21 +49,23 @@
 #define PERIDIGM_ELASTICBONDBASEDMATERIAL_HPP
 
 #include "Peridigm_Material.hpp"
+#include <Eigen/Core>
 
-namespace PeridigmNS {
+namespace PeridigmNS
+{
 
   //! Elastic bond-based peridynamic material model.
-  class ElasticBondBasedMaterial : public Material{
+  class ElasticBondBasedMaterial : public Material
+  {
   public:
-
     //! Constructor.
-    ElasticBondBasedMaterial(const Teuchos::ParameterList & params);
+    ElasticBondBasedMaterial(const Teuchos::ParameterList &params);
 
     //! Destructor.
     virtual ~ElasticBondBasedMaterial();
 
     //! Return name of material type
-    virtual std::string Name() const { return("Elastic Bond Based"); }
+    virtual std::string Name() const { return ("Elastic Bond Based"); }
 
     //! Returns the density of the material.
     virtual double Density() const { return m_density; }
@@ -72,9 +74,10 @@ namespace PeridigmNS {
     virtual double BulkModulus() const { return m_bulkModulus; }
 
     //! Returns the shear modulus of the material.
-    virtual double ShearModulus() const {
+    virtual double ShearModulus() const
+    {
       double nu = 0.25;
-      double shearModulus = (3.0*m_bulkModulus*(1.0 - 2.0*nu))/(2.0*(1.0 + nu));
+      double shearModulus = (3.0 * m_bulkModulus * (1.0 - 2.0 * nu)) / (2.0 * (1.0 + nu));
       return shearModulus;
     }
 
@@ -85,28 +88,51 @@ namespace PeridigmNS {
     virtual void
     initialize(const double dt,
                const int numOwnedPoints,
-               const int* ownedIDs,
-               const int* neighborhoodList,
-               PeridigmNS::DataManager& dataManager);
+               const int *ownedIDs,
+               const int *neighborhoodList,
+               PeridigmNS::DataManager &dataManager);
 
     //! Evaluate the internal force.
     virtual void
     computeForce(const double dt,
                  const int numOwnedPoints,
-                 const int* ownedIDs,
-                 const int* neighborhoodList,
-                 PeridigmNS::DataManager& dataManager,
+                 const int *ownedIDs,
+                 const int *neighborhoodList,
+                 PeridigmNS::DataManager &dataManager,
                  const double currentTime = 0.0) const;
 
-  protected:
+    int *collocationNeighborhoodList;
+    bool *useCollocationNodes = new bool;
+    Eigen::MatrixXd *UpdateMat;
 
+  protected:
     //! Computes the distance between nodes (a1, a2, a3) and (b1, b2, b3).
     inline double distance(double a1, double a2, double a3,
                            double b1, double b2, double b3) const
-      {
-        return ( sqrt( (a1-b1)*(a1-b1) + (a2-b2)*(a2-b2) + (a3-b3)*(a3-b3) ) );
-      }
+    {
+      return (sqrt((a1 - b1) * (a1 - b1) + (a2 - b2) * (a2 - b2) + (a3 - b3) * (a3 - b3)));
+    }
 
+    inline double weight(const double r, const double cm, const double rm)
+    {
+      double w = (std::exp(-((r * r) / (cm * cm))) - std::exp(-((rm * rm) / (cm * cm)))) / (1 -
+                                                                                            std::exp(-((rm * rm) / (cm * cm))));
+      return w;
+    }
+
+    inline Eigen::VectorXd Poly(const double x, const double y)
+    {
+      Eigen::VectorXd poly(6);
+      poly[0] = 1.0;
+      poly[1] = x;
+      poly[2] = y;
+      poly[3] = x * x;
+      poly[4] = y * y;
+      poly[5] = x * y;
+
+      return poly;
+    }
+    double m_criticalStretch;
     // material parameters
     double m_bulkModulus;
     double m_density;
@@ -120,6 +146,8 @@ namespace PeridigmNS {
     int m_coordinatesFieldId;
     int m_forceDensityFieldId;
     int m_bondDamageFieldId;
+
+    bool m_useCollocationNodes;
   };
 }
 
