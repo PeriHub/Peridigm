@@ -332,6 +332,30 @@ void PeridigmNS::Material::computeFiniteDifferenceJacobian(const double dt,
   }
 }
 
+template<typename ScalarT>
+ScalarT getData(const Teuchos::ParameterList & params,
+  std::string paramName
+)
+{
+  ScalarT parameter = 0;
+  if (params.isParameter(paramName))
+      parameter = params.get<ScalarT>(paramName);
+  return parameter;
+}
+
+template double getData<double>
+(const Teuchos::ParameterList & params,
+  std::string paramName
+);
+template bool getData<bool>
+(const Teuchos::ParameterList & params,
+  std::string paramName
+);
+template int getData<int>
+(const Teuchos::ParameterList & params,
+  std::string paramName
+);
+
 double PeridigmNS::Material::calculateBulkModulus(const Teuchos::ParameterList & params) const
 {
   bool bulkModulusDefined(false), shearModulusDefined(false), youngsModulusDefined(false), poissonsRatioDefined(false);
@@ -512,11 +536,12 @@ void PeridigmNS::Material::getStiffnessmatrix(const Teuchos::ParameterList & par
      C46 = 0.0;
      C56 = 0.0;
   }
-  // Equation (8) Dipasquale, D., Sarego, G., Zaccariotto, M., Galvanetto, U., A discussion on failure criteria
-          // for ordinary state-based Peridynamics, Engineering Fracture Mechanics (2017), doi: https://doi.org/10.1016/
-          // j.engfracmech.2017.10.011
-
-        // have to be done after rotation if angles exist
+    // Equation (8) Dipasquale, D., Sarego, G., Zaccariotto, M., Galvanetto, U., A discussion on failure criteria
+    // for ordinary state-based Peridynamics, Engineering Fracture Mechanics (2017), doi: https://doi.org/10.1016/
+    // j.engfracmech.2017.10.011
+    
+    //tbd --> in separate function for testing
+        
       if (pstress==false&&pstrain == false){
          C[0][0] = C11;C[0][1] = C12;C[0][2]= C13; C[0][3] = C14; C[0][4] = C15; C[0][5]= C16;
          C[1][0] = C12;C[1][1] = C22;C[1][2]= C23; C[1][3] = C24; C[1][4] = C25; C[1][5]= C26;
@@ -564,113 +589,7 @@ void PeridigmNS::Material::getStiffnessmatrix(const Teuchos::ParameterList & par
 
 
 
-
-
-//void
-//PeridigmNS::Material::computeDilatation(
-//        const int numOwnedPoints,
-//        const int* ownedIDs,
-//        const int* neighborhoodList,
-//        const double BM,
-//        const double SM,
-//        PeridigmNS::DataManager& dataManager) const {
-//            
-//          
-//    //////////////////////////////////////////////////////////////////////////////////////    
-//    // Routine developed for Peridigm by DLR.
-//    // Dilatation has to be updated before the damage routine. Therefore, this routine has been added
-//    // to the model evaluator. The dilatation is needed to calculate the energy at both bonds (12 and 21) 
-//    // for the correct time step, prior to the calculation of the internal forces. The bonds with critical
-//    // energy are deleted and the internal loads calculation will be done.
-//    //////////////////////////////////////////////////////////////////////////////////////    
-//    // Questions?
-//    // Christian Willberg  christian.willberg@dlr.de
-//    // Martin Raedel       martin.raedel@dlr.de
-//    //////////////////////////////////////////////////////////////////////////////////////   
-//     
-//    PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
-//    //double m_horizon = params.get<double>("Horizon");
-//    //////////////////////////////////////////////////////////////////////////////////////
-//    // ALL IDS will be initialized in the material routine "Peridigm_ElasticMaterial.cpp"
-//    // carefull if changed from Peridigm_ElasticMaterial.cpp to something else
-//    //////////////////////////////////////////////////////////////////////////////////////    
-//    
-//    int m_modelCoordinatesFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::VECTOR, PeridigmField::CONSTANT, "Model_Coordinates");
-//    int m_coordinatesFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Coordinates");
-//    int m_volumeFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume");
-//    int m_weightedVolumeFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Weighted_Volume");
-//    int m_dilatationFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Dilatation");
-//    int m_bondDamageFieldId = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage");
-//    int m_horizonFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Horizon");
-//    int m_damageModelFieldId = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Damage_Model_Data");
-//   
-//    ///////////////////////////////////////////////////////////////////////////////
-//    PeridigmNS::InfluenceFunction::functionPointer OMEGA;
-//    OMEGA = PeridigmNS::InfluenceFunction::self().getInfluenceFunction();
-//    double *x, *y, *bondDamage, *horizon;
-//    double *Volume, *weightedVolume, *damageModel, *theta;
-//    ///////////////////////////////////////////////////////////////////////////////
-//    dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
-//    dataManager.getData(m_weightedVolumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&weightedVolume);
-//    dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&Volume);
-//    dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&y);   
-//    dataManager.getData(m_dilatationFieldId, PeridigmField::STEP_NP1)->ExtractView(&theta);
-//    dataManager.getData(m_horizonFieldId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
-//    
-//    dataManager.getData(m_damageModelFieldId, PeridigmField::STEP_NP1)->ExtractView(&damageModel);
-//
-//    
-//    *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)) = *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N));
-//    dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
-//    double m_alpha = 0.0; // to be adapted for temperature
-//    double *deltaTemperature = NULL; 
-//    const double *xOwned = x;
-//    const double *yOwned = y;
-//    const double *deltaT = deltaTemperature;
-//    const double *m = weightedVolume;
-//    const double *v = Volume;
-//    double cellVolume;
-//    
-//    const int *neighPtr = neighborhoodList;
-//    
-//    
-//    for(int p=0; p<numOwnedPoints;p++, xOwned+=3, yOwned+=3, horizon++, deltaT++, m++, theta++){
-//        int numNeigh = *neighPtr; neighPtr++;
-//        const double *X = xOwned;
-//        const double *Y = yOwned;
-//        *theta = 0.0;
-//        for(int n=0;n<numNeigh;n++,neighPtr++,bondDamage++){
-//            int localId = *neighPtr;
-//            cellVolume = v[localId];
-//            const double *XP = &x[3*localId];
-//            const double *YP = &y[3*localId];
-//            double X_dx = XP[0]-X[0];
-//            double X_dy = XP[1]-X[1];
-//            double X_dz = XP[2]-X[2];
-//            double zetaSquared = X_dx*X_dx+X_dy*X_dy+X_dz*X_dz;
-//            double Y_dx = YP[0]-Y[0];
-//            double Y_dy = YP[1]-Y[1];
-//            double Y_dz = YP[2]-Y[2];
-//            double dY = Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz;
-//            double d = sqrt(zetaSquared);
-//            double e = sqrt(dY);
-//            e -= d;
-//            //if(deltaTemperature)
-//            //  e -= thermalExpansionCoefficient*(*deltaT)*d;
-//            double omega = OMEGA(d,*horizon);
-//            *theta += 3.0*omega*(1.0-*bondDamage)*d*e*cellVolume/(*m);
-//            
-//        }
-//        // variable is needed to determine the accurate energy in the energy based damage criterion
-//        damageModel[3*p] = *theta;
-//        damageModel[3*p+1] = BM / (*m);
-//        damageModel[3*p+2] = SM / (*m);
-//        
-//        *theta = 0.0;
-//
-//
-//    }
-//}        
+      
 
 void
 PeridigmNS::Material::computeDeviatoricStateNorm(
