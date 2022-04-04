@@ -245,6 +245,10 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
       double yAuxNode = AuxNodes[j][1] + x[nodeID * 3 + 1];
       // double zAuxNode = AuxNodes[j][2] + x[nodeID*3+2];
 
+      if (x[nodeID * 3] == 0 & x[nodeID * 3 + 1] == -100)
+      {
+        std::cout << "numNeighbors: " << numNeighbors << std::endl;
+      }
       for (iNID = 0; iNID < numNeighbors; ++iNID)
       {
 
@@ -255,6 +259,12 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
 
         if (dist < dx / 1000.0)
         {
+          if (x[nodeID * 3] == 0 & x[nodeID * 3 + 1] == -100)
+          {
+            std::cout << "x[neighborID * 3]: " << x[neighborID * 3] << std::endl;
+            std::cout << "x[neighborID * 3+1]: " << x[neighborID * 3 + 1] << std::endl;
+            std::cout << "dist: " << dist << std::endl;
+          }
           Clouds[iID][cloudNum++] = neighborID;
           break;
         }
@@ -307,69 +317,97 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
 
     // std::cout << "numCollocationNeighbors: " << numCollocationNeighbors << std::endl;
 
-    Eigen::MatrixXd B = Eigen::MatrixXd::Zero(MAX_BASIS, numCollocationNeighbors);
-    Eigen::MatrixXd MMatrix = Eigen::MatrixXd::Zero(MAX_BASIS, numCollocationNeighbors);
+    Eigen::MatrixXd B = Eigen::MatrixXd::Zero(MAX_BASIS, AuxNodesNo);
+    Eigen::MatrixXd MMatrix = Eigen::MatrixXd::Zero(MAX_BASIS, AuxNodesNo);
 
-    for (int j = 0; j < numCollocationNeighbors; j++)
+    for (int j = 0; j + 1 < numCollocationNeighbors; j++)
     {
+      double xj = 0;
+      double yj = 0;
 
-      int neighborID = neighborhoodList[neighborhoodListIndex++];
+      if (j == 0)
+      {
+        xj = xi;
+        yj = yi;
+      }
+      else
+      {
+        int neighborID = collocationNeighborhoodList[neighborhoodListIndex++];
+
+        xj = x[neighborID * 3];
+        yj = x[neighborID * 3 + 1];
+      }
 
       // int n = Clouds(iID, j);
       // if (n == -1) continue;
 
-      double xj = x[neighborID * 3];
-      double yj = x[neighborID * 3 + 1];
-
       double r = std::sqrt((xi - xj) * (xi - xj) + (yi - yj) * (yi - yj));
-      // std::cout << "r: " << r << std::endl;
+      if (xi == 0 & yi == -100)
+      {
+        std::cout << "numCollocationNeighbors: " << numCollocationNeighbors << std::endl;
+        std::cout << "xj: " << xj << std::endl;
+        std::cout << "yj: " << yj << std::endl;
+        std::cout << "r: " << r << std::endl;
+      }
 
       double w = weight(r, cm, rm);
-      // std::cout << "w: " << w << std::endl;
+      if (xi == 0 & yi == -100)
+      {
+        std::cout << "weight: " << w << std::endl;
+      }
 
       p = Poly(xj - xi, yj - yi);
 
-      // for (int k = 0; k < 6; k++)
-      // {
-      //   std::cout << "p[" << k << "]: " << p[k] << std::endl;
-      // }
+      if (xi == 0 & yi == -100)
+      {
+        for (int k = 0; k < 6; k++)
+        {
+          std::cout << "p[" << k << "]: " << p[k] << std::endl;
+        }
+      }
 
       A += w * p * p.transpose();
 
       B.col(j) = w * p;
     }
 
-    // for (int k = 0; k < 6; k++)
-    // {
-    //   for (int l = 0; l < 6; l++)
-    //   {
-    //     std::cout << "A(" << k << "," << l << "): " << A(k, l) << std::endl;
-    //     std::cout << "B(" << k << "," << l << "): " << B(k, l) << std::endl;
-    //   }
-    // }
+    if (xi == 0 & yi == -100)
+    {
+      for (int k = 0; k < 6; k++)
+      {
+        for (int l = 0; l < 6; l++)
+        {
+          std::cout << "A(" << k << "," << l << "): " << A(k, l) << std::endl;
+          std::cout << "B(" << k << "," << l << "): " << B(k, l) << std::endl;
+        }
+      }
+    }
 
     MMatrix = A.completeOrthogonalDecomposition().pseudoInverse() * B;
 
-    UpdateMat[iID].resize(4, numCollocationNeighbors);
+    UpdateMat[iID].resize(4, AuxNodesNo);
 
     UpdateMat[iID].row(0) = Coeffs.row(0) * MMatrix;
     UpdateMat[iID].row(1) = Coeffs.row(1) * MMatrix;
     UpdateMat[iID].row(2) = Coeffs.row(2) * MMatrix;
     UpdateMat[iID].row(3) = Coeffs.row(3) * MMatrix;
 
-    // for (int k = 0; k < 4; k++)
-    // {
-    //   for (int l = 0; l < numCollocationNeighbors; l++)
-    //   {
-    //     // if (UpdateMat[iID](k, l) != 0)
-    //     // {
-    //     std::cout << "xi: " << xi << std::endl;
-    //     std::cout << "yi: " << yi << std::endl;
-    //     std::cout << "MMatrix(" << k << "," << l << "): " << MMatrix(k, l) << std::endl;
-    //     std::cout << "UpdateMat[" << iID << "](" << k << "," << l << "): " << UpdateMat[iID](k, l) << std::endl;
-    //     // }
-    //   }
-    // }
+    if (xi == 0 & yi == -100)
+    {
+      for (int k = 0; k < 4; k++)
+      {
+        for (int l = 0; l < numCollocationNeighbors; l++)
+        {
+          // if (UpdateMat[iID](k, l) != 0)
+          // {
+          std::cout << "xi: " << xi << std::endl;
+          std::cout << "yi: " << yi << std::endl;
+          std::cout << "MMatrix(" << k << "," << l << "): " << MMatrix(k, l) << std::endl;
+          std::cout << "UpdateMat[" << iID << "](" << k << "," << l << "): " << UpdateMat[iID](k, l) << std::endl;
+          // }
+        }
+      }
+    }
   }
 }
 
