@@ -25,7 +25,7 @@ C
                   C(K1,K2) = 0.0
             END DO
       END DO
-      IF NTENS == 6 THEN
+      IF (NTENS == 6) THEN
             C(1,1) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
             C(2,2) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
             C(3,3) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
@@ -38,7 +38,7 @@ C
             C(4,4) = PROPS(3)
             C(5,5) = PROPS(3)
             C(6,6) = PROPS(3)
-      ELSEIF NTENS == 4 THEN
+      ELSE IF (NTENS == 4) THEN
             C(1,1) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
             C(2,2) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
             C(3,3) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
