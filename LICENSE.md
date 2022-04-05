@@ -1,3 +1,6 @@
+# License
+Peridigm is distributed under the three-term BSD license.  The following header appears in all Peridigm source files:
+```
 // ************************************************************************
 //
 //                             Peridigm
@@ -34,6 +37,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // ************************************************************************
+```
 
 BSD 3-Clause License
 
