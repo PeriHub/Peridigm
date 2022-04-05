@@ -38,7 +38,17 @@ C
             C(4,4) = PROPS(3)
             C(5,5) = PROPS(3)
             C(6,6) = PROPS(3)
- 
+      ELSEIF NTENS == 4 THEN
+            C(1,1) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
+            C(2,2) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
+            C(3,3) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
+            C(1,2) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            C(2,1) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            C(3,1) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            C(1,3) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            C(2,3) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            C(3,2) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            C(4,4) = PROPS(3)
       ELSE
             C(1,1) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
             C(2,2) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
