@@ -8,7 +8,6 @@ C    INCLUDE 'ABA_PARAM.INC'
       implicit real(8) (a-h,o-z)
 C
       CHARACTER*80 CMNAME
-      DOUBLE PRECISION, DIMENSION(NTENS,NTENS) :: C
       DOUBLE PRECISION, DIMENSION(NTENS) :: STRANNP1
       DIMENSION STRESS(NTENS),STATEV(NSTATV),
      1 DDSDDE(NTENS,NTENS),
@@ -26,38 +25,38 @@ C
             END DO
       END DO
       IF (NTENS == 6) THEN
-            C(1,1) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(2,2) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(3,3) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(1,2) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(2,1) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(3,1) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(1,3) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(2,3) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(3,2) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(4,4) = PROPS(3)
-            C(5,5) = PROPS(3)
-            C(6,6) = PROPS(3)
-      ELSE IF (NTENS == 4) THEN
-            C(1,1) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(2,2) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(3,3) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(1,2) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(2,1) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(3,1) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(1,3) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(2,3) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(3,2) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(4,4) = PROPS(3)
-      ELSE
-            C(1,1) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(2,2) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(1,2) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(2,1) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            C(3,3) = PROPS(3)
+            DDSDDE(1,1) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(2,2) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(3,3) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(1,2) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(2,1) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(3,1) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(1,3) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(2,3) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(3,2) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(4,4) = PROPS(3)
+            DDSDDE(5,5) = PROPS(3)
+            DDSDDE(6,6) = PROPS(3)
+      ELSE IF (NTENS == 4) THEN ! plane strain
+            DDSDDE(1,1) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(2,2) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(3,3) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(1,2) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(2,1) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(3,1) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(1,3) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(2,3) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(3,2) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(4,4) = PROPS(3)
+      ELSE  !plane stress
+            DDSDDE(1,1) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(2,2) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(1,2) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(2,1) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(3,3) = PROPS(3)
 
       END IF      
 
-      STRESS = MATMUL(C, STRANNP1)
+      STRESS = MATMUL(DDSDDE, STRANNP1)
       RETURN
       END
