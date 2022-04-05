@@ -27,11 +27,11 @@ C
                   C(K1,K2) = 0.0
             END DO
       END DO
-      C(1,1) = PROPS(1)-PROPS(3)*PROPS(3)/PROPS(7)
-      C(1,2) = PROPS(2)-PROPS(3)*PROPS(8)/PROPS(7)
-      C(2,1) = PROPS(2)-PROPS(3)*PROPS(8)/PROPS(7)
-      C(2,2) = PROPS(7)-PROPS(3)*PROPS(8)/PROPS(7)
-      C(6,6) = PROPS(21)
+      C(1,1) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
+      C(1,2) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+      C(2,1) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+      C(2,2) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
+      C(6,6) = PROPS(3)
       DO K1 =1,6
             STRESS(K1) = 0.D0
             DO K2 = 1, 6
