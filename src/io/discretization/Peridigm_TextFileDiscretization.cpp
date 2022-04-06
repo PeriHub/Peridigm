@@ -88,6 +88,10 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
 
   // Set up bond filters
   createBondFilters(params);
+  vector<double> coordinates;
+  vector<double> volumes;
+  vector<int> blockIds;
+  vector<double> angles;
 
   QUICKGRID::Data decomp = getDecomp(meshFileName, params);
 
@@ -170,17 +174,15 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
 
 PeridigmNS::TextFileDiscretization::~TextFileDiscretization() {}
 
-QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &textFileName,
-                                                              const Teuchos::RCP<Teuchos::ParameterList> &params)
+void PeridigmNS::TextFileDiscretization::getDiscretization(const string &textFileName,
+                                                           const Teuchos::RCP<Teuchos::ParameterList> &params,
+                                                           vector<double> &coordinates,
+                                                           vector<int> &blockIds,
+                                                           vector<double> &volumes,
+                                                           vector<double> &angles
+
+)
 {
-
-  // Read data from the text file
-  vector<double> coordinates;
-  vector<double> volumes;
-  vector<int> blockIds;
-  vector<double> angles;
-
-  // Read the text file on the root processor
   if (myPID == 0)
   {
     ifstream inFile(textFileName.c_str());
@@ -231,6 +233,20 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
     }
     inFile.close();
   }
+}
+
+QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &textFileName,
+                                                              const Teuchos::RCP<Teuchos::ParameterList> &params)
+{
+
+  // Read data from the text file
+  vector<double> coordinates;
+  vector<double> volumes;
+  vector<int> blockIds;
+  vector<double> angles;
+
+  getDiscretization(textFileName, params, coordinates, blockIds, volumes, angles);
+  // Read the text file on the root processor
 
   int numElements = static_cast<int>(blockIds.size());
   TEUCHOS_TEST_FOR_EXCEPT_MSG(myPID == 0 && numElements < 1, "**** Error reading discretization text file, no data found.\n");
@@ -507,7 +523,9 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecompFE(const string &te
     -> wie bekomme ich eine verteilte Elementliste hin?
     -> wie stelle ich die shared nodes sicher?
     Idee:
-      - zweite Nachbarschaftliste ohne vorherige Suche
+      - Nachbarschaftliste an die erste anhängen die Elemente sind dann Punkte am Ende der Liste
+      - sie haben eine eigenen Block -> die Blockzuweisung der Elementknoten muss dann auf FE Knoten gestellt werden,
+      dann werden sie nicht gerechnet. Der Rest bleibt
       - ID entspricht dann dem Element; der Rest ist faktisch gleich
 
 

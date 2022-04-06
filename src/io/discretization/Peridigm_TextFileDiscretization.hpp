@@ -53,16 +53,17 @@
 #include <Epetra_Comm.h>
 #include "QuickGridData.h"
 
-namespace PeridigmNS {
+namespace PeridigmNS
+{
 
   //! Discretization class that creates discretization from a text file containing node locations, volumes, and block ids.
-  class TextFileDiscretization : public PeridigmNS::Discretization {
+  class TextFileDiscretization : public PeridigmNS::Discretization
+  {
 
   public:
-
     //! Constructor
-    TextFileDiscretization(const Teuchos::RCP<const Epetra_Comm>& epetraComm,
-                           const Teuchos::RCP<Teuchos::ParameterList>& params);
+    TextFileDiscretization(const Teuchos::RCP<const Epetra_Comm> &epetraComm,
+                           const Teuchos::RCP<Teuchos::ParameterList> &params);
 
     //! Destructor
     virtual ~TextFileDiscretization();
@@ -78,7 +79,7 @@ namespace PeridigmNS {
 
     //! Get initial positions
     virtual Teuchos::RCP<Epetra_Vector> getInitialX() const;
-   //! Get point angle
+    //! Get point angle
     virtual Teuchos::RCP<Epetra_Vector> getPointAngle() const;
     //! Get the horizon value for each point.
     virtual Teuchos::RCP<Epetra_Vector> getHorizon() const;
@@ -93,16 +94,16 @@ namespace PeridigmNS {
     virtual Teuchos::RCP<PeridigmNS::NeighborhoodData> getNeighborhoodData() const;
 
     //! Get interface data for all locally-owned nodes
-    virtual Teuchos::RCP<PeridigmNS::InterfaceData> getInterfaceData() const{return Teuchos::null;}
+    virtual Teuchos::RCP<PeridigmNS::InterfaceData> getInterfaceData() const { return Teuchos::null; }
 
     //! determine if interface data was constructed
-    virtual bool InterfacesAreConstructed() const{return false;}
+    virtual bool InterfacesAreConstructed() const { return false; }
 
     //! Get the number of bonds on this processor
     virtual unsigned int getNumBonds() const;
 
     //! Get the number of elems on this processor
-    virtual unsigned int getNumElem() const {return oneDimensionalMap->NumMyElements();}
+    virtual unsigned int getNumElem() const { return oneDimensionalMap->NumMyElements(); }
 
     //! Get the maximum number of bonds per element on this processor
     virtual unsigned int getMaxNumBondsPerElem() const;
@@ -117,34 +118,41 @@ namespace PeridigmNS {
     virtual double getMaxElementDimension() const { return maxElementDimension; }
 
   private:
+    //! Private to prohibit copying
+    TextFileDiscretization(const TextFileDiscretization &);
 
     //! Private to prohibit copying
-    TextFileDiscretization(const TextFileDiscretization&);
-
-    //! Private to prohibit copying
-    TextFileDiscretization& operator=(const TextFileDiscretization&);
+    TextFileDiscretization &operator=(const TextFileDiscretization &);
 
     //! Creates a discretization object based on data read from a text file.
-    QUICKGRID::Data getDecomp(const std::string& textFileName,
-                              const Teuchos::RCP<Teuchos::ParameterList>& params);
-    QUICKGRID::Data getDecompFE(const std::string& textFileName,
-                              const std::string& topologyFileName,
-                              const Teuchos::RCP<Teuchos::ParameterList>& params);
-  protected:
+    void getDiscretization(const std::string &textFileName,
+                           const Teuchos::RCP<Teuchos::ParameterList> &params,
+                           std::vector<double> &coordinates,
+                           std::vector<int> &blockIds,
+                           std::vector<double> &volumes,
+                           std::vector<double> &angles);
 
-    template<class T>
-    struct NonDeleter{
-      void operator()(T* d) {}
+    QUICKGRID::Data getDecomp(const std::string &textFileName,
+                              const Teuchos::RCP<Teuchos::ParameterList> &params);
+    QUICKGRID::Data getDecompFE(const std::string &textFileName,
+                                const std::string &topologyFileName,
+                                const Teuchos::RCP<Teuchos::ParameterList> &params);
+
+  protected:
+    template <class T>
+    struct NonDeleter
+    {
+      void operator()(T *d) {}
     };
 
     //! Create maps
-    void createMaps(const QUICKGRID::Data& decomp);
+    void createMaps(const QUICKGRID::Data &decomp);
 
     //! Create vectors
     void createVectors();
 
     //! Create NeighborhoodData
-    void createNeighborhoodData(const QUICKGRID::Data& decomp);
+    void createNeighborhoodData(const QUICKGRID::Data &decomp);
 
     //! Filter bonds from neighborhood list
     Teuchos::RCP<PeridigmNS::NeighborhoodData> filterBonds(Teuchos::RCP<PeridigmNS::NeighborhoodData> unfilteredNeighborhoodData);
@@ -167,10 +175,10 @@ namespace PeridigmNS {
 
     //! Vector containing initial positions
     Teuchos::RCP<Epetra_Vector> initialX;
-    
+
     //! Vector containing the point angles
     Teuchos::RCP<Epetra_Vector> pointAngle;
-    
+
     //! Vector containing horizons
     Teuchos::RCP<Epetra_Vector> horizonForEachPoint;
 
