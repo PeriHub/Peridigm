@@ -143,11 +143,33 @@ const bool* coordinateTrafo
     CORRESPONDENCE::GetVoigtNotation(strainLoc, strainLocVoigt);
     CORRESPONDENCE::GetVoigtNotation(deps, depsLocVoigt);
 
+    if (plane_stress){
+      CORRESPONDENCE::ReduceComp(sigmaNP1LocVoigt, true);
+      CORRESPONDENCE::ReduceComp(strainLocVoigt, true);
+      CORRESPONDENCE::ReduceComp(depsLocVoigt, true);
+    }
+    if (plane_strain){
+      CORRESPONDENCE::ReduceComp(sigmaNP1LocVoigt, false);
+      CORRESPONDENCE::ReduceComp(strainLocVoigt, false);
+      CORRESPONDENCE::ReduceComp(depsLocVoigt, false);
+    }
+
     CORRESPONDENCE::UMATINT(sigmaNP1LocVoigt,statev,DDSDDE,&SSE,&SPD,&SCD,&RPL,
     DDSDDT, DRPLDE,&DRPLDT,strainLocVoigt,depsLocVoigt,timeArray,&dtime,temp,dtemp,
     &PREDEF,&DPRED,matnameArray,&nnormal,&nshr,&nstresscomp,&nstatev,props,
     &nprops,coords,drot,&PNEWDT,&CELENT,defGradN,defGradNP1,
     &NOEL,&NPT,&KSLAY,&KSPT,&JSTEP,&KINC,&nname);
+
+    if (plane_stress){
+      CORRESPONDENCE::ExtendToSixComp(sigmaNP1LocVoigt, true);
+      CORRESPONDENCE::ExtendToSixComp(strainLocVoigt, true);
+      CORRESPONDENCE::ExtendToSixComp(depsLocVoigt, true);
+    }
+    if (plane_strain){
+      CORRESPONDENCE::ExtendToSixComp(sigmaNP1LocVoigt, false);
+      CORRESPONDENCE::ExtendToSixComp(strainLocVoigt, false);
+      CORRESPONDENCE::ExtendToSixComp(depsLocVoigt, false);
+    }
 
     CORRESPONDENCE::GetTensorFromVoigtNotation(sigmaNP1LocVoigt, sigmaNP1);
     // back transformation local -> global 
@@ -222,6 +244,61 @@ template void GetTensorFromVoigtNotation<double>
 (
 const double* VOIGT,
 double* TENSOR
+);
+
+template<typename ScalarT>
+void ReduceComp
+(
+ScalarT* VOIGT,
+bool threeOrFour
+)
+{
+  if (threeOrFour){
+    *(VOIGT) = *(VOIGT);
+    *(VOIGT+1) = *(VOIGT+1);
+    *(VOIGT+2) = *(VOIGT+5);
+  }else{
+    *(VOIGT) = *(VOIGT);
+    *(VOIGT+1) = *(VOIGT+1);
+    *(VOIGT+2) = *(VOIGT+2);
+    *(VOIGT+3) = *(VOIGT+5);
+  }
+}
+
+template void ReduceComp<double>
+(
+double* VOIGT,
+bool threeOrFour
+);
+
+template<typename ScalarT>
+void ExtendToSixComp
+(
+ScalarT* VOIGT,
+bool threeOrFour
+)
+{
+  if (threeOrFour){
+    *(VOIGT) = *(VOIGT);
+    *(VOIGT+1) = *(VOIGT+1);
+    *(VOIGT+5) = *(VOIGT+2);
+    *(VOIGT+2) = 0.0;
+    *(VOIGT+3) = 0.0;
+    *(VOIGT+4) = 0.0;
+  }else{
+    *(VOIGT) = *(VOIGT);
+    *(VOIGT+1) = *(VOIGT+1);
+    *(VOIGT+2) = *(VOIGT+2);
+    *(VOIGT+5) = *(VOIGT+3);
+    *(VOIGT+3) = 0.0;
+    *(VOIGT+4) = 0.0;
+  }
+}
+
+template void ExtendToSixComp<double>
+(
+double* VOIGT,
+bool threeOrFour
 );
 
 /* 

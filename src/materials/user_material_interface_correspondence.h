@@ -98,6 +98,20 @@ const ScalarT* VOIGT,
 ScalarT* TENSOR
 );
 
+template<typename ScalarT>
+void ReduceComp
+(
+ScalarT* VOIGT,
+bool threeOrFour
+);
+
+template<typename ScalarT>
+void ExtendToSixComp
+(
+ScalarT* VOIGT,
+bool threeOrFour
+);
+
 extern "C" void UPERMAT(double stressnew[], double statenew[], 
 						double stressold[], double stateold[], 
 						double straininc[], const double props[],

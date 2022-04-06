@@ -20,41 +20,37 @@ C  EVALUATE NEW STRESS TENSOR
 C    
       DO K1=1,NTENS
             STRANNP1(K1) = STRAN(K1) + DSTRAN(K1)
-            DO K2=1,NTENS
-                  C(K1,K2) = 0.0
-            END DO
       END DO
       IF (NTENS == 6) THEN
-            DDSDDE(1,1) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
-            DDSDDE(2,2) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
-            DDSDDE(3,3) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
-            DDSDDE(1,2) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            DDSDDE(2,1) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            DDSDDE(3,1) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            DDSDDE(1,3) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            DDSDDE(2,3) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            DDSDDE(3,2) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(1,1) = PROPS(1)
+            DDSDDE(2,2) = PROPS(1)
+            DDSDDE(3,3) = PROPS(1)
+            DDSDDE(1,2) = PROPS(2)
+            DDSDDE(2,1) = PROPS(2)
+            DDSDDE(3,1) = PROPS(2)
+            DDSDDE(1,3) = PROPS(2)
+            DDSDDE(2,3) = PROPS(2)
+            DDSDDE(3,2) = PROPS(2)
             DDSDDE(4,4) = PROPS(3)
             DDSDDE(5,5) = PROPS(3)
             DDSDDE(6,6) = PROPS(3)
       ELSE IF (NTENS == 4) THEN ! plane strain
-            DDSDDE(1,1) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
-            DDSDDE(2,2) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
-            DDSDDE(3,3) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
-            DDSDDE(1,2) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            DDSDDE(2,1) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            DDSDDE(3,1) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            DDSDDE(1,3) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            DDSDDE(2,3) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
-            DDSDDE(3,2) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(1,1) = PROPS(1)
+            DDSDDE(2,2) = PROPS(1)
+            DDSDDE(3,3) = PROPS(1)
+            DDSDDE(1,2) = PROPS(2)
+            DDSDDE(2,1) = PROPS(2)
+            DDSDDE(3,1) = PROPS(2)
+            DDSDDE(1,3) = PROPS(2)
+            DDSDDE(2,3) = PROPS(2)
+            DDSDDE(3,2) = PROPS(2)
             DDSDDE(4,4) = PROPS(3)
       ELSE  !plane stress
             DDSDDE(1,1) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
-            DDSDDE(2,2) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
             DDSDDE(1,2) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
             DDSDDE(2,1) = PROPS(2)-PROPS(2)*PROPS(2)/PROPS(1)
+            DDSDDE(2,2) = PROPS(1)-PROPS(2)*PROPS(2)/PROPS(1)
             DDSDDE(3,3) = PROPS(3)
-
       END IF      
 
       STRESS = MATMUL(DDSDDE, STRANNP1)

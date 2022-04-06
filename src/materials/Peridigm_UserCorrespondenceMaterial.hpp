@@ -96,6 +96,8 @@ namespace PeridigmNS {
     int m_modelAnglesId;
     int m_flyingPointFlagFieldId;
     int m_rotationTensorFieldId;
+    bool m_planeStrain;
+    bool m_planeStress;
     std::string matName;
   };
 }

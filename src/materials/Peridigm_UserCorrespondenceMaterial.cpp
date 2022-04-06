@@ -64,7 +64,8 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
     m_flyingPointFlagFieldId(-1),
     m_rotationTensorFieldId(-1)    
 {
-  bool m_planeStrain = false, m_planeStress = false;
+  m_planeStrain = false;
+  m_planeStress = false;
   m_type = 0;
   m_density = params.get<double>("Density");
   if (params.isParameter("Plane Strain")){
