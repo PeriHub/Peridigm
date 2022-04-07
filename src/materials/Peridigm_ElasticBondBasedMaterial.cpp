@@ -320,7 +320,7 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
     Eigen::MatrixXd B = Eigen::MatrixXd::Zero(MAX_BASIS, AuxNodesNo);
     Eigen::MatrixXd MMatrix = Eigen::MatrixXd::Zero(MAX_BASIS, AuxNodesNo);
 
-    for (int j = 0; j + 1 < numCollocationNeighbors; j++)
+    for (int j = 0; j < numCollocationNeighbors + 1; j++)
     {
       double xj = 0;
       double yj = 0;
