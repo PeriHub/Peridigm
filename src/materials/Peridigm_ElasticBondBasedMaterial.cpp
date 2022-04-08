@@ -69,7 +69,11 @@ PeridigmNS::ElasticBondBasedMaterial::ElasticBondBasedMaterial(const Teuchos::Pa
     TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error:  The Elastic bond based material model supports only one elastic constant, the bulk modulus.");
   }
 
-  m_useCollocationNodes = params.get<bool>("Use Collocation Nodes");
+  m_useCollocationNodes = false;
+  if (params.isParameter("Use Collocation Nodes"))
+  {
+    m_useCollocationNodes = params.get<bool>("Use Collocation Nodes");
+  }
 
   PeridigmNS::FieldManager &fieldManager = PeridigmNS::FieldManager::self();
   m_volumeFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume");
@@ -97,6 +101,16 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
                                                       const int *neighborhoodList,
                                                       PeridigmNS::DataManager &dataManager)
 {
+  
+
+  if (m_useCollocationNodes)
+  {
+
+  // Extract pointers to the underlying data
+  // double *bondDamage;
+  
+  // dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
+
   const int AuxNodesNo = 29;
   double AuxNodes[AuxNodesNo][2];
 
@@ -200,6 +214,31 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
     }
   }
 
+  // Coeffs(0, 0) = 0.;
+  // Coeffs(0, 1) = 0.;
+  // Coeffs(0, 2) = 0.;
+  // Coeffs(0, 3) = 0.456;
+  // Coeffs(0, 4) = 0.152;
+  // Coeffs(0, 5) = 0.;
+  // Coeffs(1, 0) = 0.;
+  // Coeffs(1, 1) = 0.;
+  // Coeffs(1, 2) = 0.;
+  // Coeffs(1, 3) = 0.;
+  // Coeffs(1, 4) = 0.;
+  // Coeffs(1, 5) = 0.152;
+  // Coeffs(2, 0) = 0.;
+  // Coeffs(2, 1) = 0.;
+  // Coeffs(2, 2) = 0.;
+  // Coeffs(2, 3) = 0.;
+  // Coeffs(2, 4) = 0.;
+  // Coeffs(2, 5) = 0.152;
+  // Coeffs(3, 0) = 0.;
+  // Coeffs(3, 1) = 0.;
+  // Coeffs(3, 2) = 0.;
+  // Coeffs(3, 3) = 0.152;
+  // Coeffs(3, 4) = 0.456;
+  // Coeffs(3, 5) = 0.;
+
   double *x;
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
 
@@ -219,38 +258,50 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
   int cloudNumArray[numOwnedPoints];
 
   int nodeID, iNID, iID;
+  // int bondDamageIndex(0);
+  // double damageOnBond;
 
   for (iID = 0; iID < numOwnedPoints; ++iID)
   {
 
     int numNeighbors = neighborhoodList[neighborhoodListIndex++];
 
-    // if (m_useCollocationNodes)
-    // {
-    useCollocationNodes[iID] = m_useCollocationNodes;
-    // }
-    // else
-    // {
-    //   useCollocationNodes[iID] = false;
-    // }
+    if (iID >= 160100 & iID <= 160117 ){
+      useCollocationNodes[iID] = m_useCollocationNodes;
+    }
+    else
+    {
+      useCollocationNodes[iID] = false;
+    }
 
     nodeID = ownedIDs[iID];
 
     cloudNum = 0;
 
+
     for (int j = 0; j < AuxNodesNo; ++j)
     {
+      bool collocationNodeFound = false;
 
       double xAuxNode = AuxNodes[j][0] + x[nodeID * 3];
       double yAuxNode = AuxNodes[j][1] + x[nodeID * 3 + 1];
       // double zAuxNode = AuxNodes[j][2] + x[nodeID*3+2];
 
-      if (x[nodeID * 3] == 0 & x[nodeID * 3 + 1] == -100)
+      // if (x[nodeID * 3] == 0 & x[nodeID * 3 + 1] == -100)
+      // {
+        // std::cout << "numNeighbors: " << numNeighbors << std::endl;
+      // }
+      iNID = 0;
+      for (iNID; iNID < numNeighbors; ++iNID)
       {
-        std::cout << "numNeighbors: " << numNeighbors << std::endl;
-      }
-      for (iNID = 0; iNID < numNeighbors; ++iNID)
-      {
+        // damageOnBond = bondDamage[bondDamageIndex++];
+        // std::cout << "bondDamageIndex: " << bondDamageIndex << std::endl;
+
+        // if(damageOnBond != 0){
+        //   std::cout << "damageOnBond: " << damageOnBond << std::endl;
+        //   std::cout << "x[nodeID * 3]: " << x[nodeID * 3] << std::endl;
+        //   std::cout << "x[nodeID * 3+1]: " << x[nodeID * 3+1] << std::endl;
+        //   continue;}
 
         int neighborID = neighborhoodList[neighborhoodListIndex + iNID];
 
@@ -259,17 +310,34 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
 
         if (dist < dx / 1000.0)
         {
+          
           if (x[nodeID * 3] == 0 & x[nodeID * 3 + 1] == -100)
           {
             std::cout << "x[neighborID * 3]: " << x[neighborID * 3] << std::endl;
             std::cout << "x[neighborID * 3+1]: " << x[neighborID * 3 + 1] << std::endl;
             std::cout << "dist: " << dist << std::endl;
+           std::cout << "neighborID: " << neighborID << std::endl;
           }
           Clouds[iID][cloudNum++] = neighborID;
+          collocationNodeFound = true;
+          iNID++;
           break;
         }
       }
+      // bondDamageIndex-=iNID;
+        // std::cout << "bondDamageIndex: " << bondDamageIndex << std::endl;
+
+      if(!collocationNodeFound){
+        Clouds[iID][cloudNum++] = -1;
+        if (x[nodeID * 3] == 0 & x[nodeID * 3 + 1] == -100)
+        {
+          std::cout << "neighborID: " << "-1" << std::endl;
+        }
+      }
+
     }
+    // bondDamageIndex += numNeighbors;
+    // std::cout << "bondDamageIndex: " << bondDamageIndex << std::endl;
 
     neighborhoodListIndex += numNeighbors;
 
@@ -320,19 +388,26 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
     Eigen::MatrixXd B = Eigen::MatrixXd::Zero(MAX_BASIS, AuxNodesNo);
     Eigen::MatrixXd MMatrix = Eigen::MatrixXd::Zero(MAX_BASIS, AuxNodesNo);
 
-    for (int j = 0; j < numCollocationNeighbors + 1; j++)
+    for (int j = 0; j < numCollocationNeighbors; j++)
     {
       double xj = 0;
       double yj = 0;
 
-      if (j == 0)
+      if (j == 14)
       {
         xj = xi;
         yj = yi;
+        neighborhoodListIndex++;
       }
       else
       {
         int neighborID = collocationNeighborhoodList[neighborhoodListIndex++];
+        if (xi == 0 & yi == -100)
+        {
+          std::cout << "neighborID: " << neighborID << std::endl;
+        }
+        if (neighborID == -1)
+          continue;
 
         xj = x[neighborID * 3];
         yj = x[neighborID * 3 + 1];
@@ -375,11 +450,14 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
     {
       for (int k = 0; k < 6; k++)
       {
-        for (int l = 0; l < 6; l++)
-        {
-          std::cout << "A(" << k << "," << l << "): " << A(k, l) << std::endl;
-          std::cout << "B(" << k << "," << l << "): " << B(k, l) << std::endl;
-        }
+				for (int l = 0; l < 6; l++)
+				{
+					std::cout << "A(" << k << "," << l << "): " << A(k, l) << std::endl;
+				}
+				for (int l = 0; l < numCollocationNeighbors; l++)
+				{
+					std::cout << "B(" << k << "," << l << "): " << B(k, l) << std::endl;
+				}
       }
     }
 
@@ -410,6 +488,7 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
     }
   }
 }
+}
 
 void PeridigmNS::ElasticBondBasedMaterial::computeForce(const double dt,
                                                         const int numOwnedPoints,
@@ -430,6 +509,12 @@ void PeridigmNS::ElasticBondBasedMaterial::computeForce(const double dt,
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
   dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&force);
 
-  // MATERIAL_EVALUATION::computeInternalForceElasticBondBased(x, y, cellVolume, bondDamage, force, neighborhoodList, numOwnedPoints, m_bulkModulus, m_horizon);
+
+  if (m_useCollocationNodes)
+  {
   MATERIAL_EVALUATION::computeInternalForceElasticBondBasedCollocation(x, y, cellVolume, bondDamage, force, neighborhoodList, collocationNeighborhoodList, useCollocationNodes, UpdateMat, numOwnedPoints, m_bulkModulus, m_horizon, m_criticalStretch);
+  }else{
+    
+  MATERIAL_EVALUATION::computeInternalForceElasticBondBased(x, y, cellVolume, bondDamage, force, neighborhoodList, numOwnedPoints, m_bulkModulus, m_horizon);
+  }
 }
