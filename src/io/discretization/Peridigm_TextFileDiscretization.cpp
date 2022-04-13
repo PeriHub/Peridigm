@@ -242,6 +242,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   vector<double> horizon_of_element;
   vector<int> elementTopo;
   getDiscretization(textFileName, coordinates, blockIds, volumes, angles);
+
   if (params->isParameter("Input FEM Topology File"))
   {
     getFETopology(topologyFileName, coordinates, blockIds, volumes, angles, horizon_of_element, elementTopo);
@@ -249,7 +250,6 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   }
   // Read the text file on the root processor
 
-  // Verteilung der Blöcke
   int numElements = static_cast<int>(blockIds.size());
   TEUCHOS_TEST_FOR_EXCEPT_MSG(myPID == 0 && numElements < 1, "**** Error reading discretization text file, no data found.\n");
 
