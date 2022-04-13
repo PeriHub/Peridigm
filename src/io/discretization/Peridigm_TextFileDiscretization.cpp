@@ -372,7 +372,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
     // ad horizon_of_element
     if (params->isParameter("Input FEM Topology File"))
     {
-      unsigned int numGlobalIDs = globalIds.size() - elementTopo.size();
+      unsigned int numGlobalIDs = globalIds.size() - numFEElements;
       for (unsigned int i = 0; i < numGlobalIDs; ++i)
       {
         int localId = rebalancedMap.LID(globalIds[numGlobalIDs + i]);
@@ -470,12 +470,17 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string &fileName,
             angAvg[2] += angles[3 * topo[n] + 2];
             volAvg += volumes[topo[n]];
           }
-          coordinates.push_back(coorAvg[0] / (topo.size() - 1));
-          coordinates.push_back(coorAvg[1] / (topo.size() - 1));
-          coordinates.push_back(coorAvg[2] / (topo.size() - 1));
-          angles.push_back(angAvg[0] / (topo.size() - 1));
-          angles.push_back(angAvg[1] / (topo.size() - 1));
-          angles.push_back(angAvg[2] / (topo.size() - 1));
+          for (unsigned int i = 0; i < 3; i++)
+          {
+            coorAvg[i] /= (topo.size() - 1);
+            angAvg[i] /= (topo.size() - 1);
+          }
+          coordinates.push_back(coorAvg[0]);
+          coordinates.push_back(coorAvg[1]);
+          coordinates.push_back(coorAvg[2]);
+          angles.push_back(angAvg[0]);
+          angles.push_back(angAvg[1]);
+          angles.push_back(angAvg[2]);
           horizon.push_back(get_max_dist(coordinates, coorAvg, topo));
           volumes.push_back(volAvg / (topo.size() - 1));
         }
@@ -500,6 +505,7 @@ double PeridigmNS::TextFileDiscretization::get_max_dist(const vector<double> &co
       // there are some extra nodes
       horizon = 1.01 * dist;
   }
+
   return horizon;
 }
 
