@@ -93,17 +93,12 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
   vector<int> blockIds;
   vector<double> angles;
 
-  QUICKGRID::Data decomp = getDecomp(meshFileName, params);
+  QUICKGRID::Data decomp = getDecomp(meshFileName, topologyFileName, params);
 
   // \todo Refactor; the createMaps() call is currently inside getDecomp() due to order-of-operations issues with tracking element blocks.
   // createMaps(decomp);
   createNeighborhoodData(decomp);
 
-  if (params->isParameter("Input FEM Topology File"))
-  {
-    QUICKGRID::Data decompFE = getDecompFE(meshFileName, topologyFileName, params);
-    createNeighborhoodData(decompFE);
-  }
   // \todo Move this functionality to base class, it's currently duplicated in PdQuickGridDiscretization.
   // Create the bondMap, a local map used for constitutive data stored on bonds.
   // Due to Epetra_BlockMap restrictions, there can not be any entries with length zero.
@@ -236,6 +231,7 @@ void PeridigmNS::TextFileDiscretization::getDiscretization(const string &textFil
 }
 
 QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &textFileName,
+                                                              const string &topologyFileName,
                                                               const Teuchos::RCP<Teuchos::ParameterList> &params)
 {
 
@@ -244,8 +240,14 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   vector<double> volumes;
   vector<int> blockIds;
   vector<double> angles;
-
+  vector<double> horizon_of_element;
+  vector<int> elementTopo;
   getDiscretization(textFileName, params, coordinates, blockIds, volumes, angles);
+  if (params->isParameter("Input FEM Topology File"))
+  {
+    getFETopology(topologyFileName, params, coordinates, blockIds, volumes, angles, horizon_of_element, elementTopo);
+  }
+
   // Read the text file on the root processor
 
   int numElements = static_cast<int>(blockIds.size());
@@ -399,77 +401,25 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   return decomp;
 }
 
-QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecompFE(const string &textFileName,
-                                                                const string &topologyFileName,
-                                                                const Teuchos::RCP<Teuchos::ParameterList> &params)
+void PeridigmNS::TextFileDiscretization::getFETopology(const string &fileName,
+                                                       const Teuchos::RCP<Teuchos::ParameterList> &params,
+                                                       vector<double> &coordinates,
+                                                       vector<int> &blockIds,
+                                                       vector<double> &volumes,
+                                                       vector<double> &angles,
+                                                       vector<double> &horizon,
+                                                       vector<int> &elementTopo)
 {
 
-  // Read data from the text file
-  vector<double> coordinates;
-  vector<double> volumes;
-  vector<int> blockIds;
-  vector<double> angles;
-  vector<int> elementTopo;
-  vector<int> elementBlockID;
-  int numOfFiniteElements = 0;
-  int lenDecompElementNodes = 0;
-  bool FE = false;
-  // Read the text file on the root processor
   if (myPID == 0)
   {
-    ifstream inFile(textFileName.c_str());
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(!inFile.is_open(), "**** Error opening discretization text file.\n");
-    while (inFile.good())
-    {
-      string str;
-      getline(inFile, str);
-      str = trim(str);
-      // Ignore comment lines, otherwise parse
-      if (!(str[0] == '#' || str[0] == '/' || str[0] == '*' || str.size() == 0))
-      {
-        istringstream iss(str);
-        vector<double> data;
-        copy(istream_iterator<double>(iss),
-             istream_iterator<double>(),
-             back_inserter<vector<double>>(data));
-        // Check for obvious problems with the data
-        // Adapt to coordinate system and without --> to check
-        if (data.size() != 5 && data.size() != 8)
-        {
-          string msg = "\n**** Error parsing text file, invalid line: " + str + "\n";
-          TEUCHOS_TEST_FOR_EXCEPT_MSG(data.size() != 5, msg);
-          TEUCHOS_TEST_FOR_EXCEPT_MSG(data.size() != 8, msg);
-        }
-        bool anglesImport = false;
-        if (data.size() == 8)
-          anglesImport = true;
-        // Store the coordinates, block id, volumes and angles
-        coordinates.push_back(data[0]);
-        coordinates.push_back(data[1]);
-        coordinates.push_back(data[2]);
-        blockIds.push_back(static_cast<int>(data[3]));
-        volumes.push_back(data[4]);
-        if (anglesImport == true)
-        {
-          angles.push_back(data[5]);
-          angles.push_back(data[6]);
-          angles.push_back(data[7]);
-        }
-        else
-        {
-          angles.push_back(0.0);
-          angles.push_back(0.0);
-          angles.push_back(0.0);
-        }
-      }
-    }
-    inFile.close();
+    double coorAvg[3], angAvg[3], volAvg;
+    int numOfFiniteElements;
     std::string testString = "";
-    if (topologyFileName.compare(testString) != 0)
+    if (fileName.compare(testString) != 0)
     {
-      ifstream inFile(topologyFileName.c_str());
+      ifstream inFile(fileName.c_str());
       TEUCHOS_TEST_FOR_EXCEPT_MSG(!inFile.is_open(), "**** Error opening topology text file.\n");
-      FE = true;
       while (inFile.good())
       {
         numOfFiniteElements += 1;
@@ -485,216 +435,59 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecompFE(const string &te
                istream_iterator<int>(),
                back_inserter<vector<int>>(topo));
 
-          if (topo.size() == 1)
-          {
-            // defines the block where the elements are in
-            elementBlockID.push_back(topo[0]);
-          }
-          else
-          {
-            elementTopo.push_back(static_cast<int>(topo.size() - 1));
-            // lenDecompElementNodes += static_cast<int>(topo.size()) + 1;
+          blockIds.push_back(topo[0]);
+          elementTopo.push_back(static_cast<int>(topo.size() - 1));
+          // lenDecompElementNodes += static_cast<int>(topo.size()) + 1;
 
-            /*
-            tbd if multiple element types could exist in one block
-            */
-
-            for (unsigned int n = 1; n < topo.size(); n++)
-            {
-              elementTopo.push_back(static_cast<int>(topo[n]));
-            }
+          /*
+          tbd if multiple element types could exist in one block
+          */
+          coorAvg[0] = 0;
+          coorAvg[1] = 0;
+          coorAvg[2] = 0;
+          angAvg[0] = 0;
+          angAvg[1] = 0;
+          angAvg[2] = 0;
+          for (unsigned int n = 1; n < topo.size(); n++)
+          {
+            elementTopo.push_back(static_cast<int>(topo[n]));
+            coorAvg[0] += coordinates[3 * topo[n]];
+            coorAvg[1] += coordinates[3 * topo[n] + 1];
+            coorAvg[2] += coordinates[3 * topo[n] + 2];
+            angAvg[0] += angles[3 * topo[n]];
+            angAvg[1] += angles[3 * topo[n] + 1];
+            angAvg[2] += angles[3 * topo[n] + 2];
+            volAvg += volumes[topo[n]];
           }
+          coordinates.push_back(coorAvg[0] / (topo.size() - 1));
+          coordinates.push_back(coorAvg[1] / (topo.size() - 1));
+          coordinates.push_back(coorAvg[2] / (topo.size() - 1));
+          angles.push_back(angAvg[0] / (topo.size() - 1));
+          angles.push_back(angAvg[1] / (topo.size() - 1));
+          angles.push_back(angAvg[2] / (topo.size() - 1));
+          horizon.push_back(get_max_dist(coordinates, coorAvg, topo));
+          blockIds.push_back(topo[0]);
+          volumes.push_back(volAvg / (topo.size() - 1));
         }
       }
-      // int *feNeigh;
-      // int numFEnodes;
-      //  get the maximum node number. Later needed to provide adapat the neighborhood
-      // int maxNode = *max_element(elementTopo.begin(), elementTopo.end());
-      //  PDNEIGH::GETFENEIGHBORHOOD(&elementTopo[0], elementTopo.size(), numOfFiniteElements,maxNode,numFEnodes, feNeigh);
+
       inFile.close();
     }
   }
-  /*
-    - um über nachbarschaft zu gehen / in der Logik von Peridigm
-    - P1 --> E1 --> P2, P3, P4, P5
-         --> E2 --> P2, P3, P6, P7
-    --> Elemente werden mehrfach aufgebaut und das führt zu Problemen
-    Implementierung
-    -> wie bekomme ich eine verteilte Elementliste hin?
-    -> wie stelle ich die shared nodes sicher?
-    Idee:
-      - Nachbarschaftliste an die erste anhängen die Elemente sind dann Punkte am Ende der Liste
-      - sie haben eine eigenen Block -> die Blockzuweisung der Elementknoten muss dann auf FE Knoten gestellt werden,
-      dann werden sie nicht gerechnet. Der Rest bleibt
-      - ID entspricht dann dem Element; der Rest ist faktisch gleich
-
-
-  */
-  if (FE)
+}
+double PeridigmNS::TextFileDiscretization::get_max_dist(const vector<double> &coordinates, const double coorAvg[3],
+                                                        const vector<int> &topo)
+{
+  double horizon = 0.0;
+  double dist = 0.0;
+  for (unsigned int n = 1; n < topo[0] + 1; n++)
   {
-    int numElements = static_cast<int>(blockIds.size());
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(myPID == 0 && numElements < 1, "**** Error reading discretization text file, no data found.\n");
-
-    // Record the block ids on the root processor
-    set<int> uniqueBlockIds;
-    if (myPID == 0)
-    {
-      for (unsigned int i = 0; i < blockIds.size(); ++i)
-        uniqueBlockIds.insert(blockIds[i]);
-    }
-
-    // Broadcast necessary data from root processor
-    Teuchos::RCP<const Teuchos::Comm<int>> teuchosComm = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD));
-    int numGlobalElements;
-    reduceAll(*teuchosComm, Teuchos::REDUCE_SUM, 1, &numElements, &numGlobalElements);
-
-    // Broadcast the unique block ids so that all processors are aware of the full block list
-    // This is necessary because if a processor does not have any elements for a given block, it will be unaware the
-    // given block exists, which causes problems downstream
-    int numLocalUniqueBlockIds = static_cast<int>(uniqueBlockIds.size());
-    int numGlobalUniqueBlockIds;
-    reduceAll(*teuchosComm, Teuchos::REDUCE_SUM, 1, &numLocalUniqueBlockIds, &numGlobalUniqueBlockIds);
-    vector<int> uniqueLocalBlockIds(numGlobalUniqueBlockIds, 0);
-    int index = 0;
-    for (set<int>::const_iterator it = uniqueBlockIds.begin(); it != uniqueBlockIds.end(); it++)
-      uniqueLocalBlockIds[index++] = *it;
-    vector<int> uniqueGlobalBlockIds(numGlobalUniqueBlockIds);
-    reduceAll(*teuchosComm, Teuchos::REDUCE_SUM, numGlobalUniqueBlockIds, &uniqueLocalBlockIds[0], &uniqueGlobalBlockIds[0]);
-
-    // Create list of global ids
-    vector<int> globalIds(numElements);
-    for (unsigned int i = 0; i < globalIds.size(); ++i)
-      globalIds[i] = i;
-
-    // Copy data into a decomp object
-    int dimension = 3;
-
-    QUICKGRID::Data decompFE = QUICKGRID::allocateFEMGridData(numElements, dimension);
-
-    decompFE.globalNumElements = numOfFiniteElements;
-    // check if needed
-    decompFE.globalNumPoints = numGlobalElements;
-
-    memcpy(decompFE.myGlobalIDs.get(), &globalIds[0], numElements * sizeof(int));
-    memcpy(decompFE.cellVolume.get(), &volumes[0], numElements * sizeof(double));
-    memcpy(decompFE.myX.get(), &coordinates[0], dimension * numElements * sizeof(double));
-    memcpy(decompFE.myAngle.get(), &angles[0], dimension * numElements * sizeof(double));
-
-    Epetra_BlockMap tempOneDimensionalMapFE(decompFE.globalNumPoints,
-                                            decompFE.numPoints,
-                                            decompFE.myGlobalIDs.get(),
-                                            1,
-                                            0,
-                                            *comm);
-
-    Epetra_Vector tempBlockID(tempOneDimensionalMapFE);
-    double *tempBlockIDPtr;
-    tempBlockID.ExtractView(&tempBlockIDPtr);
-    for (unsigned int i = 0; i < blockIds.size(); ++i)
-      tempBlockIDPtr[i] = blockIds[i];
-    // local point ID is stored to provide, because this is needed on the processors
-    // elementTopo.push_back(oneDimensionalOverlapMap->LID(GID));
-    // call the rebalance function on the current-configuration decomp
-    decompFE = PDNEIGH::getLoadBalancedDiscretization(decompFE);
-
-    // create a (throw-away) one-dimensional owned map in the rebalanced configuration
-    Epetra_BlockMap rebalancedMap(decompFE.globalNumPoints, decompFE.numPoints, decompFE.myGlobalIDs.get(), 1, 0, *comm);
-
-    // Create a (throw-away) blockID vector corresponding to the load balanced decomposition
-    Epetra_Vector rebalancedBlockID(rebalancedMap);
-    Epetra_Import rebalancedImporter(rebalancedBlockID.Map(), tempBlockID.Map());
-    rebalancedBlockID.Import(tempBlockID, rebalancedImporter, Insert);
-
-    // Initialize the element list for each block
-    // Force blocks with no on-processor elements to have an entry in the elementBlocks map
-    for (unsigned int i = 0; i < uniqueGlobalBlockIds.size(); i++)
-    {
-      stringstream blockName;
-      blockName << "block_" << uniqueGlobalBlockIds[i];
-      (*elementBlocks)[blockName.str()] = std::vector<int>();
-    }
-
-    // Create the element list for each block
-
-    // hier muss die Topologie noch mit rein, um sicherzustellen, dass die Punkte existieren
-    for (int i = 0; i < rebalancedBlockID.MyLength(); ++i)
-    {
-      stringstream blockName;
-      blockName << "block_" << rebalancedBlockID[i];
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(elementBlocks->find(blockName.str()) == elementBlocks->end(),
-                                  "\n**** Error in TextFileDiscretization::getDecomp(), invalid block id.\n");
-      int globalID = rebalancedBlockID.Map().GID(i);
-      (*elementBlocks)[blockName.str()].push_back(globalID);
-    }
-
-    // Record the horizon for each point
-    PeridigmNS::HorizonManager &horizonManager = PeridigmNS::HorizonManager::self();
-    Teuchos::RCP<Epetra_Vector> rebalancedHorizonForEachPoint = Teuchos::rcp(new Epetra_Vector(rebalancedMap));
-    double *rebalancedX = decompFE.myX.get();
-    /*
-    CW
-    no difference between PD blocks and FE blocks is made, because it is not known for the algorithm yet
-    in the text input only blocks are given without property entries
-    */
-    for (map<string, vector<int>>::const_iterator it = elementBlocks->begin(); it != elementBlocks->end(); it++)
-    {
-      const string &blockName = it->first;
-      const vector<int> &globalIds = it->second;
-
-      bool hasConstantHorizon = horizonManager.blockHasConstantHorizon(blockName);
-      double constantHorizonValue(0.0);
-      if (hasConstantHorizon)
-        constantHorizonValue = horizonManager.getBlockConstantHorizonValue(blockName);
-
-      for (unsigned int i = 0; i < globalIds.size(); ++i)
-      {
-        int localId = rebalancedMap.LID(globalIds[i]);
-        if (hasConstantHorizon)
-        {
-          (*rebalancedHorizonForEachPoint)[localId] = constantHorizonValue;
-        }
-        else
-        {
-          double x = rebalancedX[localId * 3];
-          double y = rebalancedX[localId * 3 + 1];
-          double z = rebalancedX[localId * 3 + 2];
-          double horizon = horizonManager.evaluateHorizon(blockName, x, y, z);
-          (*rebalancedHorizonForEachPoint)[localId] = horizon;
-        }
-      }
-    }
-
-    // execute neighbor search and update the decomp to include resulting ghosts
-    std::shared_ptr<const Epetra_Comm> commSp(comm.getRawPtr(), NonDeleter<const Epetra_Comm>());
-
-    Teuchos::RCP<PDNEIGH::NeighborhoodList> list;
-    if (bondFilters.size() == 0)
-    {
-      list = Teuchos::rcp(new PDNEIGH::NeighborhoodList(commSp, decompFE.zoltanPtr.get(), decompFE.numPoints, decompFE.myGlobalIDs, decompFE.myX, rebalancedHorizonForEachPoint));
-    } // filter??
-    else
-    {
-      list = Teuchos::rcp(new PDNEIGH::NeighborhoodList(commSp, decompFE.zoltanPtr.get(), decompFE.numPoints, decompFE.myGlobalIDs, decompFE.myX, rebalancedHorizonForEachPoint, bondFilters));
-    }
-    decompFE.neighborhood = list->get_neighborhood();
-    decompFE.sizeNeighborhoodList = list->get_size_neighborhood_list();
-    decompFE.neighborhoodPtr = list->get_neighborhood_ptr();
-
-    // Create all the maps.
-    createMaps(decompFE);
-
-    // Create the blockID vector corresponding to the load balanced decomposition
-    blockID = Teuchos::rcp(new Epetra_Vector(*oneDimensionalMap));
-    Epetra_Import tempImporter(blockID->Map(), tempBlockID.Map());
-    blockID->Import(tempBlockID, tempImporter, Insert);
-
-    // Create the horizonForEachPonit vector corresponding to the load balanced decomposition
-    horizonForEachPoint = Teuchos::rcp(new Epetra_Vector(*oneDimensionalMap));
-    Epetra_Import horizonImporter(horizonForEachPoint->Map(), rebalancedHorizonForEachPoint->Map());
-    horizonForEachPoint->Import(*rebalancedHorizonForEachPoint, horizonImporter, Insert);
-
-    return decompFE;
+    dist = abs(distance(coorAvg[0], coorAvg[1], coorAvg[2],
+                        coordinates[3 * topo[n]], coordinates[3 * topo[n] + 1], coordinates[3 * topo[n] + 2]));
+    if (horizon < dist)
+      horizon = dist;
   }
+  return horizon;
 }
 
 void PeridigmNS::TextFileDiscretization::createMaps(const QUICKGRID::Data &decomp)

@@ -131,12 +131,23 @@ namespace PeridigmNS
                            std::vector<int> &blockIds,
                            std::vector<double> &volumes,
                            std::vector<double> &angles);
-
+    void getFETopology(const std::string &textFileName,
+                       const Teuchos::RCP<Teuchos::ParameterList> &params,
+                       std::vector<double> &coordinates,
+                       std::vector<int> &blockIds,
+                       std::vector<double> &volumes,
+                       std::vector<double> &angles,
+                       std::vector<double> &horizon,
+                       std::vector<int> &elementTopo);
     QUICKGRID::Data getDecomp(const std::string &textFileName,
+                              const std::string &topologyFileName,
                               const Teuchos::RCP<Teuchos::ParameterList> &params);
-    QUICKGRID::Data getDecompFE(const std::string &textFileName,
-                                const std::string &topologyFileName,
-                                const Teuchos::RCP<Teuchos::ParameterList> &params);
+    double get_max_dist(const std::vector<double> &coordinates, const double coorAvg[3], const std::vector<int> &topo);
+    inline double distance(double a1, double a2, double a3,
+                           double b1, double b2, double b3) const
+    {
+      return (sqrt((a1 - b1) * (a1 - b1) + (a2 - b2) * (a2 - b2) + (a3 - b3) * (a3 - b3)));
+    }
 
   protected:
     template <class T>
