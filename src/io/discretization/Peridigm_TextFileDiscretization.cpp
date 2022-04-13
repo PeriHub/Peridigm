@@ -242,11 +242,6 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   vector<double> horizon_of_element;
   vector<int> elementTopo;
   getDiscretization(textFileName, coordinates, blockIds, volumes, angles);
-  if (params->isParameter("Input FEM Topology File"))
-  {
-    getFETopology(topologyFileName, coordinates, blockIds, volumes, angles, horizon_of_element, elementTopo);
-    // horizon has to be added later
-  }
 
   // Read the text file on the root processor
 
@@ -352,6 +347,11 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
     if (hasConstantHorizon)
       constantHorizonValue = horizonManager.getBlockConstantHorizonValue(blockName);
 
+    if (params->isParameter("Input FEM Topology File"))
+    {
+      getFETopology(topologyFileName, coordinates, blockIds, volumes, angles, horizon_of_element, elementTopo);
+      // horizon has to be added later
+    }
     for (unsigned int i = 0; i < globalIds.size(); ++i)
     {
       int localId = rebalancedMap.LID(globalIds[i]);
@@ -447,6 +447,7 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string &fileName,
           angAvg[0] = 0;
           angAvg[1] = 0;
           angAvg[2] = 0;
+          volAvg = 0;
           for (unsigned int n = 1; n < topo.size(); n++)
           {
             elementTopo.push_back(static_cast<int>(topo[n]));
