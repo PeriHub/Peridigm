@@ -126,13 +126,11 @@ namespace PeridigmNS
 
     //! Creates a discretization object based on data read from a text file.
     void getDiscretization(const std::string &textFileName,
-                           const Teuchos::RCP<Teuchos::ParameterList> &params,
                            std::vector<double> &coordinates,
                            std::vector<int> &blockIds,
                            std::vector<double> &volumes,
                            std::vector<double> &angles);
     void getFETopology(const std::string &textFileName,
-                       const Teuchos::RCP<Teuchos::ParameterList> &params,
                        std::vector<double> &coordinates,
                        std::vector<int> &blockIds,
                        std::vector<double> &volumes,

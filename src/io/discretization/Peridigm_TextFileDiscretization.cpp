@@ -170,7 +170,6 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
 PeridigmNS::TextFileDiscretization::~TextFileDiscretization() {}
 
 void PeridigmNS::TextFileDiscretization::getDiscretization(const string &textFileName,
-                                                           const Teuchos::RCP<Teuchos::ParameterList> &params,
                                                            vector<double> &coordinates,
                                                            vector<int> &blockIds,
                                                            vector<double> &volumes,
@@ -242,10 +241,11 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   vector<double> angles;
   vector<double> horizon_of_element;
   vector<int> elementTopo;
-  getDiscretization(textFileName, params, coordinates, blockIds, volumes, angles);
+  getDiscretization(textFileName, coordinates, blockIds, volumes, angles);
   if (params->isParameter("Input FEM Topology File"))
   {
-    getFETopology(topologyFileName, params, coordinates, blockIds, volumes, angles, horizon_of_element, elementTopo);
+    getFETopology(topologyFileName, coordinates, blockIds, volumes, angles, horizon_of_element, elementTopo);
+    // horizon has to be added later
   }
 
   // Read the text file on the root processor
@@ -402,7 +402,6 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
 }
 
 void PeridigmNS::TextFileDiscretization::getFETopology(const string &fileName,
-                                                       const Teuchos::RCP<Teuchos::ParameterList> &params,
                                                        vector<double> &coordinates,
                                                        vector<int> &blockIds,
                                                        vector<double> &volumes,
