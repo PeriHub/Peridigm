@@ -242,9 +242,14 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   vector<double> horizon_of_element;
   vector<int> elementTopo;
   getDiscretization(textFileName, coordinates, blockIds, volumes, angles);
-
+  if (params->isParameter("Input FEM Topology File"))
+  {
+    getFETopology(topologyFileName, coordinates, blockIds, volumes, angles, horizon_of_element, elementTopo);
+    // horizon has to be added later
+  }
   // Read the text file on the root processor
 
+  // Verteilung der Blöcke
   int numElements = static_cast<int>(blockIds.size());
   TEUCHOS_TEST_FOR_EXCEPT_MSG(myPID == 0 && numElements < 1, "**** Error reading discretization text file, no data found.\n");
 
@@ -336,6 +341,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   // Record the horizon for each point
   PeridigmNS::HorizonManager &horizonManager = PeridigmNS::HorizonManager::self();
   Teuchos::RCP<Epetra_Vector> rebalancedHorizonForEachPoint = Teuchos::rcp(new Epetra_Vector(rebalancedMap));
+
   double *rebalancedX = decomp.myX.get();
   for (map<string, vector<int>>::const_iterator it = elementBlocks->begin(); it != elementBlocks->end(); it++)
   {
@@ -346,13 +352,9 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
     double constantHorizonValue(0.0);
     if (hasConstantHorizon)
       constantHorizonValue = horizonManager.getBlockConstantHorizonValue(blockName);
+    int numGlobalIDs = globalIds.size();
 
-    if (params->isParameter("Input FEM Topology File"))
-    {
-      getFETopology(topologyFileName, coordinates, blockIds, volumes, angles, horizon_of_element, elementTopo);
-      // horizon has to be added later
-    }
-    for (unsigned int i = 0; i < globalIds.size(); ++i)
+    for (unsigned int i = 0; i < numGlobalIDs; ++i)
     {
       int localId = rebalancedMap.LID(globalIds[i]);
       if (hasConstantHorizon)
@@ -366,6 +368,15 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
         double z = rebalancedX[localId * 3 + 2];
         double horizon = horizonManager.evaluateHorizon(blockName, x, y, z);
         (*rebalancedHorizonForEachPoint)[localId] = horizon;
+      }
+    }
+    // ad horizon_of_element
+    if (params->isParameter("Input FEM Topology File"))
+    {
+      for (unsigned int i = 0; i < elementTopo.size(); ++i)
+      {
+        int localId = rebalancedMap.LID(globalIds[numGlobalIDs + i]);
+        (*rebalancedHorizonForEachPoint)[localId] = horizon_of_element[i];
       }
     }
   }
