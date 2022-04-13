@@ -397,7 +397,7 @@ namespace PDNEIGH
 
   void NeighborhoodList::createAndAddNeighborhood()
   {
-    // hier muss die Topolgieliste rein
+
     enum
     {
       COMM_CREATE = 9,
@@ -468,14 +468,20 @@ namespace PDNEIGH
         const double *horizonP = horizon + id;
         // get bounding box information
         PointCenteredBoundingBox bb(xP, *horizonP);
-        //      if(1==rank){
-        //        std::cout << "localId, x,y,z = " << id << ", " << *xP << ", " << *(xP+1) << ", " << *(xP+2) << std::endl;
-        //        std::cout << "xMin, xMax " << bb.get_xMin() << ", " << bb.get_xMax() << std::endl;
-        //        std::cout << "yMin, yMax " << bb.get_yMin() << ", " << bb.get_yMax() << std::endl;
-        //        std::cout << "zMin, zMax " << bb.get_zMin() << ", " << bb.get_zMax() << std::endl;
-        //      }
+        // if (1 == rank)
+        //{
+        // std::cout << "localId, x,y,z = " << id << ", " << *xP << ", " << *(xP + 1) << ", " << *(xP + 2) << std::endl;
+        // std::cout << "xMin, xMax " << bb.get_xMin() << ", " << bb.get_xMax() << std::endl;
+        // std::cout << "yMin, yMax " << bb.get_yMin() << ", " << bb.get_yMax() << std::endl;
+        // std::cout << "zMin, zMax " << bb.get_zMin() << ", " << bb.get_zMax() << std::endl;
+        //}
         // den aufuf kann ich für die restliche Liste machen
+        //*   procsPointPtr                -- list of processors that box intersects.
+        //*                               Note: application is
+        //*                               responsible for ensuring sufficient memory.
+        //*   numProcsPoint             -- number of processors box intersects
         Zoltan_LB_Box_Assign(zoltan, bb.get_xMin(), bb.get_yMin(), bb.get_zMin(), bb.get_xMax(), bb.get_yMax(), bb.get_zMax(), procsPointPtr, &numProcsPoint);
+
         // ich denke ab hier muss ich den Aufruf identisch machen für die Elemente
         // ich befülle das ganze 2x und füge das der Kommunikationsliste dazu. Dann rufe ich den Kommunikationsplan auf und
         // es sollte wahrscheinlich funktionieren
@@ -485,7 +491,7 @@ namespace PDNEIGH
          */
         int *ptrToSendProcs = sendProcsPtr + nSend;
         int *i = localIdsPtr + nSend;
-        //      cout << "Zoltan_LB_Box_Assign -- numProcsPoint = " << numProcsPoint << endl;
+
         for (int j = 0; j < numProcsPoint; j++)
         {
           /*
