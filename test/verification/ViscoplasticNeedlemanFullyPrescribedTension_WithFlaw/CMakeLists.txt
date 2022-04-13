@@ -1,2 +1,0 @@
-add_test (ViscoplasticNeedlemanFullyPrescribedTension_WithFlaw_np1 python ./np1/ViscoplasticNeedlemanFullyPrescribedTension_WithFlaw.py)
-add_test (ViscoplasticNeedlemanFullyPrescribedTension_WithFlaw_np4 python ./np4/ViscoplasticNeedlemanFullyPrescribedTension_WithFlaw.py)

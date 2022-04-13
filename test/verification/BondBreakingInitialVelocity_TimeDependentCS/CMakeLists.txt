@@ -1,2 +1,0 @@
-add_test (BondBreakingInitialVelocity_TimeDependentCS_np1 python ./np1/BondBreakingInitialVelocity.py)
-add_test (BondBreakingInitialVelocity_TimeDependentCS_np3 python ./np3/BondBreakingInitialVelocity.py)

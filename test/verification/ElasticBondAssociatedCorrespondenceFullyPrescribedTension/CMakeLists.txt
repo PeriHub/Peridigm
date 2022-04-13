@@ -1,2 +1,0 @@
-add_test (ElasticBondAssociatedCorrespondenceFullyPrescribedTension_np1 python ./np1/ElasticBondAssociatedCorrespondenceFullyPrescribedTension.py)
-add_test (ElasticBondAssociatedCorrespondenceFullyPrescribedTension_np4 python ./np4/ElasticBondAssociatedCorrespondenceFullyPrescribedTension.py)
