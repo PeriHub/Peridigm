@@ -352,9 +352,8 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
     double constantHorizonValue(0.0);
     if (hasConstantHorizon)
       constantHorizonValue = horizonManager.getBlockConstantHorizonValue(blockName);
-    int numGlobalIDs = globalIds.size();
 
-    for (unsigned int i = 0; i < numGlobalIDs; ++i)
+    for (unsigned int i = 0; i < globalIds.size(); ++i)
     {
       int localId = rebalancedMap.LID(globalIds[i]);
       if (hasConstantHorizon)
@@ -373,7 +372,8 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
     // ad horizon_of_element
     if (params->isParameter("Input FEM Topology File"))
     {
-      for (unsigned int i = 0; i < elementTopo.size(); ++i)
+      unsigned int numGlobalIDs = globalIds.size() - elementTopo.size();
+      for (unsigned int i = 0; i < numGlobalIDs; ++i)
       {
         int localId = rebalancedMap.LID(globalIds[numGlobalIDs + i]);
         (*rebalancedHorizonForEachPoint)[localId] = horizon_of_element[i];
@@ -477,7 +477,6 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string &fileName,
           angles.push_back(angAvg[1] / (topo.size() - 1));
           angles.push_back(angAvg[2] / (topo.size() - 1));
           horizon.push_back(get_max_dist(coordinates, coorAvg, topo));
-          blockIds.push_back(topo[0]);
           volumes.push_back(volAvg / (topo.size() - 1));
         }
       }
@@ -491,12 +490,15 @@ double PeridigmNS::TextFileDiscretization::get_max_dist(const vector<double> &co
 {
   double horizon = 0.0;
   double dist = 0.0;
-  for (unsigned int n = 1; n < topo[0] + 1; n++)
+  for (int n = 1; n < topo[0] + 1; n++)
   {
     dist = abs(distance(coorAvg[0], coorAvg[1], coorAvg[2],
                         coordinates[3 * topo[n]], coordinates[3 * topo[n] + 1], coordinates[3 * topo[n] + 2]));
     if (horizon < dist)
-      horizon = dist;
+      // adding on percent to avoid round off errors
+      // because the neighborhoodlist is later adapted it does not matter if
+      // there are some extra nodes
+      horizon = 1.01 * dist;
   }
   return horizon;
 }
