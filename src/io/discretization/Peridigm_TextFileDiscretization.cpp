@@ -245,6 +245,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   int numFE = 0;
   if (params->isParameter("Input FEM Topology File"))
   {
+
     getFETopology(topologyFileName, coordinates, blockIds, volumes, angles, horizon_of_element, elementTopo, numFE);
     // horizon has to be added later
   }
@@ -341,7 +342,6 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   // Record the horizon for each point
   PeridigmNS::HorizonManager &horizonManager = PeridigmNS::HorizonManager::self();
   Teuchos::RCP<Epetra_Vector> rebalancedHorizonForEachPoint = Teuchos::rcp(new Epetra_Vector(rebalancedMap));
-
   double *rebalancedX = decomp.myX.get();
   for (map<string, vector<int>>::const_iterator it = elementBlocks->begin(); it != elementBlocks->end(); it++)
   {
@@ -353,8 +353,10 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
     if (hasConstantHorizon)
       constantHorizonValue = horizonManager.getBlockConstantHorizonValue(blockName);
     unsigned int numGlobalIDs = globalIds.size() - numFE;
+
     for (unsigned int i = 0; i < numGlobalIDs; ++i)
     {
+
       int localId = rebalancedMap.LID(globalIds[i]);
       if (hasConstantHorizon)
       {
@@ -369,12 +371,11 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
         (*rebalancedHorizonForEachPoint)[localId] = horizon;
       }
     }
-    // ad horizon_of_element
 
     if (params->isParameter("Input FEM Topology File"))
     {
 
-      for (unsigned int i = 0; i < numFE; ++i)
+      for (int i = 0; i < numFE; ++i)
       {
         int localId = rebalancedMap.LID(globalIds[numGlobalIDs + i]);
         (*rebalancedHorizonForEachPoint)[localId] = horizon_of_element[i];
@@ -420,11 +421,12 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string &fileName,
                                                        vector<double> &angles,
                                                        vector<double> &horizon,
                                                        vector<int> &elementTopo,
-                                                       int numFE)
+                                                       int &numFE)
 {
 
   if (myPID == 0)
   {
+    numFE = 0;
     double coorAvg[3], angAvg[3], volAvg;
     int numOfFiniteElements;
     std::string testString = "";
@@ -485,7 +487,7 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string &fileName,
           angles.push_back(angAvg[2]);
           horizon.push_back(get_max_dist(coordinates, coorAvg, topo));
           volumes.push_back(volAvg / (topo.size() - 1));
-          numFE += 1;
+          numFE = numFE + 1;
         }
       }
 

@@ -137,7 +137,7 @@ namespace PeridigmNS
                        std::vector<double> &angles,
                        std::vector<double> &horizon,
                        std::vector<int> &elementTopo,
-                       int numFE);
+                       int &numFE);
     QUICKGRID::Data getDecomp(const std::string &textFileName,
                               const std::string &topologyFileName,
                               const Teuchos::RCP<Teuchos::ParameterList> &params);
