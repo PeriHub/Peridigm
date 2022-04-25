@@ -62,8 +62,8 @@ PeridigmNS::ElasticBondBasedMaterial::ElasticBondBasedMaterial(const Teuchos::Pa
   m_bulkModulus = params.get<double>("Bulk Modulus");
   m_density = params.get<double>("Density");
   m_horizon = params.get<double>("Horizon");
-  // m_criticalStretch = params.get<double>("Critical Stretch");
-  m_criticalStretch = 10.0;
+  m_criticalStretch = params.get<double>("Critical Stretch");
+  // m_criticalStretch = 10.0;
   if (params.isParameter("Young's Modulus") || params.isParameter("Poisson's Ratio") || params.isParameter("Shear Modulus"))
   {
     TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error:  The Elastic bond based material model supports only one elastic constant, the bulk modulus.");
@@ -204,40 +204,19 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
   Coeffs(3, 5) = 0.;
 
   double R = 1.0;
+  double E = 3 * m_bulkModulus * (1 - 2 * 0.25);
 
+  // std::cout << "E: " << E << std::endl;
   for (int k = 0; k < 4; k++)
   {
     for (int l = 0; l < 6; l++)
     {
-      Coeffs(k, l) = Coeffs(k, l) * ((18.0 * m_bulkModulus) / (M_PI * m_horizon * m_horizon * m_horizon * m_horizon));
+      Coeffs(k, l) = Coeffs(k, l) * ((48.0 * E) / (5 * M_PI * m_horizon * m_horizon * m_horizon ));
+      
+      // std::cout << "Coeffs(k, l): " << Coeffs(k, l) << std::endl;
       // Coeffs(k,l) = (48.00 * E) / (5.0 * M_PI * (R * R * R));
     }
   }
-
-  // Coeffs(0, 0) = 0.;
-  // Coeffs(0, 1) = 0.;
-  // Coeffs(0, 2) = 0.;
-  // Coeffs(0, 3) = 0.456;
-  // Coeffs(0, 4) = 0.152;
-  // Coeffs(0, 5) = 0.;
-  // Coeffs(1, 0) = 0.;
-  // Coeffs(1, 1) = 0.;
-  // Coeffs(1, 2) = 0.;
-  // Coeffs(1, 3) = 0.;
-  // Coeffs(1, 4) = 0.;
-  // Coeffs(1, 5) = 0.152;
-  // Coeffs(2, 0) = 0.;
-  // Coeffs(2, 1) = 0.;
-  // Coeffs(2, 2) = 0.;
-  // Coeffs(2, 3) = 0.;
-  // Coeffs(2, 4) = 0.;
-  // Coeffs(2, 5) = 0.152;
-  // Coeffs(3, 0) = 0.;
-  // Coeffs(3, 1) = 0.;
-  // Coeffs(3, 2) = 0.;
-  // Coeffs(3, 3) = 0.152;
-  // Coeffs(3, 4) = 0.456;
-  // Coeffs(3, 5) = 0.;
 
   double *x;
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
@@ -265,14 +244,15 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
   {
 
     int numNeighbors = neighborhoodList[neighborhoodListIndex++];
-
-    if (iID >= 160100 & iID <= 160117 ){
+    
+    // if (iID == 183242 | iID == 183243 ){
+    // if (iID == 146335){
       useCollocationNodes[iID] = m_useCollocationNodes;
-    }
-    else
-    {
-      useCollocationNodes[iID] = false;
-    }
+    // }
+    // else
+    // {
+    //   useCollocationNodes[iID] = false;
+    // }
 
     nodeID = ownedIDs[iID];
 
@@ -311,13 +291,13 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
         if (dist < dx / 1000.0)
         {
           
-          if (x[nodeID * 3] == 0 & x[nodeID * 3 + 1] == -100)
-          {
-            std::cout << "x[neighborID * 3]: " << x[neighborID * 3] << std::endl;
-            std::cout << "x[neighborID * 3+1]: " << x[neighborID * 3 + 1] << std::endl;
-            std::cout << "dist: " << dist << std::endl;
-           std::cout << "neighborID: " << neighborID << std::endl;
-          }
+          // if (x[nodeID * 3] == 0 & x[nodeID * 3 + 1] == -100)
+          // {
+          //   std::cout << "x[neighborID * 3]: " << x[neighborID * 3] << std::endl;
+          //   std::cout << "x[neighborID * 3+1]: " << x[neighborID * 3 + 1] << std::endl;
+          //   std::cout << "dist: " << dist << std::endl;
+          //  std::cout << "neighborID: " << neighborID << std::endl;
+          // }
           Clouds[iID][cloudNum++] = neighborID;
           collocationNodeFound = true;
           iNID++;
@@ -329,10 +309,10 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
 
       if(!collocationNodeFound){
         Clouds[iID][cloudNum++] = -1;
-        if (x[nodeID * 3] == 0 & x[nodeID * 3 + 1] == -100)
-        {
-          std::cout << "neighborID: " << "-1" << std::endl;
-        }
+        // if (x[nodeID * 3] == 0 & x[nodeID * 3 + 1] == -100)
+        // {
+        //   std::cout << "neighborID: " << "-1" << std::endl;
+        // }
       }
 
     }
@@ -402,10 +382,10 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
       else
       {
         int neighborID = collocationNeighborhoodList[neighborhoodListIndex++];
-        if (xi == 0 & yi == -100)
-        {
-          std::cout << "neighborID: " << neighborID << std::endl;
-        }
+        // if (xi == 0 & yi == -100)
+        // {
+        //   std::cout << "neighborID: " << neighborID << std::endl;
+        // }
         if (neighborID == -1)
           continue;
 
@@ -417,49 +397,49 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
       // if (n == -1) continue;
 
       double r = std::sqrt((xi - xj) * (xi - xj) + (yi - yj) * (yi - yj));
-      if (xi == 0 & yi == -100)
-      {
-        std::cout << "numCollocationNeighbors: " << numCollocationNeighbors << std::endl;
-        std::cout << "xj: " << xj << std::endl;
-        std::cout << "yj: " << yj << std::endl;
-        std::cout << "r: " << r << std::endl;
-      }
+      // if (xi == 0 & yi == -100)
+      // {
+      //   std::cout << "numCollocationNeighbors: " << numCollocationNeighbors << std::endl;
+      //   std::cout << "xj: " << xj << std::endl;
+      //   std::cout << "yj: " << yj << std::endl;
+      //   std::cout << "r: " << r << std::endl;
+      // }
 
       double w = weight(r, cm, rm);
-      if (xi == 0 & yi == -100)
-      {
-        std::cout << "weight: " << w << std::endl;
-      }
+      // if (xi == 0 & yi == -100)
+      // {
+      //   std::cout << "weight: " << w << std::endl;
+      // }
 
       p = Poly(xj - xi, yj - yi);
 
-      if (xi == 0 & yi == -100)
-      {
-        for (int k = 0; k < 6; k++)
-        {
-          std::cout << "p[" << k << "]: " << p[k] << std::endl;
-        }
-      }
+      // if (xi == 0 & yi == -100)
+      // {
+      //   for (int k = 0; k < 6; k++)
+      //   {
+      //     std::cout << "p[" << k << "]: " << p[k] << std::endl;
+      //   }
+      // }
 
       A += w * p * p.transpose();
 
       B.col(j) = w * p;
     }
 
-    if (xi == 0 & yi == -100)
-    {
-      for (int k = 0; k < 6; k++)
-      {
-				for (int l = 0; l < 6; l++)
-				{
-					std::cout << "A(" << k << "," << l << "): " << A(k, l) << std::endl;
-				}
-				for (int l = 0; l < numCollocationNeighbors; l++)
-				{
-					std::cout << "B(" << k << "," << l << "): " << B(k, l) << std::endl;
-				}
-      }
-    }
+    // if (xi == 0 & yi == -100)
+    // {
+    //   for (int k = 0; k < 6; k++)
+    //   {
+		// 		for (int l = 0; l < 6; l++)
+		// 		{
+		// 			std::cout << "A(" << k << "," << l << "): " << A(k, l) << std::endl;
+		// 		}
+		// 		for (int l = 0; l < numCollocationNeighbors; l++)
+		// 		{
+		// 			std::cout << "B(" << k << "," << l << "): " << B(k, l) << std::endl;
+		// 		}
+    //   }
+    // }
 
     MMatrix = A.completeOrthogonalDecomposition().pseudoInverse() * B;
 
@@ -470,22 +450,22 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
     UpdateMat[iID].row(2) = Coeffs.row(2) * MMatrix;
     UpdateMat[iID].row(3) = Coeffs.row(3) * MMatrix;
 
-    if (xi == 0 & yi == -100)
-    {
-      for (int k = 0; k < 4; k++)
-      {
-        for (int l = 0; l < numCollocationNeighbors; l++)
-        {
-          // if (UpdateMat[iID](k, l) != 0)
-          // {
-          std::cout << "xi: " << xi << std::endl;
-          std::cout << "yi: " << yi << std::endl;
-          std::cout << "MMatrix(" << k << "," << l << "): " << MMatrix(k, l) << std::endl;
-          std::cout << "UpdateMat[" << iID << "](" << k << "," << l << "): " << UpdateMat[iID](k, l) << std::endl;
-          // }
-        }
-      }
-    }
+    // if (xi == 0 & yi == -100)
+    // {
+    //   for (int k = 0; k < 4; k++)
+    //   {
+    //     for (int l = 0; l < numCollocationNeighbors; l++)
+    //     {
+    //       // if (UpdateMat[iID](k, l) != 0)
+    //       // {
+    //       std::cout << "xi: " << xi << std::endl;
+    //       std::cout << "yi: " << yi << std::endl;
+    //       std::cout << "MMatrix(" << k << "," << l << "): " << MMatrix(k, l) << std::endl;
+    //       std::cout << "UpdateMat[" << iID << "](" << k << "," << l << "): " << UpdateMat[iID](k, l) << std::endl;
+    //       // }
+    //     }
+    //   }
+    // }
   }
 }
 }
