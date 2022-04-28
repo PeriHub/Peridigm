@@ -156,6 +156,13 @@ PeridigmNS::OutputManager_ExodusII::OutputManager_ExodusII(const Teuchos::RCP<Te
 
   // Initialize the exodus database
   // initializeExodusDatabase(blocks);
+
+  // Default write after damage
+  writeDamageToFile = params->get<bool>("Write Damage To File",false); 
+
+  if (writeDamageToFile){
+    initializeDamageDatabase();
+  }
 }
 
 Teuchos::ParameterList PeridigmNS::OutputManager_ExodusII::getValidParameterList() {
@@ -178,6 +185,7 @@ Teuchos::ParameterList PeridigmNS::OutputManager_ExodusII::getValidParameterList
   setIntParameter("Output Frequency",-1,"Frequency of Output",&validParameterList,intParam);
   validParameterList.set("Parallel Write",true);
   validParameterList.set("Write After Damage",false);
+  validParameterList.set("Write Damage To File",false);
 
   // Create a vector of valid output variables
   // Do not include bond data, since we can not output it
@@ -468,6 +476,36 @@ void PeridigmNS::OutputManager_ExodusII::write(Teuchos::RCP< std::vector<Peridig
   if(retval!= 0) reportExodusError(retval, "write", "ex_update");
   retval = ex_close(file_handle);
   if(retval!= 0) reportExodusError(retval, "write", "ex_close");
+}
+
+void PeridigmNS::OutputManager_ExodusII::initializeDamageDatabase() {
+  
+  damageFile.open (filenameBase+".csv", std::ios_base::trunc);
+  damageFile << "current_time,damage,x,y,z,\n";
+  damageFile.close();
+}
+
+void PeridigmNS::OutputManager_ExodusII::writeDamage(double current_time, int length, Teuchos::RCP<Epetra_Vector> netDamageField, double* yPtr) {
+  
+  if (writeDamageToFile){
+    damageFile.open (filenameBase+".csv", std::ios_base::app);
+
+    string damageString;
+    string xString;
+    string yString;
+    string zString;
+    for(int i=0 ; i<length ; i+=3){
+      if ((*netDamageField)[i/3]!=0){
+        damageString.append(to_string((*netDamageField)[i/3]) + ";");
+        xString.append(to_string(yPtr[i]) + ";");
+        yString.append(to_string(yPtr[i+1]) + ";");
+        zString.append(to_string(yPtr[i+2]) + ";");
+      }
+    }
+
+    damageFile << to_string(current_time) << "," << damageString << ","<< xString << ","<< yString << ","<< zString << endl;
+    damageFile.close();
+  }
 }
 
 void PeridigmNS::OutputManager_ExodusII::initializeExodusDatabase(Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks) {

@@ -1813,6 +1813,9 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       if ((*netDamageField)[i/3]!=0) damageExist = true;
       else allNodeDamage = false;
     }
+    if(damageExist){
+      outputManager->writeDamage(timeCurrent, a->MyLength(), netDamageField, yPtr);
+    }
 
     // Update forces based on new positions
     PeridigmNS::Timer::self().startTimer("Internal Force");

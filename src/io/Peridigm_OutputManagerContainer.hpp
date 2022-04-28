@@ -78,6 +78,13 @@ namespace PeridigmNS {
         (*it)->write(blocks, current_time, damageExist);
     }
 
+    //! Write to all output managers in container
+    void writeDamage(double current_time, int length, Teuchos::RCP<Epetra_Vector> netDamageField, double* yPtr) {
+      std::vector< Teuchos::RCP< PeridigmNS::OutputManager > >::iterator it;
+      for( it=outputManagers.begin() ; it < outputManagers.end(); it++ )
+        (*it)->writeDamage(current_time, length, netDamageField, yPtr);
+    }
+
     //! Multiply output frequency of all output managers in container
     //  for the sake of reducing load step size in Adaptive Quasi-static
     void multiplyOutputFrequency(double multiplier){
