@@ -107,7 +107,7 @@ namespace PeridigmNS {
                   const int* ownedIDs,
                   const int* neighborhoodList,
                   PeridigmNS::DataManager& dataManager,
-                  int blockInterfaceId) const;
+                  std::string blockInterfaceId) const;
               
                   
     //! evaluate Parser

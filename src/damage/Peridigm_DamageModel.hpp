@@ -100,7 +100,7 @@ namespace PeridigmNS {
                   const int* ownedIDs,
                   const int* neighborhoodList,
                   PeridigmNS::DataManager& dataManager,
-                  int blockInterfaceId) const = 0;
+                  std::string blockInterfaceId) const = 0;
 
   private:
 

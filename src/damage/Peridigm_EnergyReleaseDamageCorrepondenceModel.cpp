@@ -116,23 +116,28 @@ m_hourglassStiffId(-1) {
     m_onlyTension = false;
     if(params.isParameter("Only Tension"))
         m_onlyTension = params.get<bool>("Only Tension");
-    m_criticalEnergyInterBlock = m_criticalEnergyTension;
-    if (params.isParameter("Interblock damage energy")){
 
-        int nblocks = params.get<int>("Number of Interblocks");
-        string prop = "Block_";
+    if (params.isParameter("Number of Interblocks")){
+
+        nblocks = params.get<int>("Number of Interblocks");
+        string prop = "Interblock Critical Energy ";
   
   // https://docs.microsoft.com/de-de/cpp/cpp/delete-operator-cpp?view=msvc-170
-        delete block;
-        block = new int[2*nblocks];
+        delete m_criticalEnergyInterBlock;
+        m_criticalEnergyInterBlock = new double[nblocks*nblocks];
 
-         for(int iID=0 ; iID<nblocks ; ++iID){
-            block[2*iID]   = params.get<double>(prop + std::to_string(2*iID) + std::to_string(2*iID+1));
-            block[2*iID+1] = params.get<double>(prop + std::to_string(2*iID+1) + std::to_string(2*iID));
+
+        for(int i=0 ; i<nblocks ; ++i){
+            for(int j=0 ; j<nblocks ; ++j){
+                
+                if (params.isParameter(prop + std::to_string(i+1) + '_' +  std::to_string(j+1))){
+                    m_criticalEnergyInterBlock[i*nblocks+j] = params.get<double>(prop + std::to_string(i+1) + '_' + std::to_string(j+1));
+                }else
+                {
+                    m_criticalEnergyInterBlock[i*nblocks+j] = -1;
+                }
+            }
         }
-
-
-        m_criticalEnergyInterBlock = params.get<double>("Interblock damage energy");
       
     }
     m_bondDiffSt = 2147483647;
@@ -237,7 +242,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
         const int* ownedIDs,
         const int* neighborhoodList,
         PeridigmNS::DataManager& dataManager,
-        int blockInterfaceId = -1) const {
+        std::string blockInterfaceId = "-1") const {
 
     double *x, *y, *yN, *damage, *bondDamage, *bondDamageNP1, *bondDamageDiff, *horizon, *vol, *detachedNodes, *blockNumber;
     double *bondEnergyN, *bondEnergyNP1;
@@ -388,7 +393,13 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                     
                     criticalEnergyTension = m_criticalEnergyTension;
                     
-                    if (blockNumber[neighborID]==block[blockInterfaceId])criticalEnergyTension = m_criticalEnergyInterBlock;
+                    std::istringstream is(blockInterfaceId);
+                    int n;
+                    while( is >> n ) {
+                        if ((blockNumber[neighborID]==n) & (m_criticalEnergyInterBlock[((int)blockNumber[nodeId]-1) * nblocks + n-1] != -1)){
+                            criticalEnergyTension = m_criticalEnergyInterBlock[((int)blockNumber[nodeId]-1)* nblocks + n-1];
+                        }
+                    }
                     
                     omegaP1 = MATERIAL_EVALUATION::scalarInfluenceFunction(dX, horizon[nodeId]); 
                     omegaP2 = MATERIAL_EVALUATION::scalarInfluenceFunction(-dX, horizon[neighborID]); 

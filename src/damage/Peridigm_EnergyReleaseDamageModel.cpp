@@ -198,7 +198,7 @@ PeridigmNS::EnergyReleaseDamageModel::computeDamage(const double dt,
         const int* ownedIDs,
         const int* neighborhoodList,
         PeridigmNS::DataManager& dataManager,
-        int blockInterfaceId = -1) const {
+        std::string blockInterfaceId = "-1") const {
 
     double *x, *y, *damage, *bondDamageNP1, *horizon;
     double *vol, *weightedVolume, *damageModel;

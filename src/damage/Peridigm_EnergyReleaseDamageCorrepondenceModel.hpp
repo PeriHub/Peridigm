@@ -97,7 +97,7 @@ namespace PeridigmNS {
                   const int* ownedIDs,
                   const int* neighborhoodList,
                   PeridigmNS::DataManager& dataManager,
-                  int blockInterfaceId)const ;
+                  std::string blockInterfaceId)const ;
                   
 
     int checkDetachedNodes(
@@ -160,9 +160,9 @@ namespace PeridigmNS {
     double m_hourglassCoefficient;
     double degradationFactor;
     bool m_incremental;
-    double m_criticalEnergyInterBlock;
+    double *m_criticalEnergyInterBlock = new double;
     int blockIdFieldId;
-    int *block = new int;
+    int nblocks;
   };
 
 }

@@ -70,7 +70,7 @@ PeridigmNS::ModelEvaluator::evalDamageModel(Teuchos::RCP<Workset> workset) const
       const int numOwnedPoints = neighborhoodData->NumOwnedPoints();
       const int* ownedIDs = neighborhoodData->OwnedIDs();
       const int* neighborhoodList = neighborhoodData->NeighborhoodList();
-      int blockInterfaceId = blockIt->getBlockInterfaceID();
+      std::string blockInterfaceId = blockIt->getBlockInterfaceID();
       Teuchos::RCP<PeridigmNS::DataManager> dataManager = blockIt->getDataManager();
       
       PeridigmNS::Timer::self().startTimer("Evaluate Damage Model:Compute Damage");

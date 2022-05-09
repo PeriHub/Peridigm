@@ -122,14 +122,14 @@ namespace PeridigmNS {
     }
 
     //! Get the block interfac id
-    int getBlockInterfaceID(){
+    std::string getBlockInterfaceID(){
       if (blockParams.isParameter("Interface"))
       {
-        return blockParams.get<int>("Interface");
+        return blockParams.get<std::string>("Interface");
       }
       else
       {
-        return -1;
+        return "-1";
       }
     }
 
