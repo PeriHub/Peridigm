@@ -74,9 +74,6 @@ namespace PeridigmNS {
     //! Write data to disk
     virtual void write(Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks, double, bool);
 
-    //! Write damage to csv
-    virtual void writeDamage(double, int, Teuchos::RCP<Epetra_Vector>, double*);
-
     //! Multiply output frequency, for the sake of reducing load-step size in Adaptive Quasi-static
     virtual void multiplyOutputFrequency(double);
 
@@ -93,9 +90,6 @@ namespace PeridigmNS {
 
     //! Initialize a new exodus database
     void initializeExodusDatabase(Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks);
-
-    //! Initialize a new damage database
-    void initializeDamageDatabase();
 
     //! Initialize a new exodus database that contains only global data
     void initializeExodusDatabaseWithOnlyGlobalData(Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks);
@@ -114,8 +108,6 @@ namespace PeridigmNS {
 
     // Filename of current exodus database
     std::ostringstream filename;
-
-    std::ofstream damageFile;
 
     //! Exodus file handle
     int file_handle;
@@ -156,8 +148,6 @@ namespace PeridigmNS {
     //! Field id for element id.
     int elementIdFieldId;
 
-    //! Flag indicating if damage should be written to a csv file
-    bool writeDamageToFile;
   };
   
 }
