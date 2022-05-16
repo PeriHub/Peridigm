@@ -175,6 +175,5 @@ PeridigmNS::InitialDamageModel::computeDamage(const double dt,
                                               const int numOwnedPoints,
                                               const int* ownedIDs,
                                               const int* neighborhoodList,
-                                              PeridigmNS::DataManager& dataManager,
-                                              std::string blockInterfaceId = "-1") const
+                                              PeridigmNS::DataManager& dataManager) const
 {}

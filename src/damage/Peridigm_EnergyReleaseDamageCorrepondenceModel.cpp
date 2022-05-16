@@ -117,27 +117,35 @@ m_hourglassStiffId(-1) {
     if(params.isParameter("Only Tension"))
         m_onlyTension = params.get<bool>("Only Tension");
 
-    if (params.isParameter("Number of Interblocks")){
+    nblocks = -1;
+    m_interBlockDamage = false;
+    if (params.isParameter("Interblock Damage"))
+      m_interBlockDamage = params.get<bool>("Interblock Damage");
 
-        nblocks = params.get<int>("Number of Interblocks");
+    if (m_interBlockDamage){
+
+        nblocks = params.get<int>("Number of Blocks");
         string prop = "Interblock Critical Energy ";
   
   // https://docs.microsoft.com/de-de/cpp/cpp/delete-operator-cpp?view=msvc-170
         delete m_criticalEnergyInterBlock;
         m_criticalEnergyInterBlock = new double[nblocks*nblocks];
 
-
+        int interfacesDefined = 0;
         for(int i=0 ; i<nblocks ; ++i){
             for(int j=0 ; j<nblocks ; ++j){
                 
                 if (params.isParameter(prop + std::to_string(i+1) + '_' +  std::to_string(j+1))){
                     m_criticalEnergyInterBlock[i*nblocks+j] = params.get<double>(prop + std::to_string(i+1) + '_' + std::to_string(j+1));
+                    interfacesDefined++;
                 }else
                 {
                     m_criticalEnergyInterBlock[i*nblocks+j] = -1;
                 }
             }
         }
+        
+        TEUCHOS_TEST_FOR_TERMINATION(interfacesDefined==0, "**** No interblock critical energy values can be found.\n");
       
     }
     m_bondDiffSt = 2147483647;
@@ -241,8 +249,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
         const int numOwnedPoints,
         const int* ownedIDs,
         const int* neighborhoodList,
-        PeridigmNS::DataManager& dataManager,
-        std::string blockInterfaceId = "-1") const {
+        PeridigmNS::DataManager& dataManager) const {
 
     double *x, *y, *yN, *damage, *bondDamage, *bondDamageNP1, *bondDamageDiff, *horizon, *vol, *detachedNodes, *blockNumber;
     double *bondEnergyN, *bondEnergyNP1;
@@ -393,11 +400,12 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                     
                     criticalEnergyTension = m_criticalEnergyTension;
                     
-                    std::istringstream is(blockInterfaceId);
-                    int n;
-                    while( is >> n ) {
-                        if ((blockNumber[neighborID]==n) & (m_criticalEnergyInterBlock[((int)blockNumber[nodeId]-1) * nblocks + n-1] != -1)){
-                            criticalEnergyTension = m_criticalEnergyInterBlock[((int)blockNumber[nodeId]-1)* nblocks + n-1];
+                    if(nblocks!=-1){
+                        
+                        for(int n=0 ; n<nblocks ; ++n){
+                            if ((blockNumber[neighborID]==n) & (m_criticalEnergyInterBlock[((int)blockNumber[nodeId]-1) * nblocks + n-1] != -1)){
+                                criticalEnergyTension = m_criticalEnergyInterBlock[((int)blockNumber[nodeId]-1)* nblocks + n-1];
+                            }
                         }
                     }
                     

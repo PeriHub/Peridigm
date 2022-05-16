@@ -70,7 +70,6 @@ PeridigmNS::ModelEvaluator::evalDamageModel(Teuchos::RCP<Workset> workset) const
       const int numOwnedPoints = neighborhoodData->NumOwnedPoints();
       const int* ownedIDs = neighborhoodData->OwnedIDs();
       const int* neighborhoodList = neighborhoodData->NeighborhoodList();
-      std::string blockInterfaceId = blockIt->getBlockInterfaceID();
       Teuchos::RCP<PeridigmNS::DataManager> dataManager = blockIt->getDataManager();
       
       PeridigmNS::Timer::self().startTimer("Evaluate Damage Model:Compute Damage");
@@ -78,8 +77,7 @@ PeridigmNS::ModelEvaluator::evalDamageModel(Teuchos::RCP<Workset> workset) const
                                  numOwnedPoints,
                                  ownedIDs,
                                  neighborhoodList,
-                                 *dataManager,
-                                 blockInterfaceId);
+                                 *dataManager);
       PeridigmNS::Timer::self().stopTimer("Evaluate Damage Model:Compute Damage");
     }
   }
