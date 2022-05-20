@@ -72,7 +72,7 @@ namespace PeridigmNS {
     virtual ~OutputManager_ExodusII();
 
     //! Write data to disk
-    virtual void write(Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks, double, bool);
+    virtual void write(Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks, double, bool, bool);
 
     //! Multiply output frequency, for the sake of reducing load-step size in Adaptive Quasi-static
     virtual void multiplyOutputFrequency(double);

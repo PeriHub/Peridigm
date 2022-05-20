@@ -1937,17 +1937,17 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         stopPeridigm=true;
     }
     if (stopAfterOutput && damageExist){ 
-		if(analysisHasDataLoader){
-			dataLoader->loadData(timeCurrent, blocks);
-		}
-        outputManager->write(blocks, timeCurrent);
+      if(analysisHasDataLoader){
+        dataLoader->loadData(timeCurrent, blocks);
+      }
+        outputManager->write(blocks, timeCurrent, damageExist, true);
         std::cout<<"Break after damage."<<std::endl;
         stopPeridigm=true;
     }
     if(analysisHasDataLoader){
       dataLoader->loadData(timeCurrent, blocks);
     }
-    outputManager->write(blocks, timeCurrent);
+    outputManager->write(blocks, timeCurrent, damageExist);
     PeridigmNS::Timer::self().stopTimer("Output");
 
     // swap state N and state NP1

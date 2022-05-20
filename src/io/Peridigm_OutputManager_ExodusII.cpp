@@ -211,7 +211,7 @@ Teuchos::ParameterList PeridigmNS::OutputManager_ExodusII::getValidParameterList
 PeridigmNS::OutputManager_ExodusII::~OutputManager_ExodusII() {
 }
 
-void PeridigmNS::OutputManager_ExodusII::write(Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks, double current_time, bool damageExist = false) {
+void PeridigmNS::OutputManager_ExodusII::write(Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks, double current_time, bool damageExist = false, bool writeAlways = false) {
 
   if (!iWrite) return;
 
@@ -226,7 +226,7 @@ void PeridigmNS::OutputManager_ExodusII::write(Teuchos::RCP< std::vector<Peridig
 
   // Only write if count is in between first and last dumps and frequency count match. 
   // The +/- 1 is to account for the initialization dumps
-  if((count<(firstOutputStep) || count>(lastOutputStep+1)) || (frequency<=0 || (count-1)%frequency!=0) || (writeAfterDamage && !damageExist)) return;
+  if(((count<(firstOutputStep) || count>(lastOutputStep+1)) || (frequency<=0 || (count-1)%frequency!=0) || (writeAfterDamage && !damageExist)) && !writeAlways) return;
 
   // increment exodus_count index
   exodusCount = exodusCount + 1;

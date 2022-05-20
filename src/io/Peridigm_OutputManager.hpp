@@ -73,7 +73,7 @@ namespace PeridigmNS {
     virtual void close(){};
 
     //! Write data to disk
-    virtual void write(Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks, double, bool) = 0;
+    virtual void write(Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks, double, bool, bool) = 0;
 
     //! Multiply output frequency (for the sake of Adaptive time-stepping)
     virtual void multiplyOutputFrequency(double) = 0;

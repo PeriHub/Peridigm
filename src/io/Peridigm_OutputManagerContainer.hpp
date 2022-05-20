@@ -72,10 +72,10 @@ namespace PeridigmNS {
     }
 
     //! Write to all output managers in container
-    void write(Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks, double current_time, bool damageExist = false) {
+    void write(Teuchos::RCP< std::vector<PeridigmNS::Block> > blocks, double current_time, bool damageExist = false, bool writeAlways = false) {
       std::vector< Teuchos::RCP< PeridigmNS::OutputManager > >::iterator it;
       for( it=outputManagers.begin() ; it < outputManagers.end(); it++ )
-        (*it)->write(blocks, current_time, damageExist);
+        (*it)->write(blocks, current_time, damageExist, writeAlways);
     }
 
     //! Multiply output frequency of all output managers in container
