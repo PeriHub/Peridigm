@@ -246,9 +246,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   if (params->isParameter("Input FEM Topology File"))
   {
     getFETopology(topologyFileName, coordinates, blockIds, volumes, angles, horizon_of_element, elementTopo, numFE);
-    // horizon has to be added later
-    // aus create bondfilter
-    // PdBondFilter::FinitePlane finitePlane(normal, lowerLeftCorner, bottomUnitVector, bottomLength, sideLength);
+    
     std::shared_ptr<PdBondFilter::BondFilter> bondFilter(new PdBondFilter::PreDefinedTopologyFilter(static_cast<int>(blockIds.size()), numFE,elementTopo));
     bondFilters.push_back(bondFilter);
   }
