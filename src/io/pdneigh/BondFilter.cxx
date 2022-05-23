@@ -236,8 +236,6 @@ namespace PdBondFilter
  void PreDefinedTopologyFilter::filterBonds(std::vector<int> &treeList, const double* pt, const size_t ptLocalId, const double* xOverlap, bool* bondFlags)
  {
    bool* flagIter = bondFlags;
-   std::vector<int> topo;
-   std::vector<int> mapping;
    int id = ptLocalId;
    for (unsigned int p = 0; p < treeList.size(); p++, flagIter++)
    {

@@ -247,7 +247,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   {
     getFETopology(topologyFileName, coordinates, blockIds, volumes, angles, horizon_of_element, elementTopo, numFE);
     
-    std::shared_ptr<PdBondFilter::BondFilter> bondFilter(new PdBondFilter::PreDefinedTopologyFilter(static_cast<int>(blockIds.size()), numFE,elementTopo));
+    std::shared_ptr<PdBondFilter::BondFilter> bondFilter(new PdBondFilter::PreDefinedTopologyFilter(static_cast<int>(blockIds.size()), numFE, elementTopo));
     bondFilters.push_back(bondFilter);
   }
   // Read the text file on the root processor
