@@ -95,8 +95,8 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
 
   QUICKGRID::Data decomp = getDecomp(meshFileName, topologyFileName, params);
 
-  // \todo Refactor; the createMaps() call is currently inside getDecomp() due to order-of-operations issues with tracking element blocks.
-  // createMaps(decomp);
+  //  \todo Refactor; the createMaps() call is currently inside getDecomp() due to order-of-operations issues with tracking element blocks.
+  //  createMaps(decomp);
   createNeighborhoodData(decomp);
 
   // \todo Move this functionality to base class, it's currently duplicated in PdQuickGridDiscretization.
@@ -245,9 +245,12 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   int numFE = 0;
   if (params->isParameter("Input FEM Topology File"))
   {
-
     getFETopology(topologyFileName, coordinates, blockIds, volumes, angles, horizon_of_element, elementTopo, numFE);
     // horizon has to be added later
+    // aus create bondfilter
+    // PdBondFilter::FinitePlane finitePlane(normal, lowerLeftCorner, bottomUnitVector, bottomLength, sideLength);
+    // std::shared_ptr<PdBondFilter::BondFilter> bondFilter(new PdBondFilter::PreDefinedTopologyFilter(finitePlane));
+    // bondFilters.push_back(bondFilter);
   }
   // Read the text file on the root processor
 
@@ -260,6 +263,12 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   {
     for (unsigned int i = 0; i < blockIds.size(); ++i)
       uniqueBlockIds.insert(blockIds[i]);
+    if (numFE > 0)
+    {
+
+      std::shared_ptr<PdBondFilter::BondFilter> bondFilter(new PdBondFilter::PreDefinedTopologyFilter(uniqueBlockIds.size(), numFE, elementTopo));
+      bondFilters.push_back(bondFilter);
+    }
   }
 
   // Broadcast necessary data from root processor
@@ -474,6 +483,7 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string &fileName,
             angAvg[2] += angles[3 * topo[n] + 2];
             volAvg += volumes[topo[n]];
           }
+
           for (unsigned int i = 0; i < 3; i++)
           {
             coorAvg[i] /= (topo.size() - 1);
@@ -493,6 +503,7 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string &fileName,
 
       inFile.close();
     }
+    // bondfilteraufruf
   }
 }
 double PeridigmNS::TextFileDiscretization::get_max_dist(const vector<double> &coordinates, const double coorAvg[3],
