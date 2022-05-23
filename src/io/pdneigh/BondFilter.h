@@ -187,48 +187,13 @@ namespace PdBondFilter
     virtual void filterBonds(std::vector<int> &treeList, const double* pt, const std::size_t ptLocalId, const double* xOverlap, bool* markForExclusion);
 
   private:
-    bool idNotInTopology(const int id, const std::vector<int> &topoList) const;
+    bool idNotInTopology(const int id, const int* topoList) const;
     std::vector<int> topoList;
     std::vector<int> mapping;
     int lenNodes;
     int numFE;
   };
-  //class PreDefinedTopologyFilter : public BondFilter
-  //{
-  //public:
-  //  PreDefinedTopologyFilter(int num, int numFE, std::vector<int> topo) : BondFilter(false)
-  //  {
-  //    // algorithm maps id to element topology entry
-  //    // the number of the following nodes are given there
-//
-  //    int count = 0;
-  //    for (int i = 0; i < num; i++)
-  //    {
-  //      if (i > num - numFE)
-  //      {
-  //        topoList.push_back(count);
-  //        count += topo(count) + 1;
-  //      }
-  //      else
-  //      {
-  //        topoList.push_back(-1);
-  //      }
-  //    }
-  //  };
-  //  virtual ~PreDefinedTopologyFilter() {}
-  //  virtual void filterBonds(std::vector<int> &treeList, const double* pt, const std::size_t ptLocalId, const double* xOverlap, bool* markForExclusion);
-//
-  //private:
-  //  bool idNotInTopology(const int id, const std::vector<int> &topoList) const;
-  //  int topoID;
-  //  // topo muss hier noch rein
-  //  // std::vector<int> topoList;
-  //  std::vector<int> topoList;
-  //  // for(int i=0; i<10; i++)
-  //  //{
-  //  //    normal.push_back(std::vector<int>());
-  //  // };
-//
+  
   class TriangleFilter : public BondFilter
   {
   public:
