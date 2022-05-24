@@ -133,6 +133,7 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
   m_unrotatedCauchyStressFieldId      = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Unrotated_Cauchy_Stress");
   m_cauchyStressFieldId               = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Cauchy_Stress");
   m_partialStressFieldId              = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Partial_Stress");
+  m_nodeTypeFieldId                   = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Node_type");
   
   
 
@@ -146,7 +147,7 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
 
   m_fieldIds.push_back(m_partialStressFieldId);
   m_fieldIds.push_back(m_modelAnglesId);
-  
+  m_fieldIds.push_back(m_nodeTypeFieldId);
 }
 
 PeridigmNS::FEMMaterial::~FEMMaterial()
@@ -157,10 +158,11 @@ void
 PeridigmNS::FEMMaterial::initialize(const double dt,
                             const int numOwnedPoints,
                             const int* ownedIDs,
-                            const int* topology,
+                            const int* neighborhoodList,
                             PeridigmNS::DataManager& dataManager)
 {
   std::cout<<"init FEM"<<std::endl;
+
  // FEM::createLumbedMassesSomeHow()
   std::vector<double> NxiVector(order[0]+1), NetaVector(order[1]+1), NpsiVector(order[2]+1);
   double* Nxi  = &NxiVector[0];
@@ -214,13 +216,32 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
     }
   }
   FEM::setWeights(numIntDir,twoD,weightsx,weightsy,weightsz,weights);
-}
 
+  // extract the topology list from neighborhoodList
+  double *nodeType;
+  dataManager.getData(m_nodeTypeFieldId, PeridigmField::STEP_NP1)->ExtractView(&nodeType);
+  numElements = 0;
+  int topoPtr = 0;
+  for(int i=0 ; i<numOwnedPoints ; ++i){
+    
+    int numNodes = neighborhoodList[topoPtr];
+    topoPtr++;
+    if (nodeType[i]==2){
+      numElements += 1;
+      topology.push_back(numNodes);
+      for(int j=0 ; j<numNodes ; ++j){
+        topology.push_back(neighborhoodList[topoPtr]);
+        topoPtr++;
+        }
+    }
+    else{topoPtr+=numNodes;}
+  }
+}
 void
 PeridigmNS::FEMMaterial::computeForce(const double dt,
                               const int numOwnedPoints,
                               const int* ownedIDs,
-                              const int* topology,
+                              const int* neighborhoodList,
                               PeridigmNS::DataManager& dataManager) const
 {
   
@@ -249,7 +270,9 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
 
     std::vector<double> sigmaIntVector(9);
     double* sigmaInt = &sigmaIntVector[0];
-    //int* topoPtr = &topology[0];
+
+
+  
     
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     // for higher order it has to be adapted
@@ -282,7 +305,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     // irgendwie in die init?
     // das wäre der Austausch für verschiedene Elementtypen
     // falsch
-    int numElements = 3;
+
 
     
     
@@ -335,7 +358,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         if (rotation){  
           MATRICES::tensorRotation(angles,sigmaInt,false,sigmaInt);
         }
-        FEM::getNodalForce(Bx, By, Bz, intPointPtr, numElemNodes, topoPtr, topology, detJ, Jinv, twoD, sigmaInt, volume, force);
+        FEM::getNodalForce(Bx, By, Bz, intPointPtr, numElemNodes, topoPtr, &topology[0], detJ, Jinv, twoD, sigmaInt, volume, force);
         // has to be done for each integration point
         // it adds up the different parts of each integration point resulting element force
         

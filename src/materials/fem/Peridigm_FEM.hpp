@@ -85,7 +85,7 @@ namespace PeridigmNS {
     virtual void initialize(const double dt,
                             const int numOwnedPoints,
                             const int* ownedIDs,
-                            const int* topology,
+                            const int* neighborhoodList,
                             PeridigmNS::DataManager& dataManager);
 
     //! Evaluate the Cauchy stress (pure virtual function, must be implemented by derived correspondence material models).
@@ -96,11 +96,12 @@ namespace PeridigmNS {
     virtual void computeForce(const double dt,
                               const int numOwnedPoints,
                               const int* ownedIDs,
-                              const int* topology,
+                              const int* neighborhoodList,
                               PeridigmNS::DataManager& dataManager) const;
 //////////////////////////////////////////////////////////////////////////////////
 
-
+  std::vector<int> topology;
+  int numElements;
   protected:
     double m_density;
     double m_bulkModulus;
@@ -127,6 +128,7 @@ namespace PeridigmNS {
     int m_displacementFieldId;
     int m_deformationGradientFieldId;
     int m_volumeFieldId;
+    int m_nodeTypeFieldId;
     int order[3];
     int numIntDir[3];
     bool twoD;
