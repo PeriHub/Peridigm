@@ -81,6 +81,8 @@ namespace PeridigmNS
     virtual Teuchos::RCP<Epetra_Vector> getInitialX() const;
     //! Get point angle
     virtual Teuchos::RCP<Epetra_Vector> getPointAngle() const;
+    //! Get node type
+    virtual Teuchos::RCP<Epetra_Vector> getNodeType() const;
     //! Get the horizon value for each point.
     virtual Teuchos::RCP<Epetra_Vector> getHorizon() const;
 
@@ -140,6 +142,7 @@ namespace PeridigmNS
                        std::vector<double> &angles,
                        std::vector<double> &horizon,
                        std::vector<int> &elementTopo,
+                       std::vector<int> &nodeType,
                        int &numFE);
     QUICKGRID::Data getDecomp(const std::string &textFileName,
                               const std::string &topologyFileName,
@@ -191,7 +194,10 @@ namespace PeridigmNS
 
     //! Vector containing the point angles
     Teuchos::RCP<Epetra_Vector> pointAngle;
-
+    
+    //! Vector containing the node type
+    Teuchos::RCP<Epetra_Vector> nodeType;
+    
     //! Vector containing horizons
     Teuchos::RCP<Epetra_Vector> horizonForEachPoint;
 

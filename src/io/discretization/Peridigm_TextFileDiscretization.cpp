@@ -142,9 +142,10 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
 
   // fill the x vector with the current positions (owned positions only)
   initialX = Teuchos::rcp(new Epetra_Vector(Copy, *threeDimensionalMap, decomp.myX.get()));
-  //
+  // fill with local coordinate distribution
   pointAngle = Teuchos::rcp(new Epetra_Vector(Copy, *threeDimensionalMap, decomp.myAngle.get()));
-
+  // fill with point or element separation
+  nodeType = Teuchos::rcp(new Epetra_Vector(Copy, *threeDimensionalMap, decomp.myNodeType.get()));
   // fill cell volumes
   cellVolume = Teuchos::rcp(new Epetra_Vector(Copy, *oneDimensionalMap, decomp.cellVolume.get()));
 
@@ -241,11 +242,12 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   vector<double> angles;
   vector<double> horizon_of_element;
   vector<int> elementTopo;
+  vector<int> nodeType;
   getDiscretization(textFileName, coordinates, blockIds, volumes, angles);
   int numFE = 0;
   if (params->isParameter("Input FEM Topology File"))
   {
-    getFETopology(topologyFileName, coordinates, blockIds, volumes, angles, horizon_of_element, elementTopo, numFE);
+    getFETopology(topologyFileName, coordinates, blockIds, volumes, angles, horizon_of_element, elementTopo, nodeType, numFE);
     
     std::shared_ptr<PdBondFilter::BondFilter> bondFilter(new PdBondFilter::PreDefinedTopologyFilter(static_cast<int>(blockIds.size()), numFE, elementTopo));
     bondFilters.push_back(bondFilter);
@@ -294,7 +296,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   memcpy(decomp.cellVolume.get(), &volumes[0], numElements * sizeof(double));
   memcpy(decomp.myX.get(), &coordinates[0], 3 * numElements * sizeof(double));
   memcpy(decomp.myAngle.get(), &angles[0], 3 * numElements * sizeof(double));
-
+  memcpy(decomp.myNodeType.get(), &nodeType[0], numElements * sizeof(double));
   // Create a blockID vector in the current configuration
   // That is, the configuration prior to load balancing
   Epetra_BlockMap tempOneDimensionalMap(decomp.globalNumPoints,
@@ -422,6 +424,7 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string &fileName,
                                                        vector<double> &angles,
                                                        vector<double> &horizon,
                                                        vector<int> &elementTopo,
+                                                       vector<int> &nodeType,
                                                        int &numFE)
 {
 
@@ -437,6 +440,10 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string &fileName,
       TEUCHOS_TEST_FOR_EXCEPT_MSG(!inFile.is_open(), "**** Error opening topology text file.\n");
       while (inFile.good())
       {
+        // defines points as points
+        // this is needed to separate between virtual element points and real points
+        for (unsigned int n = 1; n < blockIds.size(); n++)nodeType.push_back(1);
+
         numOfFiniteElements += 1;
         string str;
         getline(inFile, str);
@@ -484,6 +491,7 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string &fileName,
           coordinates.push_back(coorAvg[0]);
           coordinates.push_back(coorAvg[1]);
           coordinates.push_back(coorAvg[2]);
+          nodeType.push_back(2); // defines FE Elements
           angles.push_back(angAvg[0]);
           angles.push_back(angAvg[1]);
           angles.push_back(angAvg[2]);
@@ -697,7 +705,11 @@ PeridigmNS::TextFileDiscretization::getPointAngle() const
 {
   return pointAngle;
 }
-
+Teuchos::RCP<Epetra_Vector>
+PeridigmNS::TextFileDiscretization::getNodeType() const
+{
+  return nodeType;
+}
 Teuchos::RCP<Epetra_Vector>
 PeridigmNS::TextFileDiscretization::getHorizon() const
 {

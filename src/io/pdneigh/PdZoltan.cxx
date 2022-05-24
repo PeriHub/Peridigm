@@ -548,8 +548,8 @@ void zoltanQuery_packPointsMultiFunction
   double *X = gridData->myX.get();
   double *V = gridData->cellVolume.get();
   double *A = gridData->myAngle.get();
-  
-    int *neighborList = gridData->neighborhood.get();
+  double *N = gridData->myNodeType.get();
+  int *neighborList = gridData->neighborhood.get();
   int *neighborListPtr = gridData->neighborhoodPtr.get();
 
   // iterate over addresses and copy bytes
@@ -577,7 +577,15 @@ void zoltanQuery_packPointsMultiFunction
     numBytes = sizeof(double);
     void *volPtr = (void*)(&V[id]);
     memcpy((void*)tmp,volPtr,numBytes);
+   
+   // advance buffer pointer
+    tmp += numBytes;
 
+    // cell volume
+    numBytes = sizeof(double);
+    void *nodeTypePtr = (void*)(&N[id]);
+    memcpy((void*)tmp,nodeTypePtr,numBytes);
+    
     // advance buffer pointer
     tmp += numBytes;
     // point angle
@@ -655,12 +663,14 @@ void zoltanQuery_unPackPointsMultiFunction
   std::shared_ptr<double> newX = newGridData.myX;                         double *newXPtr   = newX.get();
   std::shared_ptr<double> newV = newGridData.cellVolume;                  double *newVPtr   = newV.get();
   std::shared_ptr<double> newA = newGridData.myAngle;                     double *newAPtr   = newA.get();
+  std::shared_ptr<double> newN = newGridData.myNodeType;                  double *newNPtr   = newN.get();
   std::shared_ptr<int> newGlobalIds = newGridData.myGlobalIDs;            int    *newIdsPtr = newGlobalIds.get();
   std::shared_ptr<int> newNeighborhoodPtr = newGridData.neighborhoodPtr;  int    *newNeighPtrPtr = newNeighborhoodPtr.get();
 
   std::shared_ptr<double> X = gridData->myX;                              double *xPtr   = X.get();
   std::shared_ptr<double> V = gridData->cellVolume;                       double *vPtr   = V.get();
-    std::shared_ptr<double> A = gridData->myAngle;                          double *aPtr   = A.get();
+  std::shared_ptr<double> A = gridData->myAngle;                          double *aPtr   = A.get();
+  std::shared_ptr<double> N = gridData->myNodeType;                       double *nPtr   = N.get();
   std::shared_ptr<int> globalIds = gridData->myGlobalIDs;                 int    *idsPtr = globalIds.get();
   std::shared_ptr<int> neighborhoodPtr = gridData->neighborhoodPtr;       int    *neighPtrPtr = neighborhoodPtr.get();
   std::shared_ptr<int> neighborhood = gridData->neighborhood;             int    *neighPtr = neighborhood.get();
