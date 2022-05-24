@@ -171,7 +171,7 @@ namespace PdBondFilter
       int count = 0;
       for (int i = 0; i < lenNodes; i++)
       {
-        if (i > lenNodes - numFE)
+        if (i > lenNodes - numFE - 1)
         {
           mapping.push_back(count);
           count += topoList[count] + 1;
