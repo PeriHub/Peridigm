@@ -178,7 +178,7 @@ namespace PdBondFilter
         }
         else
         {
-          topoList.push_back(-1);
+          mapping.push_back(-1);
         }
       }
     };
