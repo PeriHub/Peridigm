@@ -86,8 +86,7 @@ namespace PeridigmNS {
                             const int numOwnedPoints,
                             const int* ownedIDs,
                             const int* topology,
-                            PeridigmNS::DataManager& dataManager,
-                            const int numElements);
+                            PeridigmNS::DataManager& dataManager);
 
     //! Evaluate the Cauchy stress (pure virtual function, must be implemented by derived correspondence material models).
     virtual void computeCauchyStress(const double* strain,
@@ -98,8 +97,7 @@ namespace PeridigmNS {
                               const int numOwnedPoints,
                               const int* ownedIDs,
                               const int* topology,
-                              PeridigmNS::DataManager& dataManager,
-                              const int numElements) const;
+                              PeridigmNS::DataManager& dataManager) const;
 //////////////////////////////////////////////////////////////////////////////////
 
 

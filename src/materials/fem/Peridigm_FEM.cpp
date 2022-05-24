@@ -158,8 +158,7 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
                             const int numOwnedPoints,
                             const int* ownedIDs,
                             const int* topology,
-                            PeridigmNS::DataManager& dataManager,
-                            const int numElements)
+                            PeridigmNS::DataManager& dataManager)
 {
   std::cout<<"init FEM"<<std::endl;
  // FEM::createLumbedMassesSomeHow()
@@ -221,9 +220,8 @@ void
 PeridigmNS::FEMMaterial::computeForce(const double dt,
                               const int numOwnedPoints,
                               const int* ownedIDs,
-                              const int* topologyTemporaryNotUsed,
-                              PeridigmNS::DataManager& dataManager,
-                              const int numElementsTemporaryNotUsed) const
+                              const int* topology,
+                              PeridigmNS::DataManager& dataManager) const
 {
   
     double *CauchyStressNP1, *modelCoordinates, *nodeAngles, *deformedCoor, *globalForce;
@@ -273,7 +271,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     //double* elNodalForces = &elNodalForceVector[0];
     
     double* weight = &weightVector[0];
-    int topoPtr = 0;
+    
     std::vector<double> JMat(9);
     double* J = &JMat[0];
     std::vector<double> JinvMat(9);
@@ -285,29 +283,12 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     // das wäre der Austausch für verschiedene Elementtypen
     // falsch
     int numElements = 3;
-    bool test = true;
-    std::vector<int> topologyVector(15);
-    int* topology = &topologyVector[0];
-    if (test){
-      topology[0] = 4;
-      topology[1] = 0;
-      topology[2] = 1;
-      topology[3] = 4;
-      topology[4] = 5;
-      topology[5] = 4;
-      topology[6] = 1;
-      topology[7] = 2;
-      topology[8] = 5;
-      topology[9] = 6;
-      topology[10] = 4;
-      topology[11] = 2;
-      topology[12] = 3;
-      topology[13] = 6;
-      topology[14] = 7;
-    }
+
+    
+    
 
     //FEM::getDisplacements(nnode,modelCoordinates, deformedCoor,dispNodal);
-    
+    int topoPtr = 8;
     for(int iID=0 ; iID<numElements ; ++iID){
       // for averaging the element number to which the node is connected has to be known
 

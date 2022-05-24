@@ -199,8 +199,7 @@ PeridigmNS::FEMElasticMaterial::initialize(const double dt,
                                           const int numOwnedPoints,
                                           const int* ownedIDs,
                                           const int* topology,
-                                          PeridigmNS::DataManager& dataManager,
-                                          const int numElements)
+                                          PeridigmNS::DataManager& dataManager)
 
 {
       
@@ -208,16 +207,13 @@ PeridigmNS::FEMElasticMaterial::initialize(const double dt,
                                       numOwnedPoints,
                                       ownedIDs,
                                       topology,
-                                      dataManager,
-                                      numElements);
+                                      dataManager);
 
                              
 }
 
 void
-PeridigmNS::FEMElasticMaterial::computeCauchyStress(const double* strain,                                                  
-                                                    double* sigmaInt
-                                                    ) const
+PeridigmNS::FEMElasticMaterial::computeCauchyStress(const double* strain, double* sigmaInt) const
 {
 
   

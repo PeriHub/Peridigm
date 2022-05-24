@@ -73,8 +73,7 @@ namespace PeridigmNS {
                             const int numOwnedPoints, 
                             const int* ownedIDs,
                             const int* topology,
-                            PeridigmNS::DataManager& dataManager,
-                            const int numElement);
+                            PeridigmNS::DataManager& dataManager);
     virtual void computeCauchyStress(const double* strain,                                                  
                                      double* sigmaInt) const;
     //! Returns the requested material property
