@@ -163,7 +163,7 @@ namespace PdBondFilter
   class PreDefinedTopologyFilter : public BondFilter
   {
   public:
-    PreDefinedTopologyFilter(int lenNodes, int numFE, std::vector<int> topoList) : BondFilter(false)
+    PreDefinedTopologyFilter(int lenNodes, int numFE, std::vector<int> topo) : BondFilter(false)
     {
     // algorithm maps id to element topology entry
     // the number of the following nodes are given there
@@ -174,7 +174,11 @@ namespace PdBondFilter
         if (i > lenNodes - numFE - 1)
         {
           mapping.push_back(count);
-          count += topoList[count] + 1;
+          
+          
+          for (int j = 0; j < topo[count] + 1; j++)
+            topoList.push_back(topo[count + j]);
+          count += topo[count] + 1;
         }
         else
         {
@@ -187,7 +191,7 @@ namespace PdBondFilter
     virtual void filterBonds(std::vector<int> &treeList, const double* pt, const std::size_t ptLocalId, const double* xOverlap, bool* markForExclusion);
 
   private:
-    bool idNotInTopology(const int uid, const int id, const std::vector<int> &topoList) const;
+    bool idNotInTopology(const int uid, const int id) const;
     std::vector<int> topoList;
     std::vector<int> mapping;
     int lenNodes;

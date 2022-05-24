@@ -248,19 +248,21 @@ namespace PdBondFilter
        *flagIter = 1;
        continue;
      }
-     if (idNotInTopology(uid, id, topoList))
+     if (idNotInTopology(uid, id))
      {
        *flagIter = 1;
      }
    }
   }
-  bool PreDefinedTopologyFilter::idNotInTopology(const int uid, const int id, const std::vector<int> &topoList) const
+  bool PreDefinedTopologyFilter::idNotInTopology(const int uid, const int id) const
   {
     bool check = true;
     // global how
     if (mapping[id] != -1){
+
       for (int i = 0; i < topoList[mapping[id]]; i++)
       {
+        
         if (uid == topoList[mapping[id] + i + 1])
         {
           check = false;
