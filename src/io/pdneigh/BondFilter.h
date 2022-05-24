@@ -187,7 +187,7 @@ namespace PdBondFilter
     virtual void filterBonds(std::vector<int> &treeList, const double* pt, const std::size_t ptLocalId, const double* xOverlap, bool* markForExclusion);
 
   private:
-    bool idNotInTopology(const int id, const int* topoList) const;
+    bool idNotInTopology(const int uid, const int id, const std::vector<int> &topoList) const;
     std::vector<int> topoList;
     std::vector<int> mapping;
     int lenNodes;

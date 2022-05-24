@@ -248,26 +248,30 @@ namespace PdBondFilter
        *flagIter = 1;
        continue;
      }
-     if (idNotInTopology(uid, &topoList[mapping[id]]))
+     if (idNotInTopology(uid, id, topoList))
      {
        *flagIter = 1;
      }
    }
- }
- bool PreDefinedTopologyFilter::idNotInTopology(const int id, const int* topoList) const
- {
-   bool check = true;
-   // global how
-   for (int i = 0; i < topoList[0]; i++)
-   {
-     if (id == topoList[i + 1])
-     {
-       check = false;
-       break;
-     }
-   }
-   return check;
- }
+  }
+  bool PreDefinedTopologyFilter::idNotInTopology(const int uid, const int id, const std::vector<int> &topoList) const
+  {
+    bool check = true;
+    // global how
+    if (mapping[id] != -1){
+      for (int i = 0; i < topoList[mapping[id]]; i++)
+      {
+        if (uid == topoList[mapping[id] + i + 1])
+        {
+          check = false;
+          break;
+        }
+      }
+    }
+    else {check = false;}
+    
+    return check;
+  }
   void TriangleFilter::filterBonds(std::vector<int> &treeList, const double* pt, const size_t ptLocalId, const double* xOverlap, bool* bondFlags)
   {
 
