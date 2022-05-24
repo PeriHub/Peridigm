@@ -261,12 +261,6 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   {
     for (unsigned int i = 0; i < blockIds.size(); ++i)
       uniqueBlockIds.insert(blockIds[i]);
-    if (numFE > 0)
-    {
-
-      std::shared_ptr<PdBondFilter::BondFilter> bondFilter(new PdBondFilter::PreDefinedTopologyFilter(uniqueBlockIds.size(), numFE, elementTopo));
-      bondFilters.push_back(bondFilter);
-    }
   }
 
   // Broadcast necessary data from root processor
