@@ -133,7 +133,7 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
   m_unrotatedCauchyStressFieldId      = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Unrotated_Cauchy_Stress");
   m_cauchyStressFieldId               = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Cauchy_Stress");
   m_partialStressFieldId              = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Partial_Stress");
-  m_nodeTypeFieldId                   = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Node_type");
+  m_nodeTypeFieldId                   = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Node_Type");
   
   
 
