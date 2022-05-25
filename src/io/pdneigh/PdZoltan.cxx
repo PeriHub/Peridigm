@@ -581,7 +581,7 @@ void zoltanQuery_packPointsMultiFunction
    // advance buffer pointer
     tmp += numBytes;
 
-    // cell volume
+    // node type
     numBytes = sizeof(double);
     void *nodeTypePtr = (void*)(&N[id]);
     memcpy((void*)tmp,nodeTypePtr,numBytes);
