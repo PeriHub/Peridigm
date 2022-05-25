@@ -296,6 +296,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   memcpy(decomp.cellVolume.get(), &volumes[0], numElements * sizeof(double));
   memcpy(decomp.myX.get(), &coordinates[0], 3 * numElements * sizeof(double));
   memcpy(decomp.myAngle.get(), &angles[0], 3 * numElements * sizeof(double));
+  // double, because the datamanage won't allow int
   memcpy(decomp.myNodeType.get(), &nodeType[0], numElements * sizeof(double));
   // Create a blockID vector in the current configuration
   // That is, the configuration prior to load balancing
