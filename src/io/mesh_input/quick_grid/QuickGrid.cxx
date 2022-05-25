@@ -174,7 +174,7 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
   // coordinates
   Array<double> X(numCells*dimension);
   // node type
-  Array<double> NodeType(dimension);  
+  Array<double> NodeType(numCells);  
   // angles
   Array<double> Angles(numCells*dimension);
   // volume
