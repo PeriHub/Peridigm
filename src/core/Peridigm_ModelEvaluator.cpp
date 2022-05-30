@@ -58,6 +58,7 @@ void
 PeridigmNS::ModelEvaluator::evalDamageModel(Teuchos::RCP<Workset> workset) const
 {
   const double dt = workset->timeStep;
+  const double currentTime = workset->currentTime;
   std::vector<PeridigmNS::Block>::iterator blockIt;
 
   // ---- Evaluate Damage ---
@@ -79,7 +80,8 @@ PeridigmNS::ModelEvaluator::evalDamageModel(Teuchos::RCP<Workset> workset) const
                                  ownedIDs,
                                  neighborhoodList,
                                  *dataManager,
-                                 blockInterfaceId);
+                                 blockInterfaceId,
+                                 currentTime);
       PeridigmNS::Timer::self().stopTimer("Evaluate Damage Model:Compute Damage");
     }
   }

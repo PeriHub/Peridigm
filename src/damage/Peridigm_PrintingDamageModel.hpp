@@ -89,7 +89,8 @@ namespace PeridigmNS
                   const int *ownedIDs,
                   const int *neighborhoodList,
                   PeridigmNS::DataManager &dataManager,
-                  int blockInterfaceId) const;
+                  int blockInterfaceId,
+                  const double currentTime) const;
 
   protected:
     //! Computes the distance between nodes (a1, a2, a3) and (b1, b2, b3).

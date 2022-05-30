@@ -97,7 +97,8 @@ namespace PeridigmNS {
                   const int* ownedIDs,
                   const int* neighborhoodList,
                   PeridigmNS::DataManager& dataManager,
-                  int blockInterfaceId)const ;
+                  int blockInterfaceId,
+                  const double currentTime)const ;
                   
 
     int checkDetachedNodes(

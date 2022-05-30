@@ -125,7 +125,8 @@ PeridigmNS::VonMisesStressDamageModel::computeDamage(const double dt,
                                                      const int* ownedIDs,
                                                      const int* neighborhoodList,
                                                      PeridigmNS::DataManager& dataManager,
-                                                     int blockInterfaceId = -1) const
+                                                     int blockInterfaceId = -1,
+                                                     const double currentTime = 0.0) const
 {
 
   double *vonMisesStress;

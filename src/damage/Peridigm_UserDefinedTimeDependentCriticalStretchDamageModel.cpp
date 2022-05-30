@@ -165,7 +165,8 @@ PeridigmNS::UserDefinedTimeDependentCriticalStretchDamageModel::computeDamage(co
                                                       const int* ownedIDs,
                                                       const int* neighborhoodList,
                                                       PeridigmNS::DataManager& dataManager,
-                                                      int blockInterfaceId = -1) const 
+                                                      int blockInterfaceId = -1,
+                                                      const double currentTime = 0.0) const 
 {
   double *x, *y, *damage, *bondDamageN, *bondDamageNP1, *deltaTemperature;//, *step;
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
