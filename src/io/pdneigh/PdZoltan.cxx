@@ -490,6 +490,8 @@ void zoltanQuery_pointSizeInBytes
     numBytesPerPoint += bytesPerDouble;
     // angles
     numBytesPerPoint += dimension*bytesPerDouble;
+    // pointTime
+    numBytesPerPoint += bytesPerDouble;
         // numNeighbors
     numBytesPerPoint += bytesPerInt;
     // neighbor list
@@ -548,6 +550,7 @@ void zoltanQuery_packPointsMultiFunction
   double *X = gridData->myX.get();
   double *V = gridData->cellVolume.get();
   double *A = gridData->myAngle.get();
+  double *PT = gridData->pointTime.get();
   
     int *neighborList = gridData->neighborhood.get();
   int *neighborListPtr = gridData->neighborhoodPtr.get();
@@ -584,6 +587,13 @@ void zoltanQuery_packPointsMultiFunction
     numBytes = dimension*sizeof(double);
     void *angPtr = (void*)(&A[dimension*id]);
     memcpy((void*)tmp,angPtr,numBytes);
+    
+    // advance buffer pointer
+    tmp += numBytes;
+    // point times
+    numBytes = sizeof(double);
+    void *pointTimePtr = (void*)(&PT[id]);
+    memcpy((void*)tmp,pointTimePtr,numBytes);
 
     // advance buffer pointer
     tmp += numBytes;
@@ -655,12 +665,14 @@ void zoltanQuery_unPackPointsMultiFunction
   std::shared_ptr<double> newX = newGridData.myX;                         double *newXPtr   = newX.get();
   std::shared_ptr<double> newV = newGridData.cellVolume;                  double *newVPtr   = newV.get();
   std::shared_ptr<double> newA = newGridData.myAngle;                     double *newAPtr   = newA.get();
+  std::shared_ptr<double> newPT = newGridData.pointTime;                  double *newPTPtr  = newPT.get();
   std::shared_ptr<int> newGlobalIds = newGridData.myGlobalIDs;            int    *newIdsPtr = newGlobalIds.get();
   std::shared_ptr<int> newNeighborhoodPtr = newGridData.neighborhoodPtr;  int    *newNeighPtrPtr = newNeighborhoodPtr.get();
 
   std::shared_ptr<double> X = gridData->myX;                              double *xPtr   = X.get();
   std::shared_ptr<double> V = gridData->cellVolume;                       double *vPtr   = V.get();
     std::shared_ptr<double> A = gridData->myAngle;                          double *aPtr   = A.get();
+    std::shared_ptr<double> PT = gridData->pointTime;                       double *ptPtr  = PT.get();
   std::shared_ptr<int> globalIds = gridData->myGlobalIDs;                 int    *idsPtr = globalIds.get();
   std::shared_ptr<int> neighborhoodPtr = gridData->neighborhoodPtr;       int    *neighPtrPtr = neighborhoodPtr.get();
   std::shared_ptr<int> neighborhood = gridData->neighborhood;             int    *neighPtr = neighborhood.get();
@@ -682,6 +694,10 @@ void zoltanQuery_unPackPointsMultiFunction
             }
       newXPtr+=dimension;
       newAPtr+=dimension;
+
+      // pointTime
+      *newPTPtr = *ptPtr;
+      newPTPtr++;
 
       // volume
       *newVPtr = *vPtr;
@@ -762,6 +778,16 @@ void zoltanQuery_unPackPointsMultiFunction
     tmp += numBytes;
     newVPtr++;
     totalNumBytes -= numBytes;
+
+    // point time
+    numBytes = sizeof(double);
+    memcpy((void*)newPTPtr,(void*)tmp,numBytes);
+    // 1) advance buffer pointer and volume pointer
+    // 2) decrement number of bytes
+    tmp += numBytes;
+    newPTPtr++;
+    totalNumBytes -= numBytes;
+
     // angle
     numBytes = dimension*sizeof(double);
     memcpy((void*)newAPtr,(void*)tmp,numBytes);
@@ -810,6 +836,7 @@ void zoltanQuery_unPackPointsMultiFunction
   gridData->myX = newX;
   gridData->cellVolume = newV;
   gridData->myAngle = newA;
+  gridData->pointTime = newPT;
   gridData->neighborhood = newNeighborhood.get_shared_ptr();
   gridData->neighborhoodPtr = newNeighborhoodPtr;
   gridData->exportFlag = newGridData.exportFlag;
@@ -842,6 +869,8 @@ int computeSizeNewNeighborhoodList(int initialValue, int numImport, int *idx, ch
     int numBytes = dimension*sizeof(double);
     // angles
     numBytes += dimension*sizeof(double);
+    // point time
+    numBytes += sizeof(double);
     // cell volume
     numBytes += sizeof(double);
     // move pointer

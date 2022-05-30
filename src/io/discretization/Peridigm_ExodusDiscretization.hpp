@@ -82,6 +82,8 @@ namespace PeridigmNS {
     virtual Teuchos::RCP<Epetra_Vector> getInitialX() const;
     //! PLACEHOLDER for get the point angles; not yet supported for Exodus; please use text file discretization
     virtual Teuchos::RCP<Epetra_Vector> getPointAngle() const;
+    //! PLACEHOLDER for get the point time; not yet supported for Exodus; please use text file discretization
+    virtual Teuchos::RCP<Epetra_Vector> getPointTime() const;
     //! Get the horizon for each point
     virtual Teuchos::RCP<Epetra_Vector> getHorizon() const;
 
@@ -189,6 +191,8 @@ namespace PeridigmNS {
     Teuchos::RCP<Epetra_Vector> initialX;
     //! Vector containing point angles --> not yet supported for Exodus; please use text file discretization
     Teuchos::RCP<Epetra_Vector> pointAngle;
+    //! Vector containing point time --> not yet supported for Exodus; please use text file discretization
+    Teuchos::RCP<Epetra_Vector> pointTime;
     //! Vector containing horizons
     Teuchos::RCP<Epetra_Vector> horizonForEachPoint;
 

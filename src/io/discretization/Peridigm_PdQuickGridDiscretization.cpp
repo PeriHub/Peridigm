@@ -325,6 +325,11 @@ PeridigmNS::PdQuickGridDiscretization::getPointAngle() const
   return pointAngle;
 }
 Teuchos::RCP<Epetra_Vector>
+PeridigmNS::PdQuickGridDiscretization::getPointTime() const
+{// PLACEHOLDER; not yet supported for PdQuickGrid; please use text file discretization
+  return pointTime;
+}
+Teuchos::RCP<Epetra_Vector>
 PeridigmNS::PdQuickGridDiscretization::getHorizon() const
 {
   return horizonForEachPoint;

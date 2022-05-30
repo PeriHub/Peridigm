@@ -80,6 +80,8 @@ namespace PeridigmNS {
     virtual Teuchos::RCP<Epetra_Vector> getInitialX() const;
    //! Get point angle
     virtual Teuchos::RCP<Epetra_Vector> getPointAngle() const;
+   //! Get point time
+    virtual Teuchos::RCP<Epetra_Vector> getPointTime() const;
     //! Get the horizon value for each point.
     virtual Teuchos::RCP<Epetra_Vector> getHorizon() const;
 
@@ -168,6 +170,9 @@ namespace PeridigmNS {
     
     //! Vector containing the point angles
     Teuchos::RCP<Epetra_Vector> pointAngle;
+
+    //! Vector containing the point times
+    Teuchos::RCP<Epetra_Vector> pointTime;
     
     //! Vector containing horizons
     Teuchos::RCP<Epetra_Vector> horizonForEachPoint;

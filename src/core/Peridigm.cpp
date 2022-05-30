@@ -299,6 +299,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   blockIdFieldId                     = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Block_Id");
   horizonFieldId                     = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Horizon");
   volumeFieldId                      = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume");
+  pointTimeFieldId                   = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Point_Time");
 
   if(analysisHasMultiphysics){
     fluidPressureYFieldId            = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Fluid_Pressure_Y");
@@ -484,6 +485,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   // \todo Replace this with a query to the requested output fields, which is why we're forcing this allocation.
   auxiliaryFieldIds.push_back(modelCoordinatesFieldId);
   auxiliaryFieldIds.push_back(anglesFieldId);
+  auxiliaryFieldIds.push_back(pointTimeFieldId);
   auxiliaryFieldIds.push_back(coordinatesFieldId);
   auxiliaryFieldIds.push_back(displacementFieldId);
   auxiliaryFieldIds.push_back(velocityFieldId);
@@ -563,6 +565,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     blockIt->importData(peridigmDiscretization->getCellVolume(), volumeFieldId,           PeridigmField::STEP_NONE, Insert);
     // Warning angles work only for text files and not for other discretizations
     blockIt->importData(peridigmDiscretization->getPointAngle(),   anglesFieldId, PeridigmField::STEP_NONE, Insert);
+    blockIt->importData(peridigmDiscretization->getPointTime(), pointTimeFieldId,           PeridigmField::STEP_NONE, Insert);
     blockIt->importData(peridigmDiscretization->getInitialX(),   modelCoordinatesFieldId, PeridigmField::STEP_NONE, Insert);
     blockIt->importData(peridigmDiscretization->getInitialX(),   coordinatesFieldId,      PeridigmField::STEP_N,    Insert);
     blockIt->importData(peridigmDiscretization->getInitialX(),   coordinatesFieldId,      PeridigmField::STEP_NP1,  Insert);

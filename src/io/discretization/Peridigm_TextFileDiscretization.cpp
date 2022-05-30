@@ -105,6 +105,8 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
 
   // fill cell volumes
   cellVolume = Teuchos::rcp(new Epetra_Vector(Copy,*oneDimensionalMap,decomp.cellVolume.get()) );
+  // fill point time
+  pointTime = Teuchos::rcp(new Epetra_Vector(Copy,*oneDimensionalMap,decomp.pointTime.get()) );
 
   // find the minimum element radius
   for(int i=0 ; i<cellVolume->MyLength() ; ++i){
@@ -135,6 +137,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   vector<double> volumes;
   vector<int> blockIds;
   vector<double> angles;
+  vector<double> pointTime;
 
   // Read the text file on the root processor
   if(myPID == 0){
@@ -154,10 +157,12 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
         // Check for obvious problems with the data
         // Adapt to coordinate system and without --> to check
         string msg = "\n**** Error parsing text file, invalid line: " + str + "\n";
-        TEUCHOS_TEST_FOR_TERMINATION(data.size() != 5 && data.size() != 8, msg);
+        TEUCHOS_TEST_FOR_TERMINATION(data.size() != 5 && data.size() != 6 && data.size() != 8, msg);
         
         bool anglesImport = false;
         if (data.size() == 8) anglesImport = true;
+        bool timeImport = false;
+        if (data.size() == 6) timeImport = true;
         // Store the coordinates, block id, volumes and angles
         coordinates.push_back(data[0]);
         coordinates.push_back(data[1]);
@@ -173,6 +178,12 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
             angles.push_back(0.0);
             angles.push_back(0.0);
             angles.push_back(0.0);
+        }
+        if (timeImport == true){
+            pointTime.push_back(data[5]);
+        }
+        else{
+            pointTime.push_back(0.0);
         }
         
       }
@@ -221,6 +232,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   memcpy(decomp.cellVolume.get(), &volumes[0], numElements*sizeof(double)); 
   memcpy(decomp.myX.get(), &coordinates[0], 3*numElements*sizeof(double));
   memcpy(decomp.myAngle.get(), &angles[0], 3*numElements*sizeof(double));
+  memcpy(decomp.pointTime.get(), &pointTime[0], numElements*sizeof(double));
                                                               
   // Create a blockID vector in the current configuration
   // That is, the configuration prior to load balancing
@@ -487,6 +499,12 @@ Teuchos::RCP<Epetra_Vector>
 PeridigmNS::TextFileDiscretization::getPointAngle() const
 { 
   return pointAngle;
+}
+
+Teuchos::RCP<Epetra_Vector>
+PeridigmNS::TextFileDiscretization::getPointTime() const
+{
+  return pointTime;
 }
 
 Teuchos::RCP<Epetra_Vector>

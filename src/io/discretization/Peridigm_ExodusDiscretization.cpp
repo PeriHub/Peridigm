@@ -830,6 +830,12 @@ PeridigmNS::ExodusDiscretization::getPointAngle() const
 }
 
 Teuchos::RCP<Epetra_Vector>
+PeridigmNS::ExodusDiscretization::getPointTime() const
+{// PLACEHOLDER; not yet supported for Exodus; please use text file discretization
+  return pointTime;
+}
+
+Teuchos::RCP<Epetra_Vector>
 PeridigmNS::ExodusDiscretization::getHorizon() const
 {
   return horizonForEachPoint;

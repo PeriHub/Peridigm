@@ -117,7 +117,8 @@ enum Type {
   BOND_ENERGY,
   HORIZON,
   DETACHED_NODES,
-  LOCAL_ANGLES
+  LOCAL_ANGLES,
+  POINT_TIME
 };
 
 enum Length {
@@ -268,6 +269,7 @@ const Field_NS::FieldSpec FLUX_DENSITY      (Field_ENUM::FLUX_DENSITY,          
  * ELEMENT SCALAR FieldSpecs (scalar fields defined over elements)
  */
 const Field_NS::FieldSpec VOLUME                  (Field_ENUM::VOLUME,                       Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::CONSTANT, "Volume");
+const Field_NS::FieldSpec POINT_TIME              (Field_ENUM::POINT_TIME,                   Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::CONSTANT, "Point_Time");
 const Field_NS::FieldSpec DENSITY                 (Field_ENUM::DENSITY,                      Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::CONSTANT, "Density");
 const Field_NS::FieldSpec GID                     (Field_ENUM::GID,                          Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::CONSTANT, "Element_Id");
 const Field_NS::FieldSpec BLOCK_ID                (Field_ENUM::BLOCK_ID,                     Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::CONSTANT, "Block_Id");
@@ -335,6 +337,7 @@ struct FieldSpecMap {
     mymap[FLUX.getLabel()]                          = FLUX;
     mymap[FLUX_DENSITY.getLabel()]                  = FLUX_DENSITY;
     mymap[VOLUME.getLabel()]                        = VOLUME;
+    mymap[POINT_TIME.getLabel()]                    = POINT_TIME;
     mymap[DENSITY.getLabel()]                       = DENSITY;
     mymap[GID.getLabel()]                           = GID;
     mymap[BLOCK_ID.getLabel()]                      = BLOCK_ID;

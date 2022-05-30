@@ -107,6 +107,7 @@ namespace PeridigmNS
     // field ids for all relevant data
     std::vector<int> m_fieldIds;
     int m_volumeFieldId;
+    int m_pointTimeFieldId;
     int m_modelCoordinatesFieldId;
     int m_coordinatesFieldId;
     int m_damageFieldId;

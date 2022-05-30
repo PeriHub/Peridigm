@@ -68,6 +68,7 @@ PeridigmNS::PrintingDamageModel::PrintingDamageModel(const Teuchos::ParameterLis
   m_damageFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::ELEMENT, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Damage");
   m_bondDamageFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::BOND, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Bond_Damage");
   m_volumeFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume");
+  m_pointTimeFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Point_Time");
 
   if (m_applyThermalStrains)
     m_deltaTemperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature_Change");
@@ -77,6 +78,7 @@ PeridigmNS::PrintingDamageModel::PrintingDamageModel(const Teuchos::ParameterLis
   m_fieldIds.push_back(m_damageFieldId);
   m_fieldIds.push_back(m_bondDamageFieldId);
   m_fieldIds.push_back(m_volumeFieldId);
+  m_fieldIds.push_back(m_pointTimeFieldId);
   if (m_applyThermalStrains)
     m_fieldIds.push_back(m_deltaTemperatureFieldId);
 }
@@ -108,13 +110,14 @@ void PeridigmNS::PrintingDamageModel::computeDamage(const double dt,
                                                     int blockInterfaceId = -1,
                                                     const double currentTime = 0.0) const
 {
-  double *x, *y, *damage, *bondDamageN, *bondDamageNP1, *deltaTemperature, *vol;
+  double *x, *y, *damage, *bondDamageN, *bondDamageNP1, *deltaTemperature, *vol, *pointTime;
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
   dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&y);
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamageN);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
   dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&vol);
+  dataManager.getData(m_pointTimeFieldId, PeridigmField::STEP_NONE)->ExtractView(&pointTime);
 
   deltaTemperature = NULL;
   if (m_applyThermalStrains)
