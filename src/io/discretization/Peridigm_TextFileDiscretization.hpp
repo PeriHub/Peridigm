@@ -142,7 +142,7 @@ namespace PeridigmNS
                        std::vector<double> &angles,
                        std::vector<double> &horizon,
                        std::vector<int> &elementTopo,
-                       std::vector<int> &nodeType,
+                       std::vector<double> &nodeType,
                        int &numFE);
     QUICKGRID::Data getDecomp(const std::string &textFileName,
                               const std::string &topologyFileName,

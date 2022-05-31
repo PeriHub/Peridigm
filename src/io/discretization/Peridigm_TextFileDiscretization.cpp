@@ -145,18 +145,18 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
   // fill with local coordinate distribution
   pointAngle = Teuchos::rcp(new Epetra_Vector(Copy, *threeDimensionalMap, decomp.myAngle.get()));
   // fill with point or element separation
-  nodeType = Teuchos::rcp(new Epetra_Vector(Copy, *threeDimensionalMap, decomp.myNodeType.get()));
+  nodeType = Teuchos::rcp(new Epetra_Vector(Copy, *oneDimensionalMap, decomp.myNodeType.get()));
   // fill cell volumes
   cellVolume = Teuchos::rcp(new Epetra_Vector(Copy, *oneDimensionalMap, decomp.cellVolume.get()));
 
-  // find the minimum element radius
-  for (int i = 0; i < cellVolume->MyLength(); ++i)
-  {
-    double radius = pow(0.238732414637843 * (*cellVolume)[i], 0.33333333333333333);
-    if (radius < minElementRadius)
-      minElementRadius = radius;
-    if (radius > maxElementRadius)
-      maxElementRadius = radius;
+    // find the minimum element radius
+    for (int i = 0; i < cellVolume->MyLength(); ++i)
+    {
+      double radius = pow(0.238732414637843 * (*cellVolume)[i], 0.33333333333333333);
+      if (radius < minElementRadius)
+        minElementRadius = radius;
+      if (radius > maxElementRadius)
+        maxElementRadius = radius;
   }
   vector<double> localMin(1);
   vector<double> globalMin(1);
@@ -242,7 +242,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   vector<double> angles;
   vector<double> horizon_of_element;
   vector<int> elementTopo;
-  vector<int> nodeType;
+  vector<double> nodeType;
   getDiscretization(textFileName, coordinates, blockIds, volumes, angles);
   int numFE = 0;
   if (params->isParameter("Input FEM Topology File"))
@@ -425,7 +425,7 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string &fileName,
                                                        vector<double> &angles,
                                                        vector<double> &horizon,
                                                        vector<int> &elementTopo,
-                                                       vector<int> &nodeType,
+                                                       vector<double> &nodeType,
                                                        int &numFE)
 {
 
@@ -435,6 +435,7 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string &fileName,
     double coorAvg[3], angAvg[3], volAvg;
     int numOfFiniteElements;
     std::string testString = "";
+    for (unsigned int n = 1; n < blockIds.size(); n++)nodeType.push_back(1);
     if (fileName.compare(testString) != 0)
     {
       ifstream inFile(fileName.c_str());
@@ -443,8 +444,7 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string &fileName,
       {
         // defines points as points
         // this is needed to separate between virtual element points and real points
-        for (unsigned int n = 1; n < blockIds.size(); n++)nodeType.push_back(1);
-
+ 
         numOfFiniteElements += 1;
         string str;
         getline(inFile, str);

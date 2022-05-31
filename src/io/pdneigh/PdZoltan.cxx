@@ -456,7 +456,8 @@ void zoltanQuery_pointSizeInBytes
    * What are we packing up?  For each point:
    * 1)  coordinates:  size = dimension*sizeof(double)
    * 1a) volume:       size = sizeof(double)
-     * 1b) angles:       size = dimension*sizeof(double)
+   * 1b) node type:    size = sizeof(double)
+   * 1c) angles:       size = dimension*sizeof(double)
    * 2)  numNeighbors: size = sizeof(int)
    * 3)  neighbors:    size = numNeighbors*sizeof(int)
    */
@@ -486,11 +487,13 @@ void zoltanQuery_pointSizeInBytes
     // number of bytes per point
     // coordinates
     int numBytesPerPoint = dimension*bytesPerDouble;
+    // node type
+    numBytesPerPoint += bytesPerDouble;
     // volume
     numBytesPerPoint += bytesPerDouble;
     // angles
     numBytesPerPoint += dimension*bytesPerDouble;
-        // numNeighbors
+    // numNeighbors
     numBytesPerPoint += bytesPerInt;
     // neighbor list
     numBytesPerPoint += numNeigh*bytesPerInt;
@@ -681,7 +684,7 @@ void zoltanQuery_unPackPointsMultiFunction
   int newSizeNeighborhoodList = 0;
 
   // Copy over points from old gridData that have not been exported
-  for(size_t p=0;p<gridData->numPoints;p++, exportPtr++, neighPtrPtr++, vPtr++, idsPtr++){
+  for(size_t p=0;p<gridData->numPoints;p++, exportPtr++, neighPtrPtr++, nPtr++, vPtr++, idsPtr++){
     // this means we keep this point
     if(0==*exportPtr){
 
@@ -692,6 +695,10 @@ void zoltanQuery_unPackPointsMultiFunction
             }
       newXPtr+=dimension;
       newAPtr+=dimension;
+
+      // node type
+      *newNPtr = *nPtr;
+      newNPtr++;
 
       // volume
       *newVPtr = *vPtr;
@@ -763,7 +770,14 @@ void zoltanQuery_unPackPointsMultiFunction
     tmp += numBytes;
     newXPtr+=dimension;
     totalNumBytes -= numBytes;
-
+    // node type
+    numBytes = sizeof(double);
+    memcpy((void*)newNPtr,(void*)tmp,numBytes);
+    // 1) advance buffer pointer and volume pointer
+    // 2) decrement number of bytes
+    tmp += numBytes;
+    newNPtr++;
+    totalNumBytes -= numBytes;
     // cell volume
     numBytes = sizeof(double);
     memcpy((void*)newVPtr,(void*)tmp,numBytes);
@@ -818,6 +832,7 @@ void zoltanQuery_unPackPointsMultiFunction
   gridData->numExport = 0;
   gridData->myGlobalIDs = newGlobalIds;
   gridData->myX = newX;
+  gridData->myNodeType = newN;
   gridData->cellVolume = newV;
   gridData->myAngle = newA;
   gridData->neighborhood = newNeighborhood.get_shared_ptr();

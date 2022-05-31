@@ -219,18 +219,20 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
 
   // extract the topology list from neighborhoodList
   double *nodeType;
-  dataManager.getData(m_nodeTypeFieldId, PeridigmField::STEP_NP1)->ExtractView(&nodeType);
+  dataManager.getData(m_nodeTypeFieldId, PeridigmField::STEP_NONE)->ExtractView(&nodeType);
   numElements = 0;
   int topoPtr = 0;
   for(int i=0 ; i<numOwnedPoints ; ++i){
     
     int numNodes = neighborhoodList[topoPtr];
     topoPtr++;
+    std::cout << i<< " "<<nodeType[i] << std::endl;
     if (nodeType[i]==2){
       numElements += 1;
       topology.push_back(numNodes);
       for(int j=0 ; j<numNodes ; ++j){
         topology.push_back(neighborhoodList[topoPtr]);
+        std::cout << neighborhoodList[topoPtr] << std::endl;
         topoPtr++;
         }
     }
@@ -311,7 +313,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     
 
     //FEM::getDisplacements(nnode,modelCoordinates, deformedCoor,dispNodal);
-    int topoPtr = 8;
+    int topoPtr = 0;
     for(int iID=0 ; iID<numElements ; ++iID){
       // for averaging the element number to which the node is connected has to be known
 

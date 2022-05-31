@@ -122,8 +122,10 @@ typedef struct {
    * as the cell volume of the master;
    *
    * myX: cell coordinates
-     
+   *
    * myAngle: Point Angles
+   *
+   * myNodeType: node type (1-point; 2-Finite Element or given topology)
    */
   std::shared_ptr<double> theta, cellVolume, myX, myAngle, myNodeType;
 } AxisSymmetricWedgeData;

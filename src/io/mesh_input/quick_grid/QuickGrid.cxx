@@ -197,12 +197,12 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
   double *vPtr = V.get();
   int *gIdsPtr = globalIds.get();
   int *nPtr = neighborhoodPtr.get();
-   char *exportFlagPtr = exportFlag.get();
+  char *exportFlagPtr = exportFlag.get();
   for(size_t p=0;p<numCells;p++){
 
     for(size_t d=0;d<dimension;d++){
       xPtr[p*dimension+d]=0;
-            anglesPtr[p*dimension+d]=0;}
+      anglesPtr[p*dimension+d]=0;}
     vPtr[p]=0;
     nodeTypePtr[p]=0;
     gIdsPtr[p]=0;
