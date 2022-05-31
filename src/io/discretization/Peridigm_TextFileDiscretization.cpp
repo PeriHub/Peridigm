@@ -435,7 +435,7 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string &fileName,
     double coorAvg[3], angAvg[3], volAvg;
     int numOfFiniteElements;
     std::string testString = "";
-    for (unsigned int n = 1; n < blockIds.size(); n++)nodeType.push_back(1);
+    for (unsigned int n = 0; n < blockIds.size(); n++)nodeType.push_back(1);
     if (fileName.compare(testString) != 0)
     {
       ifstream inFile(fileName.c_str());
