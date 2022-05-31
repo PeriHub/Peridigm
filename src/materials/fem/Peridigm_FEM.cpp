@@ -226,13 +226,12 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
     
     int numNodes = neighborhoodList[topoPtr];
     topoPtr++;
-    std::cout << i<< " "<<nodeType[i] << std::endl;
+    
     if (nodeType[i]==2){
       numElements += 1;
       topology.push_back(numNodes);
       for(int j=0 ; j<numNodes ; ++j){
         topology.push_back(neighborhoodList[topoPtr]);
-        std::cout << neighborhoodList[topoPtr] << std::endl;
         topoPtr++;
         }
     }
