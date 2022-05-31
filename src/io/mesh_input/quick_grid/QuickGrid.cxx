@@ -240,7 +240,7 @@ QuickGridData allocatePdGridData(size_t numCells, size_t dimension){
   gridData.myGlobalIDs = globalIds.get_shared_ptr();
   gridData.myX = X.get_shared_ptr();
   gridData.myAngle = Angles.get_shared_ptr();
-  gridData.pointTime = PointTime.get_shared_ptr();
+  gridData.myPointTime = PointTime.get_shared_ptr();
   gridData.cellVolume = V.get_shared_ptr();
   gridData.neighborhood = neighborhoodList.get_shared_ptr();
   gridData.neighborhoodPtr = neighborhoodPtr.get_shared_ptr();

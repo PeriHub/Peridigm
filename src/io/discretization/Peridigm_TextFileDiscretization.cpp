@@ -106,7 +106,7 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
   // fill cell volumes
   cellVolume = Teuchos::rcp(new Epetra_Vector(Copy,*oneDimensionalMap,decomp.cellVolume.get()) );
   // fill point time
-  pointTime = Teuchos::rcp(new Epetra_Vector(Copy,*oneDimensionalMap,decomp.pointTime.get()) );
+  pointTime = Teuchos::rcp(new Epetra_Vector(Copy,*oneDimensionalMap,decomp.myPointTime.get()) );
 
   // find the minimum element radius
   for(int i=0 ; i<cellVolume->MyLength() ; ++i){
@@ -232,7 +232,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   memcpy(decomp.cellVolume.get(), &volumes[0], numElements*sizeof(double)); 
   memcpy(decomp.myX.get(), &coordinates[0], 3*numElements*sizeof(double));
   memcpy(decomp.myAngle.get(), &angles[0], 3*numElements*sizeof(double));
-  memcpy(decomp.pointTime.get(), &pointTime[0], numElements*sizeof(double));
+  memcpy(decomp.myPointTime.get(), &pointTime[0], numElements*sizeof(double));
                                                               
   // Create a blockID vector in the current configuration
   // That is, the configuration prior to load balancing

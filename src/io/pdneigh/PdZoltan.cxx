@@ -550,7 +550,7 @@ void zoltanQuery_packPointsMultiFunction
   double *X = gridData->myX.get();
   double *V = gridData->cellVolume.get();
   double *A = gridData->myAngle.get();
-  double *PT = gridData->pointTime.get();
+  double *PT = gridData->myPointTime.get();
   
     int *neighborList = gridData->neighborhood.get();
   int *neighborListPtr = gridData->neighborhoodPtr.get();
@@ -665,14 +665,14 @@ void zoltanQuery_unPackPointsMultiFunction
   std::shared_ptr<double> newX = newGridData.myX;                         double *newXPtr   = newX.get();
   std::shared_ptr<double> newV = newGridData.cellVolume;                  double *newVPtr   = newV.get();
   std::shared_ptr<double> newA = newGridData.myAngle;                     double *newAPtr   = newA.get();
-  std::shared_ptr<double> newPT = newGridData.pointTime;                  double *newPTPtr  = newPT.get();
+  std::shared_ptr<double> newPT = newGridData.myPointTime;                  double *newPTPtr  = newPT.get();
   std::shared_ptr<int> newGlobalIds = newGridData.myGlobalIDs;            int    *newIdsPtr = newGlobalIds.get();
   std::shared_ptr<int> newNeighborhoodPtr = newGridData.neighborhoodPtr;  int    *newNeighPtrPtr = newNeighborhoodPtr.get();
 
   std::shared_ptr<double> X = gridData->myX;                              double *xPtr   = X.get();
   std::shared_ptr<double> V = gridData->cellVolume;                       double *vPtr   = V.get();
     std::shared_ptr<double> A = gridData->myAngle;                          double *aPtr   = A.get();
-    std::shared_ptr<double> PT = gridData->pointTime;                       double *ptPtr  = PT.get();
+    std::shared_ptr<double> PT = gridData->myPointTime;                       double *ptPtr  = PT.get();
   std::shared_ptr<int> globalIds = gridData->myGlobalIDs;                 int    *idsPtr = globalIds.get();
   std::shared_ptr<int> neighborhoodPtr = gridData->neighborhoodPtr;       int    *neighPtrPtr = neighborhoodPtr.get();
   std::shared_ptr<int> neighborhood = gridData->neighborhood;             int    *neighPtr = neighborhood.get();
@@ -683,7 +683,7 @@ void zoltanQuery_unPackPointsMultiFunction
   int newSizeNeighborhoodList = 0;
 
   // Copy over points from old gridData that have not been exported
-  for(size_t p=0;p<gridData->numPoints;p++, exportPtr++, neighPtrPtr++, vPtr++, idsPtr++){
+  for(size_t p=0;p<gridData->numPoints;p++, exportPtr++, neighPtrPtr++, vPtr++, ptPtr++, idsPtr++){
     // this means we keep this point
     if(0==*exportPtr){
 
@@ -836,7 +836,7 @@ void zoltanQuery_unPackPointsMultiFunction
   gridData->myX = newX;
   gridData->cellVolume = newV;
   gridData->myAngle = newA;
-  gridData->pointTime = newPT;
+  gridData->myPointTime = newPT;
   gridData->neighborhood = newNeighborhood.get_shared_ptr();
   gridData->neighborhoodPtr = newNeighborhoodPtr;
   gridData->exportFlag = newGridData.exportFlag;
