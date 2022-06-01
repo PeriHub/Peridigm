@@ -248,20 +248,19 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
                               PeridigmNS::DataManager& dataManager) const
 {
   
-    double *CauchyStressNP1, *modelCoordinates, *nodeAngles, *deformedCoor, *globalForce;
+    double *CauchyStressNP1, *undeformedCoor, *nodeAngles, *deformedCoor, *globalForce;
     //double *displacements;
 
     dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&CauchyStressNP1);
 
     dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&nodeAngles);
-    dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&modelCoordinates);
+    dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&undeformedCoor);
     dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&deformedCoor);
    // dataManager.getData(m_displacementFieldId, PeridigmField::STEP_NP1)->ExtractView(&displacements);
     dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&globalForce);
     double *volume;
     dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&volume);
     bool rotation = false;
-    const double* nodalCoor = modelCoordinates;
    // double* disp = displacements;
     double* force = globalForce;
     double* sigmaNP1 = CauchyStressNP1;
@@ -324,11 +323,11 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         globalId = topology[topoPtr + n];
         for(int i=0 ; i<3 ; ++i){
         
-          elNodalCoor[3*n+i]   = nodalCoor[3*globalId+i];       
-          dispNodal[3*n+i]   = deformedCoor[3*globalId+i]   - elNodalCoor[3*n+i]  ;  
-          
+          elNodalCoor[3*n+i]   = deformedCoor[3*globalId+i];       
+          dispNodal[3*n+i]     = deformedCoor[3*globalId+i] - undeformedCoor[3*globalId+i]  ;
+    
         }
-        
+        //std::cout <<iID <<" " <<n<<" " << dispNodal[3 * n] << std::endl;
         sigmaNP1[9*elementID  ] = 0.0;sigmaNP1[9*elementID+1] = 0.0; sigmaNP1[9*elementID+2] = 0.0;
         sigmaNP1[9*elementID+3] = 0.0;sigmaNP1[9*elementID+4] = 0.0; sigmaNP1[9*elementID+5] = 0.0;
         sigmaNP1[9*elementID+6] = 0.0;sigmaNP1[9*elementID+7] = 0.0; sigmaNP1[9*elementID+8] = 0.0;
@@ -340,9 +339,9 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         int intPointPtr = jID*numElemNodes;
         // only if nodes and integration points are equal the topology is suitable here.
 
-        detJ=FEM::getJacobian(Bx,By,Bz,numElemNodes,intPointPtr,elNodalCoor, weight[jID], twoD, J, Jinv);
+        detJ=FEM::getJacobian(Bx, By, Bz, numElemNodes, intPointPtr, elNodalCoor, weight[jID], twoD, J, Jinv);
         
-        FEM::computeStrain(Bx,By,Bz,dispNodal, intPointPtr, numElemNodes, Jinv, twoD, strain); 
+        FEM::computeStrain(Bx, By, Bz, dispNodal, intPointPtr, numElemNodes, Jinv, twoD, strain); 
         
         //https://www.continuummechanics.org/stressxforms.html
         // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
@@ -360,9 +359,18 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         // has to be done for each integration point
         // it adds up the different parts of each integration point resulting element force
         for (int i=0 ; i<9 ; ++i){
-          sigmaNP1[9 * elementID + i] += sigmaInt[i];
+          sigmaNP1[9 * elementID + i] += *(sigmaInt+i) ;
+          force[3 * elementID + i] = 0.0;
         }
-
+      }
+      for(int n=0 ; n<numElemNodes ; ++n){   
+        globalId = topology[topoPtr + n];     
+        for (int i=0 ; i<3 ; ++i){
+            force[3 * elementID + i] += force[3 * globalId + i] / numElemNodes;
+        }
+        for(int i=0 ; i<9 ; ++i){
+          sigmaNP1[9 * globalId + i] = sigmaNP1[9 * elementID + i];
+        }
       }
       //FEM::setGlobalForces(numElemNodes, topoPtr, topology, elNodalForces, force);  
         //topology -= numNeigh;
@@ -372,7 +380,8 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
       
       //  for sigmaNP1[9*elementID  ]
       
-      
+
+
       topoPtr+=numElemNodes;
  
  
