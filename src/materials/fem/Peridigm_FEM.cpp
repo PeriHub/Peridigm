@@ -216,8 +216,6 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
     }
   }
   FEM::setWeights(numIntDir,twoD,weightsx,weightsy,weightsz,weights);
-
-  // extract the topology list from neighborhoodList
   double *nodeType;
   dataManager.getData(m_nodeTypeFieldId, PeridigmField::STEP_NONE)->ExtractView(&nodeType);
   numElements = 0;
@@ -229,6 +227,7 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
     
     if (nodeType[i]==2){
       numElements += 1;
+      topology.push_back(i);
       topology.push_back(numNodes);
       for(int j=0 ; j<numNodes ; ++j){
         topology.push_back(neighborhoodList[topoPtr]);
@@ -237,6 +236,9 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
     }
     else{topoPtr+=numNodes;}
   }
+
+  
+  
 }
 void
 PeridigmNS::FEMMaterial::computeForce(const double dt,
@@ -272,9 +274,11 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     std::vector<double> sigmaIntVector(9);
     double* sigmaInt = &sigmaIntVector[0];
 
-
-  
-    
+  // how in init?
+    //double *nodeType;
+    //dataManager.getData(m_nodeTypeFieldId, PeridigmField::STEP_NONE)->ExtractView(&nodeType);
+    //FEM::getTopology(numOwnedPoints, neighborhoodList, nodeType, numElements, topology);
+      
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     // for higher order it has to be adapted
     // it is a full integration
@@ -302,41 +306,34 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     double* Jinv = &JinvMat[0];
     double detJ = 0.0;
     int globalId, numElemNodes;
+    std::cout << numElements << "  " << topology[0] << std::endl;
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // irgendwie in die init?
-    // das wäre der Austausch für verschiedene Elementtypen
-    // falsch
-
-
-    
-    
-
     //FEM::getDisplacements(nnode,modelCoordinates, deformedCoor,dispNodal);
     int topoPtr = 0;
+    int elementID = 0;
     for(int iID=0 ; iID<numElements ; ++iID){
       // for averaging the element number to which the node is connected has to be known
-
+      elementID = topology[topoPtr];
+      topoPtr++;
       numElemNodes = topology[topoPtr];
       topoPtr++;
-      angles[0] = 0.0;angles[1] = 0.0;angles[2] = 0.0;
-      
+      angles[0] = nodeAngles[3*elementID]; // element angle is already the average of all element nodes            
+      angles[1] = nodeAngles[3*elementID+1]; // element angle is already the average of all element nodes            
+      angles[2] = nodeAngles[3*elementID+2]; // element angle is already the average of all element nodes            
       for(int n=0 ; n<numElemNodes ; ++n){
         globalId = topology[topoPtr + n];
-        elNodalCoor[3*n]   = nodalCoor[3*globalId];
-        elNodalCoor[3*n+1] = nodalCoor[3*globalId+1];
-        elNodalCoor[3*n+2] = nodalCoor[3*globalId+2];
-        //elNodalForces[3*n]   = 0.0;
-        //elNodalForces[3*n+1] = 0.0;
-        //elNodalForces[3*n+2] = 0.0;
-        dispNodal[3*n]   = deformedCoor[3*globalId]   - elNodalCoor[3*n]  ;  
-    
+        for(int i=0 ; i<3 ; ++i){
         
-        dispNodal[3*n+1] = deformedCoor[3*globalId+1] - elNodalCoor[3*n+1];
-        dispNodal[3*n+2] = deformedCoor[3*globalId+2] - elNodalCoor[3*n+2];
-        sigmaNP1[9*globalId  ] = 0.0;sigmaNP1[9*globalId+1] = 0.0; sigmaNP1[9*globalId+2] = 0.0;
-        sigmaNP1[9*globalId+3] = 0.0;sigmaNP1[9*globalId+4] = 0.0; sigmaNP1[9*globalId+5] = 0.0;
-        sigmaNP1[9*globalId+6] = 0.0;sigmaNP1[9*globalId+7] = 0.0; sigmaNP1[9*globalId+8] = 0.0;
-        angles[0] += nodeAngles[3*globalId]/numElemNodes;angles[1] += nodeAngles[3*globalId+1]/numElemNodes;angles[2] += nodeAngles[3*globalId+2]/numElemNodes;
+          elNodalCoor[3*n+i]   = nodalCoor[3*globalId+i];       
+          dispNodal[3*n+i]   = deformedCoor[3*globalId+i]   - elNodalCoor[3*n+i]  ;  
+          
+        }
+        
+        sigmaNP1[9*elementID  ] = 0.0;sigmaNP1[9*elementID+1] = 0.0; sigmaNP1[9*elementID+2] = 0.0;
+        sigmaNP1[9*elementID+3] = 0.0;sigmaNP1[9*elementID+4] = 0.0; sigmaNP1[9*elementID+5] = 0.0;
+        sigmaNP1[9*elementID+6] = 0.0;sigmaNP1[9*elementID+7] = 0.0; sigmaNP1[9*elementID+8] = 0.0;
+        
+
       }
       
       for (int jID=0 ; jID<numInt ; ++jID){
@@ -362,13 +359,19 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         FEM::getNodalForce(Bx, By, Bz, intPointPtr, numElemNodes, topoPtr, &topology[0], detJ, Jinv, twoD, sigmaInt, volume, force);
         // has to be done for each integration point
         // it adds up the different parts of each integration point resulting element force
-        
+        for (int i=0 ; i<9 ; ++i){
+          sigmaNP1[9 * elementID + i] += sigmaInt[i];
+        }
 
       }
       //FEM::setGlobalForces(numElemNodes, topoPtr, topology, elNodalForces, force);  
         //topology -= numNeigh;
               // avarage stresses
               // sigmaNP1 /= numInt;
+      //for (int i=0 ; i<9 ; ++i){
+      
+      //  for sigmaNP1[9*elementID  ]
+      
       
       topoPtr+=numElemNodes;
  

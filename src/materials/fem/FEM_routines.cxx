@@ -162,6 +162,36 @@ double* Bxi
     FEM::derivativeShapeFunctionsLagrangeRecursive(Bxi,  Nxi,  order, xi, elCoor);
 
 }
+void getTopology
+(
+const int numOwnedPoints,
+const int* neighborhoodList,
+const double* nodeType,
+int numElements,
+std::vector<int> topology
+)
+{
+  numElements = 0;
+  int topoPtr = 0;
+  for(int i=0 ; i<numOwnedPoints ; ++i){
+    
+    int numNodes = neighborhoodList[topoPtr];
+    topoPtr++;
+    
+    if (nodeType[i]==2){
+      numElements += 1;
+      topology.push_back(i);
+      topology.push_back(numNodes);
+      for(int j=0 ; j<numNodes ; ++j){
+        topology.push_back(neighborhoodList[topoPtr]);
+        topoPtr++;
+        }
+    }
+    else{topoPtr+=numNodes;}
+  }
+
+}
+
 
 
 

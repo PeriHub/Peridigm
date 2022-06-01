@@ -100,15 +100,15 @@ namespace PeridigmNS {
                               PeridigmNS::DataManager& dataManager) const;
 //////////////////////////////////////////////////////////////////////////////////
 
-  std::vector<int> topology;
-  int numElements;
+
   protected:
     double m_density;
     double m_bulkModulus;
     double m_shearModulus;
     int numInt;
     int nnode;
-
+    std::vector<int> topology;
+    int numElements;
     double *Bx = new double;
     double *By = new double;
     double *Bz = new double;
