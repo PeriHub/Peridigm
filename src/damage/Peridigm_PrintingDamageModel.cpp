@@ -126,7 +126,7 @@ void PeridigmNS::PrintingDamageModel::computeDamage(const double dt,
   double trialDamage(0.0);
   int neighborhoodListIndex(0), bondIndex(0);
   int nodeId, numNeighbors, neighborID, iID, iNID;
-  double nodeInitialX[3], nodeCurrentX[3], initialDistance, currentDistance, relativeExtension;
+  double nodeInitialX[3], nodeCurrentX[3], initialDistance, currentDistance, relativeExtension, nodePointTime;
 
   // Set the bond damage to the previous value
   *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)) = *(dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N));
@@ -143,6 +143,7 @@ void PeridigmNS::PrintingDamageModel::computeDamage(const double dt,
     nodeCurrentX[0] = y[nodeId * 3];
     nodeCurrentX[1] = y[nodeId * 3 + 1];
     nodeCurrentX[2] = y[nodeId * 3 + 2];
+    nodePointTime = pointTime[nodeId];
     numNeighbors = neighborhoodList[neighborhoodListIndex++];
     for (iNID = 0; iNID < numNeighbors; ++iNID)
     {
@@ -159,6 +160,12 @@ void PeridigmNS::PrintingDamageModel::computeDamage(const double dt,
       trialDamage = 0.0;
       if (relativeExtension > m_criticalStretch)
         trialDamage = 1.0;
+      if (nodePointTime/1000 > currentTime){
+        trialDamage = 1.0;
+      }
+      else if(currentTime - dt < nodePointTime/1000 && nodePointTime/1000 <= currentTime){
+        bondDamageNP1[bondIndex] = 0.0;
+      }
       if (trialDamage > bondDamageNP1[bondIndex])
       {
         bondDamageNP1[bondIndex] = trialDamage;

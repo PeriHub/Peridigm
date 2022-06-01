@@ -77,11 +77,14 @@ PeridigmNS::BoundaryCondition::BoundaryCondition(const string & name_,
   function = bcParams.get<string>("Value");
 
   // set up RTCompiler
-  rtcFunction = Teuchos::rcp<PG_RuntimeCompiler::Function>(new PG_RuntimeCompiler::Function(5, "rtcBoundaryConditionFunction"));
+  rtcFunction = Teuchos::rcp<PG_RuntimeCompiler::Function>(new PG_RuntimeCompiler::Function(8, "rtcBoundaryConditionFunction"));
   rtcFunction->addVar("double", "x");
   rtcFunction->addVar("double", "y");
   rtcFunction->addVar("double", "z");
   rtcFunction->addVar("double", "t");
+  rtcFunction->addVar("double", "dt");
+  rtcFunction->addVar("double", "temp");
+  rtcFunction->addVar("double", "pt");
   rtcFunction->addVar("double", "value");
 
   if(toVector->Map().ElementSize()==1)
@@ -99,6 +102,12 @@ void PeridigmNS::BoundaryCondition::evaluateParser(const int & localNodeID, doub
   Teuchos::RCP<Epetra_Vector> x = peridigm->getX();
   const Epetra_BlockMap& threeDimensionalMap = x->Map();
   TEUCHOS_TEST_FOR_TERMINATION(threeDimensionalMap.ElementSize() != 3, "**** setVectorValues() must be called with map having element size = 3.\n");
+  
+  Teuchos::RCP<Epetra_Vector> pointTime = peridigm->getPointTime();
+  const Epetra_BlockMap& oneDimensionalMap = pointTime->Map();
+  TEUCHOS_TEST_FOR_TERMINATION(oneDimensionalMap.ElementSize() != 1, "**** setVectorValues() must be called with map having element size = 3.\n");
+
+  Teuchos::RCP<Epetra_Vector> temperature = peridigm->getTemperature();
 
   bool success(true);
   // set the coordinates and set the return value to 0.0
@@ -109,7 +118,13 @@ void PeridigmNS::BoundaryCondition::evaluateParser(const int & localNodeID, doub
   if(success)
     success = rtcFunction->varValueFill(2, (*x)[localNodeID*3 + 2]);
   if(success)
-    success = rtcFunction->varValueFill(4, 0.0);
+    success = rtcFunction->varValueFill(4, timeCurrent-timePrevious);
+  if(success)
+    success = rtcFunction->varValueFill(5, (*temperature)[localNodeID]);
+  if(success)
+    success = rtcFunction->varValueFill(6, (*pointTime)[localNodeID]);
+  if(success)
+    success = rtcFunction->varValueFill(7, 0.0);
   // evaluate at previous time
   if(success)
     success = rtcFunction->varValueFill(3, timePrevious);

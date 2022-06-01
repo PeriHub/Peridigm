@@ -882,7 +882,7 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
   bondMap = peridigmDisc->getGlobalBondMap();
 
   // Create mothership vectors
-  int numOneDimensionalMothershipVectors = 12;
+  int numOneDimensionalMothershipVectors = 13;
   bool initializeToZero = true;
   if(analysisHasMultiphysics)
     numOneDimensionalMothershipVectors += 7;
@@ -900,6 +900,7 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
   netDamageField = Teuchos::rcp((*oneDimensionalMothership)(9), false);               // damage status
   scalarScratch = Teuchos::rcp((*oneDimensionalMothership)(10), false);               // scratch vector corresponding to oneDimensionalMap
   bondDamageDiffField = Teuchos::rcp((*oneDimensionalMothership)(11), false);         // bondDamage difference
+  pointTime = Teuchos::rcp((*oneDimensionalMothership)(12), false);                   // point time
   
   if (analysisHasMultiphysics) {
     fluidPressureU = Teuchos::rcp((*oneDimensionalMothership)(12), false);        // fluid pressure displacement
@@ -958,6 +959,13 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
   double* volumePtr;
   volume->ExtractView(&volumePtr);
   blas.COPY(volume->MyLength(), vol, volumePtr);
+
+  // Set the point time
+  double* pt;
+  peridigmDisc->getPointTime()->ExtractView(&pt);
+  double* ptPtr;
+  pointTime->ExtractView(&ptPtr);
+  blas.COPY(pointTime->MyLength(), pt, ptPtr);
 
   // Set the initial positions
   double* initialX;
@@ -1439,7 +1447,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   }
 
   // Pointer index into sub-vectors for use with BLAS
-  double *xPtr, *u_previousPtr, *uPtr, *yPtr, *v_previousPtr, *vPtr, *aPtr;
+  double *xPtr, *u_previousPtr, *uPtr, *yPtr, *v_previousPtr, *vPtr, *aPtr, *ptPtr;
   x->ExtractView( &xPtr );
   u->ExtractView( &uPtr );
   u_previous->ExtractView( &u_previousPtr );
@@ -1448,6 +1456,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   v_previous->ExtractView( &v_previousPtr );
   a->ExtractView( &aPtr );
   int length = a->MyLength();
+  pointTime->ExtractView( &ptPtr );
 
   // Set the prescribed displacements (allow for nonzero initial displacements).
   // Then back compute the displacement vector.  Leave the velocity as zero.
@@ -1597,8 +1606,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         if(peridigmComm->MyPID() == 0) {
         cout << "<- Reduce dt: " << dt  << " nsteps: " << nsteps << endl;
         }
-        workset->timeStep = dt;
-        workset->currentTime = timeCurrent;
+        // workset->timeStep = dt;
+        // workset->currentTime = timeCurrent;
 
         adaptiveImportStep = PeridigmField::STEP_NP1;
         adaptiveExportStep = PeridigmField::STEP_N;
@@ -1621,8 +1630,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         if(peridigmComm->MyPID() == 0) {
           cout << "-> Raise dt: " << dt  << " nsteps: " << nsteps << endl;
           }
-        workset->timeStep = dt;
-        workset->currentTime = timeCurrent;
+        // workset->timeStep = dt;
+        // workset->currentTime = timeCurrent;
 
         adaptiveImportStep = PeridigmField::STEP_NP1;
         adaptiveExportStep = PeridigmField::STEP_NP1;
@@ -1640,6 +1649,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     }
 
     currentTime = timeCurrent;
+    workset->currentTime = currentTime;
 
     //std::cout << step << "/" << nsteps << " time: " << timeCurrent<< std::endl;
 

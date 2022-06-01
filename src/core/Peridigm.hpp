@@ -357,6 +357,7 @@ namespace PeridigmNS {
     Teuchos::RCP<Epetra_Vector> getVelocityGradientX() { return velocityGradientX; }
     Teuchos::RCP<Epetra_Vector> getVelocityGradientY() { return velocityGradientY; }
     Teuchos::RCP<Epetra_Vector> getVelocityGradientZ() { return velocityGradientZ; }
+    Teuchos::RCP<Epetra_Vector> getPointTime() { return pointTime; }
     //@}
 
     //! Accessor for global neighborhood data
@@ -583,6 +584,9 @@ namespace PeridigmNS {
 
     //! Global vector for cell volume
     Teuchos::RCP<Epetra_Vector> volume;
+
+    //! Global vector for cell pointTime
+    Teuchos::RCP<Epetra_Vector> pointTime;
 
     //! Global vector for cell density
     Teuchos::RCP<Epetra_Vector> density;
