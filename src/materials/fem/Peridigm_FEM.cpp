@@ -248,7 +248,8 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
   
     double *CauchyStressNP1, *undeformedCoor, *nodeAngles, *deformedCoor, *globalForce;
     //double *displacements;
-
+    //m_unrotatedCauchyStressFieldId    
+    //m_cauchyStressFieldId
     dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&CauchyStressNP1);
 
     dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&nodeAngles);
@@ -318,7 +319,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
           dispNodal[3*nID+i]     = deformedCoor[3*globalId+i] - undeformedCoor[3*globalId+i];
           }
       }   
-      FEM::setToZero(&sigmaNP1[9 * elementID], 9);
+      //FEM::setToZero(&sigmaNP1[9 * elementID], 9);
       FEM::setToZero(&elNodalForces[0],3*numElemNodes);
 
       
@@ -348,8 +349,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         // it adds up the different parts of each integration point resulting element force
         FEM::setGlobalStresses(elementID, sigmaInt, sigmaNP1);  
       }
-      
-       
+ 
       FEM::setNodalStresses(numElemNodes, elementID, topoPtr, topology, sigmaNP1);
       FEM::setGlobalForces(numElemNodes, elementID, topoPtr, topology, elNodalForces, volume, force); 
        
