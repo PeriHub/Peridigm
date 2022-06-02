@@ -221,16 +221,15 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
   numElements = 0;
   int topoPtr = 0;
   for(int i=0 ; i<numOwnedPoints ; ++i){
-    
     int numNodes = neighborhoodList[topoPtr];
     topoPtr++;
     
     if (nodeType[i]==2){
       numElements += 1;
-      topology.push_back(i);
-      topology.push_back(numNodes);
+      topologyVector.push_back(i);
+      topologyVector.push_back(numNodes);
       for(int j=0 ; j<numNodes ; ++j){
-        topology.push_back(neighborhoodList[topoPtr]);
+        topologyVector.push_back(neighborhoodList[topoPtr]);
         topoPtr++;
         }
     }
@@ -273,12 +272,9 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     std::vector<double> sigmaIntVector(9);
     double* sigmaInt = &sigmaIntVector[0];
 
-  // how in init?
-    //double *nodeType;
-    //dataManager.getData(m_nodeTypeFieldId, PeridigmField::STEP_NONE)->ExtractView(&nodeType);
-    //FEM::getTopology(numOwnedPoints, neighborhoodList, nodeType, numElements, topology);
-      
-    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    const int* topology = &topologyVector[0];
+
+    /////////////////////////////////////////////////////////////////////
     // for higher order it has to be adapted
     // it is a full integration
     // reduced integration is not included yet
@@ -294,8 +290,8 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     double* dispNodal = &dispNodalVector[0];
     std::vector<double> elNodalCoorVector(ndof);
     double* elNodalCoor = &elNodalCoorVector[0];
-    //std::vector<double> elNodalForceVector(ndof);
-    //double* elNodalForces = &elNodalForceVector[0];
+    std::vector<double> elNodalForceVector(ndof);
+    double* elNodalForces = &elNodalForceVector[0];
     
     double* weight = &weightVector[0];
     
@@ -322,17 +318,14 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
       for(int n=0 ; n<numElemNodes ; ++n){
         globalId = topology[topoPtr + n];
         for(int i=0 ; i<3 ; ++i){
-        
+          elNodalForces[3 * i] = 0.0;
           elNodalCoor[3*n+i]   = deformedCoor[3*globalId+i];       
-          dispNodal[3*n+i]     = deformedCoor[3*globalId+i] - undeformedCoor[3*globalId+i]  ;
-    
+          dispNodal[3*n+i]     = deformedCoor[3*globalId+i] - undeformedCoor[3*globalId+i];
         }
         //std::cout <<iID <<" " <<n<<" " << dispNodal[3 * n] << std::endl;
         sigmaNP1[9*elementID  ] = 0.0;sigmaNP1[9*elementID+1] = 0.0; sigmaNP1[9*elementID+2] = 0.0;
         sigmaNP1[9*elementID+3] = 0.0;sigmaNP1[9*elementID+4] = 0.0; sigmaNP1[9*elementID+5] = 0.0;
         sigmaNP1[9*elementID+6] = 0.0;sigmaNP1[9*elementID+7] = 0.0; sigmaNP1[9*elementID+8] = 0.0;
-        
-
       }
       
       for (int jID=0 ; jID<numInt ; ++jID){
@@ -355,36 +348,17 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         if (rotation){  
           MATRICES::tensorRotation(angles,sigmaInt,false,sigmaInt);
         }
-        FEM::getNodalForce(Bx, By, Bz, intPointPtr, numElemNodes, topoPtr, &topology[0], detJ, Jinv, twoD, sigmaInt, volume, force);
+        FEM::nodalForce(Bx, By, Bz, intPointPtr, numElemNodes, detJ, Jinv, twoD, sigmaInt, elNodalForces);
         // has to be done for each integration point
         // it adds up the different parts of each integration point resulting element force
-        for (int i=0 ; i<9 ; ++i){
-          sigmaNP1[9 * elementID + i] += *(sigmaInt+i) ;
-          force[3 * elementID + i] = 0.0;
-        }
+        
       }
-      for(int n=0 ; n<numElemNodes ; ++n){   
-        globalId = topology[topoPtr + n];     
-        for (int i=0 ; i<3 ; ++i){
-            force[3 * elementID + i] += force[3 * globalId + i] / numElemNodes;
-        }
-        for(int i=0 ; i<9 ; ++i){
-          sigmaNP1[9 * globalId + i] = sigmaNP1[9 * elementID + i];
-        }
-      }
-      //FEM::setGlobalForces(numElemNodes, topoPtr, topology, elNodalForces, force);  
-        //topology -= numNeigh;
-              // avarage stresses
-              // sigmaNP1 /= numInt;
-      //for (int i=0 ; i<9 ; ++i){
       
-      //  for sigmaNP1[9*elementID  ]
-      
-
+      FEM::setGlobalStresses(numElemNodes, elementID, topoPtr, topology, sigmaInt, sigmaNP1); 
+      FEM::setGlobalForces(numElemNodes, elementID, topoPtr, topology, elNodalForces, volume, force);  
+       
 
       topoPtr+=numElemNodes;
- 
- 
 
     }
   

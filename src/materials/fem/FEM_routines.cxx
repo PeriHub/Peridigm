@@ -246,37 +246,31 @@ const int numIntDir[3]
     return numInt;
 }
 
-void getNodalForce
+void nodalForce
 (
 const double* Bx,
 const double* By,
 const double* Bz,
 const int intPointPtr,
 const int nnode,
-const int topoPtr, 
-const int* topology,
 const double detJ,
 const double* Jinv, 
 const bool twoD,
 const double* sigmaInt, 
-const double* volume, //needed for PD solver
-double* forces
+double* nforces
 )
 {   
     double BxiTemp = 0.0, BetaTemp = 0.0, BpsiTemp = 0.0;
-    int globalId;
+    int elId;
     for(int nID=0 ; nID<nnode ; ++nID){ 
         BxiTemp  = Bx[intPointPtr + nID];
         BetaTemp = By[intPointPtr + nID];
         if (twoD==false)  {
             BpsiTemp = Bz[intPointPtr + nID];
-        }
-        // determined by python sympy
-        globalId = topology[topoPtr+nID];
-        
-        forces[3*globalId]  -=( *(sigmaInt)  *(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) + *(sigmaInt+1)*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp) + *(sigmaInt+2)*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp) )*detJ*volume[globalId];
-        forces[3*globalId+1]-=( *(sigmaInt+1)*(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) + *(sigmaInt+4)*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp) + *(sigmaInt+5)*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp) )*detJ*volume[globalId];
-        forces[3*globalId+2]-=( *(sigmaInt+2)*(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) + *(sigmaInt+5)*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp) + *(sigmaInt+8)*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp) )*detJ*volume[globalId];   
+        }   
+        nforces[3*nID]  -=( *(sigmaInt)  *(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) + *(sigmaInt+1)*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp) + *(sigmaInt+2)*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp) )*detJ;
+        nforces[3*nID+1]-=( *(sigmaInt+1)*(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) + *(sigmaInt+4)*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp) + *(sigmaInt+5)*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp) )*detJ;
+        nforces[3*nID+2]-=( *(sigmaInt+2)*(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) + *(sigmaInt+5)*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp) + *(sigmaInt+8)*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp) )*detJ;
         
     }
       
@@ -418,24 +412,52 @@ void setWeights
     }
 
 }
+void setGlobalStresses
+(
+    const int nnode,
+    const int elementID,
+    int topoPtr,
+    const int* topology,
+    const double* sigmaInt,
+    double* sigmaNP1
+)
+
+{
+    int globalId;
+    for (int i=0 ; i<9 ; ++i){
+          sigmaNP1[9 * elementID + i] += *(sigmaInt+i) ;
+          for(int nID=0 ; nID<nnode ; ++nID){
+            globalId = topology[topoPtr + nID];
+            // set the element stresses equal to the element nodel stress
+            // to have stresses at the nodes for visualisation
+            sigmaNP1[9 * globalId + i] = sigmaNP1[9 * elementID + i];
+        }
+    }
+}
+
 void setGlobalForces
 (
     const int nnode,
-    const int topoPtr,
+    const int elementID,
+    int topoPtr,
     const int* topology,
     const double* elNodalForces,
+    const double* volume, //needed for PD solver
     double* force
 )
 {
     int globalId;
+    for (int i=0 ; i<3 ; ++i){         
+          force[3 * elementID + i] = 0.0;
+    }
     
     for(int nID=0 ; nID<nnode ; ++nID){
       globalId = topology[topoPtr + nID];
-      force[3*globalId]   += elNodalForces[3*nID]  ;
-      force[3*globalId+1] += elNodalForces[3*nID+1];
-      force[3*globalId+2] += elNodalForces[3*nID+2];
+      for (int i=0 ; i<3 ; ++i){  
+          force[3*globalId+i]   = elNodalForces[3*nID+i]  *volume[globalId];
+          force[3 * elementID + i] = force[3 * globalId + i] / nnode;
+      }
      }
-
 
 }
  

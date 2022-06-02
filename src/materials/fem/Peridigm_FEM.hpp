@@ -107,7 +107,7 @@ namespace PeridigmNS {
     double m_shearModulus;
     int numInt;
     int nnode;
-    std::vector<int> topology;
+    std::vector<int> topologyVector;
     int numElements;
     double *Bx = new double;
     double *By = new double;

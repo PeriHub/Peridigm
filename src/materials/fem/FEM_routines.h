@@ -118,21 +118,18 @@ double* Bx,
 double* By,
 double* Bz
 );
-void getNodalForce
+void nodalForce
 (
 const double* Bx,
 const double* By,
 const double* Bz,
 const int intPointPtr,
 const int nnode,
-const int topoPtr, 
-const int* topology,
 const double detJ,
 const double* Jinv, 
 const bool twoD,
 const double* sigmaInt, 
-const double* volume,
-double* forces
+double* nforces
 );
 
 void tensorRotation
@@ -206,14 +203,25 @@ const double* weightsy,
 const double* weightsz,
 double* weights
 );
+void setGlobalStresses(
+const int nnode,
+const int elementID,
+int topoPtr,
+const int *topology,
+const double *sigmaInt,
+double *sigmaNP1
+);
 void setGlobalForces
 (
 const int nnode,
-const int topoPtr,
+const int elementID,
+int topoPtr,
 const int* topology,
 const double* elNodalForces,
+const double* volume,
 double* force
 );
+
 void getDisplacements
 (
 const int numOwnedPoints,
