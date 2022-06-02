@@ -61,6 +61,15 @@
 
 namespace MATRICES {
 
+void setToZero(
+    double* A,
+    int len
+)
+{
+    for (int i=0 ; i<len ; ++i){
+        A[i] = 0;
+    } 
+}
 template<typename ScalarT>
 int Invert2by2Matrix
 (

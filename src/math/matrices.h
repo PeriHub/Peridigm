@@ -52,6 +52,12 @@
 
 namespace MATRICES {
 
+
+//set double fields to zero
+void setToZero(
+    double* A,
+    int len);
+
 //! Invert a single 2-by-2 matrix; returns zero of successful, one if not successful (e.g., singular matrix).
 template<typename ScalarT>
 int Invert2by2Matrix
