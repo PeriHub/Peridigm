@@ -144,8 +144,11 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
   initialX = Teuchos::rcp(new Epetra_Vector(Copy, *threeDimensionalMap, decomp.myX.get()));
   // fill with local coordinate distribution
   pointAngle = Teuchos::rcp(new Epetra_Vector(Copy, *threeDimensionalMap, decomp.myAngle.get()));
+    if (params->isParameter("Input FEM Topology File"))
+  {
   // fill with point or element separation
   nodeType = Teuchos::rcp(new Epetra_Vector(Copy, *oneDimensionalMap, decomp.myNodeType.get()));
+  }
   // fill cell volumes
   cellVolume = Teuchos::rcp(new Epetra_Vector(Copy, *oneDimensionalMap, decomp.cellVolume.get()));
 
@@ -297,7 +300,10 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   memcpy(decomp.myX.get(), &coordinates[0], 3 * numElements * sizeof(double));
   memcpy(decomp.myAngle.get(), &angles[0], 3 * numElements * sizeof(double));
   // double, because the datamanage won't allow int
-  memcpy(decomp.myNodeType.get(), &nodeType[0], numElements * sizeof(double));
+  if (params->isParameter("Input FEM Topology File"))
+  { 
+    memcpy(decomp.myNodeType.get(), &nodeType[0], numElements * sizeof(double));
+  }
   // Create a blockID vector in the current configuration
   // That is, the configuration prior to load balancing
   Epetra_BlockMap tempOneDimensionalMap(decomp.globalNumPoints,
