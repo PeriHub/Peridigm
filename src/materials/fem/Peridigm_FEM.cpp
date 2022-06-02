@@ -218,22 +218,9 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
   double *nodeType;
   dataManager.getData(m_nodeTypeFieldId, PeridigmField::STEP_NONE)->ExtractView(&nodeType);
   numElements = 0;
-  int topoPtr = 0;
-  for(int i=0 ; i<numOwnedPoints ; ++i){
-    int numNodes = neighborhoodList[topoPtr];
-    topoPtr++;
-    
-    if (nodeType[i]==2){
-      numElements += 1;
-      topologyVector.push_back(i);
-      topologyVector.push_back(numNodes);
-      for(int j=0 ; j<numNodes ; ++j){
-        topologyVector.push_back(neighborhoodList[topoPtr]);
-        topoPtr++;
-        }
-    }
-    else{topoPtr+=numNodes;}
-  }
+  
+  std::vector<int> topology;
+  FEM::getTopology(numOwnedPoints, neighborhoodList, nodeType, numElements, topology);
 
   
   

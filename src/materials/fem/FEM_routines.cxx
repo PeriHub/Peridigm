@@ -188,8 +188,7 @@ std::vector<int> topology
         }
     }
     else{topoPtr+=numNodes;}
-  }
-
+  } 
 }
 
 
