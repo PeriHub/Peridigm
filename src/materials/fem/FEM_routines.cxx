@@ -450,6 +450,7 @@ void setNodalStresses
             // to have stresses at the nodes for visualisation
             sigmaNP1[9 * globalId + i] = sigmaNP1[9 * elementID + i];
         }
+        
     }
 }
 void setGlobalForces
@@ -466,7 +467,7 @@ void setGlobalForces
     int globalId;
 
     setToZero(&force[3 * elementID], 3);
-    
+
     for(int nID=0 ; nID<nnode ; ++nID){
       globalId = topology[topoPtr + nID];
       for (int i=0 ; i<3 ; ++i){  
