@@ -206,7 +206,34 @@ TEUCHOS_UNIT_TEST(correspondence, createRotationMatrix) {
         TEST_FLOATING_EQUALITY(Bz[n],Btest[n],tolerance);        
     }
 }
+TEUCHOS_UNIT_TEST(matrices, setToZero) {
 
+    std::vector<double> AVector(9);
+    double* A = &AVector[0];
+    
+    *(A)=1;
+    *(A+1)=4;
+    *(A+2)=7;
+    *(A+3)=2;
+    *(A+4)=5;
+    *(A+5)=8;
+    *(A+6)=3;
+    *(A+7)=6;
+    *(A+8)=9;
+    MATRICES::setToZero(A,3);
+    for (int n=0; n<3; n++)
+    {
+        TEST_FLOATING_EQUALITY(*(A+n),0,0);
+    }
+    MATRICES::setToZero(&A[6],3);
+    for (int n=0; n<3; n++)
+    {
+        TEST_FLOATING_EQUALITY(*(A+6+n),0,0);
+    }
+    TEST_FLOATING_EQUALITY(*(A+3),2,0);
+    TEST_FLOATING_EQUALITY(*(A+4),5,0);
+    TEST_FLOATING_EQUALITY(*(A+5),6,0);
+}
 TEUCHOS_UNIT_TEST(matrices, TransposeMatrix) {
 
     std::vector<double> AVector(9);
