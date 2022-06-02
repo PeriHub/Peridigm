@@ -230,10 +230,10 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
     
     if (nodeType[i]==2){
       numElements += 1;
-      topology.push_back(i);
-      topology.push_back(numNodes);
+      topologyVector.push_back(i);
+      topologyVector.push_back(numNodes);
       for(int j=0 ; j<numNodes ; ++j){
-        topology.push_back(neighborhoodList[topoPtr]);
+        topologyVector.push_back(neighborhoodList[topoPtr]);
         topoPtr++;
         }
     }
