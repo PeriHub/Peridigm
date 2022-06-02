@@ -144,11 +144,8 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
   initialX = Teuchos::rcp(new Epetra_Vector(Copy, *threeDimensionalMap, decomp.myX.get()));
   // fill with local coordinate distribution
   pointAngle = Teuchos::rcp(new Epetra_Vector(Copy, *threeDimensionalMap, decomp.myAngle.get()));
-    if (params->isParameter("Input FEM Topology File"))
-  {
   // fill with point or element separation
   nodeType = Teuchos::rcp(new Epetra_Vector(Copy, *oneDimensionalMap, decomp.myNodeType.get()));
-  }
   // fill cell volumes
   cellVolume = Teuchos::rcp(new Epetra_Vector(Copy, *oneDimensionalMap, decomp.cellVolume.get()));
 
@@ -248,6 +245,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   vector<double> nodeType;
   getDiscretization(textFileName, coordinates, blockIds, volumes, angles);
   int numFE = 0;
+  for (unsigned int n = 0; n < blockIds.size(); n++)nodeType.push_back(1);
   if (params->isParameter("Input FEM Topology File"))
   {
     getFETopology(topologyFileName, coordinates, blockIds, volumes, angles, horizon_of_element, elementTopo, nodeType, numFE);
@@ -300,10 +298,8 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   memcpy(decomp.myX.get(), &coordinates[0], 3 * numElements * sizeof(double));
   memcpy(decomp.myAngle.get(), &angles[0], 3 * numElements * sizeof(double));
   // double, because the datamanage won't allow int
-  if (params->isParameter("Input FEM Topology File"))
-  { 
-    memcpy(decomp.myNodeType.get(), &nodeType[0], numElements * sizeof(double));
-  }
+  memcpy(decomp.myNodeType.get(), &nodeType[0], numElements * sizeof(double));
+  
   // Create a blockID vector in the current configuration
   // That is, the configuration prior to load balancing
   Epetra_BlockMap tempOneDimensionalMap(decomp.globalNumPoints,
@@ -441,7 +437,7 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string &fileName,
     double coorAvg[3], angAvg[3], volAvg;
     int numOfFiniteElements;
     std::string testString = "";
-    for (unsigned int n = 0; n < blockIds.size(); n++)nodeType.push_back(1);
+    
     if (fileName.compare(testString) != 0)
     {
       ifstream inFile(fileName.c_str());

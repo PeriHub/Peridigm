@@ -578,8 +578,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     blockIt->importData(peridigmDiscretization->getHorizon(),    horizonFieldId,          PeridigmField::STEP_NONE, Insert);
     blockIt->importData(peridigmDiscretization->getCellVolume(), volumeFieldId,           PeridigmField::STEP_NONE, Insert);
     // Warning angles work only for text files and not for other discretizations
-    if (params->isParameter("Input FEM Topology File")){
-    blockIt->importData(peridigmDiscretization->getNodeType(),   nodeTypeFieldId, PeridigmField::STEP_NONE, Insert);}
+    blockIt->importData(peridigmDiscretization->getNodeType(),   nodeTypeFieldId, PeridigmField::STEP_NONE, Insert);
     blockIt->importData(peridigmDiscretization->getPointAngle(),   anglesFieldId, PeridigmField::STEP_NONE, Insert);
     blockIt->importData(peridigmDiscretization->getInitialX(),   modelCoordinatesFieldId, PeridigmField::STEP_NONE, Insert);
     blockIt->importData(peridigmDiscretization->getInitialX(),   coordinatesFieldId,      PeridigmField::STEP_N,    Insert);
