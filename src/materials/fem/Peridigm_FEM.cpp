@@ -56,7 +56,6 @@
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
 #include "FEM_routines.h"
-#include "matrices.h"
 using namespace std;
 
 PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
@@ -301,7 +300,6 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     double* Jinv = &JinvMat[0];
     double detJ = 0.0;
     int globalId, numElemNodes;
-    std::cout << numElements << "  " << topology[0] << std::endl;
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     //FEM::getDisplacements(nnode,modelCoordinates, deformedCoor,dispNodal);
     int topoPtr = 0;
@@ -311,22 +309,19 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
       elementID = topology[topoPtr];
       topoPtr++;
       numElemNodes = topology[topoPtr];
-      topoPtr++;
-      angles[0] = nodeAngles[3*elementID]; // element angle is already the average of all element nodes            
-      angles[1] = nodeAngles[3*elementID+1]; // element angle is already the average of all element nodes            
-      angles[2] = nodeAngles[3*elementID+2]; // element angle is already the average of all element nodes            
-      for(int n=0 ; n<numElemNodes ; ++n){
-        globalId = topology[topoPtr + n];
-        for(int i=0 ; i<3 ; ++i){
-          elNodalForces[3 * i] = 0.0;
-          elNodalCoor[3*n+i]   = deformedCoor[3*globalId+i];       
-          dispNodal[3*n+i]     = deformedCoor[3*globalId+i] - undeformedCoor[3*globalId+i];
-        }
-        //std::cout <<iID <<" " <<n<<" " << dispNodal[3 * n] << std::endl;
-        sigmaNP1[9*elementID  ] = 0.0;sigmaNP1[9*elementID+1] = 0.0; sigmaNP1[9*elementID+2] = 0.0;
-        sigmaNP1[9*elementID+3] = 0.0;sigmaNP1[9*elementID+4] = 0.0; sigmaNP1[9*elementID+5] = 0.0;
-        sigmaNP1[9*elementID+6] = 0.0;sigmaNP1[9*elementID+7] = 0.0; sigmaNP1[9*elementID+8] = 0.0;
-      }
+      topoPtr++;  
+      for(int i=0 ; i<3 ; ++i){
+        angles[i] = nodeAngles[3*elementID+i]; // element angle is already the average of all element nodes            
+        for(int nID=0 ; nID<numElemNodes ; ++nID){
+          globalId = topology[topoPtr + nID];
+          elNodalCoor[3*nID+i]   = deformedCoor[3*globalId+i];       
+          dispNodal[3*nID+i]     = deformedCoor[3*globalId+i] - undeformedCoor[3*globalId+i];
+          }
+      }   
+      FEM::setToZero(&sigmaNP1[9 * elementID], 9);
+      FEM::setToZero(&elNodalForces[0],3*numElemNodes);
+
+      
       
       for (int jID=0 ; jID<numInt ; ++jID){
         int intPointPtr = jID*numElemNodes;
@@ -339,23 +334,25 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         //https://www.continuummechanics.org/stressxforms.html
         // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
         if (rotation){  
-          MATRICES::tensorRotation(angles,strain,true,strain);
+          FEM::tensorRotation(angles,strain,true,strain);
         }
         
         computeCauchyStress(strain, sigmaInt);
         
         // rotation back
         if (rotation){  
-          MATRICES::tensorRotation(angles,sigmaInt,false,sigmaInt);
+          FEM::tensorRotation(angles,sigmaInt,false,sigmaInt);
         }
         FEM::nodalForce(Bx, By, Bz, intPointPtr, numElemNodes, detJ, Jinv, twoD, sigmaInt, elNodalForces);
         // has to be done for each integration point
         // it adds up the different parts of each integration point resulting element force
-        
+        FEM::setGlobalStresses(elementID, sigmaInt, sigmaNP1);  
       }
       
-      FEM::setGlobalStresses(numElemNodes, elementID, topoPtr, topology, sigmaInt, sigmaNP1); 
-      FEM::setGlobalForces(numElemNodes, elementID, topoPtr, topology, elNodalForces, volume, force);  
+       
+      FEM::setNodalStresses(numElemNodes, elementID, topoPtr, topology, sigmaNP1);
+      FEM::setGlobalForces(numElemNodes, elementID, topoPtr, topology, elNodalForces, volume, force); 
+       
        
 
       topoPtr+=numElemNodes;

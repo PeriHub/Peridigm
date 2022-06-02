@@ -203,13 +203,29 @@ const double* weightsy,
 const double* weightsz,
 double* weights
 );
-void setGlobalStresses(
+void setNodalStresses(
 const int nnode,
 const int elementID,
 int topoPtr,
-const int *topology,
-const double *sigmaInt,
-double *sigmaNP1
+const int* topology,
+double* sigmaNP1
+);
+
+void setToZero(
+double* A,
+int len
+);
+template<typename ScalarT>
+void tensorRotation(
+const double* angles,
+const ScalarT* tensorIn,
+const bool globToLoc,
+ScalarT* tensorOut
+);
+void setGlobalStresses(
+const int elementID,
+const double* sigmaInt,
+double* sigmaNP1
 );
 void setGlobalForces
 (

@@ -414,19 +414,37 @@ void setWeights
 }
 void setGlobalStresses
 (
-    const int nnode,
     const int elementID,
-    int topoPtr,
-    const int* topology,
     const double* sigmaInt,
     double* sigmaNP1
 )
 
 {
-    int globalId;
     for (int i=0 ; i<9 ; ++i){
-          sigmaNP1[9 * elementID + i] += *(sigmaInt+i) ;
-          for(int nID=0 ; nID<nnode ; ++nID){
+       sigmaNP1[9 * elementID + i] += *(sigmaInt+i) ;      
+    }
+}
+void setToZero(
+    double* A,
+    int len
+)
+{
+    MATRICES::setToZero(A, len);
+}
+
+void setNodalStresses
+(
+    const int nnode,
+    const int elementID,
+    int topoPtr,
+    const int* topology,
+    double* sigmaNP1
+)
+
+{
+    int globalId;
+    for(int nID=0 ; nID<nnode ; ++nID){
+        for (int i=0 ; i<9 ; ++i){
             globalId = topology[topoPtr + nID];
             // set the element stresses equal to the element nodel stress
             // to have stresses at the nodes for visualisation
@@ -434,7 +452,6 @@ void setGlobalStresses
         }
     }
 }
-
 void setGlobalForces
 (
     const int nnode,
@@ -447,15 +464,14 @@ void setGlobalForces
 )
 {
     int globalId;
-    for (int i=0 ; i<3 ; ++i){         
-          force[3 * elementID + i] = 0.0;
-    }
+
+    setToZero(&force[3 * elementID], 3);
     
     for(int nID=0 ; nID<nnode ; ++nID){
       globalId = topology[topoPtr + nID];
       for (int i=0 ; i<3 ; ++i){  
-          force[3*globalId+i]   = elNodalForces[3*nID+i]  *volume[globalId];
-          force[3 * elementID + i] = force[3 * globalId + i] / nnode;
+          force[3*globalId+i]      += elNodalForces[3*nID+i]  *volume[globalId];
+          force[3 * elementID + i] += force[3 * globalId + i] / nnode;
       }
      }
 
@@ -572,5 +588,31 @@ void getDisplacements
         *(disp+i) = *(coorNP1+i)-*(modelCoord+i);    
     }
 }
+template<typename ScalarT>
+void tensorRotation
+(
+    const double* angles,
+    const ScalarT* tensorIn,
+    const bool globToLoc,
+    ScalarT* tensorOut
+){
+    MATRICES::tensorRotation(angles, tensorIn, globToLoc, tensorOut);
+}
 
+
+template void tensorRotation<double>
+(
+    const double* angles,
+    const double* tensorIn,
+    const bool globToLoc,
+    double* tensorOut
+);
+
+template void tensorRotation<Sacado::Fad::DFad<double> >
+(
+    const double* angles,
+    const Sacado::Fad::DFad<double>* tensorIn,
+    const bool globToLoc,
+    Sacado::Fad::DFad<double>* tensorOut
+);
 }
