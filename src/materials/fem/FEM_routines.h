@@ -77,8 +77,8 @@ const double elCoor
 );
 void getTopology(
     const int numOwnedPoints,
-    const int *neighborhoodList,
-    const double *nodeType,
+    const int* neighborhoodList,
+    const double* nodeType,
     int numElements,
     std::vector<int> topology);
 
