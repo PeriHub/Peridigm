@@ -88,11 +88,7 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
 
   // Set up bond filters
   createBondFilters(params);
-  vector<double> coordinates;
-  vector<double> volumes;
-  vector<int> blockIds;
-  vector<double> angles;
-
+  
   QUICKGRID::Data decomp = getDecomp(meshFileName, topologyFileName, params);
 
   //  \todo Refactor; the createMaps() call is currently inside getDecomp() due to order-of-operations issues with tracking element blocks.
@@ -174,7 +170,8 @@ void PeridigmNS::TextFileDiscretization::getDiscretization(const string &textFil
                                                            vector<double> &coordinates,
                                                            vector<int> &blockIds,
                                                            vector<double> &volumes,
-                                                           vector<double> &angles
+                                                           vector<double> &angles,
+                                                           vector<double> &nodeType
 
 )
 {
@@ -210,6 +207,7 @@ void PeridigmNS::TextFileDiscretization::getDiscretization(const string &textFil
         coordinates.push_back(data[0]);
         coordinates.push_back(data[1]);
         coordinates.push_back(data[2]);
+        nodeType.push_back(1);
         blockIds.push_back(static_cast<int>(data[3]));
         volumes.push_back(data[4]);
         if (anglesImport == true)
@@ -243,9 +241,8 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   vector<double> horizon_of_element;
   vector<int> elementTopo;
   vector<double> nodeType;
-  getDiscretization(textFileName, coordinates, blockIds, volumes, angles);
+  getDiscretization(textFileName, coordinates, blockIds, volumes, angles,nodeType);
   int numFE = 0;
-  for (unsigned int n = 0; n < blockIds.size(); n++)nodeType.push_back(1);
   if (params->isParameter("Input FEM Topology File"))
   {
     getFETopology(topologyFileName, coordinates, blockIds, volumes, angles, horizon_of_element, elementTopo, nodeType, numFE);

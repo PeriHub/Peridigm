@@ -131,7 +131,8 @@ namespace PeridigmNS
                            std::vector<double> &coordinates,
                            std::vector<int> &blockIds,
                            std::vector<double> &volumes,
-                           std::vector<double> &angles);
+                           std::vector<double> &angles,
+                           std::vector<double> &nodeType);
     //! Creates a discretization object based on data read from a text file.
     //! With additional topology information which can be used for finite element analysis
 
