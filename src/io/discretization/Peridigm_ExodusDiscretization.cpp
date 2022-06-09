@@ -71,6 +71,7 @@ using namespace std;
 
 PeridigmNS::ExodusDiscretization::ExodusDiscretization(const Teuchos::RCP<const Epetra_Comm>& epetra_comm,
                                                        const Teuchos::RCP<Teuchos::ParameterList>& params) :
+  Discretization(epetra_comm),
   verbose(false),
   minElementRadius(1.0e50),
   maxElementRadius(0.0),
@@ -82,10 +83,9 @@ PeridigmNS::ExodusDiscretization::ExodusDiscretization(const Teuchos::RCP<const 
   maxNumBondsPerElem(0),
   myPID(epetra_comm->MyPID()),
   numPID(epetra_comm->NumProc()),
-  bondFilterCommand("None"),
-  comm(epetra_comm)
+  bondFilterCommand("None")
 {
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(params->get<string>("Type") != "Exodus", "Invalid Type in ExodusDiscretization");
+  TEUCHOS_TEST_FOR_TERMINATION(params->get<string>("Type") != "Exodus", "Invalid Type in ExodusDiscretization");
 
   string meshFileName = params->get<string>("Input Mesh File");
 
@@ -182,39 +182,8 @@ PeridigmNS::ExodusDiscretization::ExodusDiscretization(const Teuchos::RCP<const 
                                                                 0,
                                                                 oneDimensionalOverlapMap->Comm()));
 
-  // \todo Move this functionality to base class, it's currently duplicated in PdQuickGridDiscretization.
   // Create the bondMap, a local map used for constitutive data stored on bonds.
-  // Due to Epetra_BlockMap restrictions, there can not be any entries with length zero.
-  // This means that points with no neighbors can not appear in the bondMap.
-  int numMyElementsUpperBound = oneDimensionalMap->NumMyElements();
-  int numGlobalElements = -1;
-  int numMyElements = 0;
-  int maxNumBonds = 0;
-  int* oneDimensionalMapGlobalElements = oneDimensionalMap->MyGlobalElements();
-  int* myGlobalElements = new int[numMyElementsUpperBound];
-  int* elementSizeList = new int[numMyElementsUpperBound];
-  int* const neighborhood = neighborhoodData->NeighborhoodList();
-  int neighborhoodIndex = 0;
-  int numPointsWithZeroNeighbors = 0;
-  for(int i=0 ; i<neighborhoodData->NumOwnedPoints() ; ++i){
-    int numNeighbors = neighborhood[neighborhoodIndex];
-    if(numNeighbors > 0){
-      numMyElements++;
-      myGlobalElements[i-numPointsWithZeroNeighbors] = oneDimensionalMapGlobalElements[i];
-      elementSizeList[i-numPointsWithZeroNeighbors] = numNeighbors;
-    }
-    else{
-      numPointsWithZeroNeighbors++;
-    }
-    numBonds += numNeighbors;
-    if(numNeighbors>maxNumBonds) maxNumBonds = numNeighbors;
-    neighborhoodIndex += 1 + numNeighbors;
-  }
-  maxNumBondsPerElem = maxNumBonds;
-  int indexBase = 0;
-  bondMap = Teuchos::rcp(new Epetra_BlockMap(numGlobalElements, numMyElements, myGlobalElements, elementSizeList, indexBase, *comm));
-  delete[] myGlobalElements;
-  delete[] elementSizeList;
+  createBondMapAndCheckForZeroNeighbors(bondMap, oneDimensionalMap, neighborhoodData, numBonds, maxNumBondsPerElem);
 
   // find the minimum element radius
   for(int i=0 ; i<cellVolume->MyLength() ; ++i){
@@ -311,12 +280,12 @@ void PeridigmNS::ExodusDiscretization::loadData(const string& meshFileName)
   // If there is an auxiliary map provided that has a different name, throw an
   // error because I don't know what to do with it.
   if(numElemMaps > 0){
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(numElemMaps > 1,
+    TEUCHOS_TEST_FOR_TERMINATION(numElemMaps > 1,
                                 "**** Error in ExodusDiscretization::loadData(), genesis file contains invalid number of auxiliary element maps (>1).\n");
     char mapName[MAX_STR_LENGTH];
     retval = ex_get_name(exodusFileId, EX_ELEM_MAP, 1, mapName);
     if (retval != 0) reportExodusError(retval, "ExodusDiscretization::loadData()", "ex_get_name");
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(string(mapName) != string("original_global_id_map"),
+    TEUCHOS_TEST_FOR_TERMINATION(string(mapName) != string("original_global_id_map"),
                                 "**** Error in ExodusDiscretization::loadData(), unknown exodus EX_ELEM_MAP: " + string(mapName) + ".\n");
     vector<int> auxMap(numElem);
     retval = ex_get_num_map(exodusFileId, EX_ELEM_MAP, 1, &auxMap[0]);
@@ -327,12 +296,12 @@ void PeridigmNS::ExodusDiscretization::loadData(const string& meshFileName)
     elemIdMap = auxMap;
   }
   if(numNodeMaps > 0){
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(numNodeMaps > 1,
+    TEUCHOS_TEST_FOR_TERMINATION(numNodeMaps > 1,
                                 "**** Error in ExodusDiscretization::loadData(), genesis file contains invalid number of auxiliary node maps (>1).\n");
     char mapName[MAX_STR_LENGTH];
     retval = ex_get_name(exodusFileId, EX_NODE_MAP, 1, mapName);
     if (retval != 0) reportExodusError(retval, "ExodusDiscretization::loadData()", "ex_get_name");
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(string(mapName) != string("original_global_id_map"),
+    TEUCHOS_TEST_FOR_TERMINATION(string(mapName) != string("original_global_id_map"),
                                 "**** Error in ExodusDiscretization::loadData(), unknown exodus EX_NODE_MAP: " + string(mapName) + ".\n");
     vector<int> auxMap(numNodes);
     retval = ex_get_num_map(exodusFileId, EX_NODE_MAP, 1, &auxMap[0]);
@@ -388,7 +357,7 @@ void PeridigmNS::ExodusDiscretization::loadData(const string& meshFileName)
       ss << "block_" << elemBlockId;
       elemBlockName = ss.str();
     }
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(elementBlocks->find(elemBlockName) != elementBlocks->end(), "**** Duplicate block found: " + elemBlockName + "\n");
+    TEUCHOS_TEST_FOR_TERMINATION(elementBlocks->find(elemBlockName) != elementBlocks->end(), "**** Duplicate block found: " + elemBlockName + "\n");
     // Create a list for storing the element ids in this block
     (*elementBlocks)[elemBlockName] = vector<int>();
     vector<int>& elementBlock = (*elementBlocks)[elemBlockName];
@@ -412,7 +381,7 @@ void PeridigmNS::ExodusDiscretization::loadData(const string& meshFileName)
         exodusElementType = HEX_ELEMENT;
       else{
         string msg = "\n**** Error in loadData(), unknown element type " + elemTypeString + ".\n";
-        TEUCHOS_TEST_FOR_EXCEPT_MSG(true, msg);
+        TEUCHOS_TEST_FOR_TERMINATION(true, msg);
       }
       conn.resize(numElemThisBlock*numNodesPerElem);
       retval = ex_get_elem_conn(exodusFileId, elemBlockId, &conn[0]);
@@ -569,7 +538,7 @@ void PeridigmNS::ExodusDiscretization::loadData(const string& meshFileName)
         ss << "nodelist_" << nodeSetId;
         nodeSetName = ss.str();
       }
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(nodeSets->find(nodeSetName) != nodeSets->end(), "**** Duplicate node set found: " + nodeSetName + "\n");
+      TEUCHOS_TEST_FOR_TERMINATION(nodeSets->find(nodeSetName) != nodeSets->end(), "**** Duplicate node set found: " + nodeSetName + "\n");
       (*nodeSets)[nodeSetName] = vector<int>();
       (*nodeSetIds)[nodeSetName] = exodusNodeSetIds[i];
     }
@@ -764,7 +733,7 @@ PeridigmNS::ExodusDiscretization::filterBonds(Teuchos::RCP<PeridigmNS::Neighborh
     string msg = "**** Error, unrecognized value for \"Omit Bonds Between Blocks\":  ";
     msg += bondFilterCommand + "\n";
     msg += "**** Valid options are:  All, None\n";
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, msg);
+    TEUCHOS_TEST_FOR_TERMINATION(true, msg);
   }
 
   // Create an overlap vector containing the block IDs of each cell
@@ -904,10 +873,10 @@ PeridigmNS::ExodusDiscretization::getMaxNumBondsPerElem() const
 void PeridigmNS::ExodusDiscretization::getExodusMeshNodePositions(int globalNodeID,
                                                                vector<double>& nodePositions)
 {
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(!storeExodusMesh, "**** Error:  getExodusMeshNodePositions() called, but exodus information not stored.\n");
+  TEUCHOS_TEST_FOR_TERMINATION(!storeExodusMesh, "**** Error:  getExodusMeshNodePositions() called, but exodus information not stored.\n");
 
   int localId = exodusMeshElementConnectivity->Map().LID(globalNodeID);
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(localId == -1, "**** Invalid local Exodus element Id in getExodusMeshNodePositions().\n");
+  TEUCHOS_TEST_FOR_TERMINATION(localId == -1, "**** Invalid local Exodus element Id in getExodusMeshNodePositions().\n");
   unsigned int numNodes = exodusMeshElementConnectivity->Map().ElementSize(localId);
   int exodusMeshElementIndex = exodusMeshElementConnectivity->Map().FirstPointInElement(localId);
   vector<int> elementConnectivity(numNodes);
@@ -930,7 +899,7 @@ void PeridigmNS::ExodusDiscretization::getExodusMeshNodePositions(int globalNode
 
 double PeridigmNS::ExodusDiscretization::computeMaxElementDimension()
 {
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(!storeExodusMesh, "**** Error:  computeMaxElementDimension() called, but exodus information not stored.\n");
+  TEUCHOS_TEST_FOR_TERMINATION(!storeExodusMesh, "**** Error:  computeMaxElementDimension() called, but exodus information not stored.\n");
   double length, volume, localMaxElementDimension(0.0);
   double x, y, z;
   int globalId, numNodes, numNodesInElement;
@@ -941,7 +910,7 @@ double PeridigmNS::ExodusDiscretization::computeMaxElementDimension()
     globalId = oneDimensionalMap->GID(iElem);
     getExodusMeshNodePositions(globalId, nodeCoordinates);
     numNodes = nodeCoordinates.size()/3;
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(numNodes != 8 &&
+    TEUCHOS_TEST_FOR_TERMINATION(numNodes != 8 &&
                                 numNodes != 4 &&
                                 numNodes != 1 &&
                                 numNodes != 10 &&
@@ -1019,7 +988,7 @@ void PeridigmNS::ExodusDiscretization::removeNonintersectingNeighborsFromNeighbo
       getExodusMeshNodePositions(neighborGlobalId, exodusNodePositions);
       horizon = (*searchRadii)[elemLocalId];
    
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(exodusNodePositions.size()/3 != 8,
+      TEUCHOS_TEST_FOR_TERMINATION(exodusNodePositions.size()/3 != 8,
                                   "\n**** Error:  Element-horizon intersection calculations currently enabled only for hexahedron elements.\n");
 
 #ifdef DEBUGGING_BACKWARDS_COMPATIBILITY_NEIGHBORHOOD_LIST
@@ -1085,7 +1054,7 @@ void PeridigmNS::ExodusDiscretization::removeNonintersectingNeighborsFromNeighbo
     index += 1;
     for(int i=0 ; i<numNeighbors ; ++i){
       neighborLocalId = overlapMap->LID(refinedNeighborGlobalIdList[index]);
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(neighborLocalId == -1, "\n**** Error:  Invalid local ID in removeNonintersectingNeighborsFromNeighborList().\n");
+      TEUCHOS_TEST_FOR_TERMINATION(neighborLocalId == -1, "\n**** Error:  Invalid local ID in removeNonintersectingNeighborsFromNeighborList().\n");
       neighborList[index] = neighborLocalId;
       index += 1;
     }
