@@ -487,9 +487,9 @@ void zoltanQuery_pointSizeInBytes
     // number of bytes per point
     // coordinates
     int numBytesPerPoint = dimension*bytesPerDouble;
-    // node type
-    numBytesPerPoint += bytesPerDouble;
     // volume
+    numBytesPerPoint += bytesPerDouble;    
+    // node type
     numBytesPerPoint += bytesPerDouble;
     // angles
     numBytesPerPoint += dimension*bytesPerDouble;
@@ -565,7 +565,10 @@ void zoltanQuery_packPointsMultiFunction
 
     ZOLTAN_ID_TYPE id = *localIdsPtr;
 
-    // Mark this point as exported
+    // Mark this point as exported 
+    // Order must be equal everywhere, where the memory allocation occur
+    // to avoid missmatches
+    ////
     exportFlagPtr[id]=1;
 
     char *tmp = &buf[*idxPtr];
@@ -573,26 +576,22 @@ void zoltanQuery_packPointsMultiFunction
     void *xPtr = (void*)(&X[dimension*id]);
     int numBytes = dimension*sizeof(double);
     memcpy((void*)tmp,xPtr,numBytes);
-
     // advance buffer pointer
     tmp += numBytes;
-
     // cell volume
     numBytes = sizeof(double);
     void *volPtr = (void*)(&V[id]);
     memcpy((void*)tmp,volPtr,numBytes);
-   
-   // advance buffer pointer
+    // advance buffer pointer
     tmp += numBytes;
-
     // node type
     numBytes = sizeof(double);
     void *nodeTypePtr = (void*)(&N[id]);
-    memcpy((void*)tmp,nodeTypePtr,numBytes);
-    
+    memcpy((void*)tmp,nodeTypePtr,numBytes);  
     // advance buffer pointer
     tmp += numBytes;
-    // point angle
+
+        // point angle
     numBytes = dimension*sizeof(double);
     void *angPtr = (void*)(&A[dimension*id]);
     memcpy((void*)tmp,angPtr,numBytes);
@@ -771,14 +770,6 @@ void zoltanQuery_unPackPointsMultiFunction
     tmp += numBytes;
     newXPtr+=dimension;
     totalNumBytes -= numBytes;
-    // node type
-    numBytes = sizeof(double);
-    memcpy((void*)newNPtr,(void*)tmp,numBytes);
-    // 1) advance buffer pointer and volume pointer
-    // 2) decrement number of bytes
-    tmp += numBytes;
-    newNPtr++;
-    totalNumBytes -= numBytes;
     // cell volume
     numBytes = sizeof(double);
     memcpy((void*)newVPtr,(void*)tmp,numBytes);
@@ -786,6 +777,14 @@ void zoltanQuery_unPackPointsMultiFunction
     // 2) decrement number of bytes
     tmp += numBytes;
     newVPtr++;
+    totalNumBytes -= numBytes;
+    // node type
+    numBytes = sizeof(double);
+    memcpy((void*)newNPtr,(void*)tmp,numBytes);
+    // 1) advance buffer pointer and volume pointer
+    // 2) decrement number of bytes
+    tmp += numBytes;
+    newNPtr++;
     totalNumBytes -= numBytes;
     // angle
     numBytes = dimension*sizeof(double);
@@ -866,12 +865,12 @@ int computeSizeNewNeighborhoodList(int initialValue, int numImport, int *idx, ch
 
     // coordinates
     int numBytes = dimension*sizeof(double);
-    // angles
-    numBytes += dimension*sizeof(double);
     // cell volume
     numBytes += sizeof(double);
     // node type
     numBytes += sizeof(double);
+    // angles
+    numBytes += dimension*sizeof(double);
     // move pointer
     tmp += numBytes;
 
