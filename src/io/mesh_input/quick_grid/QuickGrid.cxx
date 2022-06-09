@@ -979,7 +979,7 @@ AxisSymmetricWedgeData AxisSymmetric2DCylinderMeshGenerator::create_wedge_data(Q
       }
     }
   }
-  //std::set<int>::iterator master_start = owned_masters.begin();
+  std::set<int>::iterator master_start = owned_masters.begin();
   std::set<int>::const_iterator end=owned_masters.end();
   size_t num_owned_slaves(0);
   size_t num_master = owned_masters.size();
