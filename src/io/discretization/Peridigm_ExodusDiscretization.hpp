@@ -241,8 +241,6 @@ namespace PeridigmNS {
     //! Discretization parameter controling the formation of bonds
     std::string bondFilterCommand;
 
-    //! Epetra communicator
-    Teuchos::RCP<const Epetra_Comm> comm;
   };
 }
 
