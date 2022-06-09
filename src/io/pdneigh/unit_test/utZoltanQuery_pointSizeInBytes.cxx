@@ -138,7 +138,7 @@ TEUCHOS_UNIT_TEST(ZoltanQuery_pointSizeInBytes, SmallNeighborhood) {
 
 	for(int p=0;p<numPoints;p++){
 		sizeAnswers[p]=dimension*sizeof(double)+dimension*sizeof(double)+sizeof(double)+(1+numNeighbors[p])*sizeof(int)+sizeof(double);
-	               	// coordinates + angle + volume + neighborhood + nodeTyoe
+	               	// coordinates + angle + volume + neighborhood + nodeType
 	}
 	int *neighPtr = gridData.neighborhoodPtr.get();
 	for(int p=0;p<9;p++){
