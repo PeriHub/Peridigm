@@ -75,6 +75,7 @@ PeridigmNS::AlbanyDiscretization::AlbanyDiscretization(const MPI_Comm& mpiComm,
                                                        int* nodeGlobalIds,
                                                        const double* nodeCoord,
                                                        const int * nodeBlockId) :
+  Discretization(Teuchos::rcp(new Epetra_MpiComm(mpiComm))),
   minElementRadius(1.0e50),
   maxElementRadius(0.0),
   maxElementDimension(0.0),
@@ -82,12 +83,10 @@ PeridigmNS::AlbanyDiscretization::AlbanyDiscretization(const MPI_Comm& mpiComm,
   maxNumBondsPerElem(0),
   bondFilterCommand("None")
 {
-  comm = Teuchos::rcp(new Epetra_MpiComm(mpiComm));
-
   Teuchos::RCP<Teuchos::ParameterList> discretizationParams = Teuchos::rcpFromRef(params->sublist("Discretization", true));
   Teuchos::RCP<Teuchos::ParameterList> blockParams = Teuchos::rcpFromRef(params->sublist("Blocks", true));
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(discretizationParams->get<string>("Type") != "Albany", "Invalid Type in AlbanyDiscretization");
+  TEUCHOS_TEST_FOR_TERMINATION(discretizationParams->get<string>("Type") != "Albany", "Invalid Type in AlbanyDiscretization");
 
   // Create the owned maps
    oneDimensionalMap = Teuchos::rcp(new Epetra_BlockMap(-1, numGlobalIds, globalIds, 1, 0, *comm));
@@ -280,39 +279,8 @@ PeridigmNS::AlbanyDiscretization::AlbanyDiscretization(const MPI_Comm& mpiComm,
                                                                 0,
                                                                 oneDimensionalOverlapMap->Comm()));
 
-  // \todo Move this functionality to base class, it's currently duplicated in multiple discretizations.
   // Create the bondMap, a local map used for constitutive data stored on bonds.
-  // Due to Epetra_BlockMap restrictions, there can not be any entries with length zero.
-  // This means that points with no neighbors can not appear in the bondMap.
-  int numMyElementsUpperBound = oneDimensionalMap->NumMyElements();
-  int numGlobalElements = -1; 
-  int numMyElements = 0;
-  int maxNumBonds = 0;
-  int* oneDimensionalMapGlobalElements = oneDimensionalMap->MyGlobalElements();
-  int* myGlobalElements = new int[numMyElementsUpperBound];
-  int* elementSizeList = new int[numMyElementsUpperBound];
-  int* const neighborhood = neighborhoodData->NeighborhoodList();
-  int neighborhoodIndex = 0;
-  int numPointsWithZeroNeighbors = 0;
-  for(int i=0 ; i<neighborhoodData->NumOwnedPoints() ; ++i){
-    int numNeighbors = neighborhood[neighborhoodIndex];
-    if(numNeighbors > 0){
-      numMyElements++;
-      myGlobalElements[i-numPointsWithZeroNeighbors] = oneDimensionalMapGlobalElements[i];
-      elementSizeList[i-numPointsWithZeroNeighbors] = numNeighbors;
-    }
-    else{
-      numPointsWithZeroNeighbors++;
-    }
-    numBonds += numNeighbors;
-    if(numNeighbors>maxNumBonds) maxNumBonds = numNeighbors;
-    neighborhoodIndex += 1 + numNeighbors;
-  }
-  maxNumBondsPerElem = maxNumBonds;
-  int indexBase = 0;
-  bondMap = Teuchos::rcp(new Epetra_BlockMap(numGlobalElements, numMyElements, myGlobalElements, elementSizeList, indexBase, *comm));
-  delete[] myGlobalElements;
-  delete[] elementSizeList;
+  createBondMapAndCheckForZeroNeighbors(bondMap, oneDimensionalMap, neighborhoodData, numBonds, maxNumBondsPerElem);
 
   // find the minimum element radius
   for(int i=0 ; i<cellVolume->MyLength() ; ++i){
@@ -376,7 +344,7 @@ void PeridigmNS::AlbanyDiscretization::createBlockElementLists() {
   for(int i=0 ; i<blockID->MyLength() ; ++i){
     stringstream blockName;
     blockName << "block_" << (*blockID)[i];
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(elementBlocks->find(blockName.str()) == elementBlocks->end(),
+    TEUCHOS_TEST_FOR_TERMINATION(elementBlocks->find(blockName.str()) == elementBlocks->end(),
                                 "\n**** Error in AlbanyDiscretization::loadData(), invalid block id.\n");
     int globalID = blockID->Map().GID(i);
     (*elementBlocks)[blockName.str()].push_back(globalID);
@@ -436,7 +404,7 @@ PeridigmNS::AlbanyDiscretization::filterBonds(Teuchos::RCP<PeridigmNS::Neighborh
     string msg = "**** Error, unrecognized value for \"Omit Bonds Between Blocks\":  ";
     msg += bondFilterCommand + "\n";
     msg += "**** Valid options are:  All, None\n";
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, msg);
+    TEUCHOS_TEST_FOR_TERMINATION(true, msg);
   }
 
   // Create an overlap vector containing the block IDs of each cell
