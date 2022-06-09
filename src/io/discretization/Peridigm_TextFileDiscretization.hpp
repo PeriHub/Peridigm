@@ -57,13 +57,12 @@ namespace PeridigmNS
 {
 
   //! Discretization class that creates discretization from a text file containing node locations, volumes, and block ids.
-  class TextFileDiscretization : public PeridigmNS::Discretization
-  {
+  class TextFileDiscretization : public PeridigmNS::Discretization {
 
   public:
     //! Constructor
-    TextFileDiscretization(const Teuchos::RCP<const Epetra_Comm> &epetraComm,
-                           const Teuchos::RCP<Teuchos::ParameterList> &params);
+    TextFileDiscretization(const Teuchos::RCP<const Epetra_Comm>& epetraComm,
+                           const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     //! Destructor
     virtual ~TextFileDiscretization();
@@ -121,13 +120,13 @@ namespace PeridigmNS
 
   private:
     //! Private to prohibit copying
-    TextFileDiscretization(const TextFileDiscretization &);
+    TextFileDiscretization(const TextFileDiscretization&);
 
     //! Private to prohibit copying
-    TextFileDiscretization &operator=(const TextFileDiscretization &);
+    TextFileDiscretization& operator=(const TextFileDiscretization&);
 
     //! Creates a discretization object based on data read from a text file.
-    void getDiscretization(const std::string &textFileName,
+    void getDiscretization(const std::string& textFileName,
                            std::vector<double> &coordinates,
                            std::vector<int> &blockIds,
                            std::vector<double> &volumes,
@@ -163,13 +162,13 @@ namespace PeridigmNS
     };
 
     //! Create maps
-    void createMaps(const QUICKGRID::Data &decomp);
+    void createMaps(const QUICKGRID::Data& decomp);
 
     //! Create vectors
     void createVectors();
 
     //! Create NeighborhoodData
-    void createNeighborhoodData(const QUICKGRID::Data &decomp);
+    void createNeighborhoodData(const QUICKGRID::Data& decomp);
 
     //! Filter bonds from neighborhood list
     Teuchos::RCP<PeridigmNS::NeighborhoodData> filterBonds(Teuchos::RCP<PeridigmNS::NeighborhoodData> unfilteredNeighborhoodData);
@@ -225,9 +224,6 @@ namespace PeridigmNS
 
     //! Discretization parameter controling the formation of bonds
     std::string bondFilterCommand;
-
-    //! Epetra communicator
-    Teuchos::RCP<const Epetra_Comm> comm;
   };
 }
 
