@@ -350,6 +350,8 @@ namespace PeridigmNS {
     Teuchos::RCP<Epetra_Vector> getVolume() { return volume; }
     Teuchos::RCP<Epetra_Vector> getTemperature() { return temperature; }
     Teuchos::RCP<Epetra_Vector> getDeltaTemperature() { return deltaTemperature; }
+    Teuchos::RCP<Epetra_Vector> getHeatFlow() { return heatFlow; }
+    Teuchos::RCP<Epetra_Vector> getInternalHeatSource() { return internalHeatSource; }
     Teuchos::RCP<Epetra_Vector> getConcentration() { return concentration; }
     Teuchos::RCP<Epetra_Vector> getDamage() { return damage; }
     Teuchos::RCP<Epetra_Vector> getJacobianDeterminant() { return jacobianDeterminant; }
@@ -426,6 +428,12 @@ namespace PeridigmNS {
 
     //! Multiphysics flag
     bool analysisHasMultiphysics;
+    
+    //! Thermal flag
+    bool analysisHasThermal; //MODIFIED NOTE
+
+    //! Robin boundary condition fot thermal shock flag
+    bool hasThermalShock;
 
     //! Flag for computing element-sphere intersections
     bool computeIntersections;
@@ -518,6 +526,24 @@ namespace PeridigmNS {
 
     //! Global vector for temperature
     Teuchos::RCP<Epetra_Vector> temperature;
+
+    //! Global vector for cell specific heat
+  	Teuchos::RCP<Epetra_Vector> specificHeat;
+
+  	//! Global vector for cell thermal conductivity
+  	Teuchos::RCP<Epetra_Vector> thermalConductivity;
+
+  	//! Global vector for cell convection constant
+  	Teuchos::RCP<Epetra_Vector> convectionConstant;
+
+  	//! Global vector for cell fluid Temperature
+  	Teuchos::RCP<Epetra_Vector> fluidTemperature;
+
+  	//! Global vector for heat flow
+  	Teuchos::RCP<Epetra_Vector> heatFlow;
+
+  	//! Global vector for heat flow
+  	Teuchos::RCP<Epetra_Vector> internalHeatSource;
 
     //! Global vector for temperature change
     Teuchos::RCP<Epetra_Vector> deltaTemperature;
@@ -665,6 +691,13 @@ namespace PeridigmNS {
     //! BLAS for local-only vector updates (BLAS-1)
     Epetra_BLAS blas;
 
+    // thermal information
+    int deltaTemperatureFieldId;
+    int heatFlowFieldId;
+    int internalHeatSourceFieldId;
+    int numThermalDoFs;
+    string textThermalDoFs;
+
     // field ids for all relevant data
     bool hasCorrespondence;
     int elementIdFieldId;
@@ -680,7 +713,7 @@ namespace PeridigmNS {
     int accelerationFieldId;
     int temperatureFieldId;
     int concentrationFieldId;
-    int deltaTemperatureFieldId;
+    // int deltaTemperatureFieldId;
     int fluxDivergenceFieldId;
     int concentrationFluxDivergenceFieldId;
     int forceDensityFieldId;

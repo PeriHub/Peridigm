@@ -457,6 +457,7 @@ void zoltanQuery_pointSizeInBytes
    * 1)  coordinates:  size = dimension*sizeof(double)
    * 1a) volume:       size = sizeof(double)
      * 1b) angles:       size = dimension*sizeof(double)
+     * 1c) pointTime:       size = sizeof(double)
    * 2)  numNeighbors: size = sizeof(int)
    * 3)  neighbors:    size = numNeighbors*sizeof(int)
    */
@@ -492,7 +493,7 @@ void zoltanQuery_pointSizeInBytes
     numBytesPerPoint += dimension*bytesPerDouble;
     // pointTime
     numBytesPerPoint += bytesPerDouble;
-        // numNeighbors
+    // numNeighbors
     numBytesPerPoint += bytesPerInt;
     // neighbor list
     numBytesPerPoint += numNeigh*bytesPerInt;
@@ -544,6 +545,7 @@ void zoltanQuery_packPointsMultiFunction
    * 1) coordinates and using one memcpy
    * 2) volume using one memcpy
      * 2a)angles and using one memcpy
+     * 2b)pointTime and using one memcpy
    * 3) numNeigh and neighbors using one memcpy
    */
   int dimension = gridData->dimension;

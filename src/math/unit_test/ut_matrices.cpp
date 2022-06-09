@@ -71,7 +71,6 @@ TEUCHOS_UNIT_TEST(matrices, tensorRotation) {
     for (n=0; n<9; n++){
         B[n] = (n+1) + 0.33*n*n;
     }
-
     MATRICES::tensorRotation(A,B,true,C);
     MATRICES::tensorRotation(A,C,false,Ctest);
     
@@ -170,6 +169,7 @@ TEUCHOS_UNIT_TEST(matrices, MatMul) {
 
 TEUCHOS_UNIT_TEST(matrices, Invert3by3Matrix) {
 
+    std::cout<<"Test11"<<std::endl;
     std::vector<double> AVector(9);
     double* A = &AVector[0];
     double determinant;
@@ -201,7 +201,7 @@ TEUCHOS_UNIT_TEST(matrices, Invert3by3Matrix) {
 
     int b = MATRICES::Invert3by3Matrix(A,determinant,Ctest);
 
-    TEST_FLOATING_EQUALITY(b,0,0);
+    TEST_EQUALITY_CONST(b,0);
     for (n=0; n<9; n++)
     {
         TEST_FLOATING_EQUALITY(*(Ctest+n),*(C+n),0);
@@ -243,7 +243,7 @@ TEUCHOS_UNIT_TEST(matrices, Invert2by2Matrix) {
     *(C+4)=-0.5;
 
     int b = MATRICES::Invert2by2Matrix(A,determinant,Ctest);
-    TEST_FLOATING_EQUALITY(b,0,0);
+    TEST_EQUALITY_CONST(b,0);
     for (n=0; n<4; n++)
     {
         TEST_FLOATING_EQUALITY(*(Ctest+n),*(C+n),0);
@@ -254,7 +254,7 @@ TEUCHOS_UNIT_TEST(matrices, Invert2by2Matrix) {
     *(A+4)=0;
 
     b = MATRICES::Invert3by3Matrix(A,determinant,Ctest);
-    TEST_FLOATING_EQUALITY(b,1,0);
+    TEST_EQUALITY_CONST(b,1);
 
 }
 
@@ -320,6 +320,7 @@ TEUCHOS_UNIT_TEST(matrices, MatrixMultiply3x3) {
 
 TEUCHOS_UNIT_TEST(matrices, MatrixMultiply) {
 
+    std::cout<<"Test19"<<std::endl;
     std::vector<double> AVector(9);
     double* A = &AVector[0];
     std::vector<double> BVector(9);
