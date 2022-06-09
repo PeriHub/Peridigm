@@ -54,6 +54,7 @@
 #include "Peridigm_ElasticLinearCorrespondenceMaterial.hpp"
 #include "Peridigm_ElasticMaterial.hpp"
 #include "Peridigm_MultiphysicsElasticMaterial.hpp"
+#include "Peridigm_ThermalElasticMaterial.hpp"
 #include "Peridigm_ElasticPlasticMaterial.hpp"
 #include "Peridigm_ElasticPlasticHardeningMaterial.hpp"
 #include "Peridigm_ViscoelasticMaterial.hpp"
@@ -135,6 +136,8 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
     materialModel = Teuchos::rcp( new ElasticLinearCorrespondenceMaterial(materialParams) );    
   else if (materialModelName == "User Correspondence")
     materialModel = Teuchos::rcp( new UserCorrespondenceMaterial(materialParams) );    
+  else if (materialModelName == "Thermal Elastic")
+    materialModel = Teuchos::rcp( new ThermalElasticMaterial(materialParams) );
   else if (materialModelName == "Elastic Partial Volume"){
 #ifdef PERIDIGM_PV
     materialModel = Teuchos::rcp( new ElasticPVMaterial(materialParams) );

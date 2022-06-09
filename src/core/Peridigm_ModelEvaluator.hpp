@@ -78,7 +78,9 @@ namespace PeridigmNS {
     //! Model evaluation that acts directly on the workset
     void evalModel(Teuchos::RCP<Workset> workset, bool damageExist) const;
     //! Damage model evaluation that acts directly on the workset
-    void evalDamageModel(Teuchos::RCP<Workset> workset) const;
+    void evalDamageModel(Teuchos::RCP<Workset> workset) const;    
+    //! Model evaluation that acts directly on the workset
+    void evalHeatFlow(Teuchos::RCP<Workset> workset) const;
     //! Jacobian evaluation that acts directly on the workset
     void evalJacobian(Teuchos::RCP<Workset> workset) const;
 

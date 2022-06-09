@@ -47,6 +47,7 @@
 //@HEADER
 
 #include "Peridigm_ModelEvaluator.hpp"
+#include "Peridigm_ThermalMaterial.hpp"
 #include "Peridigm_Timer.hpp"
 
 PeridigmNS::ModelEvaluator::ModelEvaluator(){
@@ -162,6 +163,33 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset, bool damage
   if(!workset->contactManager.is_null())
     workset->contactManager->evaluateContactForce(dt);
   PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Contact");
+}
+
+void
+PeridigmNS::ModelEvaluator::evalHeatFlow(Teuchos::RCP<Workset> workset) const
+{
+	const double dt = workset->timeStep;
+	std::vector<PeridigmNS::Block>::iterator blockIt;
+
+	// ---- Evaluate Heat Flow ----
+	for(blockIt = workset->blocks->begin() ; blockIt != workset->blocks->end() ; blockIt++){
+
+		Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData = blockIt->getNeighborhoodData();
+		const int numOwnedPoints = neighborhoodData->NumOwnedPoints();
+		const int* ownedIDs = neighborhoodData->OwnedIDs();
+		const int* neighborhoodList = neighborhoodData->NeighborhoodList();
+		Teuchos::RCP<PeridigmNS::DataManager> dataManager = blockIt->getDataManager();
+		Teuchos::RCP<const PeridigmNS::Material> materialModel = blockIt->getMaterialModel();
+		Teuchos::RCP<const PeridigmNS::ThermalMaterial> matmod = Teuchos::rcp_dynamic_cast<const PeridigmNS::ThermalMaterial>(materialModel);
+
+		if (!Teuchos::is_null(matmod)){
+			matmod->computeHeatFlow(dt,
+								numOwnedPoints,
+								ownedIDs,
+								neighborhoodList,
+								*dataManager);
+		}
+	}
 }
 
 void
