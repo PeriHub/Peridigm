@@ -78,7 +78,7 @@ namespace PdBondFilter
        do not intersect between (0<=t<=1). If the plane and line are parallel,
        zero is returned and t is set to DBL_MAX.
        */
-    int bondIntersectInfinitePlane(const double* p0, const double* p1, double &t, double x[3]);
+  int bondIntersectInfinitePlane(const double *p0, const double *p1, double &t, double x[3]);
     /*
      * Under the assumption that the bond (p1-p0) intersects 'this' infinite plane at
      * the point 'x', this function determines if the intersection exists
@@ -105,7 +105,7 @@ namespace PdBondFilter
      * single scalar flag can be associated with every point in the neighborhood of 'pt';
      * bonds are included by default, ie flag=0; if a point is excluded then flag =1 is set
      */
-    virtual void filterBonds(std::vector<int> &treeList, const double* pt, const std::size_t ptLocalId, const double* xOverlap, bool* bondFlags) = 0;
+  virtual void filterBonds(std::vector<int>& treeList, const double *pt, const std::size_t ptLocalId, const double *xOverlap, bool* bondFlags) = 0;
 
   protected:
     bool includeSelf;
@@ -136,12 +136,9 @@ namespace PdBondFilter
     FinitePlane plane;
   };
 
-
-  class DiskFilter : public BondFilter
-  {
-  public:
-    DiskFilter(double* c, double* n, double r) : BondFilter(false), tolerance(1.0e-15), radius(r)
-    {
+class DiskFilter: public BondFilter {
+public:
+  DiskFilter(double *c, double* n, double r) : BondFilter(false), tolerance(1.0e-15), radius(r) {
       center[0] = c[0];
       center[1] = c[1];
       center[2] = c[2];
@@ -225,8 +222,8 @@ namespace PdBondFilter
       normal_[2] /= normal_magnitude;
     }
     virtual ~TriangleFilter() {}
-    virtual void filterBonds(std::vector<int> &treeList, const double* pt, const std::size_t ptLocalId, const double* xOverlap, bool* markForExclusion);
-  private:
+  virtual void filterBonds(std::vector<int> &treeList, const double *pt, const std::size_t ptLocalId, const double *xOverlap, bool* markForExclusion);
+private:
     bool bondIntersectsTriangle(const double* p0, const double* p1) const;
     bool pointInTriangle(const double* x) const;
     double v1_[3];

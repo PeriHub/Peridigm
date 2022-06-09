@@ -65,18 +65,19 @@
 
 using namespace std;
 
-PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<const Epetra_Comm> &epetra_comm,
-                                                           const Teuchos::RCP<Teuchos::ParameterList> &params) : minElementRadius(1.0e50),
+PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<const Epetra_Comm>& epetra_comm,
+                                                           const Teuchos::RCP<Teuchos::ParameterList>& params) :
+  Discretization(epetra_comm),
+  minElementRadius(1.0e50),
                                                                                                                  maxElementRadius(0.0),
                                                                                                                  maxElementDimension(0.0),
                                                                                                                  numBonds(0),
                                                                                                                  maxNumBondsPerElem(0),
                                                                                                                  myPID(epetra_comm->MyPID()),
                                                                                                                  numPID(epetra_comm->NumProc()),
-                                                                                                                 bondFilterCommand("None"),
-                                                                                                                 comm(epetra_comm)
+  bondFilterCommand("None")
 {
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(params->get<string>("Type") != "Text File", "Invalid Type in TextFileDiscretization");
+  TEUCHOS_TEST_FOR_TERMINATION(params->get<string>("Type") != "Text File", "Invalid Type in TextFileDiscretization");
 
   string meshFileName = params->get<string>("Input Mesh File");
   string topologyFileName = "";
@@ -95,46 +96,8 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
   //  createMaps(decomp);
   createNeighborhoodData(decomp);
 
-  // \todo Move this functionality to base class, it's currently duplicated in PdQuickGridDiscretization.
-  // Create the bondMap, a local map used for constitutive data stored on bonds.
-  // Due to Epetra_BlockMap restrictions, there can not be any entries with length zero.
-  // This means that points with no neighbors can not appear in the bondMap.
-  int numMyElementsUpperBound = oneDimensionalMap->NumMyElements();
-  int numGlobalElements = -1;
-  int numMyElements = 0;
-  int maxNumBonds = 0;
-  int *oneDimensionalMapGlobalElements = oneDimensionalMap->MyGlobalElements();
-  int *myGlobalElements = new int[numMyElementsUpperBound];
-  int *elementSizeList = new int[numMyElementsUpperBound];
-  int *const neighborhood = neighborhoodData->NeighborhoodList();
-  int neighborhoodIndex = 0;
-  int numPointsWithZeroNeighbors = 0;
-  for (int i = 0; i < neighborhoodData->NumOwnedPoints(); ++i)
-  {
-    int numNeighbors = neighborhood[neighborhoodIndex];
-    if (numNeighbors > 0)
-    {
-      numMyElements++;
-      myGlobalElements[i - numPointsWithZeroNeighbors] = oneDimensionalMapGlobalElements[i];
-      elementSizeList[i - numPointsWithZeroNeighbors] = numNeighbors;
-    }
-    else
-    {
-      numPointsWithZeroNeighbors++;
-    }
-    numBonds += numNeighbors;
-    if (numNeighbors > maxNumBonds)
-      maxNumBonds = numNeighbors;
-    neighborhoodIndex += 1 + numNeighbors;
-  }
-  maxNumBondsPerElem = maxNumBonds;
-  int indexBase = 0;
-  bondMap = Teuchos::rcp(new Epetra_BlockMap(numGlobalElements, numMyElements, myGlobalElements, elementSizeList, indexBase, *comm));
-  delete[] myGlobalElements;
-  delete[] elementSizeList;
-
   // 3D only
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(decomp.dimension != 3, "Invalid dimension in decomposition (only 3D is supported)");
+  TEUCHOS_TEST_FOR_TERMINATION(decomp.dimension != 3, "Invalid dimension in decomposition (only 3D is supported)");
 
   // fill the x vector with the current positions (owned positions only)
   initialX = Teuchos::rcp(new Epetra_Vector(Copy, *threeDimensionalMap, decomp.myX.get()));
@@ -142,6 +105,8 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
   pointAngle = Teuchos::rcp(new Epetra_Vector(Copy, *threeDimensionalMap, decomp.myAngle.get()));
   // fill with point or element separation
   nodeType = Teuchos::rcp(new Epetra_Vector(Copy, *oneDimensionalMap, decomp.myNodeType.get()));
+  // Create the bondMap, a local map used for constitutive data stored on bonds.
+  createBondMapAndCheckForZeroNeighbors(bondMap, oneDimensionalMap, neighborhoodData, numBonds, maxNumBondsPerElem);
   // fill cell volumes
   cellVolume = Teuchos::rcp(new Epetra_Vector(Copy, *oneDimensionalMap, decomp.cellVolume.get()));
 
@@ -166,7 +131,7 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
 
 PeridigmNS::TextFileDiscretization::~TextFileDiscretization() {}
 
-void PeridigmNS::TextFileDiscretization::getDiscretization(const string &textFileName,
+void PeridigmNS::TextFileDiscretization::getDiscretization(const string& textFileName,
                                                            vector<double> &coordinates,
                                                            vector<int> &blockIds,
                                                            vector<double> &volumes,
@@ -178,9 +143,8 @@ void PeridigmNS::TextFileDiscretization::getDiscretization(const string &textFil
   if (myPID == 0)
   {
     ifstream inFile(textFileName.c_str());
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(!inFile.is_open(), "**** Error opening discretization text file.\n");
-    while (inFile.good())
-    {
+    TEUCHOS_TEST_FOR_TERMINATION(!inFile.is_open(), "**** Error opening discretization text file.\n");
+    while(inFile.good()){
       string str;
       getline(inFile, str);
       str = trim(str);
@@ -228,9 +192,9 @@ void PeridigmNS::TextFileDiscretization::getDiscretization(const string &textFil
   }
 }
 
-QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &textFileName,
-                                                              const string &topologyFileName,
-                                                              const Teuchos::RCP<Teuchos::ParameterList> &params)
+QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& textFileName,
+                                                              const string& topologyFileName,
+                                                              const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
 
   // Read data from the text file
@@ -253,7 +217,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   // Read the text file on the root processor
 
   int numElements = static_cast<int>(blockIds.size());
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(myPID == 0 && numElements < 1, "**** Error reading discretization text file, no data found.\n");
+  TEUCHOS_TEST_FOR_TERMINATION(myPID == 0 && numElements < 1, "**** Error reading discretization text file, no data found.\n");
 
   // Record the block ids on the root processor
   set<int> uniqueBlockIds;
@@ -336,7 +300,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   {
     stringstream blockName;
     blockName << "block_" << rebalancedBlockID[i];
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(elementBlocks->find(blockName.str()) == elementBlocks->end(),
+    TEUCHOS_TEST_FOR_TERMINATION(elementBlocks->find(blockName.str()) == elementBlocks->end(),
                                 "\n**** Error in TextFileDiscretization::getDecomp(), invalid block id.\n");
     int globalID = rebalancedBlockID.Map().GID(i);
     (*elementBlocks)[blockName.str()].push_back(globalID);
@@ -345,11 +309,10 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   // Record the horizon for each point
   PeridigmNS::HorizonManager &horizonManager = PeridigmNS::HorizonManager::self();
   Teuchos::RCP<Epetra_Vector> rebalancedHorizonForEachPoint = Teuchos::rcp(new Epetra_Vector(rebalancedMap));
-  double *rebalancedX = decomp.myX.get();
-  for (map<string, vector<int>>::const_iterator it = elementBlocks->begin(); it != elementBlocks->end(); it++)
-  {
-    const string &blockName = it->first;
-    const vector<int> &globalIds = it->second;
+  double* rebalancedX = decomp.myX.get();
+  for(map<string, vector<int> >::const_iterator it = elementBlocks->begin() ; it != elementBlocks->end() ; it++){
+    const string& blockName = it->first;
+    const vector<int>& globalIds = it->second;
 
     bool hasConstantHorizon = horizonManager.blockHasConstantHorizon(blockName);
     double constantHorizonValue(0.0);
@@ -417,7 +380,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string &text
   return decomp;
 }
 
-void PeridigmNS::TextFileDiscretization::getFETopology(const string &fileName,
+void PeridigmNS::TextFileDiscretization::getFETopology(const string& fileName,
                                                        vector<double> &coordinates,
                                                        vector<int> &blockIds,
                                                        vector<double> &volumes,
@@ -554,8 +517,7 @@ void PeridigmNS::TextFileDiscretization::createNeighborhoodData(const QUICKGRID:
 {
   neighborhoodData = Teuchos::rcp(new PeridigmNS::NeighborhoodData);
   neighborhoodData->SetNumOwned(decomp.numPoints);
-  // neighborhoodData->SetElementsOwned(decomp.numElements);
-  memcpy(neighborhoodData->OwnedIDs(),
+   memcpy(neighborhoodData->OwnedIDs(), 
          Discretization::getLocalOwnedIds(decomp, *oneDimensionalOverlapMap).get(),
          decomp.numPoints * sizeof(int));
   memcpy(neighborhoodData->NeighborhoodPtr(),
@@ -601,7 +563,7 @@ PeridigmNS::TextFileDiscretization::filterBonds(Teuchos::RCP<PeridigmNS::Neighbo
     string msg = "**** Error, unrecognized value for \"Omit Bonds Between Blocks\":  ";
     msg += bondFilterCommand + "\n";
     msg += "**** Valid options are:  All, None\n";
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, msg);
+    TEUCHOS_TEST_FOR_TERMINATION(true, msg);
   }
 
   // Create an overlap vector containing the block IDs of each cell
@@ -615,9 +577,7 @@ PeridigmNS::TextFileDiscretization::filterBonds(Teuchos::RCP<PeridigmNS::Neighbo
   // Apply the block bonding matrix and create a new NeighborhoodData
   Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData = Teuchos::rcp(new PeridigmNS::NeighborhoodData);
   neighborhoodData->SetNumOwned(unfilteredNeighborhoodData->NumOwnedPoints());
-  // neighborhoodData->SetElementsOwned(unfilteredNeighborhoodData->NumOwnedElements());
-
-  memcpy(neighborhoodData->OwnedIDs(), unfilteredNeighborhoodData->OwnedIDs(), neighborhoodData->NumOwnedPoints() * sizeof(int));
+  memcpy(neighborhoodData->OwnedIDs(), unfilteredNeighborhoodData->OwnedIDs(), neighborhoodData->NumOwnedPoints()*sizeof(int));
   vector<int> neighborhoodListVec;
   neighborhoodListVec.reserve(unfilteredNeighborhoodData->NeighborhoodListSize());
   int *const neighborhoodPtr = neighborhoodData->NeighborhoodPtr();

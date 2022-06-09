@@ -57,6 +57,7 @@
 #include <vector>
 #include <map>
 
+
 class Epetra_Comm;
 struct Zoltan_Struct;
 class Epetra_Distributor;
@@ -83,114 +84,104 @@ What is a neighborhood and what does it do?
  * 2) Load balance mesh
  * 3) Create NeighborhoodList
  * 4) 4th argument -- BondFilter which defaults to neighborhood search that does not include 'self' point
+*/
+
+namespace PDNEIGH {
+
+/**
+ * Utilities
  */
+using std::shared_ptr;
+using std::size_t;
+using UTILITIES::Array;
 
-namespace PDNEIGH
-{
+template<class T> struct ArrayDeleter{
+  void operator()(T *d) {
+    delete [] d;
+  }
+};
 
-  /**
-   * Utilities
-   */
-  using std::shared_ptr;
-  using std::size_t;
-  using UTILITIES::Array;
+class NeighborhoodList {
 
-  template <class T>
-  struct ArrayDeleter
-  {
-    void operator()(T *d)
-    {
-      delete[] d;
+class Epetra_MapTag;
+friend class Epetra_MapTag;
+private:
+  enum Epetra_MapType { OWNED=0, OVERLAP=1 };
+  class Epetra_MapTag {
+  public:
+    explicit Epetra_MapTag(Epetra_MapType t, size_t block_size) : type(t), ndf(block_size) {}
+    const Epetra_MapType type;
+    const size_t ndf;
+  };
+
+  struct MapComparator {
+    bool operator() (Epetra_MapTag left, Epetra_MapTag right) const {
+      if(left.type < right.type)
+        return true;
+      return left.ndf < right.ndf;
     }
   };
 
-  class NeighborhoodList
-  {
+public:
+  NeighborhoodList(
+      shared_ptr<const Epetra_Comm> comm,
+      struct Zoltan_Struct *zz,
+      size_t numOwnedPoints,
+      shared_ptr<int> ownedGIDs,
+      shared_ptr<double> owned_coordinates,
+      Teuchos::RCP<Epetra_Vector> horizonList,
+      std::vector< shared_ptr<PdBondFilter::BondFilter> > bondFilters = std::vector< shared_ptr<PdBondFilter::BondFilter> >()
+      );
+  NeighborhoodList(
+      shared_ptr<const Epetra_Comm> comm,
+      struct Zoltan_Struct *zz,
+      size_t numOwnedPoints,
+      shared_ptr<int> ownedGIDs,
+      shared_ptr<double> owned_coordinates,
+      double horizon,
+      std::vector< shared_ptr<PdBondFilter::BondFilter> > bondFilters = std::vector< shared_ptr<PdBondFilter::BondFilter> >()
+      );
+  double get_frameset_buffer_size() const;
+  size_t get_num_owned_points() const;
+  size_t get_num_shared_points() const;
+  int get_num_neigh (int localId) const;
+  shared_ptr<int> get_neighborhood_ptr() const;
+  shared_ptr<int> get_neighborhood() const;
+  shared_ptr<int> get_local_neighborhood() const;
+  shared_ptr<int> get_owned_gids() const;
+  shared_ptr<int> get_shared_gids() const;
+  const int* get_neighborhood (int localId) const;
+  const int* get_local_neighborhood (int localId) const;
 
-    class Epetra_MapTag;
-    friend class Epetra_MapTag;
+  int get_size_neighborhood_list() const;
+  shared_ptr<double> get_owned_x() const;
+  shared_ptr<Epetra_BlockMap> getOwnedMap(int ndf) const;
+  shared_ptr<Epetra_BlockMap> getOverlapMap(int ndf) const;
+  shared_ptr<const Epetra_Comm> get_Epetra_Comm() const;
+  shared_ptr<Epetra_Distributor> create_Epetra_Distributor() const;
 
-  private:
-    enum Epetra_MapType
-    {
-      OWNED = 0,
-      OVERLAP = 1
-    };
-    class Epetra_MapTag
-    {
-    public:
-      explicit Epetra_MapTag(Epetra_MapType t, size_t block_size) : type(t), ndf(block_size) {}
-      const Epetra_MapType type;
-      const size_t ndf;
-    };
+private:
 
-    struct MapComparator
-    {
-      bool operator()(Epetra_MapTag left, Epetra_MapTag right) const
-      {
-        if (left.type < right.type)
-          return true;
-        return left.ndf < right.ndf;
-      }
-    };
+  void buildNeighborhoodList(int numOverlapPoints,shared_ptr<double> xOverlapPtr);
+  Array<int> createLocalNeighborList(const Epetra_BlockMap &overlapMap);
+  Array<int> createSharedGlobalIds() const;
+  void createAndAddNeighborhood();
+  shared_ptr<Epetra_BlockMap> create_Epetra_BlockMap(Epetra_MapTag key);
 
-  public:
-    NeighborhoodList(
-        shared_ptr<const Epetra_Comm> comm,
-        struct Zoltan_Struct *zz,
-        size_t numOwnedPoints,
-        shared_ptr<int> ownedGIDs,
-        shared_ptr<double> owned_coordinates,
-        Teuchos::RCP<Epetra_Vector> horizonList,
-        std::vector<shared_ptr<PdBondFilter::BondFilter>> bondFilters = std::vector<shared_ptr<PdBondFilter::BondFilter>>());
-    NeighborhoodList(
-        shared_ptr<const Epetra_Comm> comm,
-        struct Zoltan_Struct *zz,
-        size_t numOwnedPoints,
-        shared_ptr<int> ownedGIDs,
-        shared_ptr<double> owned_coordinates,
-        double horizon,
-        std::vector<shared_ptr<PdBondFilter::BondFilter>> bondFilters = std::vector<shared_ptr<PdBondFilter::BondFilter>>());
-
-    double get_frameset_buffer_size() const;
-    size_t get_num_owned_points() const;
-    size_t get_num_shared_points() const;
-    int get_num_neigh(int localId) const;
-    shared_ptr<int> get_neighborhood_ptr() const;
-    shared_ptr<int> get_neighborhood() const;
-    shared_ptr<int> get_local_neighborhood() const;
-    shared_ptr<int> get_owned_gids() const;
-    shared_ptr<int> get_shared_gids() const;
-    const int *get_neighborhood(int localId) const;
-    const int *get_local_neighborhood(int localId) const;
-
-    int get_size_neighborhood_list() const;
-    shared_ptr<double> get_owned_x() const;
-    shared_ptr<Epetra_BlockMap> getOwnedMap(int ndf) const;
-    shared_ptr<Epetra_BlockMap> getOverlapMap(int ndf) const;
-    shared_ptr<const Epetra_Comm> get_Epetra_Comm() const;
-    shared_ptr<Epetra_Distributor> create_Epetra_Distributor() const;
-
-  private:
-    void buildNeighborhoodList(int numOverlapPoints, shared_ptr<double> xOverlapPtr);
-    Array<int> createLocalNeighborList(const Epetra_BlockMap &overlapMap);
-    Array<int> createSharedGlobalIds() const;
-    void createAndAddNeighborhood();
-    shared_ptr<Epetra_BlockMap> create_Epetra_BlockMap(Epetra_MapTag key);
-
-  private:
-    shared_ptr<const Epetra_Comm> epetraComm;
-    std::map<Epetra_MapTag, shared_ptr<Epetra_BlockMap>, MapComparator> epetra_block_maps;
-    size_t num_owned_points, size_neighborhood_list;
-    size_t num_elements;
-    double frameset_buffer_size;
+private:
+  shared_ptr<const Epetra_Comm> epetraComm;
+  std::map<Epetra_MapTag, shared_ptr<Epetra_BlockMap>, MapComparator > epetra_block_maps;
+  size_t num_owned_points, size_neighborhood_list;
+  double frameset_buffer_size;
     Teuchos::RCP<Epetra_Vector> horizons;
-    shared_ptr<int> owned_gids;
-    shared_ptr<double> owned_x;
-    Array<int> neighborhood, elements, local_neighborhood, neighborhood_ptr, num_neighbors, sharedGIDs;
-    struct Zoltan_Struct *zoltan;
-    std::vector<shared_ptr<PdBondFilter::BondFilter>> filter_ptrs;
-  };
+  shared_ptr<int> owned_gids;
+  shared_ptr<double> owned_x;
+  Array<int> neighborhood, local_neighborhood, neighborhood_ptr, num_neighbors, sharedGIDs;
+  struct Zoltan_Struct *zoltan;
+  std::vector< shared_ptr<PdBondFilter::BondFilter> > filter_ptrs;
+
+};
+
 
 }
 

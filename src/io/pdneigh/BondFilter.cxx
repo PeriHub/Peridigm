@@ -62,8 +62,7 @@ namespace PdBondFilter
   {
   }
 
-  int FinitePlane::bondIntersectInfinitePlane(const double* p0, const double* p1, double &t, double x[3])
-  {
+  int FinitePlane::bondIntersectInfinitePlane(const double *p0, const double *p1, double &t, double x[3]) {
 
     double numerator = (r0[0] - p0[0]) * n[0] + (r0[1] - p0[1]) * n[1] + (r0[2] - p0[2]) * n[2];
     double denominator = (p1[0] - p0[0]) * n[0] + (p1[1] - p0[1]) * n[1] + (p1[2] - p0[2]) * n[2];
@@ -111,8 +110,7 @@ namespace PdBondFilter
     return intersects;
   }
 
-  void BondFilterDefault::filterBonds(std::vector<int> &treeList, const double* pt, const size_t ptLocalId, const double* xOverlap, bool* bondFlags)
-  {
+void BondFilterDefault::filterBonds(std::vector<int>& treeList, const double *pt, const size_t ptLocalId, const double *xOverlap, bool *bondFlags) {
 
     bool* flagIter = bondFlags;
     for (unsigned int n = 0; n < treeList.size(); n++, flagIter++)
@@ -129,109 +127,99 @@ namespace PdBondFilter
     }
   }
 
-  void FinitePlaneFilter::filterBonds(std::vector<int> &treeList, const double* pt, const size_t ptLocalId, const double* xOverlap, bool* bondFlags)
-  {
+
+void FinitePlaneFilter::filterBonds(std::vector<int>& treeList, const double *pt, const size_t ptLocalId, const double *xOverlap, bool *bondFlags) {
 
     /*
-     * Create bond points
+   * Create bond points
+   */
+  const double *p0 = pt;
+  const double *p1;
+  double x[3], t;
+  bool *flagIter = bondFlags;
+  for(unsigned int p=0;p<treeList.size();p++,flagIter++){
+    /*
+     * Local id of point within neighborhood
      */
-    const double* p0 = pt;
-    const double* p1;
-    double x[3], t;
-    bool* flagIter = bondFlags;
-    for (unsigned int p = 0; p < treeList.size(); p++, flagIter++)
-    {
-      /*
-       * Local id of point within neighborhood
-       */
-      size_t uid = treeList[p];
-      /*
-       * We mark points only if we do not want to include them
-       */
-      if (ptLocalId == uid && !includeSelf)
-      {
-        *flagIter = 1;
-        continue;
-      }
+    size_t uid = treeList[p];
+    /*
+     * We mark points only if we do not want to include them
+     */
+    if(ptLocalId==uid && !includeSelf) {
+      *flagIter=1;
+      continue;
+    }
 
-      /*
-       * Now run plane filter
-       */
-      p1 = xOverlap + (3 * uid);
-      if (0 != plane.bondIntersectInfinitePlane(p0, p1, t, x) && plane.bondIntersect(x, tolerance))
-      {
-        *flagIter = 1;
-      }
+    /*
+     * Now run plane filter
+     */
+    p1 = xOverlap+(3*uid);
+    if( 0 != plane.bondIntersectInfinitePlane(p0,p1,t,x) && plane.bondIntersect(x,tolerance) ){
+      *flagIter=1;
+    }
+	}
+}
+
+void DiskFilter::filterBonds(std::vector<int> &treeList, const double *pt, const size_t ptLocalId, const double *xOverlap, bool *bondFlags) {
+
+  const double* p0 = pt;
+  const double* p1;
+  bool* flagIter = bondFlags;
+  for(unsigned int p=0;p<treeList.size();p++,flagIter++){
+
+    // Local id of point within neighborhood
+    size_t uid = treeList[p];
+
+    // Set flag for bonds that will be excluded from the neighborlist
+    p1 = xOverlap+(3*uid);
+    if(ptLocalId==uid && !includeSelf) {
+      *flagIter=1;
+      continue;
+    }
+    if( bondIntersectsDisk(p0, p1) ) {
+      *flagIter=1;
     }
   }
+}
 
-  void DiskFilter::filterBonds(std::vector<int> &treeList, const double* pt, const size_t ptLocalId, const double* xOverlap, bool* bondFlags)
-  {
+bool DiskFilter::bondIntersectsDisk(const double* p0, const double* p1) const {
 
-    const double* p0 = pt;
-    const double* p1;
-    bool* flagIter = bondFlags;
-    for (unsigned int p = 0; p < treeList.size(); p++, flagIter++)
-    {
+  double numerator   = (center[0] - p0[0]) * normal[0] + (center[1] - p0[1]) * normal[1] + (center[2] - p0[2]) * normal[2];
+  double denominator = (p1[0] - p0[0]) * normal[0] + (p1[1] - p0[1]) * normal[1] + (p1[2] - p0[2]) * normal[2];
 
-      // Local id of point within neighborhood
-      size_t uid = treeList[p];
+  double t;
 
-      // Set flag for bonds that will be excluded from the neighborlist
-      p1 = xOverlap + (3 * uid);
-      if (ptLocalId == uid && !includeSelf)
-      {
-        *flagIter = 1;
-        continue;
-      }
-      if (bondIntersectsDisk(p0, p1))
-      {
-        *flagIter = 1;
-      }
-    }
+  if(std::abs(denominator) < tolerance){
+    // line is parallel to plane
+    // it may or may not lie on the plane
+    // if it does lie on the plane, then the numerator will be zero
+    // in either case, this function will return "no intersection"
+    t = DBL_MAX;
+  }
+  else{
+    // the line intersects the plane
+    t = numerator/denominator;
   }
 
-  bool DiskFilter::bondIntersectsDisk(const double* p0, const double* p1) const
-  {
-
-    double numerator = (center[0] - p0[0]) * normal[0] + (center[1] - p0[1]) * normal[1] + (center[2] - p0[2]) * normal[2];
-    double denominator = (p1[0] - p0[0]) * normal[0] + (p1[1] - p0[1]) * normal[1] + (p1[2] - p0[2]) * normal[2];
-
-    double t;
-
-    if (std::abs(denominator) < tolerance)
-    {
-      // line is parallel to plane
-      // it may or may not lie on the plane
-      // if it does lie on the plane, then the numerator will be zero
-      // in either case, this function will return "no intersection"
-      t = DBL_MAX;
-    }
-    else
-    {
-      // the line intersects the plane
-      t = numerator / denominator;
-    }
-
-    if (t < 0.0 || t > 1.0)
-      return false;
-
-    // intersection point
-    double x[3];
-    x[0] = p0[0] + t * (p1[0] - p0[0]);
-    x[1] = p0[1] + t * (p1[1] - p0[1]);
-    x[2] = p0[2] + t * (p1[2] - p0[2]);
-
-    // check if intesection point is within disk
-    double distance_squared = (x[0] - center[0]) * (x[0] - center[0]) +
-                              (x[1] - center[1]) * (x[1] - center[1]) +
-                              (x[2] - center[2]) * (x[2] - center[2]);
-
-    if (distance_squared < radius * radius)
-      return true;
-
+  if (t < 0.0 || t > 1.0)
     return false;
-  }
+
+  // intersection point
+  double x[3];
+  x[0] = p0[0] + t * (p1[0] - p0[0]);
+  x[1] = p0[1] + t * (p1[1] - p0[1]);
+  x[2] = p0[2] + t * (p1[2] - p0[2]);
+
+  // check if intesection point is within disk
+  double distance_squared = (x[0] - center[0])*(x[0] - center[0]) +
+                            (x[1] - center[1])*(x[1] - center[1]) +
+                            (x[2] - center[2])*(x[2] - center[2]);
+
+  if (distance_squared < radius*radius)
+    return true;
+
+  return false;
+}
 
  void PreDefinedTopologyFilter::filterBonds(std::vector<int> &treeList, const double* pt, const size_t ptLocalId, const double* xOverlap, bool* bondFlags)
  {

@@ -290,15 +290,20 @@ TEUCHOS_UNIT_TEST(QuickGrid_loadBal_np2_3x1x1, p1) {
 	int id=0; // this is a local id
 	const double tolerance = 1.0e-15;
 	double *r = gridData.myX.get();
-        TEST_FLOATING_EQUALITY(r[3*id+0],x3,tolerance);
+    TEST_FLOATING_EQUALITY(r[3*id+0],x3,tolerance);
 	TEST_FLOATING_EQUALITY(r[3*id+1],y,tolerance);
 	TEST_FLOATING_EQUALITY(r[3*id+2],z,tolerance);
 
 	// assert cell volumes
 	double *v = gridData.cellVolume.get();
 	double *end = v+myNumPoints;
+	
 	for(; v != end ; v++){
+		
+				std::cout << *v << " " << _cellVolume << std::endl;
+		std::cout << "test " << " " << " " << std::endl;
 		TEST_FLOATING_EQUALITY(*v,_cellVolume,tolerance);
+
 	}
 
       
