@@ -57,59 +57,26 @@ using std::shared_ptr;
 
 PeridigmNS::PdQuickGridDiscretization::PdQuickGridDiscretization(const Teuchos::RCP<const Epetra_Comm>& epetra_comm,
                                                                  const Teuchos::RCP<Teuchos::ParameterList>& params) :
+  Discretization(epetra_comm),
   minElementRadius(1.0e50),
   maxElementRadius(0.0),
   maxElementDimension(0.0),
   numBonds(0),
   maxNumBondsPerElem(0),
   myPID(epetra_comm->MyPID()),
-  numPID(epetra_comm->NumProc()),
-  comm(epetra_comm)
+  numPID(epetra_comm->NumProc())
 {
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(params->get<std::string>("Type") != "PdQuickGrid", "Invalid Type in PdQuickGridDiscretization");
+  TEUCHOS_TEST_FOR_TERMINATION(params->get<std::string>("Type") != "PdQuickGrid", "Invalid Type in PdQuickGridDiscretization");
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(params->isSublist("Bond Filters"), "**** Error: Bond filters not supported for PdQuickGrid discretizations.\n");
+  TEUCHOS_TEST_FOR_TERMINATION(params->isSublist("Bond Filters"), "**** Error: Bond filters not supported for PdQuickGrid discretizations.\n");
 
   QUICKGRID::Data decomp = getDiscretization(params);
 
   createMaps(decomp);
   createNeighborhoodData(decomp);
 
-  // Create the bondMap, a local map used for constitutive data stored on bonds.
-  // Due to Epetra_BlockMap restrictions, there can not be any entries with length zero.
-  // This means that points with no neighbors can not appear in the bondMap.
-  int numMyElementsUpperBound = oneDimensionalMap->NumMyElements();
-  int numGlobalElements = -1; 
-  int numMyElements = 0;
-  int maxNumBonds = 0;
-  int* oneDimensionalMapGlobalElements = oneDimensionalMap->MyGlobalElements();
-  int* myGlobalElements = new int[numMyElementsUpperBound];
-  int* elementSizeList = new int[numMyElementsUpperBound];
-  int* neighborhood = decomp.neighborhood.get();
-  int neighborhoodIndex = 0;
-  int numPointsWithZeroNeighbors = 0;
-  for(size_t i=0 ; i<decomp.numPoints ; ++i){
-    int numNeighbors = neighborhood[neighborhoodIndex];
-    if(numNeighbors > 0){
-      numMyElements++;
-      myGlobalElements[i-numPointsWithZeroNeighbors] = oneDimensionalMapGlobalElements[i];
-      elementSizeList[i-numPointsWithZeroNeighbors] = numNeighbors;
-    }
-    else{
-      numPointsWithZeroNeighbors++;
-    }
-    numBonds += numNeighbors;
-    if(numNeighbors>maxNumBonds) maxNumBonds = numNeighbors;
-    neighborhoodIndex += 1 + numNeighbors;
-  }
-  maxNumBondsPerElem = maxNumBonds;
-  int indexBase = 0;
-  bondMap = Teuchos::rcp(new Epetra_BlockMap(numGlobalElements, numMyElements, myGlobalElements, elementSizeList, indexBase, *comm));
-  delete[] myGlobalElements;
-  delete[] elementSizeList;
-
   // 3D only
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(decomp.dimension != 3, "Invalid dimension in decomposition (only 3D is supported)");
+  TEUCHOS_TEST_FOR_TERMINATION(decomp.dimension != 3, "Invalid dimension in decomposition (only 3D is supported)");
 
   // There is only one block and it is called "block_1"
   std::string blockName = "block_1";
@@ -117,9 +84,12 @@ PeridigmNS::PdQuickGridDiscretization::PdQuickGridDiscretization(const Teuchos::
   // fill the x vector with the current positions (owned positions only)
   initialX = Teuchos::rcp(new Epetra_Vector(Copy,*threeDimensionalMap,decomp.myX.get()) );
 
+  // Create the bondMap, a local map used for constitutive data stored on bonds.
+  createBondMapAndCheckForZeroNeighbors(bondMap, oneDimensionalMap, neighborhoodData, numBonds, maxNumBondsPerElem);
+
   // fill the vector of horizon values for each point
   PeridigmNS::HorizonManager& horizonManager = PeridigmNS::HorizonManager::self();
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(!horizonManager.blockHasConstantHorizon(blockName), "\n**** Error, variable horizon not supported for QuickGrid discretizations!\n");
+  TEUCHOS_TEST_FOR_TERMINATION(!horizonManager.blockHasConstantHorizon(blockName), "\n**** Error, variable horizon not supported for QuickGrid discretizations!\n");
   double horizon = horizonManager.getBlockConstantHorizonValue(blockName);
   horizonForEachPoint = Teuchos::rcp(new Epetra_Vector(*oneDimensionalMap));
   horizonForEachPoint->PutScalar(horizon);
@@ -140,55 +110,29 @@ PeridigmNS::PdQuickGridDiscretization::PdQuickGridDiscretization(const Teuchos::
 
 PeridigmNS::PdQuickGridDiscretization::PdQuickGridDiscretization(const Teuchos::RCP<const Epetra_Comm>& epetra_comm,
                                                                  const Teuchos::RCP<const QUICKGRID::Data>& decomp) :
+  Discretization(epetra_comm),
   minElementRadius(1.0e50),
   maxElementRadius(0.0),
   maxElementDimension(0.0),
   numBonds(0),
   myPID(comm->MyPID()),
-  numPID(comm->NumProc()),
-  comm(epetra_comm)
+  numPID(comm->NumProc())
 {
   createMaps(*decomp);
   createNeighborhoodData(*decomp);
 
-  // Create the bondMap, a local map used for constitutive data stored on bonds.
-  // Due to Epetra_BlockMap restrictions, there can not be any entries with length zero.
-  // This means that points with no neighbors can not appear in the bondMap.
-  int numMyElementsUpperBound = oneDimensionalMap->NumMyElements();
-  int numGlobalElements = -1; 
-  int numMyElements = 0;
-  int* oneDimensionalMapGlobalElements = oneDimensionalMap->MyGlobalElements();
-  int* myGlobalElements = new int[numMyElementsUpperBound];
-  int* elementSizeList = new int[numMyElementsUpperBound];
-  int* neighborhood = decomp->neighborhood.get();
-  int neighborhoodIndex = 0;
-  int numPointsWithZeroNeighbors = 0;
-  for(size_t i=0 ; i<decomp->numPoints ; ++i){
-    int numNeighbors = neighborhood[neighborhoodIndex];
-    if(numNeighbors > 0){
-      numMyElements++;
-      myGlobalElements[i-numPointsWithZeroNeighbors] = oneDimensionalMapGlobalElements[i];
-      elementSizeList[i-numPointsWithZeroNeighbors] = numNeighbors;
-    }
-    else{
-      numPointsWithZeroNeighbors++;
-    }
-    numBonds += numNeighbors;
-    neighborhoodIndex += 1 + numNeighbors;
-  }
-  int indexBase = 0;
-  bondMap = Teuchos::rcp(new Epetra_BlockMap(numGlobalElements, numMyElements, myGlobalElements, elementSizeList, indexBase, *comm));
-  delete[] myGlobalElements;
-  delete[] elementSizeList;
-
   // 3D only
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(decomp->dimension != 3, "Invalid dimension in decomposition (only 3D is supported)");
+  TEUCHOS_TEST_FOR_TERMINATION(decomp->dimension != 3, "Invalid dimension in decomposition (only 3D is supported)");
 
   // fill the x vector with the current positions (owned positions only)
   initialX = Teuchos::rcp(new Epetra_Vector(Copy, *threeDimensionalMap, decomp->myX.get()) );
 
+  // Create the bondMap, a local map used for constitutive data stored on bonds.
+  createBondMapAndCheckForZeroNeighbors(bondMap, oneDimensionalMap, neighborhoodData, numBonds, maxNumBondsPerElem);
+
   // fill cell volumes
   cellVolume = Teuchos::rcp(new Epetra_Vector(Copy, *oneDimensionalMap, decomp->cellVolume.get()) );
+  
 }
 
 PeridigmNS::PdQuickGridDiscretization::~PdQuickGridDiscretization() {}
@@ -207,7 +151,7 @@ QUICKGRID::Data PeridigmNS::PdQuickGridDiscretization::getDiscretization(const T
   // There is only one block for QuickGrid discretizations, block_1
   PeridigmNS::HorizonManager& horizonManager = PeridigmNS::HorizonManager::self();
   string blockName = "block_1";
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(!horizonManager.blockHasConstantHorizon(blockName), "\n**** Error, variable horizon not supported for QuickGrid discretizations!\n");
+  TEUCHOS_TEST_FOR_TERMINATION(!horizonManager.blockHasConstantHorizon(blockName), "\n**** Error, variable horizon not supported for QuickGrid discretizations!\n");
   double horizon = horizonManager.getBlockConstantHorizonValue(blockName);
 
   // param list should have a "sublist" with different types that we switch on here
@@ -282,7 +226,7 @@ QUICKGRID::Data PeridigmNS::PdQuickGridDiscretization::getDiscretization(const T
 //     maxElementDimension = sqrt((xLength/nx)*(xLength/nx) + (yLength/ny)*(yLength/ny) + (zLength/nz)*(zLength/nz));
   } 
   else { // ERROR
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Invalid Type in PdQuickGridDiscretization");
+    TEUCHOS_TEST_FOR_TERMINATION(true, "Invalid Type in PdQuickGridDiscretization");
   }
 
   return decomp;
@@ -318,18 +262,18 @@ PeridigmNS::PdQuickGridDiscretization::createMaps(const QUICKGRID::Data& decomp)
 void
 PeridigmNS::PdQuickGridDiscretization::createNeighborhoodData(const QUICKGRID::Data& decomp)
 {
-   neighborhoodData = Teuchos::rcp(new PeridigmNS::NeighborhoodData);
-   neighborhoodData->SetNumOwned(decomp.numPoints);
-   memcpy(neighborhoodData->OwnedIDs(),
-          Discretization::getLocalOwnedIds(decomp, *oneDimensionalOverlapMap).get(),
- 		  decomp.numPoints*sizeof(int));
-   memcpy(neighborhoodData->NeighborhoodPtr(), 
- 		  decomp.neighborhoodPtr.get(),
- 		  decomp.numPoints*sizeof(int));
-   neighborhoodData->SetNeighborhoodListSize(decomp.sizeNeighborhoodList);
-   memcpy(neighborhoodData->NeighborhoodList(),
-		  Discretization::getLocalNeighborList(decomp, *oneDimensionalOverlapMap).get(),
- 		  decomp.sizeNeighborhoodList*sizeof(int));
+  neighborhoodData = Teuchos::rcp(new PeridigmNS::NeighborhoodData);
+  neighborhoodData->SetNumOwned(decomp.numPoints);
+  memcpy(neighborhoodData->OwnedIDs(),
+        Discretization::getLocalOwnedIds(decomp, *oneDimensionalOverlapMap).get(),
+    decomp.numPoints*sizeof(int));
+  memcpy(neighborhoodData->NeighborhoodPtr(),
+    decomp.neighborhoodPtr.get(),
+    decomp.numPoints*sizeof(int));
+  neighborhoodData->SetNeighborhoodListSize(decomp.sizeNeighborhoodList);
+  memcpy(neighborhoodData->NeighborhoodList(),
+    Discretization::getLocalNeighborList(decomp, *oneDimensionalOverlapMap).get(),
+    decomp.sizeNeighborhoodList*sizeof(int));
 }
 
 Teuchos::RCP<const Epetra_BlockMap>
