@@ -63,9 +63,10 @@ namespace PeridigmNS {
   public:
 
     //! Constructor
-    Discretization() :
+    Discretization(const Teuchos::RCP<const Epetra_Comm>& epetraComm) :
       elementBlocks(Teuchos::rcp(new std::map< std::string, std::vector<int> >())),
-      nodeSets(Teuchos::rcp(new std::map< std::string, std::vector<int> >()))
+      nodeSets(Teuchos::rcp(new std::map< std::string, std::vector<int> >())),
+      comm(epetraComm)
     {}
 
     //! Destructor
@@ -99,7 +100,7 @@ namespace PeridigmNS {
     virtual Teuchos::RCP<Epetra_Vector> getInitialX() const = 0;
     //! Get point angle
     virtual Teuchos::RCP<Epetra_Vector> getPointAngle() const = 0;
-    //! Get point angle
+    //! Get point node type
     virtual Teuchos::RCP<Epetra_Vector> getNodeType() const = 0;
     //! Get the horizon for each node
     virtual Teuchos::RCP<Epetra_Vector> getHorizon() const = 0;
@@ -164,6 +165,13 @@ namespace PeridigmNS {
     //! Get the block id for a given block name
     int blockNameToBlockId(std::string blockName) const;
 
+    //! Create the bondMap, a local map used for constitutive data stored on bonds.
+    void createBondMapAndCheckForZeroNeighbors(Teuchos::RCP<Epetra_BlockMap>& bondMap,
+                                               const Teuchos::RCP<Epetra_BlockMap> oneDimensionalMap,
+                                               const Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData,
+                                               unsigned int & numBonds,
+                                               unsigned int & maxNumBondsPerElem) const;
+
   protected:
 
     //! Get the overlap map.
@@ -174,9 +182,6 @@ namespace PeridigmNS {
 
     //! Get the local owned IDs.
     static std::shared_ptr<int> getLocalOwnedIds(const QUICKGRID::Data& gridData, const Epetra_BlockMap& overlapMap);
-
-    //! Get the element nodal list.
-    static std::shared_ptr<int> getElementNodalList(const QUICKGRID::Data& gridData, const Epetra_BlockMap& overlapMap);
 
     //! Get the local neighborhood list.
     static std::shared_ptr<int> getLocalNeighborList(const QUICKGRID::Data& gridData, const Epetra_BlockMap& overlapMap);
@@ -192,6 +197,9 @@ namespace PeridigmNS {
     Teuchos::RCP< std::map< std::string, int> > nodeSetIds;
 
     std::vector< std::shared_ptr<PdBondFilter::BondFilter> > bondFilters;
+
+    //! Epetra communicator
+    Teuchos::RCP<const Epetra_Comm> comm;
 
   private:
 
