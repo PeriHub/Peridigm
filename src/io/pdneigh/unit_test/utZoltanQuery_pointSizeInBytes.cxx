@@ -137,10 +137,14 @@ TEUCHOS_UNIT_TEST(ZoltanQuery_pointSizeInBytes, SmallNeighborhood) {
 	}
 
 	for(int p=0;p<numPoints;p++){
-		sizeAnswers[p]=(dimension+1)*sizeof(double)+(1+numNeighbors[p])*sizeof(int);
+		sizeAnswers[p]=dimension*sizeof(double)+dimension*sizeof(double)+sizeof(double)+(1+numNeighbors[p])*sizeof(int)+sizeof(double);
+	               	// coordinates + angle + volume + neighborhood + nodeTyoe
 	}
 	int *neighPtr = gridData.neighborhoodPtr.get();
 	for(int p=0;p<9;p++){
+		
+		std::cout <<sizeAnswers[p]<< std::endl;
+		std::cout <<sizes[p]<< std::endl;
 		TEST_ASSERT( ptrAnswers[p] == neighPtr[exportLocalIds[p]] );
 		TEST_ASSERT( sizeAnswers[p] == sizes[p] );
 	}
