@@ -111,27 +111,6 @@ std::shared_ptr<int> PeridigmNS::Discretization::getLocalOwnedIds(const QUICKGRI
     *lIds = overlapMap.LID(*gIds);
   return localIds.get_shared_ptr();
 }
-/*
-std::shared_ptr<int> PeridigmNS::Discretization::getElementNodalList(const QUICKGRID::Data& gridData, const Epetra_BlockMap& overlapMap){
-  UTILITIES::Array<int> localNeighborList(gridData.sizeElementNodalList);
-  int *localNeig = localNeighborList.get();
-  int *neighPtr = gridData.elementNodalPtr.get();
-  int *neigh = gridData.elementNodal.get();
-  for(size_t p=0;p<gridData.numElements;p++){
-    int ptr = neighPtr[p];
-    int numNeigh = neigh[ptr];
-    localNeig[ptr]=numNeigh;
-    for(int n=1;n<=numNeigh;n++){
-      int gid = neigh[ptr+n];
-      int localId = overlapMap.LID(gid);
-      localNeig[ptr+n] = localId;
-    }
-  }
-  return localNeighborList.get_shared_ptr();
-}
-*/
-
-
 
 std::shared_ptr<int> PeridigmNS::Discretization::getLocalNeighborList(const QUICKGRID::Data& gridData, const Epetra_BlockMap& overlapMap){
   UTILITIES::Array<int> localNeighborList(gridData.sizeNeighborhoodList);
@@ -150,24 +129,6 @@ std::shared_ptr<int> PeridigmNS::Discretization::getLocalNeighborList(const QUIC
   }
   return localNeighborList.get_shared_ptr();
 }
-
-//std::shared_ptr<int> PeridigmNS::Discretization::getElementNodalList(const QUICKGRID::Data& gridData, const Epetra_BlockMap& overlapMap){
-//  UTILITIES::Array<int> elementList(gridData.sizeElementNodesList);
-//  int *localNeig = elementList.get();
-//  int *neighPtr = gridData.elementNodesPtr.get();
-//  int *neigh = gridData.elementNodes.get();
-//  for(size_t p=0;p<gridData.numElements;p++){
-//    int ptr = neighPtr[p];
-//    int numNeigh = neigh[ptr];
-//    localNeig[ptr]=numNeigh;
-//    for(int n=1;n<=numNeigh;n++){
-//      int gid = neigh[ptr+n];
-//      int localId = overlapMap.LID(gid);
-//      localNeig[ptr+n] = localId;
-//    }
-//  }
-//  return elementList.get_shared_ptr();
-//}
 
 Epetra_BlockMap PeridigmNS::Discretization::getOwnedMap(const Epetra_Comm& comm,const QUICKGRID::Data& gridData, int ndf) {
   int numShared=0;
@@ -235,7 +196,7 @@ void PeridigmNS::Discretization::createBondFilters(const Teuchos::RCP<Teuchos::P
       else{
         string msg = "\n**** Error, invalid bond filter type:  " + type;
         msg += "\n**** Allowable types are:  Rectangular_Plane, Exodus Mesh\n";
-        TEUCHOS_TEST_FOR_EXCEPT_MSG(true, msg);
+        TEUCHOS_TEST_FOR_TERMINATION(true, msg);
       }
     }
   }
@@ -265,8 +226,59 @@ int PeridigmNS::Discretization::blockNameToBlockId(string blockName) const {
     blockIDSS >> bID;
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(underscore_loc == string::npos, "\n**** Parse error, invalid block name: " + blockName + "\n");
+    TEUCHOS_TEST_FOR_TERMINATION(underscore_loc == string::npos, "\n**** Parse error, invalid block name: " + blockName + "\n");
   }
 
   return bID;
+}
+
+void PeridigmNS::Discretization::createBondMapAndCheckForZeroNeighbors(Teuchos::RCP<Epetra_BlockMap>& bondMap,
+                                                                       const Teuchos::RCP<Epetra_BlockMap> oneDimensionalMap,
+                                                                       const Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData,
+                                                                       unsigned int & numBonds,
+                                                                       unsigned int & maxNumBondsPerElem) const {
+  // Create the bondMap, a local map used for constitutive data stored on bonds.
+  // Due to Epetra_BlockMap restrictions, there can not be any entries with length zero.
+  // This means that points with no neighbors can not appear in the bondMap.
+  int numMyElementsUpperBound = oneDimensionalMap->NumMyElements();
+  int numGlobalElements = -1;
+  int numMyElements = 0;
+  int maxNumBonds = 0;
+  int* oneDimensionalMapGlobalElements = oneDimensionalMap->MyGlobalElements();
+  int* myGlobalElements = new int[numMyElementsUpperBound];
+  int* elementSizeList = new int[numMyElementsUpperBound];
+  int* const neighborhood = neighborhoodData->NeighborhoodList();
+  int neighborhoodIndex = 0;
+  int numPointsWithZeroNeighbors = 0;
+  for(int i=0 ; i<neighborhoodData->NumOwnedPoints() ; ++i){
+    int numNeighbors = neighborhood[neighborhoodIndex];
+    if(numNeighbors > 0){
+      numMyElements++;
+      myGlobalElements[i-numPointsWithZeroNeighbors] = oneDimensionalMapGlobalElements[i];
+      elementSizeList[i-numPointsWithZeroNeighbors] = numNeighbors;
+    }
+    else{
+      numPointsWithZeroNeighbors++;
+      /*
+       * Print warning message when no neighbor exist for this point.
+       * This can cause in problems downstream e.g. in computation of the
+       * jacobian matrix in quasi-static or implicit solver.
+       */
+      int globalID = oneDimensionalMapGlobalElements[i];
+      int localID  = oneDimensionalMap->LID(globalID);
+      Teuchos::RCP<Epetra_Vector> xPtr = getInitialX();
+      std::cout << "\n *** WARNING: PeridigmNS::Discretization::createBondMapAndCheckForZeroNeighbors(..)\n";
+      std::cout << "\tNumber of neighbors is less or equal 1!\n\tThis is probably a problem for the evaluation of a jacobian.\n";
+      std::cout << "\tGlobal point id = " << globalID << "\n"
+                << "\tx,y,z = " << (*xPtr)[3*localID] << ", " << (*xPtr)[3*localID+1] << ", " << (*xPtr)[3*localID+2] << "\n" << std::endl;
+    }
+    numBonds += numNeighbors;
+    if(numNeighbors>maxNumBonds) maxNumBonds = numNeighbors;
+    neighborhoodIndex += 1 + numNeighbors;
+  }
+  maxNumBondsPerElem = maxNumBonds;
+  int indexBase = 0;
+  bondMap = Teuchos::rcp(new Epetra_BlockMap(numGlobalElements, numMyElements, myGlobalElements, elementSizeList, indexBase, *comm));
+  delete[] myGlobalElements;
+  delete[] elementSizeList;
 }
