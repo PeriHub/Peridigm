@@ -165,6 +165,47 @@ template void setPartialStresses<double>(
     double *partialStressPtr);
 
 template<typename ScalarT>
+void setForces(
+  const ScalarT TX, 
+  const ScalarT TY, 
+  const ScalarT TZ, 
+  const double vol, 
+  const double volNeigh, 
+  ScalarT *fOwned,
+  ScalarT *fNeigh)
+{
+  
+  MATERIAL_UTILITIES::setForces(fx, fy, fz, cellVolume, selfCellVolume, fOwned, &fInternalOverlap[3 * localId]);
+  *(fOwned+0) += TX*volNeigh;
+  *(fOwned+1) += TY*volNeigh;
+  *(fOwned+2) += TZ*volNeigh;
+  *(fNeigh+0) -= TX*vol;
+  *(fNeigh+1) -= TY*vol;
+  *(fNeigh+2) -= TZ*vol;
+}
+
+
+
+
+template void setForces<Sacado::Fad::DFad<double> >
+(
+  const Sacado::Fad::DFad<double> TX, 
+  const Sacado::Fad::DFad<double> TY, 
+  const Sacado::Fad::DFad<double> TZ, 
+  const double vol, 
+  const double volNeigh, 
+  Sacado::Fad::DFad<double> *fOwned,
+  Sacado::Fad::DFad<double> *fNeigh);
+template void setForces<double>(
+  const double TX,
+  const double TY,
+  const double TZ,
+  const double vol, 
+  const double volNeigh, 
+  double *fOwned,
+  double *fNeigh);
+
+template<typename ScalarT>
 void setPartialStresses(
   const ScalarT TX, 
   const ScalarT TY, 
