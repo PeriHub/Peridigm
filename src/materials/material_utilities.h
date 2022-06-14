@@ -92,6 +92,18 @@ void set_pure_shear
     PURE_SHEAR mode,
     double gamma
 );
+template<typename ScalarT>
+void setPartialStresses
+(
+  const ScalarT TX, 
+  const ScalarT TY, 
+  const ScalarT TZ, 
+  const double X_dx, 
+  const double X_dy, 
+  const double X_dz,
+  const double vol, 
+  ScalarT *partialStressPtr
+  );
 
 void computeWeightedVolume
 (
