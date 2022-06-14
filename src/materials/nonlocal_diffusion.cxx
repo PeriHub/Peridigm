@@ -500,12 +500,7 @@ void computeInternalForceLinearElasticCoupled
       fy = t * Y_dy / dY;
       fz = t * Y_dz / dY;
 
-      *(fOwned+0) += fx*cellVolume;
-      *(fOwned+1) += fy*cellVolume;
-      *(fOwned+2) += fz*cellVolume;
-      fInternalOverlap[3*localId+0] -= fx*selfCellVolume;
-      fInternalOverlap[3*localId+1] -= fy*selfCellVolume;
-      fInternalOverlap[3*localId+2] -= fz*selfCellVolume;
+      MATERIAL_EVALUATION::setForces(fx, fy, fz, selfCellVolume, cellVolume, fOwned, &fInternalOverlap[3 * localId]);
     }
   }
 }

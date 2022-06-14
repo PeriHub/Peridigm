@@ -1222,15 +1222,7 @@ void computeForcesAndStresses
           neighborVol = volume[neighborIndex];
           vol = volume[iID];
 
-          *(forceDensityPtr)   += TX * neighborVol;
-          *(forceDensityPtr+1) += TY * neighborVol;
-          *(forceDensityPtr+2) += TZ * neighborVol;
-          
-           
-          force[3*neighborIndex+0] -= TX * vol;
-          force[3*neighborIndex+1] -= TY * vol;
-          force[3*neighborIndex+2] -= TZ * vol;
-        
+          MATERIAL_EVALUATION::setForces(TX, TY, TZ, vol, neighborVol, forceDensityPtr, &force[3*neighborIndex]);
           partialStressPtr = partialStress + 9*iID;
           MATERIAL_EVALUATION::setPartialStresses(TX, TY, TZ, X_dx, X_dy, X_dz, neighborVol, partialStressPtr);
       }

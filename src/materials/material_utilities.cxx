@@ -172,9 +172,9 @@ void setForces(
   const double vol, 
   const double volNeigh, 
   ScalarT *fOwned,
-  ScalarT *fNeigh)
+  ScalarT *fNeigh
+  )
 {
-  
   *(fOwned+0) += TX*volNeigh;
   *(fOwned+1) += TY*volNeigh;
   *(fOwned+2) += TZ*volNeigh;
@@ -182,9 +182,6 @@ void setForces(
   *(fNeigh+1) -= TY*vol;
   *(fNeigh+2) -= TZ*vol;
 }
-
-
-
 
 template void setForces<Sacado::Fad::DFad<double> >
 (
@@ -194,7 +191,8 @@ template void setForces<Sacado::Fad::DFad<double> >
   const double vol, 
   const double volNeigh, 
   Sacado::Fad::DFad<double> *fOwned,
-  Sacado::Fad::DFad<double> *fNeigh);
+  Sacado::Fad::DFad<double> *fNeigh 
+);
 template void setForces<double>(
   const double TX,
   const double TY,
@@ -202,7 +200,8 @@ template void setForces<double>(
   const double vol, 
   const double volNeigh, 
   double *fOwned,
-  double *fNeigh);
+  double *fNeigh
+);
 
 template<typename ScalarT>
 void setPartialStresses(

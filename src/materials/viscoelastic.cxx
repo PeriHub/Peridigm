@@ -48,6 +48,7 @@
 #include <cmath>
 #include <iostream>
 #include "viscoelastic.h"
+#include "material_utilities.h"
 using std::cout;
 using std::endl;
 namespace MATERIAL_EVALUATION {
@@ -189,12 +190,7 @@ void computeInternalForceViscoelasticStandardLinearSolid
       double fy = t * dy / dYNp1;
       double fz = t * dz / dYNp1;
 
-      *(fOwned+0) += fx*cellVolume;
-      *(fOwned+1) += fy*cellVolume;
-      *(fOwned+2) += fz*cellVolume;
-      fInternalOverlap[3*localId+0] -= fx*selfCellVolume;
-      fInternalOverlap[3*localId+1] -= fy*selfCellVolume;
-      fInternalOverlap[3*localId+2] -= fz*selfCellVolume;
+      MATERIAL_EVALUATION::setForces(fx, fy, fz, selfCellVolume, cellVolume, fOwned, &fInternalOverlap[3 * localId]);
     }
   }
 }
