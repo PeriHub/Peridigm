@@ -67,25 +67,7 @@ int EigenVec2D
  ScalarT* result
 )
 {
-  // This function computes the Eigenvector of a 2D 3x3 matrix
-  int returnCode(0);
-
-  *(result+0) = -2 * *(a+1) / ( *(a+0) - *(a+4) + sqrt(pow( *(a+0), 2) - 2 * *(a+0) * *(a+4) + 4 * pow( *(a+1), 2) + pow( *(a+4), 2)));
-  *(result+1) = -2 * *(a+1) / ( *(a+0) - *(a+4) - sqrt(pow( *(a+0), 2) - 2 * *(a+0) * *(a+4) + 4 * pow( *(a+1), 2) + pow( *(a+4), 2)));
-  *(result+2) = 0.0;
-  *(result+3) = 1;
-  *(result+4) = 1;
-  *(result+5) = 0.0;
-  *(result+6) = 0.0;
-  *(result+7) = 0.0;
-  *(result+8) = 0.0;
-
-  if(*(result+0)!=*(result+0) || *(result+1)!=*(result+1))
-  {
-    returnCode=1;
-  }
-
-  return returnCode;
+  return MATRICES::EigenVec2D(a, result);
 }
 
 
@@ -1239,27 +1221,10 @@ void computeForcesAndStresses
          
           neighborVol = volume[neighborIndex];
           vol = volume[iID];
-          
-          *(forceDensityPtr)   += TX * neighborVol;
-          *(forceDensityPtr+1) += TY * neighborVol;
-          *(forceDensityPtr+2) += TZ * neighborVol;
-          
-           
-          force[3*neighborIndex+0] -= TX * vol;
-          force[3*neighborIndex+1] -= TY * vol;
-          force[3*neighborIndex+2] -= TZ * vol;
-        
+
+          MATERIAL_EVALUATION::setForces(TX, TY, TZ, vol, neighborVol, forceDensityPtr, &force[3*neighborIndex]);
           partialStressPtr = partialStress + 9*iID;
-          *(partialStressPtr)   += TX*X_dx*neighborVol;
-          *(partialStressPtr+1) += TX*X_dy*neighborVol;
-          *(partialStressPtr+2) += TX*X_dz*neighborVol;
-          *(partialStressPtr+3) += TY*X_dx*neighborVol;
-          *(partialStressPtr+4) += TY*X_dy*neighborVol;
-          *(partialStressPtr+5) += TY*X_dz*neighborVol;
-          *(partialStressPtr+6) += TZ*X_dx*neighborVol;
-          *(partialStressPtr+7) += TZ*X_dy*neighborVol;
-          *(partialStressPtr+8) += TZ*X_dz*neighborVol;
-       
+          MATERIAL_EVALUATION::setPartialStresses(TX, TY, TZ, X_dx, X_dy, X_dz, neighborVol, partialStressPtr);
       }
 
       //  countNeighbors += bondDamage[bondIndex];
@@ -5341,7 +5306,15 @@ template int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient<do
     int numPoints,
     double dt
 );
+template int EigenVec2D<double>(
+    const double* a,
+    double* result
+);
 
+template int EigenVec2D<Sacado::Fad::DFad<double>>(
+    const  Sacado::Fad::DFad<double>* a,
+     Sacado::Fad::DFad<double>* result
+);
 template void computeBondLevelVelocityGradient<double>
 (
     const double* coordinates,

@@ -51,6 +51,7 @@
 #include "elastic_plastic_hardening.h"
 #include <complex>
 #include "Peridigm_Constants.hpp"
+#include "material_utilities.h"
 
 namespace MATERIAL_EVALUATION {
 
@@ -245,12 +246,7 @@ void computeInternalForceIsotropicHardeningPlastic
       ScalarT fy = t * dy_Y / dY;
       ScalarT fz = t * dz_Y / dY;
 
-      *(fOwned+0) += fx*cellVolume;
-      *(fOwned+1) += fy*cellVolume;
-      *(fOwned+2) += fz*cellVolume;
-      fInternalOverlap[3*localId+0] -= fx*selfCellVolume;
-      fInternalOverlap[3*localId+1] -= fy*selfCellVolume;
-      fInternalOverlap[3*localId+2] -= fz*selfCellVolume;
+      MATERIAL_EVALUATION::setForces(fx, fy, fz, selfCellVolume, cellVolume, fOwned, &fInternalOverlap[3 * localId]);
     }
 
   }

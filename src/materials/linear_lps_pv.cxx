@@ -194,12 +194,9 @@ void computeInternalForceLinearLPS
       fx = (1.0 - *damage)*(temp1*zeta[0] + temp2*matVec[0]);
       fy = (1.0 - *damage)*(temp1*zeta[1] + temp2*matVec[1]);
       fz = (1.0 - *damage)*(temp1*zeta[2] + temp2*matVec[2]);
-      *(force)   += fx*volNeighbor;
-      *(force+1) += fy*volNeighbor;
-      *(force+2) += fz*volNeighbor;
-      forceOverlapPtr[3*neighborId]   -= fx*volSelf;
-      forceOverlapPtr[3*neighborId+1] -= fy*volSelf;
-      forceOverlapPtr[3*neighborId+2] -= fz*volSelf;
+ 
+      MATERIAL_EVALUATION::setForces(fx, fy, fz, volSelf, volNeighbor, force, &forceOverlapPtr[3*neighborId]);
+
     }
   }
 }

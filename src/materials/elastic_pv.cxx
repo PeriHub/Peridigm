@@ -292,12 +292,7 @@ void computeInternalForceLinearElasticPV
         neighborCellVolume = volumeOverlap[localId];
       }
 
-      *(fOwned+0) += fx*neighborCellVolume;
-      *(fOwned+1) += fy*neighborCellVolume;
-      *(fOwned+2) += fz*neighborCellVolume;
-      fInternalOverlap[3*localId+0] -= fx*selfCellVolume;
-      fInternalOverlap[3*localId+1] -= fy*selfCellVolume;
-      fInternalOverlap[3*localId+2] -= fz*selfCellVolume;
+      MATERIAL_EVALUATION::setForces(fx, fy, fz, selfCellVolume, neighborCellVolume, fOwned, &fInternalOverlap[3*localId]);
     }
   }
 }

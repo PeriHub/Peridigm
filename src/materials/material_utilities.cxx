@@ -144,7 +144,87 @@ void set_pure_shear
   }
 
 }
+template void setPartialStresses<Sacado::Fad::DFad<double> >
+(
+  const Sacado::Fad::DFad<double> TX, 
+  const Sacado::Fad::DFad<double> TY, 
+  const Sacado::Fad::DFad<double> TZ, 
+  const double X_dx, 
+  const double X_dy, 
+  const double X_dz,
+  const double vol, 
+  Sacado::Fad::DFad<double> *partialStressPtr);
+template void setPartialStresses<double>(
+    const double TX,
+    const double TY,
+    const double TZ,
+    const double X_dx,
+    const double X_dy,
+    const double X_dz,
+    const double vol,
+    double *partialStressPtr);
 
+template<typename ScalarT>
+void setForces(
+  const ScalarT TX, 
+  const ScalarT TY, 
+  const ScalarT TZ, 
+  const double vol, 
+  const double volNeigh, 
+  ScalarT *fOwned,
+  ScalarT *fNeigh
+  )
+{
+  *(fOwned+0) += TX*volNeigh;
+  *(fOwned+1) += TY*volNeigh;
+  *(fOwned+2) += TZ*volNeigh;
+  *(fNeigh+0) -= TX*vol;
+  *(fNeigh+1) -= TY*vol;
+  *(fNeigh+2) -= TZ*vol;
+}
+
+template void setForces<Sacado::Fad::DFad<double> >
+(
+  const Sacado::Fad::DFad<double> TX, 
+  const Sacado::Fad::DFad<double> TY, 
+  const Sacado::Fad::DFad<double> TZ, 
+  const double vol, 
+  const double volNeigh, 
+  Sacado::Fad::DFad<double> *fOwned,
+  Sacado::Fad::DFad<double> *fNeigh 
+);
+template void setForces<double>(
+  const double TX,
+  const double TY,
+  const double TZ,
+  const double vol, 
+  const double volNeigh, 
+  double *fOwned,
+  double *fNeigh
+);
+
+template<typename ScalarT>
+void setPartialStresses(
+  const ScalarT TX, 
+  const ScalarT TY, 
+  const ScalarT TZ, 
+  const double X_dx, 
+  const double X_dy, 
+  const double X_dz,
+  const double vol, 
+  ScalarT *partialStressPtr
+  )
+{
+  *(partialStressPtr)   += TX*X_dx*vol;
+  *(partialStressPtr+1) += TX*X_dy*vol;
+  *(partialStressPtr+2) += TX*X_dz*vol;
+  *(partialStressPtr+3) += TY*X_dx*vol;
+  *(partialStressPtr+4) += TY*X_dy*vol;
+  *(partialStressPtr+5) += TY*X_dz*vol;
+  *(partialStressPtr+6) += TZ*X_dx*vol;
+  *(partialStressPtr+7) += TZ*X_dy*vol;
+  *(partialStressPtr+8) += TZ*X_dz*vol;
+}
 double scalarInfluenceFunction
 (
         double zeta,
@@ -679,6 +759,4 @@ double compute_norm_2_deviatoric_extension
 }
 
 }
-
-
 }

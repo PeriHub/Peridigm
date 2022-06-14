@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <fstream>
 #include <stdexcept>
+#include "material_utilities.h"
 
 namespace MATERIAL_EVALUATION {
 
@@ -832,12 +833,8 @@ void computeInternalForcePals
       fy = t * Y_dy / dY;
       fz = t * Y_dz / dY;
       cell_volume= volumeOverlap[localId];
-      *(fOwned+0) += fx*cell_volume;
-      *(fOwned+1) += fy*cell_volume;
-      *(fOwned+2) += fz*cell_volume;
-      fInternalOverlap[3*localId+0] -= fx*self_cell_volume;
-      fInternalOverlap[3*localId+1] -= fy*self_cell_volume;
-      fInternalOverlap[3*localId+2] -= fz*self_cell_volume;
+
+      MATERIAL_EVALUATION::setForces(fx, fy, fz, self_cell_volume, cell_volume, fOwned, &fInternalOverlap[3 * localId]);
     }
 
   }

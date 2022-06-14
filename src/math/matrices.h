@@ -80,6 +80,13 @@ const ScalarT* matrix,
 ScalarT& determinant,
 ScalarT* inverse
 );
+
+template<typename ScalarT>
+int EigenVec2D
+(
+ const ScalarT* a,
+ ScalarT* result
+);
 // rotates a second order tensor in a new configuration or back
 template<typename ScalarT>
 void tensorRotation

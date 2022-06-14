@@ -106,13 +106,8 @@ void computeInternalForceElasticBondBased
       fx = t * (neighborY[0] - Y[0]) / currentBondLength;
       fy = t * (neighborY[1] - Y[1]) / currentBondLength;
       fz = t * (neighborY[2] - Y[2]) / currentBondLength;
+      MATERIAL_EVALUATION::setForces(fx, fy, fz, volume, neighborVolume, &fInternalOverlap[3*p], &fInternalOverlap[3*neighborId]);
 
-      fInternalOverlap[3*p+0] += fx*neighborVolume;
-      fInternalOverlap[3*p+1] += fy*neighborVolume;
-      fInternalOverlap[3*p+2] += fz*neighborVolume;
-      fInternalOverlap[3*neighborId+0] -= fx*volume;
-      fInternalOverlap[3*neighborId+1] -= fy*volume;
-      fInternalOverlap[3*neighborId+2] -= fz*volume;
     }
   }
 }

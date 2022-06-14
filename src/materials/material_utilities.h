@@ -92,6 +92,18 @@ void set_pure_shear
     PURE_SHEAR mode,
     double gamma
 );
+template<typename ScalarT>
+void setPartialStresses
+(
+    const ScalarT TX, 
+    const ScalarT TY, 
+    const ScalarT TZ, 
+    const double X_dx, 
+    const double X_dy, 
+    const double X_dz,
+    const double vol, 
+    ScalarT *partialStressPtr
+);
 
 void computeWeightedVolume
 (
@@ -103,7 +115,16 @@ void computeWeightedVolume
     double horizon,
     const FunctionPointer OMEGA=PeridigmNS::InfluenceFunction::self().getInfluenceFunction()
 );
-
+template<typename ScalarT>
+void setForces(
+  const ScalarT TX, 
+  const ScalarT TY, 
+  const ScalarT TZ, 
+  const double vol, 
+  const double volNeigh, 
+  ScalarT *fOwned,
+  ScalarT *fNeigh
+  );
 
 /**
  * Call this function on a single point 'X'

@@ -146,23 +146,9 @@ void computeInternalForceLinearElastic
             fy = t * Y_dy / dY;
             fz = t * Y_dz / dY;
 
-            *(fOwned+0) += fx*cellVolume;
-            *(fOwned+1) += fy*cellVolume;
-            *(fOwned+2) += fz*cellVolume;
-            fInternalOverlap[3*localId+0] -= fx*selfCellVolume;
-            fInternalOverlap[3*localId+1] -= fy*selfCellVolume;
-            fInternalOverlap[3*localId+2] -= fz*selfCellVolume;
-
+            MATERIAL_EVALUATION::setForces(fx, fy, fz, selfCellVolume, cellVolume, fOwned, &fInternalOverlap[3 * localId]);
             if(partialStressOverlap != 0){
-              *(psOwned+0) += fx*X_dx*cellVolume;
-              *(psOwned+1) += fx*X_dy*cellVolume;
-              *(psOwned+2) += fx*X_dz*cellVolume;
-              *(psOwned+3) += fy*X_dx*cellVolume;
-              *(psOwned+4) += fy*X_dy*cellVolume;
-              *(psOwned+5) += fy*X_dz*cellVolume;
-              *(psOwned+6) += fz*X_dx*cellVolume;
-              *(psOwned+7) += fz*X_dy*cellVolume;
-              *(psOwned+8) += fz*X_dz*cellVolume;
+              MATERIAL_EVALUATION::setPartialStresses(fx, fy, fz, X_dx, X_dy, X_dz, cellVolume, psOwned);
             }
         }
     
