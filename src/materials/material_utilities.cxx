@@ -175,7 +175,6 @@ void setForces(
   ScalarT *fNeigh)
 {
   
-  MATERIAL_UTILITIES::setForces(fx, fy, fz, cellVolume, selfCellVolume, fOwned, &fInternalOverlap[3 * localId]);
   *(fOwned+0) += TX*volNeigh;
   *(fOwned+1) += TY*volNeigh;
   *(fOwned+2) += TZ*volNeigh;
