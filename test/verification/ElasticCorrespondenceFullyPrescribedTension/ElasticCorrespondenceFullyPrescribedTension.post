@@ -1,2 +1,1 @@
-blot ElasticCorrespondenceFullyPrescribedTension.e -input ElasticCorrespondenceFullyPrescribedTension.blot met
-gnuplot ElasticCorrespondenceFullyPrescribedTension.plotgen
+../ElasticCorrespondenceFullyPrescribedTension.post
