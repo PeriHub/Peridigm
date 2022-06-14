@@ -951,6 +951,40 @@ template void tensorRotation<Sacado::Fad::DFad<double> >
   Sacado::Fad::DFad<double>* tensorOut
 );
 
+template<typename ScalarT>
+int EigenVec2D
+(
+ const ScalarT* a,
+ ScalarT* result
+)
+{
+  // This function computes the Eigenvector of a 2D 3x3 matrix
+  int returnCode(0);
 
+  *(result+0) = -2 * *(a+1) / ( *(a+0) - *(a+4) + sqrt(pow( *(a+0), 2) - 2 * *(a+0) * *(a+4) + 4 * pow( *(a+1), 2) + pow( *(a+4), 2)));
+  *(result+1) = -2 * *(a+1) / ( *(a+0) - *(a+4) - sqrt(pow( *(a+0), 2) - 2 * *(a+0) * *(a+4) + 4 * pow( *(a+1), 2) + pow( *(a+4), 2)));
+  *(result+2) = 0.0;
+  *(result+3) = 1;
+  *(result+4) = 1;
+  *(result+5) = 0.0;
+  *(result+6) = 0.0;
+  *(result+7) = 0.0;
+  *(result+8) = 0.0;
 
+  if(*(result+0)!=*(result+0) || *(result+1)!=*(result+1))
+  {
+    returnCode=1;
+  }
+
+  return returnCode;
+}
+template int EigenVec2D<double>(
+    const double* a,
+    double* result
+);
+
+template int EigenVec2D<Sacado::Fad::DFad<double>>(
+    const  Sacado::Fad::DFad<double>* a,
+     Sacado::Fad::DFad<double>* result
+);
 }
