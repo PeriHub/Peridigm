@@ -139,6 +139,7 @@ namespace PeridigmNS {
     int m_bondDamageFieldId;
     int m_deltaTemperatureFieldId;
     int m_stepFieldId;
+    int m_volumeFieldId;
   };
 
 }

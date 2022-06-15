@@ -49,9 +49,10 @@
 #include "Peridigm_Field.hpp"
 #include "Peridigm_GenesisToTriangles.hpp"
 #include "BondFilter.h"
+#include "damage_utilities.h"
 
 PeridigmNS::InitialDamageModel::InitialDamageModel(const Teuchos::ParameterList& params)
-  : DamageModel(params),  m_modelCoordinatesFieldId(-1), m_damageFieldId(-1), m_bondDamageFieldId(-1)
+  : DamageModel(params),  m_modelCoordinatesFieldId(-1), m_damageFieldId(-1), m_bondDamageFieldId(-1), m_volumeFieldId(-1)
 {
   Teuchos::ParameterList temp = params;
   m_bondFilterParameters = temp.sublist("Bond Filters", true);
@@ -60,10 +61,11 @@ PeridigmNS::InitialDamageModel::InitialDamageModel(const Teuchos::ParameterList&
   m_modelCoordinatesFieldId = fieldManager.getFieldId("Model_Coordinates");
   m_damageFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::ELEMENT, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Damage");
   m_bondDamageFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::BOND, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Bond_Damage");
-
+  m_volumeFieldId                                  = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume");
   m_fieldIds.push_back(m_modelCoordinatesFieldId);
   m_fieldIds.push_back(m_damageFieldId);
   m_fieldIds.push_back(m_bondDamageFieldId);
+    m_fieldIds.push_back(m_volumeFieldId);
 }
 
 PeridigmNS::InitialDamageModel::~InitialDamageModel()
@@ -115,9 +117,9 @@ PeridigmNS::InitialDamageModel::initialize(const double dt,
     }
   }
 
-  double *x, *damageN, *damageNP1, *bondDamageN, *bondDamageNP1;
+  double *x, *vol, *damageNP1, *bondDamageN, *bondDamageNP1;
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
-  dataManager.getData(m_damageFieldId, PeridigmField::STEP_N)->ExtractView(&damageN);
+  dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&vol);
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damageNP1);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamageN);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
@@ -152,22 +154,8 @@ PeridigmNS::InitialDamageModel::initialize(const double dt,
   //  Update the element damage (percent of bonds broken)
   neighborhoodListIndex = 0;
   bondIndex = 0;
-  for(int iID=0 ; iID<numOwnedPoints ; ++iID){
-    int nodeID = ownedIDs[iID];
-    int numNeighbors = neighborhoodList[neighborhoodListIndex++];
-    neighborhoodListIndex += numNeighbors;
-    double totalDamage = 0.0;
-    for(int iNID=0 ; iNID<numNeighbors ; ++iNID){
-      bondDamageN[bondIndex] = bondDamageNP1[bondIndex]; // set bond damage for both step N and NP1
-      totalDamage += bondDamageNP1[bondIndex++];
-    }
-    if(numNeighbors > 0)
-      totalDamage /= numNeighbors;
-    else
-      totalDamage = 0.0;
-    damageN[nodeID] = totalDamage;
-    damageNP1[nodeID] = totalDamage;
-  }
+    //  Update the element damage (percent of bonds broken)
+  DAMAGE_UTILITIES::calculateDamageIndex(numOwnedPoints,ownedIDs,vol,neighborhoodList,bondDamageNP1, damageNP1);
 }
 
 void
