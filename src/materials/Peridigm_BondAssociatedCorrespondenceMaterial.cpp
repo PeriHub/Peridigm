@@ -48,7 +48,7 @@
 #include "Peridigm_BondAssociatedCorrespondenceMaterial.hpp"
 #include "Peridigm_Field.hpp"
 #include "elastic.h"
-#include "correspondence.h"
+#include "hypoelastic_correspondence.h"
 #include "matrices.h"
 #include <Teuchos_Assert.hpp>
 #include <Sacado.hpp> // for MPI_abort
