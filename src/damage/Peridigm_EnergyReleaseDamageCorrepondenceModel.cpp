@@ -201,7 +201,6 @@ m_hourglassStiffId(-1) {
     m_fieldIds.push_back(m_coordinatesFieldId);
     m_fieldIds.push_back(m_weightedVolumeFieldId);
     m_fieldIds.push_back(m_dilatationFieldId);
-    m_fieldIds.push_back(m_volumeFieldId);
     m_fieldIds.push_back(m_damageFieldId);
     m_fieldIds.push_back(m_detachedNodesFieldId);
     m_fieldIds.push_back(m_bondDamageFieldId);
