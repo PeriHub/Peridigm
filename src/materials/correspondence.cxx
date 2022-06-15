@@ -1684,13 +1684,8 @@ double hourglassCoefficient//,
       neighborVol = volume[neighborIndex];
       neighborHourglassForceDensityPtr = hourglassForceDensity + 3*neighborIndex;
 
-      *(hourglassForceDensityPtr)   += TSx * neighborVol;
-      *(hourglassForceDensityPtr+1) += TSy * neighborVol;
-      *(hourglassForceDensityPtr+2) += TSz * neighborVol;
+      MATERIAL_EVALUATION::setForces(TSx, TSy, TSz, vol, neighborVol, hourglassForceDensityPtr, neighborHourglassForceDensityPtr);
 
-      *(neighborHourglassForceDensityPtr)   -= TSx * vol;
-      *(neighborHourglassForceDensityPtr+1) -= TSy * vol;
-      *(neighborHourglassForceDensityPtr+2) -= TSz * vol;
 
     }
   }
