@@ -342,20 +342,6 @@ void updateDeformationGradient
   }
 }
 
-void CheckCoordinateTransformation(
-  const int numOwnedPoints, 
-  const double *angles, 
-  bool *coorTrafo
-  )
-{
-    
-  for (int iID=0 ; iID<3*numOwnedPoints; ++iID){
-    coorTrafo[iID/3] = false;
-    if (*(angles+iID)!=0){
-      coorTrafo[iID/3] = true;
-    }
-  }
-}
 
 
 
