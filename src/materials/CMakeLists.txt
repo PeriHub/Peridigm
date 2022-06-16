@@ -14,7 +14,7 @@ set(PD_MATERIAL_SOURCES
     elastic_plastic_hardening.cxx
     viscoelastic.cxx
     correspondence.cxx
-    hypoelastic_correspondence.cxx
+    bondassociated_correspondence.cxx
     elastic_correspondence.cxx
     elastic_plastic_correspondence.cxx
     isotropic_hardening_correspondence.cxx

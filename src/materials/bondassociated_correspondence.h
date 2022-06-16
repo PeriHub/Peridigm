@@ -1,4 +1,4 @@
-//! \file hypoelastic_correspondence.h
+//! \file bondassociated_correspondence.h
 //@HEADER
 // ************************************************************************
 //

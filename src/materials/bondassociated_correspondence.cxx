@@ -1,4 +1,4 @@
-//! \file hypoelastic_correspondence.cxx
+//! \file bondassociated_correspondence.cxx
 
 //@HEADER
 // ************************************************************************
@@ -45,7 +45,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "hypoelastic_correspondence.h"
+#include "bondassociated_correspondence.h"
 #include "matrices.h"
 #include "elastic_correspondence.h"
 #include "material_utilities.h"
