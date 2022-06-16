@@ -1265,70 +1265,6 @@ void computeForcesAndStresses
   
 
 }
-template<typename ScalarT>
-void computeGreenLagrangeStrain
-(
-  const ScalarT* deformationGradientXX,
-  const ScalarT* deformationGradientXY,
-  const ScalarT* deformationGradientXZ,
-  const ScalarT* deformationGradientYX,
-  const ScalarT* deformationGradientYY,
-  const ScalarT* deformationGradientYZ,
-  const ScalarT* deformationGradientZX,
-  const ScalarT* deformationGradientZY,
-  const ScalarT* deformationGradientZZ,
-  ScalarT* greenLagrangeStrainXX,
-  ScalarT* greenLagrangeStrainXY,
-  ScalarT* greenLagrangeStrainXZ,
-  ScalarT* greenLagrangeStrainYX,
-  ScalarT* greenLagrangeStrainYY,
-  ScalarT* greenLagrangeStrainYZ,
-  ScalarT* greenLagrangeStrainZX,
-  ScalarT* greenLagrangeStrainZY,
-  ScalarT* greenLagrangeStrainZZ,
-  int numPoints
-)
-{
-  // Green-Lagrange Strain E = 0.5*(F^T F - I)
-
-  const ScalarT* defGradXX = deformationGradientXX;
-  const ScalarT* defGradXY = deformationGradientXY;
-  const ScalarT* defGradXZ = deformationGradientXZ;
-  const ScalarT* defGradYX = deformationGradientYX;
-  const ScalarT* defGradYY = deformationGradientYY;
-  const ScalarT* defGradYZ = deformationGradientYZ;
-  const ScalarT* defGradZX = deformationGradientZX;
-  const ScalarT* defGradZY = deformationGradientZY;
-  const ScalarT* defGradZZ = deformationGradientZZ;
-  ScalarT* strainXX = greenLagrangeStrainXX;
-  ScalarT* strainXY = greenLagrangeStrainXY;
-  ScalarT* strainXZ = greenLagrangeStrainXZ;
-  ScalarT* strainYX = greenLagrangeStrainYX;
-  ScalarT* strainYY = greenLagrangeStrainYY;
-  ScalarT* strainYZ = greenLagrangeStrainYZ;
-  ScalarT* strainZX = greenLagrangeStrainZX;
-  ScalarT* strainZY = greenLagrangeStrainZY;
-  ScalarT* strainZZ = greenLagrangeStrainZZ;
-
-  for(int iID=0 ; iID<numPoints ; ++iID, 
-        ++defGradXX, ++defGradXY, ++defGradXZ,
-        ++defGradYX, ++defGradYY, ++defGradYZ,
-        ++defGradZX, ++defGradZY, ++defGradZZ,
-        ++strainXX, ++strainXY, ++strainXZ,
-        ++strainYX, ++strainYY, ++strainYZ,
-        ++strainZX, ++strainZY, ++strainZZ){
-
-    *strainXX = 0.5 * ( *(defGradXX) * *(defGradXX) + *(defGradYX) * *(defGradYX) + *(defGradZX) * *(defGradZX) - 1.0 );
-    *strainXY = 0.5 * ( *(defGradXX) * *(defGradXY) + *(defGradYX) * *(defGradYY) + *(defGradZX) * *(defGradZY) );
-    *strainXZ = 0.5 * ( *(defGradXX) * *(defGradXZ) + *(defGradYX) * *(defGradYZ) + *(defGradZX) * *(defGradZZ) );
-    *strainYX = 0.5 * ( *(defGradXY) * *(defGradXX) + *(defGradYY) * *(defGradYX) + *(defGradZY) * *(defGradZX) );
-    *strainYY = 0.5 * ( *(defGradXY) * *(defGradXY) + *(defGradYY) * *(defGradYY) + *(defGradZY) * *(defGradZY) - 1.0 );
-    *strainYZ = 0.5 * ( *(defGradXY) * *(defGradXZ) + *(defGradYY) * *(defGradYZ) + *(defGradZY) * *(defGradZZ) );
-    *strainZX = 0.5 * ( *(defGradXZ) * *(defGradXX) + *(defGradYZ) * *(defGradYX) + *(defGradZZ) * *(defGradZX) );
-    *strainZY = 0.5 * ( *(defGradXZ) * *(defGradXY) + *(defGradYZ) * *(defGradYY) + *(defGradZZ) * *(defGradZY) );
-    *strainZZ = 0.5 * ( *(defGradXZ) * *(defGradXZ) + *(defGradYZ) * *(defGradYZ) + *(defGradZZ) * *(defGradZZ) - 1.0 );
-  }
-}
 
 template<typename ScalarT>
 void computeHourglassForce
@@ -3393,29 +3329,6 @@ double* detachedNodes
 );
 
 
-template void computeGreenLagrangeStrain<double>
-(
-  const double* deformationGradientXX,
-  const double* deformationGradientXY,
-  const double* deformationGradientXZ,
-  const double* deformationGradientYX,
-  const double* deformationGradientYY,
-  const double* deformationGradientYZ,
-  const double* deformationGradientZX,
-  const double* deformationGradientZY,
-  const double* deformationGradientZZ,
-  double* greenLagrangeStrainXX,
-  double* greenLagrangeStrainXY,
-  double* greenLagrangeStrainXZ,
-  double* greenLagrangeStrainYX,
-  double* greenLagrangeStrainYY,
-  double* greenLagrangeStrainYZ,
-  double* greenLagrangeStrainZX,
-  double* greenLagrangeStrainZY,
-  double* greenLagrangeStrainZZ,
-  int numPoints
-);
-
 template void computeHourglassForce<double>
 (
 const double* volume,
@@ -3514,29 +3427,6 @@ template void setValuesForDetachedNodes<double>
 
 /** Explicit template instantiation for Sacado::Fad::DFad<double>. */
 
-
-template void computeGreenLagrangeStrain<Sacado::Fad::DFad<double> >
-(
-  const Sacado::Fad::DFad<double>* deformationGradientXX,
-  const Sacado::Fad::DFad<double>* deformationGradientXY,
-  const Sacado::Fad::DFad<double>* deformationGradientXZ,
-  const Sacado::Fad::DFad<double>* deformationGradientYX,
-  const Sacado::Fad::DFad<double>* deformationGradientYY,
-  const Sacado::Fad::DFad<double>* deformationGradientYZ,
-  const Sacado::Fad::DFad<double>* deformationGradientZX,
-  const Sacado::Fad::DFad<double>* deformationGradientZY,
-  const Sacado::Fad::DFad<double>* deformationGradientZZ,
-  Sacado::Fad::DFad<double>* greenLagrangeStrainXX,
-  Sacado::Fad::DFad<double>* greenLagrangeStrainXY,
-  Sacado::Fad::DFad<double>* greenLagrangeStrainXZ,
-  Sacado::Fad::DFad<double>* greenLagrangeStrainYX,
-  Sacado::Fad::DFad<double>* greenLagrangeStrainYY,
-  Sacado::Fad::DFad<double>* greenLagrangeStrainYZ,
-  Sacado::Fad::DFad<double>* greenLagrangeStrainZX,
-  Sacado::Fad::DFad<double>* greenLagrangeStrainZY,
-  Sacado::Fad::DFad<double>* greenLagrangeStrainZZ,
-  int numPoints
-);
 
 
 

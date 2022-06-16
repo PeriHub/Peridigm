@@ -132,31 +132,6 @@ const bool type,
 double* detachedNodes
 );
 
-
-//! Green-Lagrange Strain E = 0.5*(F^T F - I).
-template<typename ScalarT>
-void computeGreenLagrangeStrain
-(
-const ScalarT* deformationGradientXX,
-const ScalarT* deformationGradientXY,
-const ScalarT* deformationGradientXZ,
-const ScalarT* deformationGradientYX,
-const ScalarT* deformationGradientYY,
-const ScalarT* deformationGradientYZ,
-const ScalarT* deformationGradientZX,
-const ScalarT* deformationGradientZY,
-const ScalarT* deformationGradientZZ,
-ScalarT* greenLagrangeStrainXX,
-ScalarT* greenLagrangeStrainXY,
-ScalarT* greenLagrangeStrainXZ,
-ScalarT* greenLagrangeStrainYX,
-ScalarT* greenLagrangeStrainYY,
-ScalarT* greenLagrangeStrainYZ,
-ScalarT* greenLagrangeStrainZX,
-ScalarT* greenLagrangeStrainZY,
-ScalarT* greenLagrangeStrainZZ,
-int numPoints
-);
 template<typename ScalarT>
 void computeGreenLagrangeStrain
 (const ScalarT* defGrad,
