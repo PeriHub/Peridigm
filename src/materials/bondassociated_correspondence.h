@@ -43,8 +43,8 @@
 //
 // ************************************************************************
 //@HEADER
-#ifndef CORRESPONDENCE_H
-#define CORRESPONDENCE_H
+#ifndef BONDASSOCIATED_CORRESPONDENCE_H
+#define BONDASSOCIATED_CORRESPONDENCE_H
 
 
 namespace CORRESPONDENCE {
@@ -380,4 +380,4 @@ void computeStressIntegral
 
 }
 
-#endif // CORRESPONDENCE_H
+#endif // BONDASSOCIATED_CORRESPONDENCE_H

@@ -358,68 +358,7 @@ void CheckCoordinateTransformation(
 }
 
 
-double FLAWFUNCTION(
-  const bool isFlaw,
-  const double yieldStress,
-  const double flawMagnitude, 
-  const double flawSize, 
-  const double* modelCoord, 
-  const double flawLocationX, 
-  const double flawLocationY, 
-  const double flawLocationZ, 
-  const int type
-)
-{
 
-    double reducedYieldStress = yieldStress;
-    if (isFlaw){
-      if (type == 1){
-        reducedYieldStress = yieldStress * (1.0 - flawMagnitude 
-                          * exp( ((- ( *(modelCoord) - flawLocationX)) * (*(modelCoord) - flawLocationX) -
-                          (( *(modelCoord+1) - flawLocationY)) * (*(modelCoord+1) - flawLocationY) -
-                          (( *(modelCoord+2) - flawLocationZ)) * (*(modelCoord+2) - flawLocationZ)
-                          ) / flawSize / flawSize
-                          ));
-      }
-      else{
-        std::cout<<"not implemented yet"<<std::endl;
-      }
-    }
-    return reducedYieldStress;
-}
-
-template<typename ScalarT>
-void computeGreenLagrangeStrain
-(
-  const ScalarT* defGrad,
-  ScalarT* strain
-)
-{
-
-  *(strain)   = 0.5 * ( *(defGrad)   * *(defGrad)   + *(defGrad+3) * *(defGrad+3) + *(defGrad+6) * *(defGrad+6)  - 1.0 );
-  *(strain+1) = 0.5 * ( *(defGrad)   * *(defGrad+1) + *(defGrad+3) * *(defGrad+4) + *(defGrad+6) * *(defGrad+7)  );
-  *(strain+2) = 0.5 * ( *(defGrad)   * *(defGrad+2) + *(defGrad+3) * *(defGrad+5) + *(defGrad+6) * *(defGrad+8)  );
-  *(strain+3) = 0.5 * ( *(defGrad)   * *(defGrad+1) + *(defGrad+3) * *(defGrad+4) + *(defGrad+6) * *(defGrad+7)  );
-  *(strain+4) = 0.5 * ( *(defGrad+1) * *(defGrad+1) + *(defGrad+4) * *(defGrad+4) + *(defGrad+7) * *(defGrad+7)  - 1.0 );
-  *(strain+5) = 0.5 * ( *(defGrad+1) * *(defGrad+2) + *(defGrad+4) * *(defGrad+5) + *(defGrad+7) * *(defGrad+8)  );
-  *(strain+6) = 0.5 * ( *(defGrad)   * *(defGrad+2) + *(defGrad+3) * *(defGrad+5) + *(defGrad+6) * *(defGrad+8)  );
-  *(strain+7) = 0.5 * ( *(defGrad+1) * *(defGrad+2) + *(defGrad+4) * *(defGrad+5) + *(defGrad+7) * *(defGrad+8)  );
-  *(strain+8) = 0.5 * ( *(defGrad+2) * *(defGrad+2) + *(defGrad+5) * *(defGrad+5) + *(defGrad+8) * *(defGrad+8)  - 1.0 );
-}
-
-
-template void computeGreenLagrangeStrain<Sacado::Fad::DFad<double>>
-(
-const Sacado::Fad::DFad<double>* defGrad, 
-Sacado::Fad::DFad<double>* strain
-
-);
-template void computeGreenLagrangeStrain<double>
-(
-const double* defGrad, 
-double* strain
-
-);
 
 
 
