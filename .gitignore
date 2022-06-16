@@ -18,3 +18,12 @@ bld/
 .vs/
 out/
 html/
+build/CMakeCache.txt
+build/.cmake/api/v1/query/client-vscode/query.json
+build/CMakeFiles/cmake.check_cache
+build/CMakeFiles/CMakeOutput.log
+build/CMakeFiles/3.20.5/CMakeSystem.cmake
+.gitignore
+src/damage/unit_test/Testing/Temporary/CTestCostData.txt
+src/damage/unit_test/Testing/Temporary/LastTest.log
+.gitignore
