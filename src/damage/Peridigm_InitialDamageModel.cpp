@@ -117,9 +117,10 @@ PeridigmNS::InitialDamageModel::initialize(const double dt,
     }
   }
 
-  double *x, *vol, *damageNP1, *bondDamageN, *bondDamageNP1;
+  double *x, *vol, *damageN, *damageNP1, *bondDamageN, *bondDamageNP1;
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
   dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&vol);
+  dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damageN);
   dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damageNP1);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamageN);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
@@ -130,7 +131,7 @@ PeridigmNS::InitialDamageModel::initialize(const double dt,
   std::vector<int> treeList(1,0);
   std::vector<double> xOverlap(3);
   int ptLocalID = -1;
-  bool bondFlag;
+  bool bondFlag = true;
   for(int iID=0 ; iID<numOwnedPoints ; ++iID){
     int nodeID = ownedIDs[iID];
     double* pt = &x[3*nodeID];
@@ -144,18 +145,19 @@ PeridigmNS::InitialDamageModel::initialize(const double dt,
       for (std::vector< std::shared_ptr<PdBondFilter::BondFilter> >::iterator it = bondFilters.begin(); it != bondFilters.end() ; it++) {
         bondFlag = false;
         (*it)->filterBonds(treeList, pt, ptLocalID, xOverlap.data(), &bondFlag);
-        if (bondFlag)
+        if (bondFlag){
+          bondDamageN[bondIndex] = 1.0;
           bondDamageNP1[bondIndex] = 1.0;
+          }
       }
       bondIndex += 1;
     }
   }
-
   //  Update the element damage (percent of bonds broken)
-  neighborhoodListIndex = 0;
-  bondIndex = 0;
-    //  Update the element damage (percent of bonds broken)
+  DAMAGE_UTILITIES::calculateDamageIndex(numOwnedPoints,ownedIDs,vol,neighborhoodList,bondDamageN, damageN);
+  //  Update the element damage (percent of bonds broken)
   DAMAGE_UTILITIES::calculateDamageIndex(numOwnedPoints,ownedIDs,vol,neighborhoodList,bondDamageNP1, damageNP1);
+
 }
 
 void
