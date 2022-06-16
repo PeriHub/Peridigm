@@ -451,9 +451,7 @@ PeridigmNS::EnergyReleaseDamageModel::computeDamage(const double dt,
 
         }
     
-
     //  Update the element damage (percent of bonds broken)
-
     DAMAGE_UTILITIES::calculateDamageIndex(numOwnedPoints,ownedIDs,vol,neighborhoodList,bondDamageNP1, damage);
    
 }
