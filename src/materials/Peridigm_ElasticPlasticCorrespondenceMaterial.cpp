@@ -192,26 +192,7 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::computeCauchyStress(const doub
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_N)->ExtractView(&equivalentPlasticStrainN);
   double *modelCoordinates;
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&modelCoordinates);
-  // CORRESPONDENCE::updateElasticPerfectlyPlasticCauchyStress(modelCoordinates,
-  //                                                           unrotatedRateOfDeformation,
-  //                                                           unrotatedCauchyStressN, 
-  //                                                           unrotatedCauchyStressNP1, 
-  //                                                           cauchyStressPlastic,
-  //                                                           vonMisesStress,
-  //                                                           equivalentPlasticStrainN, 
-  //                                                           equivalentPlasticStrainNP1, 
-  //                                                           numOwnedPoints, 
-  //                                                           m_bulkModulus, 
-  //                                                           m_shearModulus, 
-  //                                                           m_yieldStress, 
-  //                                                           m_isFlaw,
-  //                                                           m_flawLocationX,
-  //                                                           m_flawLocationY,
-  //                                                           m_flawLocationZ,
-  //                                                           m_flawSize,
-  //                                                           m_flawMagnitude,
-  //                                                           dt);
-
+                                                    
   CORRESPONDENCE::updateElasticPerfectlyPlasticCauchyStress(unrotatedRateOfDeformation, 
                                                             unrotatedCauchyStressN, 
                                                             unrotatedCauchyStressNP1, 
