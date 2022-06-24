@@ -186,10 +186,6 @@ void updateElasticViscoplasticCauchyStressCode
 
   double reducedYieldStress;
 
-
-
-
-
   //strainInc = dt * rateOfDef
   for(int i = 0; i < 9; i++){
     strainInc[i] = *(rateOfDef+i)*dt;
@@ -203,14 +199,6 @@ void updateElasticViscoplasticCauchyStressCode
   deviatoricStrainInc[0] -= dilatationInc/3.0;
   deviatoricStrainInc[4] -= dilatationInc/3.0;
   deviatoricStrainInc[8] -= dilatationInc/3.0;
-
-  //Compute an elastic ``trail stress''
-  for(int i = 0; i < 9; i++){
-    *(stressNP1+i) = *(stressN+i) + deviatoricStrainInc[i]*2.0*shearMod;
-  }
-  *(stressNP1) += bulkMod*dilatationInc;
-  *(stressNP1+4) += bulkMod*dilatationInc;
-  *(stressNP1+8) += bulkMod*dilatationInc;
 
   sphericalStressNP1 = (*(stressNP1) + *(stressNP1+4) + *(stressNP1+8))/3.0;
 

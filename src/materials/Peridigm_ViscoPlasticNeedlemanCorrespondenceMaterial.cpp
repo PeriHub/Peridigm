@@ -48,6 +48,7 @@
 #include "Peridigm_ViscoPlasticNeedlemanCorrespondenceMaterial.hpp"
 #include "Peridigm_Field.hpp"
 #include "viscoplastic_needleman_correspondence.h"
+#include "elastic_correspondence.h"
 #include "material_utilities.h"
 #include <Teuchos_Assert.hpp>
 
@@ -138,6 +139,15 @@ PeridigmNS::ViscoplasticNeedlemanCorrespondenceMaterial::computeCauchyStress(con
 
   double *modelCoordinates;
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&modelCoordinates);
+
+  CORRESPONDENCE::updateElasticCauchyStress(unrotatedRateOfDeformation, 
+                                            unrotatedCauchyStressN, 
+                                            unrotatedCauchyStressNP1,
+                                            vonMisesStress,
+                                            numOwnedPoints,
+                                            m_bulkModulus,
+                                            m_shearModulus,
+                                            dt);
 
   CORRESPONDENCE::updateElasticViscoplasticCauchyStress(modelCoordinates,
                                                         unrotatedRateOfDeformation,
