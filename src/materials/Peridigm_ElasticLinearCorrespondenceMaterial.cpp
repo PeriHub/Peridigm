@@ -54,74 +54,87 @@
 
 using namespace std;
 
-PeridigmNS::ElasticLinearCorrespondenceMaterial::ElasticLinearCorrespondenceMaterial(const Teuchos::ParameterList& params)
-  : CorrespondenceMaterial(params),
-    m_modelAnglesId(-1),
-    m_deformationGradientFieldId(-1),
-    m_cauchyStressFieldId(-1)
+PeridigmNS::ElasticLinearCorrespondenceMaterial::ElasticLinearCorrespondenceMaterial(const Teuchos::ParameterList &params)
+    : CorrespondenceMaterial(params),
+      m_modelAnglesId(-1),
+      m_deformationGradientFieldId(-1),
+      m_cauchyStressFieldId(-1)
 {
   bool m_planeStrain = false, m_planeStress = false;
   m_type = 0;
   m_density = params.get<double>("Density");
-  if (params.isParameter("Plane Strain")){
+  if (params.isParameter("Plane Strain"))
+  {
     m_planeStrain = params.get<bool>("Plane Strain");
-    }
-  if (params.isParameter("Plane Stress")){
+  }
+  if (params.isParameter("Plane Stress"))
+  {
     m_planeStress = params.get<bool>("Plane Stress");
-    }
-  if (m_planeStrain==true)m_type=1;
-  if (m_planeStress==true)m_type=2;
+  }
+  if (m_planeStrain == true)
+    m_type = 1;
+  if (m_planeStress == true)
+    m_type = 2;
 
   m_hencky = false;
-  if (params.isParameter("Hencky Strain")){
-      m_hencky = params.get<bool>("Hencky Strain");
+  if (params.isParameter("Hencky Strain"))
+  {
+    m_hencky = params.get<bool>("Hencky Strain");
   }
   getStiffnessmatrix(params, C, m_planeStrain, m_planeStress);
-    
-  
-  PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
+  // getThermalExpansionCoefficient(params,alpha)
+  m_applyThermalStrains = false;
+  if (params.isParameter("Thermal Expansion Coefficient"))
+  {
+    m_alpha[0][0] = params.get<double>("Thermal Expansion Coefficient");
+    m_alpha[1][1] = m_alpha[0][0];
+    m_alpha[2][2] = m_alpha[0][0];
 
-  m_cauchyStressFieldId                 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Unrotated_Cauchy_Stress");
-  m_deformationGradientFieldId          = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Deformation_Gradient");
-  m_modelAnglesId                       = fieldManager.getFieldId(PeridigmField::NODE   , PeridigmField::VECTOR, PeridigmField::CONSTANT     , "Local_Angles");
+    if (params.isParameter("Thermal Expansion Coefficient Y"))
+      m_alpha[1][1] = params.get<double>("Thermal Expansion Coefficient Y");
+
+    if (params.isParameter("Thermal Expansion Coefficient Z"))
+      m_alpha[2][2] = params.get<double>("Thermal Expansion Coefficient Z");
+
+    m_applyThermalStrains = true;
+  }
+  PeridigmNS::FieldManager &fieldManager = PeridigmNS::FieldManager::self();
+
+  m_cauchyStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Unrotated_Cauchy_Stress");
+  m_deformationGradientFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Deformation_Gradient");
+  m_modelAnglesId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::VECTOR, PeridigmField::CONSTANT, "Local_Angles");
   m_fieldIds.push_back(m_modelAnglesId);
   m_fieldIds.push_back(m_deformationGradientFieldId);
   m_fieldIds.push_back(m_cauchyStressFieldId);
-
 }
 
 PeridigmNS::ElasticLinearCorrespondenceMaterial::~ElasticLinearCorrespondenceMaterial()
 {
 }
 
-void
-PeridigmNS::ElasticLinearCorrespondenceMaterial::initialize(const double dt,
-                                                             const int numOwnedPoints,
-                                                             const int* ownedIDs,
-                                                             const int* neighborhoodList,
-                                                             PeridigmNS::DataManager& dataManager)
+void PeridigmNS::ElasticLinearCorrespondenceMaterial::initialize(const double dt,
+                                                                 const int numOwnedPoints,
+                                                                 const int *ownedIDs,
+                                                                 const int *neighborhoodList,
+                                                                 PeridigmNS::DataManager &dataManager)
 {
-      PeridigmNS::CorrespondenceMaterial::initialize(dt,
-                                                      numOwnedPoints,
-                                                      ownedIDs,
-                                                      neighborhoodList,
-                                                      dataManager);
-      
-      double *angles;
-      dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
-      coorTrafo = new bool[numOwnedPoints];
-      CORRESPONDENCE::CheckCoordinateTransformation(numOwnedPoints, angles, coorTrafo);
-                             
+  PeridigmNS::CorrespondenceMaterial::initialize(dt,
+                                                 numOwnedPoints,
+                                                 ownedIDs,
+                                                 neighborhoodList,
+                                                 dataManager);
+
+  double *angles;
+  dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
+  coorTrafo = new bool[numOwnedPoints];
+  CORRESPONDENCE::CheckCoordinateTransformation(numOwnedPoints, angles, coorTrafo);
 }
 
-void
-PeridigmNS::ElasticLinearCorrespondenceMaterial::computeCauchyStress(const double dt,
-                                                               const int numOwnedPoints,
-                                                               PeridigmNS::DataManager& dataManager,
-                                                               const double time) const
+void PeridigmNS::ElasticLinearCorrespondenceMaterial::computeCauchyStress(const double dt,
+                                                                          const int numOwnedPoints,
+                                                                          PeridigmNS::DataManager &dataManager,
+                                                                          const double time) const
 {
-
-  
 
   double *CauchyStress, *CauchyStressNP1, *defGrad, *angles;
   // have to be checked if the additional effort is useful or not
@@ -133,18 +146,14 @@ PeridigmNS::ElasticLinearCorrespondenceMaterial::computeCauchyStress(const doubl
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NP1)->ExtractView(&defGrad);
   dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
 
-  CORRESPONDENCE::updateElasticCauchyStressAnisotropic(defGrad, 
-                                            CauchyStress,
-                                            CauchyStressNP1,
-                                            numOwnedPoints,
-                                            C,
-                                            angles,
-                                            m_type,
-                                            dt,
-                                            coorTrafo,
-                                            m_hencky);
-                                            
-                                  
-                                            
-                                           
+  CORRESPONDENCE::updateElasticCauchyStressAnisotropic(defGrad,
+                                                       CauchyStress,
+                                                       CauchyStressNP1,
+                                                       numOwnedPoints,
+                                                       C,
+                                                       angles,
+                                                       m_type,
+                                                       dt,
+                                                       coorTrafo,
+                                                       m_hencky);
 }

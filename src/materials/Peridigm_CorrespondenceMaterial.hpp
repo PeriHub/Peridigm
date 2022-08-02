@@ -51,19 +51,20 @@
 #include "Peridigm_Material.hpp"
 #include "Peridigm_InfluenceFunction.hpp"
 
-namespace PeridigmNS {
+namespace PeridigmNS
+{
 
-  class CorrespondenceMaterial : public Material{
+  class CorrespondenceMaterial : public Material
+  {
   public:
-
     //! Constructor.
-    CorrespondenceMaterial(const Teuchos::ParameterList & params);
+    CorrespondenceMaterial(const Teuchos::ParameterList &params);
 
     //! Destructor.
     virtual ~CorrespondenceMaterial();
 
     //! Return name of material type
-    virtual std::string Name() const { return("Correspondence Base Class"); }
+    virtual std::string Name() const { return ("Correspondence Base Class"); }
 
     //! Returns the density of the material.
     virtual double Density() const { return m_density; }
@@ -80,33 +81,33 @@ namespace PeridigmNS {
     //! Initialize the material model.
     virtual void initialize(const double dt,
                             const int numOwnedPoints,
-                            const int* ownedIDs,
-                            const int* neighborhoodList,
-                            PeridigmNS::DataManager& dataManager);
+                            const int *ownedIDs,
+                            const int *neighborhoodList,
+                            PeridigmNS::DataManager &dataManager);
 
     //! Evaluate the Cauchy stress (pure virtual function, must be implemented by derived correspondence material models).
     virtual void computeCauchyStress(const double dt,
                                      const int numOwnedPoints,
-                                     PeridigmNS::DataManager& dataManager,
+                                     PeridigmNS::DataManager &dataManager,
                                      const double time = 0.0) const = 0;
 
     //! Evaluate the internal force.
     virtual void computeForce(const double dt,
                               const int numOwnedPoints,
-                              const int* ownedIDs,
-                              const int* neighborhoodList,
-                              PeridigmNS::DataManager& dataManager,
+                              const int *ownedIDs,
+                              const int *neighborhoodList,
+                              PeridigmNS::DataManager &dataManager,
                               const double currentTime = 0.0) const;
-//////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////
 
-//! Evaluate the jacobian.
+    //! Evaluate the jacobian.
     virtual void
     computeJacobian(const double dt,
                     const int numOwnedPoints,
-                    const int* ownedIDs,
-                    const int* neighborhoodList,
-                    PeridigmNS::DataManager& dataManager,
-                    PeridigmNS::SerialMatrix& jacobian,
+                    const int *ownedIDs,
+                    const int *neighborhoodList,
+                    PeridigmNS::DataManager &dataManager,
+                    PeridigmNS::SerialMatrix &jacobian,
                     PeridigmNS::Material::JacobianType jacobianType = PeridigmNS::Material::FULL_MATRIX) const;
     /// \enum JacobianType
     /// \brief Whether to compute the full tangent stiffness matrix or just its block diagonal entries
@@ -127,40 +128,37 @@ namespace PeridigmNS {
     ///
     /// \note The default behavior is to compute the full tangent stiffness matrix. This enum is useful to only
     /// if you need to efficiently compute only the block diagonal entries of the full tangent stiffness matrix.
-    //enum JacobianType { UNDEFINED=0, NONE=1, FULL_MATRIX=2, BLOCK_DIAGONAL=3 };                           
-//! Evaluate the jacobian via automatic differentiation.
+    // enum JacobianType { UNDEFINED=0, NONE=1, FULL_MATRIX=2, BLOCK_DIAGONAL=3 };
+    //! Evaluate the jacobian via automatic differentiation.
     virtual void
     computeAutomaticDifferentiationJacobian(const double dt,
                                             const int numOwnedPoints,
-                                            const int* ownedIDs,
-                                            const int* neighborhoodList,
-                                            PeridigmNS::DataManager& dataManager,
-                                            PeridigmNS::SerialMatrix& jacobian,
+                                            const int *ownedIDs,
+                                            const int *neighborhoodList,
+                                            PeridigmNS::DataManager &dataManager,
+                                            PeridigmNS::SerialMatrix &jacobian,
                                             PeridigmNS::Material::JacobianType jacobianType = PeridigmNS::Material::FULL_MATRIX) const;
-//! Evaluate the jacobian via finite difference scheme .
+    //! Evaluate the jacobian via finite difference scheme .
     virtual void
     computeJacobianFiniteDifference(const double dt,
                                     const int numOwnedPoints,
-                                    const int* ownedIDs,
-                                    const int* neighborhoodList,
-                                    PeridigmNS::DataManager& dataManager,
-                                    PeridigmNS::SerialMatrix& jacobian,
+                                    const int *ownedIDs,
+                                    const int *neighborhoodList,
+                                    PeridigmNS::DataManager &dataManager,
+                                    PeridigmNS::SerialMatrix &jacobian,
                                     FiniteDifferenceScheme finiteDifferenceScheme,
                                     PeridigmNS::Material::JacobianType jacobianType = PeridigmNS::Material::FULL_MATRIX) const;
-  
-    
-  
-    //! Returns a vector of field IDs that need to be synchronized across block boundaries and MPI boundaries after precompute().
-  //  virtual std::vector<int> FieldIdsForSynchronizationAfterPrecompute() const {
-  //    std::vector<int> fieldIds;
-  //    fieldIds.push_back(m_piolaStressTimesInvShapeTensorXId);
-  //    fieldIds.push_back(m_piolaStressTimesInvShapeTensorYId);
-  //    fieldIds.push_back(m_piolaStressTimesInvShapeTensorZId);
-  //    return fieldIds;
-  //  }
-    //enum FiniteDifferenceScheme { FORWARD_DIFFERENCE=0, CENTRAL_DIFFERENCE=1 };
-  protected:
 
+    //! Returns a vector of field IDs that need to be synchronized across block boundaries and MPI boundaries after precompute().
+    //  virtual std::vector<int> FieldIdsForSynchronizationAfterPrecompute() const {
+    //    std::vector<int> fieldIds;
+    //    fieldIds.push_back(m_piolaStressTimesInvShapeTensorXId);
+    //    fieldIds.push_back(m_piolaStressTimesInvShapeTensorYId);
+    //    fieldIds.push_back(m_piolaStressTimesInvShapeTensorZId);
+    //    return fieldIds;
+    //  }
+    // enum FiniteDifferenceScheme { FORWARD_DIFFERENCE=0, CENTRAL_DIFFERENCE=1 };
+  protected:
     // material parameters
     double m_bulkModulus;
     double m_shearModulus;
@@ -168,14 +166,13 @@ namespace PeridigmNS {
     bool m_applyAutomaticDifferentiationJacobian;
     bool m_applyThermalStrains;
     double D;
-    int    m_stabilizationType;
+    int m_stabilizationType;
     double C[6][6];
-    double m_alpha[3][3];
-    bool   m_planeStress, m_planeStrain;
-    bool   m_plane = false;
-    bool   nonLin = false;
-    bool   lin = true;
-    bool   avg = false;
+    bool m_planeStress, m_planeStrain;
+    bool m_plane = false;
+    bool nonLin = false;
+    bool lin = true;
+    bool avg = false;
     double m_hourglassCoefficient;
     double scal;
     PeridigmNS::InfluenceFunction::functionPointer m_OMEGA;

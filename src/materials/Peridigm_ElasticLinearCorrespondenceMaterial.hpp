@@ -50,43 +50,44 @@
 
 #include "Peridigm_CorrespondenceMaterial.hpp"
 
-namespace PeridigmNS {
+namespace PeridigmNS
+{
 
-  class ElasticLinearCorrespondenceMaterial : public CorrespondenceMaterial{
+  class ElasticLinearCorrespondenceMaterial : public CorrespondenceMaterial
+  {
   public:
-
-	//! Constructor.
-    ElasticLinearCorrespondenceMaterial(const Teuchos::ParameterList & params);
+    //! Constructor.
+    ElasticLinearCorrespondenceMaterial(const Teuchos::ParameterList &params);
 
     //! Destructor.
     virtual ~ElasticLinearCorrespondenceMaterial();
 
     //! Return name of material type
-    virtual std::string Name() const { return("Linear Elastic Correspondence"); }
+    virtual std::string Name() const { return ("Linear Elastic Correspondence"); }
 
     //! Evaluate the Cauchy stress. --> call from Peridigm_CorrespondenceMaterial.cpp
-    virtual void initialize(const double dt, 
-                            const int numOwnedPoints, 
-                            const int* ownedIDs,
-                            const int* neighborhoodList,
-                            PeridigmNS::DataManager& dataManager);
+    virtual void initialize(const double dt,
+                            const int numOwnedPoints,
+                            const int *ownedIDs,
+                            const int *neighborhoodList,
+                            PeridigmNS::DataManager &dataManager);
     virtual void computeCauchyStress(const double dt,
                                      const int numOwnedPoints,
-                                     PeridigmNS::DataManager& dataManager,
+                                     PeridigmNS::DataManager &dataManager,
                                      const double time = 0.0) const;
     //! Returns the requested material property
     //! A dummy method here.
-    virtual double lookupMaterialProperty(const std::string keyname) const {return 0.0;}
+    virtual double lookupMaterialProperty(const std::string keyname) const { return 0.0; }
     bool *coorTrafo = new bool;
 
   protected:
-
     // field spec ids for all relevant data
     double C[6][6];
+    double m_alpha[3][3];
     int m_type;
     int m_stabilizationType;
     int m_modelAnglesId;
-        
+
     int m_deformationGradientFieldId;
     int m_cauchyStressFieldId;
     bool m_incremental;
