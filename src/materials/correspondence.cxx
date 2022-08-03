@@ -2331,6 +2331,55 @@ double* strain
 );
 
 template<typename ScalarT>
+void getStrain
+(
+  const int numPoints,
+  const ScalarT* defGrad,
+  const double alpha[][3],
+  const ScalarT* temperature,
+  const bool hencky,
+  const bool applyThermalStrains,
+  ScalarT* strain
+)
+{   std::string logStrainErrorMessage = "**** Error:  elastic_correspondence ::updateElasticCauchyStressAnisotropic() failed to compute logStrain.\n";
+  for(int iID=0 ; iID<numPoints ; ++iID, defGrad+=9, strain+=9, temperature+=1){
+    if (hencky){
+      int defGradLogReturnCode = CORRESPONDENCE::computeLogStrain(defGrad,strain);
+      TEUCHOS_TEST_FOR_TERMINATION(defGradLogReturnCode != 0, logStrainErrorMessage);
+      }
+    else
+      {CORRESPONDENCE::computeGreenLagrangeStrain(defGrad,strain);}
+    if (applyThermalStrains){
+      CORRESPONDENCE::addTemperatureStrain(alpha,*(temperature),strain);
+      }
+
+  }
+
+}
+
+template void getStrain<Sacado::Fad::DFad<double>>
+(
+const int numPoints,
+const Sacado::Fad::DFad<double>* defGrad,
+const double alpha[][3],
+const Sacado::Fad::DFad<double>* temperature,
+const bool hencky,
+const bool applyThermalStrains,
+Sacado::Fad::DFad<double>* strain
+);
+template void getStrain<double>
+(
+const int numPoints,
+const double* defGrad,
+const double alpha[][3],
+const double* temperature,
+const bool hencky,
+const bool applyThermalStrains,
+double* strain
+);
+
+
+template<typename ScalarT>
 void computeGreenLagrangeStrain
 (
   const ScalarT* defGrad,

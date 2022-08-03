@@ -133,6 +133,18 @@ double* detachedNodes
 );
 
 template<typename ScalarT>
+void getStrain
+(
+const int numPoints,
+const ScalarT* defGrad,
+const double alpha[][3],
+const ScalarT* temperature,
+const bool hencky,
+const bool applyThermalStrains,
+ScalarT* strain
+);
+
+template<typename ScalarT>
 void addTemperatureStrain
 (
 const double alpha[][3],

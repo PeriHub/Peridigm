@@ -164,7 +164,6 @@ namespace PeridigmNS
     double m_shearModulus;
     double m_density;
     bool m_applyAutomaticDifferentiationJacobian;
-    bool m_applyThermalStrains;
     double D;
     int m_stabilizationType;
     double C[6][6];
@@ -201,7 +200,6 @@ namespace PeridigmNS
     int m_detachedNodesFieldId;
     int m_partialStressFieldId;
     int m_hourglassStiffId;
-    int m_temperatureFieldId;
     int m_netdamageFieldId;
     int m_type;
     int m_modelAnglesId;

@@ -283,7 +283,7 @@ void updateElasticCauchyStress
 template<typename ScalarT>
 void updateElasticCauchyStressAnisotropic
 (
-const ScalarT* DeformationGradient, 
+const ScalarT* strainNP1, 
 const ScalarT* unrotatedCauchyStressN, 
 ScalarT* unrotatedCauchyStressNP1, 
 const int numPoints, 
@@ -291,39 +291,34 @@ const ScalarT Cstiff[][6],
 const double* angles,
 const int type,
 const double dt,
-const bool* coordinateTrafo,
-const bool hencky
+const bool* coordinateTrafo
 )
 {
   
-  const ScalarT* defGrad = DeformationGradient;
+ 
   ScalarT* sigmaNP1 = unrotatedCauchyStressNP1;
+  
   std::vector<ScalarT> strainVector(9);
-
   ScalarT* strain = &strainVector[0];
+  std::vector<ScalarT> stressVector(9);
+  ScalarT* stress = &stressVector[0];
  std::string logStrainErrorMessage = "**** Error:  elastic_correspondence ::updateElasticCauchyStressAnisotropic() failed to compute logStrain.\n";
   
 
   //int defGradLogReturnCode(0);
   bool rotation = false;
   for(int iID=0 ; iID<numPoints ; ++iID, 
-        defGrad+=9, sigmaNP1+=9, angles+=3){
+        strainNP1+=9, sigmaNP1+=9, angles+=3){
 
 
-          if (hencky&&type!=0){
-            int defGradLogReturnCode = CORRESPONDENCE::computeLogStrain(defGrad,strain);
-            TEUCHOS_TEST_FOR_TERMINATION(defGradLogReturnCode != 0, logStrainErrorMessage);
-          }
-          else{CORRESPONDENCE::computeGreenLagrangeStrain(defGrad,strain);}
-          //if (m_applyThermalStrains){CORRESPONDENCE::addTemperatureStrain(alpha,temperature,strain)}
-
+          
           //https://www.continuummechanics.org/stressxforms.html
           // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
           if (rotation){  
-            MATRICES::tensorRotation(angles,strain,true,strain);
+            MATRICES::tensorRotation(angles,strainNP1,true,strain);
           }
 
-          CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(strain, sigmaNP1, Cstiff, type);
+          CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(strain, stress, Cstiff, type);
           // rotation back
           if (rotation){  
             MATRICES::tensorRotation(angles,strain,false,strain);
@@ -373,7 +368,7 @@ const int type
 }       
 template void updateElasticCauchyStressAnisotropic<Sacado::Fad::DFad<double>>
 (
-const Sacado::Fad::DFad<double>* DeformationGradient, 
+const Sacado::Fad::DFad<double>* strainVectorNP1, 
 const Sacado::Fad::DFad<double>* unrotatedCauchyStressN, 
 Sacado::Fad::DFad<double>* unrotatedCauchyStressNP1, 
 const int numPoints, 
@@ -381,12 +376,11 @@ const Sacado::Fad::DFad<double> Cstiff[][6],
 const double* angles,
 const int type,
 const double dt,
-const bool* coordinateTrafo,
-const bool hencky
+const bool* coordinateTrafo
 );
 template void updateElasticCauchyStressAnisotropic<double>
 (
-const double* DeformationGradient, 
+const double* strainVectorNP1, 
 const double* unrotatedCauchyStressN, 
 double* unrotatedCauchyStressNP1, 
 const int numPoints, 
@@ -394,8 +388,7 @@ const double Cstiff[][6],
 const double* angles,
 const int type,
 const double dt,
-const bool* coordinateTrafo,
-const bool hencky
+const bool* coordinateTrafo
 );
 // Explicit template instantiation for double
 template void updateElasticCauchyStressAnisotropicCode<double>

@@ -84,15 +84,18 @@ namespace PeridigmNS
     // field spec ids for all relevant data
     double C[6][6];
     double alpha[3][3];
-    bool m_applyThermalStrains;
+    
     int m_type;
     int m_stabilizationType;
     int m_modelAnglesId;
-
+    int m_temperatureFieldId;
     int m_deformationGradientFieldId;
     int m_cauchyStressFieldId;
+    int m_strain;
     bool m_incremental;
     bool m_hencky;
+    bool m_applyThermalStrains;
+    
   };
 }
 

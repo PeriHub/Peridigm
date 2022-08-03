@@ -27,3 +27,5 @@ build/CMakeFiles/3.20.5/CMakeSystem.cmake
 src/damage/unit_test/Testing/Temporary/CTestCostData.txt
 src/damage/unit_test/Testing/Temporary/LastTest.log
 .gitignore
+src/materials/unit_test/Testing/Temporary/CTestCostData.txt
+src/materials/unit_test/Testing/Temporary/LastTest.log
