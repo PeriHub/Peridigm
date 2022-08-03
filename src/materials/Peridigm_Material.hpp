@@ -201,6 +201,9 @@ namespace PeridigmNS {
     double calculateShearModulus(const Teuchos::ParameterList & params) const;
     //! Reads all elastic material parameters and provide an elasticity matrix
     void getStiffnessmatrix(const Teuchos::ParameterList & params, double C[][6], bool pstrain, bool pstress) const;
+    bool getThermalExpansionCoefficient(const Teuchos::ParameterList & params, double m_alpha[][3]) const;
+
+
     template<typename ScalarT>ScalarT getData(const Teuchos::ParameterList & params, std::string paramName);
     enum FiniteDifferenceScheme { FORWARD_DIFFERENCE=0, CENTRAL_DIFFERENCE=1 };
 

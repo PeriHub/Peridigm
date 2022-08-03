@@ -83,7 +83,8 @@ namespace PeridigmNS
   protected:
     // field spec ids for all relevant data
     double C[6][6];
-    double m_alpha[3][3];
+    double alpha[3][3];
+    bool m_applyThermalStrains;
     int m_type;
     int m_stabilizationType;
     int m_modelAnglesId;

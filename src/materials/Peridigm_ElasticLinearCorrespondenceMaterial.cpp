@@ -82,22 +82,8 @@ PeridigmNS::ElasticLinearCorrespondenceMaterial::ElasticLinearCorrespondenceMate
     m_hencky = params.get<bool>("Hencky Strain");
   }
   getStiffnessmatrix(params, C, m_planeStrain, m_planeStress);
-  // getThermalExpansionCoefficient(params,alpha)
-  m_applyThermalStrains = false;
-  if (params.isParameter("Thermal Expansion Coefficient"))
-  {
-    m_alpha[0][0] = params.get<double>("Thermal Expansion Coefficient");
-    m_alpha[1][1] = m_alpha[0][0];
-    m_alpha[2][2] = m_alpha[0][0];
-
-    if (params.isParameter("Thermal Expansion Coefficient Y"))
-      m_alpha[1][1] = params.get<double>("Thermal Expansion Coefficient Y");
-
-    if (params.isParameter("Thermal Expansion Coefficient Z"))
-      m_alpha[2][2] = params.get<double>("Thermal Expansion Coefficient Z");
-
-    m_applyThermalStrains = true;
-  }
+  m_applyThermalStrains = getThermalExpansionCoefficient(params,alpha);
+  
   PeridigmNS::FieldManager &fieldManager = PeridigmNS::FieldManager::self();
 
   m_cauchyStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Unrotated_Cauchy_Stress");
