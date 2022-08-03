@@ -315,6 +315,8 @@ const bool hencky
             TEUCHOS_TEST_FOR_TERMINATION(defGradLogReturnCode != 0, logStrainErrorMessage);
           }
           else{CORRESPONDENCE::computeGreenLagrangeStrain(defGrad,strain);}
+          //if (m_applyThermalStrains){CORRESPONDENCE::addTemperatureStrain(alpha,temperature,strain)}
+
           //https://www.continuummechanics.org/stressxforms.html
           // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
           if (rotation){  
