@@ -321,7 +321,7 @@ const bool* coordinateTrafo
           CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(strain, stress, Cstiff, type);
           // rotation back
           if (rotation){  
-            MATRICES::tensorRotation(angles,strain,false,strain);
+            MATRICES::tensorRotation(angles,stress,false,sigmaNP1);
           }
 
         }
