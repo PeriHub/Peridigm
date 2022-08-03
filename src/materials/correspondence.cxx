@@ -2300,7 +2300,7 @@ template<typename ScalarT>
 void addTemperatureStrain
 (
   const double alpha[][3],
-  const ScalarT* temperature,
+  const ScalarT temperature,
   ScalarT* strain
 )
 {
@@ -2320,13 +2320,13 @@ void addTemperatureStrain
 template void addTemperatureStrain<Sacado::Fad::DFad<double>>
 (
 const double alpha[][3],
-const Sacado::Fad::DFad<double>* temperature,
+const Sacado::Fad::DFad<double> temperature,
 Sacado::Fad::DFad<double>* strain
 );
 template void addTemperatureStrain<double>
 (
 const double alpha[][3],
-const double* temperature,
+const double temperature,
 double* strain
 );
 

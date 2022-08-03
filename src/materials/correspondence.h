@@ -136,7 +136,7 @@ template<typename ScalarT>
 void addTemperatureStrain
 (
 const double alpha[][3],
-const ScalarT* temperature,
+const ScalarT temperature,
 ScalarT* strain
 );
 
