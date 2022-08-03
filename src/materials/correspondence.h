@@ -133,10 +133,20 @@ double* detachedNodes
 );
 
 template<typename ScalarT>
-void computeGreenLagrangeStrain
-(const ScalarT* defGrad,
+void addTemperatureStrain
+(
+const double alpha[][3],
+const ScalarT* temperature,
 ScalarT* strain
 );
+
+template<typename ScalarT>
+void computeGreenLagrangeStrain
+(
+const ScalarT* defGrad,
+ScalarT* strain
+);
+
 double FLAWFUNCTION(
 const bool isFlaw,
 const double yieldStress,
