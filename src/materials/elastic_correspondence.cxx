@@ -283,7 +283,7 @@ void updateElasticCauchyStress
 template<typename ScalarT>
 void updateElasticCauchyStressAnisotropic
 (
-const ScalarT* strainNP1, 
+const ScalarT* DeformationGradient, 
 const ScalarT* unrotatedCauchyStressN, 
 ScalarT* unrotatedCauchyStressNP1, 
 const int numPoints, 
@@ -295,36 +295,34 @@ const bool* coordinateTrafo
 )
 {
   
- 
+  const ScalarT* defGrad = DeformationGradient;
   ScalarT* sigmaNP1 = unrotatedCauchyStressNP1;
-  
   std::vector<ScalarT> strainVector(9);
+
   ScalarT* strain = &strainVector[0];
-  std::vector<ScalarT> stressVector(9);
-  ScalarT* stress = &stressVector[0];
  std::string logStrainErrorMessage = "**** Error:  elastic_correspondence ::updateElasticCauchyStressAnisotropic() failed to compute logStrain.\n";
   
 
   //int defGradLogReturnCode(0);
   bool rotation = false;
-  for(int iID=0 ; iID<numPoints ; ++iID, 
-        strainNP1+=9, sigmaNP1+=9, angles+=3){
+  for(int iID=0 ; iID<numPoints ; ++iID, defGrad+=9, sigmaNP1+=9, angles+=3){
 
+    CORRESPONDENCE::computeGreenLagrangeStrain(defGrad,strain);
+    //if (m_applyThermalStrains){CORRESPONDENCE::addTemperatureStrain(alpha,temperature,strain)}
 
-          
-          //https://www.continuummechanics.org/stressxforms.html
-          // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
-          if (rotation){  
-            MATRICES::tensorRotation(angles,strainNP1,true,strain);
-          }
+    //https://www.continuummechanics.org/stressxforms.html
+    // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
+    if (rotation){  
+      MATRICES::tensorRotation(angles,strain,true,strain);
+    }
 
-          CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(strain, stress, Cstiff, type);
-          // rotation back
-          if (rotation){  
-            MATRICES::tensorRotation(angles,stress,false,sigmaNP1);
-          }
+    CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(strain, sigmaNP1, Cstiff, type);
+    // rotation back
+    if (rotation){  
+      MATRICES::tensorRotation(angles,strain,false,strain);
+    }
 
-        }
+  }
 
 }
 
