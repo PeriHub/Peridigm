@@ -465,12 +465,17 @@ bool PeridigmNS::Material::getThermalExpansionCoefficient(const Teuchos::Paramet
   return m_applyThermalStrains;
 }
 
-
-
 void PeridigmNS::Material::getStiffnessmatrix(const Teuchos::ParameterList & params, double C[][6], bool pstrain, bool pstress) const
 {
   double ctemp[6][6];
- 
+          
+  for(int iID=0 ; iID<6 ; ++iID)
+    {
+    for(int jID=0 ; jID<6 ; ++jID){
+      C[iID][jID]=0.0;
+    }
+  }
+
   // bool iso = false;
   bool iso = true;
 
@@ -478,16 +483,16 @@ void PeridigmNS::Material::getStiffnessmatrix(const Teuchos::ParameterList & par
     if (params.get<string>("Material Symmetry")=="Anisotropic"){
             iso = false;
     }
-    for(int iID=1 ; iID<6 ; ++iID)
+    for(int iID=0 ; iID<6 ; ++iID)
     { // because C is symmetric only the upper triangle is read
       for(int jID=iID ; jID<6 ; ++jID){
         if (params.isParameter("C" + std::to_string(iID+1) + std::to_string(jID+1))){
           ctemp[iID][jID] = params.get<double>("C" + std::to_string(iID+1) + std::to_string(jID+1));
         }
         else
-      {
-        ctemp[iID][jID] = 0.0;
-      }
+        {
+          ctemp[iID][jID] = 0.0;
+        }
       }
     }
   }
@@ -499,7 +504,7 @@ void PeridigmNS::Material::getStiffnessmatrix(const Teuchos::ParameterList & par
     double lam = m_bulkModulus - 2./3.*m_shearModulus; 
     for(int iID=0 ; iID<6 ; ++iID)
     {
-      for(int jID=0 ; jID<6 ; ++jID){
+      for(int jID=1 ; jID<6 ; ++jID){
         ctemp[iID][jID] = 0.0;
       }
       ctemp[iID][iID] = 2*m_shearModulus + lam;
@@ -511,43 +516,31 @@ void PeridigmNS::Material::getStiffnessmatrix(const Teuchos::ParameterList & par
     // for ordinary state-based Peridynamics, Engineering Fracture Mechanics (2017), doi: https://doi.org/10.1016/
     // j.engfracmech.2017.10.011
   
-      if (pstress==false&&pstrain == false){
-        for(int iID=0 ; iID<6 ; ++iID)
-          {
-          for(int jID=iID ; jID<6 ; ++jID){
-            C[iID][jID] = ctemp[jID][iID];
-            C[jID][iID] = C[iID][jID];
-            }
-        }
-         
+  if (pstress==false&&pstrain == false){
+    for(int iID=0 ; iID<6 ; ++iID)
+      {
+      for(int jID=iID ; jID<6 ; ++jID){
+        C[iID][jID] = ctemp[jID][iID];
+        C[jID][iID] = C[iID][jID];
       }
-      else{
-        if (pstress==false&&pstrain == false){
-          for(int iID=0 ; iID<6 ; ++iID)
-            {
-            for(int jID=0 ; jID<6 ; ++jID){
-              C[iID][jID] = 0.0;
-            }
-          }
-        }
-      if (pstress==true&&iso == true){
-            //only transversal isotropic in the moment --> definition of iso missing
-            double temp = ctemp[0][2] * ctemp[0][2] / ctemp[1][1];
-            C[0][0] = ctemp[0][0] - temp;
-            C[0][1] = ctemp[0][1] - temp;
-            C[1][0] = ctemp[0][1] - temp;
-            C[1][1] = ctemp[0][0] - temp;
-            C[5][5] = ctemp[5][5];
-        }
-        else{
-          C[0][0] = ctemp[0][0];C[0][1] = ctemp[0][1];C[0][5] = ctemp[0][5];
-          C[1][0] = ctemp[0][1];C[1][1] = ctemp[1][1];C[1][5] = ctemp[1][5];
-          C[5][0] = ctemp[0][5];ctemp[5][1] = ctemp[1][5];C[5][5] = ctemp[5][5];
-          
-          }
-      }
-
-
+    }
+  }
+  else{
+    if (pstress==true&&iso == true){
+      //only transversal isotropic in the moment --> definition of iso missing
+      double temp = ctemp[0][2] * ctemp[0][2] / ctemp[1][1];
+      C[0][0] = ctemp[0][0] - temp;
+      C[0][1] = ctemp[0][1] - temp;
+      C[1][0] = ctemp[0][1] - temp;
+      C[1][1] = ctemp[0][0] - temp;
+      C[5][5] = ctemp[5][5];
+    }
+    else{
+      C[0][0] = ctemp[0][0];C[0][1] = ctemp[0][1];C[0][5] = ctemp[0][5];
+      C[1][0] = ctemp[0][1];C[1][1] = ctemp[1][1];C[1][5] = ctemp[1][5];
+      C[5][0] = ctemp[0][5];ctemp[5][1] = ctemp[1][5];C[5][5] = ctemp[5][5];
+    }
+  }
 }
 
 
@@ -700,4 +693,3 @@ PeridigmNS::Material::computeDeviatoricStateNorm(
         
     }
 }        
-
