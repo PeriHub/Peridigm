@@ -148,9 +148,6 @@ protected:
   int neighborhoodListSize;
   int* neighborhoodList;
   int* neighborhoodPtr;
-  int topologyListSize;
-  int* topology;
-  int* topologyPtr;
 };
 
 }
