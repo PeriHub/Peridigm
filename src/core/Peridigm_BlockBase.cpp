@@ -264,7 +264,6 @@ Teuchos::RCP<PeridigmNS::NeighborhoodData> PeridigmNS::BlockBase::createNeighbor
 
   Teuchos::RCP<PeridigmNS::NeighborhoodData> blockNeighborhoodData = Teuchos::rcp(new PeridigmNS::NeighborhoodData);
   blockNeighborhoodData->SetNumOwned(ownedIDs.size());
-  blockNeighborhoodData->SetElementsOwned(ownedIDs.size());
   
   
   if(ownedIDs.size() > 0){
