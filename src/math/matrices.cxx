@@ -927,6 +927,18 @@ int invertAndCond(const ScalarT* Min,
 
   return 0;
 }
+double vectorNorm
+(
+    const double* vector,
+    const int len
+){
+    double accum = 0.;
+    for (int i = 0; i < len; ++i) {
+        accum += vector[i] * vector[i];
+    }
+    return sqrt(accum);
+}
+
 
 template int invertAndCond<double>
 (

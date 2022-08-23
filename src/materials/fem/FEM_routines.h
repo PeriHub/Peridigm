@@ -132,12 +132,18 @@ const double* sigmaInt,
 double* nforces
 );
 
+template<typename ScalarT>
 void tensorRotation
 (
 const double* angles,
-const double* tensorIn,
+const ScalarT* tensorIn,
 const bool globToLoc,
-double* tensorOut
+ScalarT* tensorOut
+);
+double vectorNorm
+(
+const double* vector,
+const int len
 );
 
 void defineLagrangianGridSpace

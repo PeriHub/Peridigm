@@ -98,6 +98,12 @@ ScalarT* tensorOut
 );
 
 
+double vectorNorm
+(
+const double* vector,
+const int len
+);
+
 //! Invert a single N-by-N symmetric matrix; returns zero of successful, one if not successful (e.g., singular matrix).
 
 //! Inner product of two 3-by-3 matrices.

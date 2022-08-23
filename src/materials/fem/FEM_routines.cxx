@@ -615,4 +615,13 @@ template void tensorRotation<Sacado::Fad::DFad<double> >
     const bool globToLoc,
     Sacado::Fad::DFad<double>* tensorOut
 );
+
+double vectorNorm
+(
+    const double* vector,
+    const int len
+){
+    return MATRICES::vectorNorm(vector, len);
+}
+
 }

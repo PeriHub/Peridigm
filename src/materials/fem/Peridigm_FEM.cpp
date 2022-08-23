@@ -271,7 +271,8 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     std::vector<double> strainVector(9);
     
     double* strain = &strainVector[0];
-    double angles[3];
+    std::vector<double> anglesVector(3);
+    double* angles = &anglesVector[0];;
     //int defGradLogReturnCode(0);
 
     std::vector<double> sigmaIntVector(9);
@@ -323,7 +324,9 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
           elNodalCoor[3*nID+i]   = deformedCoor[3*globalId+i];       
           dispNodal[3*nID+i]     = deformedCoor[3*globalId+i] - undeformedCoor[3*globalId+i];
           }
-      }   
+      } 
+      if (FEM::vectorNorm(angles, 3)!=0)rotation=true;
+      else rotation = false;
       //FEM::setToZero(&sigmaNP1[9 * elementID], 9);
       FEM::setToZero(&elNodalForces[0],3*numElemNodes);
 
