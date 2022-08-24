@@ -164,7 +164,7 @@ const int order[3],
 const double elCoor[3]
 );
 
-void weightsAndIntegrationPoints
+bool weightsAndIntegrationPoints
 (
 const int order, 
 double* elCoor,

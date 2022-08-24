@@ -182,13 +182,14 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
   double* weights  = &weightVector[0];
  
   int intPointPtr = 0;
+  bool success;
   // temporary vector; the length varies depended on the direction, but its max is nnode
   //std::vector<double> NIntVector(nnode), BIntVector(nnode);
   //double* NInt = &NIntVector[0];
   //double* BInt = &BIntVector[0];
-  FEM::weightsAndIntegrationPoints(order[0], elCoorx, weightsx);
-  FEM::weightsAndIntegrationPoints(order[1], elCoory, weightsy);
-
+  success=FEM::weightsAndIntegrationPoints(order[0], elCoorx, weightsx);
+  success=FEM::weightsAndIntegrationPoints(order[1], elCoory, weightsy);
+  TEUCHOS_TEST_FOR_TERMINATION(success==false, "**** Weights are not include for this polynomial degree.\n");
   if (twoD){
     for (int jID=0 ; jID<numIntDir[1] ; ++jID){
       FEM::getLagrangeElementData(order[1],elCoory[jID],Neta,Beta);
@@ -201,7 +202,9 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
     }
   }
   else{
-    FEM::weightsAndIntegrationPoints(order[2], elCoorz, weightsz); 
+    success=FEM::weightsAndIntegrationPoints(order[2], elCoorz, weightsz); 
+    TEUCHOS_TEST_FOR_TERMINATION(success==false, "**** Weights are not include for this polynomial degree.\n");
+
     for (int kID=0 ; kID<numIntDir[2] ; ++kID){
       FEM::getLagrangeElementData(order[2],elCoorz[kID],Npsi,Bpsi);
       for (int jID=0 ; jID<numIntDir[1] ; ++jID){

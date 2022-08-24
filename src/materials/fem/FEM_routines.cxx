@@ -63,7 +63,7 @@
 using namespace std;
 namespace FEM {
 
-void weightsAndIntegrationPoints
+bool weightsAndIntegrationPoints
 (
 const int order, 
 double* elCoor,
@@ -71,6 +71,7 @@ double* weights
 )
 {
 //https://de.wikipedia.org/wiki/Gau%C3%9F-Quadratur
+bool success = true;
 if (order == 0)
 {
     elCoor[0] = 0;
@@ -92,13 +93,11 @@ else if (order==2)
     elCoor[2] =  sqrt(3.0/5.0);
     weights[2] = 5.0/9.0;
 }
-//else if (order == 3)
-//{}
 else
 {
-    //hier muss eine Fehlermeldung rein
+    success = false;
 }
-
+    return success;
 }
 
 
