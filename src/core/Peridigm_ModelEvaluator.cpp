@@ -137,7 +137,6 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset, bool damage
     if(runEval){
       PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Compute Force");
       const int* neighborhoodList = neighborhoodData->NeighborhoodList();
-      std::cout<<"eval"<<std::endl;
       materialModel->computeForce(dt,
                                   numOwnedPoints,
                                   ownedIDs,
