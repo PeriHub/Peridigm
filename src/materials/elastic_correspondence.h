@@ -171,7 +171,7 @@ void updateBondLevelElasticCauchyStress
 template<typename ScalarT>
 void updateElasticCauchyStressAnisotropic
 (
-const ScalarT* strainVectorNP1, 
+ScalarT* strainVectorNP1, 
 const ScalarT* unrotatedCauchyStressN, 
 ScalarT* unrotatedCauchyStressNP1, 
 const int numPoints, 

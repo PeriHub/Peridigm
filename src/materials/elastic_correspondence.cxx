@@ -283,7 +283,7 @@ void updateElasticCauchyStress
 template<typename ScalarT>
 void updateElasticCauchyStressAnisotropic
 (
-const ScalarT* DeformationGradient, 
+ScalarT* strainVectorNP1, 
 const ScalarT* unrotatedCauchyStressN, 
 ScalarT* unrotatedCauchyStressNP1, 
 const int numPoints, 
@@ -295,19 +295,16 @@ const bool* coordinateTrafo
 )
 {
   
-  const ScalarT* defGrad = DeformationGradient;
+  ScalarT* strain = strainVectorNP1;
   ScalarT* sigmaNP1 = unrotatedCauchyStressNP1;
-  std::vector<ScalarT> strainVector(9);
 
-  ScalarT* strain = &strainVector[0];
- std::string logStrainErrorMessage = "**** Error:  elastic_correspondence ::updateElasticCauchyStressAnisotropic() failed to compute logStrain.\n";
+  std::string logStrainErrorMessage = "**** Error:  elastic_correspondence ::updateElasticCauchyStressAnisotropic() failed to compute logStrain.\n";
   
 
   //int defGradLogReturnCode(0);
   bool rotation = true;
-  for(int iID=0 ; iID<numPoints ; ++iID, defGrad+=9, sigmaNP1+=9, angles+=3){
+  for(int iID=0 ; iID<numPoints ; ++iID, strain+=9, sigmaNP1+=9, angles+=3){
 
-    CORRESPONDENCE::computeGreenLagrangeStrain(defGrad,strain);
     //if (m_applyThermalStrains){CORRESPONDENCE::addTemperatureStrain(alpha,temperature,strain)}
 
     //https://www.continuummechanics.org/stressxforms.html
@@ -368,7 +365,7 @@ const int type
 }       
 template void updateElasticCauchyStressAnisotropic<Sacado::Fad::DFad<double>>
 (
-const Sacado::Fad::DFad<double>* strainVectorNP1, 
+Sacado::Fad::DFad<double>* strainVectorNP1, 
 const Sacado::Fad::DFad<double>* unrotatedCauchyStressN, 
 Sacado::Fad::DFad<double>* unrotatedCauchyStressNP1, 
 const int numPoints, 
@@ -380,7 +377,7 @@ const bool* coordinateTrafo
 );
 template void updateElasticCauchyStressAnisotropic<double>
 (
-const double* strainVectorNP1, 
+double* strainVectorNP1, 
 const double* unrotatedCauchyStressN, 
 double* unrotatedCauchyStressNP1, 
 const int numPoints, 
