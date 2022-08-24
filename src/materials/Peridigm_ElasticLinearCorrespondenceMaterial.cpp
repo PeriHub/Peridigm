@@ -145,8 +145,7 @@ void PeridigmNS::ElasticLinearCorrespondenceMaterial::computeCauchyStress(const 
            
   CORRESPONDENCE::getStrain(numOwnedPoints,defGrad,alpha, temperature, m_hencky, m_applyThermalStrains, strain);
 
-
-  CORRESPONDENCE::updateElasticCauchyStressAnisotropic(defGrad,
+  CORRESPONDENCE::updateElasticCauchyStressAnisotropic(strain,
                                                        CauchyStress,
                                                        CauchyStressNP1,
                                                        numOwnedPoints,

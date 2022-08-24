@@ -52,7 +52,6 @@
 #include "FEM_ElasticMaterial.hpp"
 #include "Peridigm_Field.hpp"
 #include "elastic_correspondence.h"
-#include "FEM_routines.h"
 #include <Teuchos_Assert.hpp>
 
 using namespace std;
@@ -202,7 +201,7 @@ PeridigmNS::FEMElasticMaterial::initialize(const double dt,
                                           PeridigmNS::DataManager& dataManager)
 
 {
-      
+        std::cout<<"check"<<std::endl;
   PeridigmNS::FEMMaterial::initialize(dt,
                                       numOwnedPoints,
                                       ownedIDs,
@@ -215,7 +214,7 @@ PeridigmNS::FEMElasticMaterial::initialize(const double dt,
 void
 PeridigmNS::FEMElasticMaterial::computeCauchyStress(const double* strain, double* sigmaInt) const
 {
-
+  std::cout<<"check 2"<<std::endl;
   
   CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(strain, sigmaInt, C, m_type);                        
                                          

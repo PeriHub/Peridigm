@@ -63,7 +63,7 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
     m_density(0.0)
     
 {
-     
+
   m_density = params.get<double>("Density");
 
   bool m_planeStrain = false, m_planeStress = false;
@@ -160,7 +160,7 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
                             const int* neighborhoodList,
                             PeridigmNS::DataManager& dataManager)
 {
-  std::cout<<"init FEM"<<std::endl;
+
 
  // FEM::createLumbedMassesSomeHow()
   std::vector<double> NxiVector(order[0]+1), NetaVector(order[1]+1), NpsiVector(order[2]+1);
@@ -248,9 +248,9 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
                               const int numOwnedPoints,
                               const int* ownedIDs,
                               const int* neighborhoodList,
-                              PeridigmNS::DataManager& dataManager) const
+                              PeridigmNS::DataManager& dataManager,
+                              const double currentTime) const
 {
-  
     double *CauchyStressNP1, *undeformedCoor, *nodeAngles, *deformedCoor, *globalForce;
     //double *displacements;
     //m_unrotatedCauchyStressFieldId    
@@ -311,6 +311,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     //FEM::getDisplacements(nnode,modelCoordinates, deformedCoor,dispNodal);
     int topoPtr = 0;
     int elementID = 0;
+
     for(int iID=0 ; iID<numElements ; ++iID){
       // for averaging the element number to which the node is connected has to be known
       elementID = topology[topoPtr];
@@ -330,8 +331,6 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
       //FEM::setToZero(&sigmaNP1[9 * elementID], 9);
       FEM::setToZero(&elNodalForces[0],3*numElemNodes);
 
-      
-      
       for (int jID=0 ; jID<numInt ; ++jID){
         int intPointPtr = jID*numElemNodes;
         // only if nodes and integration points are equal the topology is suitable here.
