@@ -80,8 +80,7 @@ const double* RotationN,
 const double* RotationNP1,
 const bool plane_stress,
 const bool plane_strain,
-const std::string matname,
-const bool* coordinateTrafo
+const std::string matname
 )
 {
   // Hooke's law
@@ -90,7 +89,7 @@ const bool* coordinateTrafo
   const ScalarT* GLStrainN = strainN;
   ScalarT* GLStrainNP1 = strainNP1;
   ScalarT* sigmaNP1 = unrotatedCauchyStressNP1;
-
+  bool rotation = false;
   int nshr = 3;
   int nnormal = 3;
   int nstresscomp = 6;
@@ -130,7 +129,8 @@ const bool* coordinateTrafo
   for(int iID=0 ; iID<numPoints ; ++iID, 
           coords+=3, defGradN+=9, defGradNP1+=9, GLStrainN+=9,GLStrainNP1+=9,sigmaNP1+=9, angles+=3){
           NOEL = iID;
-    
+    if (MATRICES::vectorNorm(angles, 3)!=0)rotation=true;
+    else rotation = false;
     CORRESPONDENCE::computeGreenLagrangeStrain(defGradNP1,GLStrainNP1);
 
     CORRESPONDENCE::DIFFTENSOR(GLStrainN, GLStrainNP1, deps);
@@ -138,7 +138,7 @@ const bool* coordinateTrafo
     // Transformation global -> local
     //https://www.continuummechanics.org/stressxforms.html
     // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
-    if (coordinateTrafo[iID]==true){  
+    if (rotation==true){  
       MATRICES::tensorRotation(angles,GLStrainN,true,strainLoc);
       MATRICES::tensorRotation(angles,deps,true,deps);
     }
@@ -178,7 +178,7 @@ const bool* coordinateTrafo
 
     CORRESPONDENCE::GetTensorFromVoigtNotation(sigmaNP1LocVoigt, sigmaNP1);
     // back transformation local -> global 
-    if (coordinateTrafo[iID]==true){  
+    if (rotation==true){  
       MATRICES::tensorRotation(angles,sigmaNP1,false,sigmaNP1);
     }
   }
@@ -343,8 +343,7 @@ const double* RotationN,
 const double* RotationNP1,
 const bool plane_stress,
 const bool plane_strain,
-const std::string matname,
-const bool* coordinateTrafo
+const std::string matname
 );
 
 

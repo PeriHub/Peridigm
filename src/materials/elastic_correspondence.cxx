@@ -290,8 +290,7 @@ const int numPoints,
 const ScalarT Cstiff[][6],
 const double* angles,
 const int type,
-const double dt,
-const bool* coordinateTrafo
+const double dt
 )
 {
   
@@ -372,8 +371,7 @@ const int numPoints,
 const Sacado::Fad::DFad<double> Cstiff[][6],
 const double* angles,
 const int type,
-const double dt,
-const bool* coordinateTrafo
+const double dt
 );
 template void updateElasticCauchyStressAnisotropic<double>
 (
@@ -384,8 +382,7 @@ const int numPoints,
 const double Cstiff[][6],
 const double* angles,
 const int type,
-const double dt,
-const bool* coordinateTrafo
+const double dt
 );
 // Explicit template instantiation for double
 template void updateElasticCauchyStressAnisotropicCode<double>

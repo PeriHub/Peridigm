@@ -77,8 +77,7 @@ const double* RotationN,
 const double* RotationNP1,
 const bool plane_stress,
 const bool plane_strain,
-const std::string matname,
-const bool* coordinateTrafo
+const std::string matname
 );
 
 template<typename ScalarT>

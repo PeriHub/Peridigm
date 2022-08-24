@@ -119,10 +119,7 @@ void PeridigmNS::ElasticLinearCorrespondenceMaterial::initialize(const double dt
                                                  neighborhoodList,
                                                  dataManager);
 
-  double *angles;
-  dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
-  coorTrafo = new bool[numOwnedPoints];
-  CORRESPONDENCE::CheckCoordinateTransformation(numOwnedPoints, angles, coorTrafo);
+
 }
 
 void PeridigmNS::ElasticLinearCorrespondenceMaterial::computeCauchyStress(const double dt,
@@ -153,7 +150,6 @@ void PeridigmNS::ElasticLinearCorrespondenceMaterial::computeCauchyStress(const 
                                                        C,
                                                        angles,
                                                        m_type,
-                                                       dt,
-                                                       coorTrafo
+                                                       dt
                                                        );
 }

@@ -55,11 +55,7 @@ int EigenVec2D
  const ScalarT* a,
  ScalarT* result
 );
-void CheckCoordinateTransformation(
-  const int numOwnedPoints, 
-  const double *angles, 
-  bool *coorTrafo
-);
+
 //! Hencky-Strain E = 0.5*ln(C).
 template<typename ScalarT>
 int computeLogStrain

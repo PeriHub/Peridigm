@@ -178,8 +178,7 @@ const int numPoints,
 const ScalarT Cstiff[][6],
 const double* angles,
 const int type,
-const double dt,
-const bool* coordinateTrafo
+const double dt
 );
 
 template<typename ScalarT>

@@ -165,8 +165,6 @@ PeridigmNS::UserCorrespondenceMaterial::initialize(const double dt,
       /*
        check if and where local coordinates exists; 
       */
-      coorTrafo = new bool[numOwnedPoints];
-      CORRESPONDENCE::CheckCoordinateTransformation(numOwnedPoints, angles, coorTrafo);
       
 
 }
@@ -245,8 +243,7 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
                                         RotationNP1,
                                         m_planeStress,
                                         m_planeStrain,
-                                        matName,
-                                        coorTrafo);
+                                        matName);
 
    if (nstat > 0) {
       double *stat;
