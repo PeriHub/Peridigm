@@ -227,13 +227,13 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
   numElements = 0;
   int topoPtr = 0;
   for(int i=0 ; i<numOwnedPoints ; ++i){
-    
-    int numNodes = neighborhoodList[topoPtr];
+
+    int numNodes = neighborhoodList[topoPtr]; 
     topoPtr++;
     
     if (nodeType[i]==2){
       numElements += 1;
-      topologyVector.push_back(i);
+      topologyVector.push_back(i); // elementID
       topologyVector.push_back(numNodes);
       for(int j=0 ; j<numNodes ; ++j){
         topologyVector.push_back(neighborhoodList[topoPtr]);
@@ -323,12 +323,17 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
       topoPtr++;  
       for(int i=0 ; i<3 ; ++i){
         angles[i] = nodeAngles[3*elementID+i]; // element angle is already the average of all element nodes            
-        for(int nID=0 ; nID<numElemNodes ; ++nID){
+      }
+      for(int nID=0 ; nID<numElemNodes ; ++nID){
           globalId = topology[topoPtr + nID];
-          elNodalCoor[3*nID+i]   = deformedCoor[3*globalId+i];       
-          dispNodal[3*nID+i]     = deformedCoor[3*globalId+i] - undeformedCoor[3*globalId+i];
+          for(int i=0 ; i<3 ; ++i){
+            elNodalCoor[3*nID+i]   = deformedCoor[3*globalId+i];       
+            dispNodal[3*nID+i]     = deformedCoor[3*globalId+i] - undeformedCoor[3*globalId+i];
           }
-      } 
+        }
+       
+
+
       if (FEM::vectorNorm(angles, 3)!=0)rotation=true;
       else rotation = false;
       //FEM::setToZero(&sigmaNP1[9 * elementID], 9);
