@@ -48,6 +48,7 @@
 #include "Peridigm_DiffusionMaterial.hpp"
 #include "Peridigm_Field.hpp"
 #include "Peridigm_Constants.hpp"
+#include "temperature_diffusion.h"
 #ifdef PERIDIGM_IMPROVED_QUADRATURE
   #include <gsl/gsl_linalg.h>
   #include <gsl/gsl_cblas.h>
@@ -57,7 +58,7 @@
 
 PeridigmNS::DiffusionMaterial::DiffusionMaterial(const Teuchos::ParameterList& params)
   : Material(params),
-    m_horizon(0.0),
+    m_horizonFieldId(0.0),
     m_coefficient(0.0),
     m_useImprovedQuadrature(false),
     m_volumeFieldId(-1),
@@ -66,7 +67,6 @@ PeridigmNS::DiffusionMaterial::DiffusionMaterial(const Teuchos::ParameterList& p
     m_fluxDivergenceFieldId(-1),
     m_quadratureWeightsFieldId(-1)
 {
-  m_horizon = params.get<double>("Horizon");
   m_coefficient = params.get<double>("Coefficient");
   if (params.isParameter("Use Improved Quadrature")) {
     m_useImprovedQuadrature = params.get<bool>("Use Improved Quadrature");
@@ -77,11 +77,12 @@ PeridigmNS::DiffusionMaterial::DiffusionMaterial(const Teuchos::ParameterList& p
   m_modelCoordinatesFieldId        = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR,      PeridigmField::CONSTANT, "Model_Coordinates");
   m_temperatureFieldId             = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Temperature");
   m_fluxDivergenceFieldId          = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Flux_Divergence");
-
+  m_horizonFieldId                 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Horizon");
   m_fieldIds.push_back(m_volumeFieldId);
   m_fieldIds.push_back(m_modelCoordinatesFieldId);
   m_fieldIds.push_back(m_temperatureFieldId);
   m_fieldIds.push_back(m_fluxDivergenceFieldId);
+  m_fieldIds.push_back(m_horizonFieldId);
 
   if (m_useImprovedQuadrature) {
     m_quadratureWeightsFieldId     = fieldManager.getFieldId(PeridigmField::BOND,    PeridigmField::SCALAR,      PeridigmField::CONSTANT, "Quadrature_Weights");
@@ -156,43 +157,25 @@ PeridigmNS::DiffusionMaterial::computeFluxDivergence(const double dt,
   dataManager.getData(m_fluxDivergenceFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
 
   // Extract pointers to the underlying data
-  double *volume, *modelCoord, *temperature, *fluxDivergence, *quadratureWeights;
+  double *volume, *modelCoord, *temperature, *fluxDivergence, *quadratureWeights, *horizon;
 
   dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&volume);
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&modelCoord);
   dataManager.getData(m_temperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&temperature);
   dataManager.getData(m_fluxDivergenceFieldId, PeridigmField::STEP_NP1)->ExtractView(&fluxDivergence);
+  dataManager.getData(m_horizonFieldId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
   if (m_useImprovedQuadrature) {
     dataManager.getData(m_quadratureWeightsFieldId, PeridigmField::STEP_NONE)->ExtractView(&quadratureWeights);
   }
-
-  int neighborhoodListIndex(0);
-  int numNeighbors, neighborID, iID, iNID, bondListIndex;
-  double nodeInitialPosition[3], initialDistance, quadWeight;
-  double kernel, nodeTemperature, temperatureDifference, nodeFluxDivergence;//, neighborFluxDivergence;
-
-  const double pi = value_of_pi();
-
-  bondListIndex = 0;
-  for(iID=0 ; iID<numOwnedPoints ; ++iID){
-    nodeTemperature = temperature[iID];
-    nodeInitialPosition[0] = modelCoord[iID*3];
-    nodeInitialPosition[1] = modelCoord[iID*3+1];
-    nodeInitialPosition[2] = modelCoord[iID*3+2];
-    numNeighbors = neighborhoodList[neighborhoodListIndex++];
-    for(iNID=0 ; iNID<numNeighbors ; ++iNID){
-      neighborID = neighborhoodList[neighborhoodListIndex++];
-      quadWeight = volume[neighborID];
-      if (m_useImprovedQuadrature) {
-        quadWeight = quadratureWeights[bondListIndex++];
-      }
-      initialDistance = distance(nodeInitialPosition[0], nodeInitialPosition[1], nodeInitialPosition[2],
-                                 modelCoord[neighborID*3], modelCoord[neighborID*3+1], modelCoord[neighborID*3+2]);
-      kernel = 6.0/(pi*m_horizon*m_horizon*m_horizon*m_horizon*initialDistance);
-      temperatureDifference = temperature[neighborID] - nodeTemperature;
-      nodeFluxDivergence = m_coefficient*kernel*temperatureDifference*quadWeight;
-      TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(nodeFluxDivergence), "**** NaN detected in DiffusionMaterial::computeFluxDivergence().\n");
-      fluxDivergence[iID] += nodeFluxDivergence;
-    }
-  }
+  Diffusion::computeFlux(modelCoord,
+                                temperature,
+                                neighborhoodList,
+                                quadratureWeights,
+                                numOwnedPoints,
+                                m_useImprovedQuadrature,
+                                horizon,
+                                m_coefficient,
+                                volume,
+                                fluxDivergence);
+  
 }

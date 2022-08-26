@@ -131,8 +131,16 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset, bool damage
 
     bool runEval = true;
     
-    if (materialModel->Name().find("Correspondence")!=std::string::npos) runEval = damageExist;
-    
+    PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Flux Divergence");
+    materialModel->computeFluxDivergence(dt,
+                                         numOwnedPoints,
+                                         ownedIDs,
+                                         neighborhoodList,
+                                         *dataManager);
+    PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Internal Force:Flux Divergence");
+
+
+    if (materialModel->Name().find("Correspondence")!=std::string::npos) runEval = damageExist;  
     
     if(runEval){
       PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Compute Force");
@@ -146,13 +154,7 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset, bool damage
       PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Internal Force:Compute Force");
     }
     
-    PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Flux Divergence");
-    materialModel->computeFluxDivergence(dt,
-                                         numOwnedPoints,
-                                         ownedIDs,
-                                         neighborhoodList,
-                                         *dataManager);
-    PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Internal Force:Flux Divergence");
+
   }
   PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Internal Force");
 

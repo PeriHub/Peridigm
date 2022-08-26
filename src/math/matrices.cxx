@@ -927,6 +927,18 @@ int invertAndCond(const ScalarT* Min,
 
   return 0;
 }
+
+double distance(    
+    const double a1, 
+    const double a2, 
+    const double a3,
+    const double b1, 
+    const double b2, 
+    const double b3) 
+{
+    return ( sqrt( (a1-b1)*(a1-b1) + (a2-b2)*(a2-b2) + (a3-b3)*(a3-b3) ) );
+}
+
 double vectorNorm
 (
     const double* vector,
@@ -938,7 +950,13 @@ double vectorNorm
     }
     return sqrt(accum);
 }
-
+    double dist(
+    const double a1, 
+    const double a2, 
+    const double a3,
+    const double b1, 
+    const double b2, 
+    const double b3);
 
 template int invertAndCond<double>
 (

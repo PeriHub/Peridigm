@@ -97,6 +97,14 @@ const bool globToLoc,
 ScalarT* tensorOut
 );
 
+double distance(
+    const double a1, 
+    const double a2, 
+    const double a3,
+    const double b1, 
+    const double b2, 
+    const double b3
+    );
 
 double vectorNorm
 (

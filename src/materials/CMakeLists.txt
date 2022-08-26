@@ -1,29 +1,30 @@
 #
 # Add subdirectories
 #
-add_subdirectory (unit_test)
+add_subdirectory(unit_test)
 
 # Collection of libs that we need to link with
 set(PD_MATERIAL_SOURCES
-    ../core/Peridigm_InfluenceFunction.cpp
-    elastic.cxx
-    elastic_pv.cxx
-    linear_lps_pv.cxx
-    elastic_bond_based.cxx
-    elastic_plastic.cxx
-    elastic_plastic_hardening.cxx
-    viscoelastic.cxx
-    correspondence.cxx
-    bondassociated_correspondence.cxx
-    elastic_correspondence.cxx
-    elastic_plastic_correspondence.cxx
-    isotropic_hardening_correspondence.cxx
-    viscoplastic_needleman_correspondence.cxx
-    material_utilities.cxx
-    nonlocal_diffusion.cxx
-    pals.cxx
-    user_material_interface_correspondence.cxx
-    user_material.cxx
+  ../core/Peridigm_InfluenceFunction.cpp
+  elastic.cxx
+  elastic_pv.cxx
+  linear_lps_pv.cxx
+  elastic_bond_based.cxx
+  elastic_plastic.cxx
+  elastic_plastic_hardening.cxx
+  viscoelastic.cxx
+  correspondence.cxx
+  bondassociated_correspondence.cxx
+  elastic_correspondence.cxx
+  elastic_plastic_correspondence.cxx
+  isotropic_hardening_correspondence.cxx
+  viscoplastic_needleman_correspondence.cxx
+  material_utilities.cxx
+  nonlocal_diffusion.cxx
+  pals.cxx
+  user_material_interface_correspondence.cxx
+  user_material.cxx
+  temperature_diffusion.cxx
 )
 
 # Optional source files for Sandia internal development
@@ -39,8 +40,8 @@ ENDIF()
 # PdMaterialUtilities library
 add_library(PdMaterialUtilities ${PD_MATERIAL_SOURCES})
 
-IF (INSTALL_PERIDIGM)
-   install(TARGETS PdMaterialUtilities EXPORT peridigm-export
-   LIBRARY DESTINATION ${LIB_INSTALL_DIR}
-   ARCHIVE DESTINATION ${LIB_INSTALL_DIR})
-ENDIF ()
+IF(INSTALL_PERIDIGM)
+  install(TARGETS PdMaterialUtilities EXPORT peridigm-export
+    LIBRARY DESTINATION ${LIB_INSTALL_DIR}
+    ARCHIVE DESTINATION ${LIB_INSTALL_DIR})
+ENDIF()

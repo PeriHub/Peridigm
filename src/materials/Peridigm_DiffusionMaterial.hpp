@@ -119,13 +119,13 @@ namespace PeridigmNS {
     Teuchos::RCP<PeridigmNS::BoundaryAndInitialConditionManager> bc_manager_;
 
     // material properties
-    double m_horizon;
     double m_coefficient;
     bool m_useImprovedQuadrature;
 
     // field spec ids for all relevant data
     std::vector<int> m_fieldIds;
     int m_volumeFieldId;
+    int m_horizonFieldId;
     int m_modelCoordinatesFieldId;
     int m_temperatureFieldId;
     int m_fluxDivergenceFieldId;
