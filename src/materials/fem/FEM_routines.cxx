@@ -217,12 +217,13 @@ void derivativeShapeFunctionsLagrangeRecursive
     const double elCoor
 )
 {
-// https://math.stackexchange.com/questions/809927/first-derivative-of-lagrange-polynomial
+// https://en.wikipedia.org/wiki/Lagrange_polynomial#Derivation[6]
 
     for(int k=0;k<order+1;k++){
+        B[k] = 0.0;
         for(int i=0;i<order+1;i++){
             if (i!=k){
-                B[k] = 1.0/(elCoor-xi[i])*N[k];
+                B[k] += 1.0/(xi[k]-xi[i])*N[k];
             }
         }
     }
@@ -355,8 +356,13 @@ void setElementMatrices
 
         for(int j=0;j<order[1]+1;j++){
             for(int i=0;i<order[0]+1;i++){
-                Bx[offset + count] = Bxi[i]*Neta[j];
+                Bx[offset + count]  = Bxi[i]*Neta[j];
                 By[offset + count] = Nxi[i]*Beta[j];
+                /*
+                std::cout<<i<<" "<< j<< " "<< count<<" "<<Bx[offset + count]<<" "<<By[offset + count]<<std::endl;
+                std::cout<<Nxi[i]<<" "<< Bxi[i]<< " "<< Neta[j]<<" "<<Beta[j]<<std::endl;
+                std::cout<<" "<<std::endl;
+                */
                 count++;
             }
         }

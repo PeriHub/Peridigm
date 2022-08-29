@@ -195,8 +195,7 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
       FEM::getLagrangeElementData(order[1],elCoory[jID],Neta,Beta);
       for (int iID=0 ; iID<numIntDir[0] ; ++iID){
         FEM::getLagrangeElementData(order[0],elCoorx[iID],Nxi,Bxi);
-        FEM::setElementMatrices(twoD, intPointPtr, order, Nxi, Neta, Npsi, Bxi, Beta, Bpsi, Bx, By, Bz);
-        
+        FEM::setElementMatrices(twoD, intPointPtr, order, Nxi, Neta, Npsi, Bxi, Beta, Bpsi, Bx, By, Bz);  
         intPointPtr += nnode;
       }
     }
