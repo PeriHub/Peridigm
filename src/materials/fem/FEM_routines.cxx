@@ -89,7 +89,7 @@ else if (order==2)
     elCoor[0] = -sqrt(3.0/5.0);
     weights[0] = 5.0/9.0;
     elCoor[1] =  0.0;
-    weights[1] = sqrt(1.0/3.0);
+    weights[1] = 8.0/9.0;
     elCoor[2] =  sqrt(3.0/5.0);
     weights[2] = 5.0/9.0;
 }
