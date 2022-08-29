@@ -391,8 +391,7 @@ void setWeights
     if (twoD){
         for(int j=0;j<numIntDir[1];j++){
             for(int i=0;i<numIntDir[0];i++){
-               weights[count] = weightsx[i]*weightsy[j];
-              
+               weights[count] = weightsx[i]*weightsy[j];           
                count++;
             }
         }
