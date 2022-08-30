@@ -85,7 +85,6 @@ void getTopology(
 void derivativeShapeFunctionsLagrangeRecursive
 (
 double* B, 
-const double* N,
 const int order,
 const double* xi,
 const double elCoor

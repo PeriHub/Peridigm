@@ -158,7 +158,7 @@ double* Bxi
     double* xi = &xiVector[0];
     FEM::defineLagrangianGridSpace(order, xi);
     FEM::shapeFunctionsLagrangeRecursive(Nxi,  order, xi, elCoor);
-    FEM::derivativeShapeFunctionsLagrangeRecursive(Bxi,  Nxi,  order, xi, elCoor);
+    FEM::derivativeShapeFunctionsLagrangeRecursive(Bxi, order, xi, elCoor);
 
 }
 void getTopology
@@ -211,22 +211,29 @@ double* xi
 void derivativeShapeFunctionsLagrangeRecursive
 (
     double* B, 
-    const double* N,
     const int order,
     const double* xi,
     const double elCoor
 )
 {
 // https://en.wikipedia.org/wiki/Lagrange_polynomial#Derivation[6]
+// sympy calculated
 
     for(int k=0;k<order+1;k++){
         B[k] = 0.0;
         for(int i=0;i<order+1;i++){
             if (i!=k){
-                B[k] += 1.0/(xi[k]-xi[i])*N[k];
+                double temp = 1 / (xi[i]-xi[k]);
+                for(int m=0;m<order+1;m++){
+                    if (m!=i && m!=k){
+                        temp *= (elCoor-xi[m]) / (xi[k] - xi[m]);
+                    }
+                }
+                B[k] += temp;
             }
         }
     }
+
 }
 
 int getNumberOfIntegrationPoints
@@ -358,11 +365,7 @@ void setElementMatrices
             for(int i=0;i<order[0]+1;i++){
                 Bx[offset + count]  = Bxi[i]*Neta[j];
                 By[offset + count] = Nxi[i]*Beta[j];
-                /*
-                std::cout<<i<<" "<< j<< " "<< count<<" "<<Bx[offset + count]<<" "<<By[offset + count]<<std::endl;
-                std::cout<<Nxi[i]<<" "<< Bxi[i]<< " "<< Neta[j]<<" "<<Beta[j]<<std::endl;
-                std::cout<<" "<<std::endl;
-                */
+
                 count++;
             }
         }
