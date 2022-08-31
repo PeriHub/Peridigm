@@ -167,7 +167,7 @@ PeridigmNS::DiffusionMaterial::computeFluxDivergence(const double dt,
   if (m_useImprovedQuadrature) {
     dataManager.getData(m_quadratureWeightsFieldId, PeridigmField::STEP_NONE)->ExtractView(&quadratureWeights);
   }
-  Diffusion::computeFlux(modelCoord,
+  DIFFUSION::computeFlux(modelCoord,
                                 temperature,
                                 neighborhoodList,
                                 quadratureWeights,

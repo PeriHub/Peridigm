@@ -47,7 +47,7 @@
 #ifndef TEMPERATURE_DIFFUSION_H
 #define TEMPERATURE_DIFFUSION_H
 
-namespace Diffusion {
+namespace DIFFUSION {
 
 void computeFlux
 (

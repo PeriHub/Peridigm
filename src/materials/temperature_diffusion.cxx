@@ -50,7 +50,7 @@
 
 
 using namespace std;
-namespace Diffusion {
+namespace DIFFUSION {
   void computeFlux(
     const double* modelCoord,
     const double* temperature,
