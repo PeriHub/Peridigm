@@ -48,6 +48,7 @@
 #include "Peridigm_CorrespondenceMaterial.hpp"
 #include "Peridigm_Field.hpp"
 #include "correspondence.h"
+#include "temperature_diffusion.h"
 #include "matrices.h"
 #include "Peridigm_DegreesOfFreedomManager.hpp"
 #include "elastic_correspondence.h"
@@ -149,6 +150,13 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     }
   }
 
+  //m_applyFluxDivergence = getFluxDivergenceCoefficient(params,coefficient);
+  
+  if (params.isParameter("Hencky Strain")){
+    m_applyFluxDivergence = params.get<bool>("Apply Temperature Diffusion");
+    coefficient[0] = params.get<double>("Coefficient");
+  }
+  
   // TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticCorrespondence material model.\n");
   TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Apply Shear Correction Factor"), "**** Error:  Shear Correction Factor is not supported for the ElasticCorrespondence material model.\n");
 
@@ -176,7 +184,12 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_partialStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Partial_Stress");
   m_detachedNodesFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Detached_Nodes");
   m_hourglassStiffId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Hourglass_Stiffness");
-
+  if (m_applyFluxDivergence){
+    m_fluxDivergenceFieldId          = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Flux_Divergence");
+    m_temperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature");
+    m_fieldIds.push_back(m_fluxDivergenceFieldId);
+    m_fieldIds.push_back(m_temperatureFieldId);
+  }
   m_fieldIds.push_back(m_horizonFieldId);
   m_fieldIds.push_back(m_volumeFieldId);
   m_fieldIds.push_back(m_modelCoordinatesFieldId);
@@ -416,6 +429,23 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                           detachedNodes);
     }
   }
+  double *fluxDivergence, *quadratureWeights, *temperature;
+  
+  dataManager.getData(m_temperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&temperature);
+  dataManager.getData(m_fluxDivergenceFieldId, PeridigmField::STEP_NP1)->ExtractView(&fluxDivergence);
+
+
+  Diffusion::computeFlux(modelCoordinates,
+                                temperature,
+                                neighborhoodList,
+                                quadratureWeights,
+                                numOwnedPoints,
+                                false,
+                                horizon,
+                                coefficient[0],
+                                volume,
+                                fluxDivergence);
+
   // Evaluate the Cauchy stress using the routine implemented in the derived class (specific correspondence material model)
   // The general idea is to compute the stress based on:
   //   1) The unrotated rate-of-deformation tensor

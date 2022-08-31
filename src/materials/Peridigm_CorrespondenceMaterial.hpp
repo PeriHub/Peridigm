@@ -167,6 +167,7 @@ namespace PeridigmNS
     double D;
     int m_stabilizationType;
     double C[6][6];
+    double coefficient[3];
     bool m_planeStress, m_planeStrain;
     bool m_plane = false;
     bool nonLin = false;
@@ -201,12 +202,15 @@ namespace PeridigmNS
     int m_partialStressFieldId;
     int m_hourglassStiffId;
     int m_netdamageFieldId;
+    int m_temperatureFieldId;
+    int m_fluxDivergenceFieldId;
     int m_type;
     int m_modelAnglesId;
     int m_deformationGradientNonIncFieldId;
     bool m_plast;
     bool m_adaptHourGlass;
     bool linRateOfDeformation;
+    bool m_applyFluxDivergence;
   };
 }
 
