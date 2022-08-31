@@ -448,20 +448,22 @@ double PeridigmNS::Material::calculateShearModulus(const Teuchos::ParameterList 
 bool PeridigmNS::Material::getThermalExpansionCoefficient(const Teuchos::ParameterList & params, double m_alpha[][3]) const
 {
   bool m_applyThermalStrains = false;
-  if (params.isParameter("Thermal Expansion Coefficient"))
-  {
-    m_alpha[0][0] = params.get<double>("Thermal Expansion Coefficient");
-    m_alpha[1][1] = m_alpha[0][0];
-    m_alpha[2][2] = m_alpha[0][0];
 
-    if (params.isParameter("Thermal Expansion Coefficient Y"))
-      m_alpha[1][1] = params.get<double>("Thermal Expansion Coefficient Y");
+  if (params.isParameter("Apply Thermal Strain")){
+    m_applyThermalStrains = params.get<double>("Apply Thermal Strain"); 
+    if (params.isParameter("Thermal Expansion Coefficient"))
+    {
+      m_alpha[0][0] = params.get<double>("Thermal Expansion Coefficient");
+      m_alpha[1][1] = m_alpha[0][0];
+      m_alpha[2][2] = m_alpha[0][0];
 
-    if (params.isParameter("Thermal Expansion Coefficient Z"))
-      m_alpha[2][2] = params.get<double>("Thermal Expansion Coefficient Z");
-
-    
-  }
+      if (params.isParameter("Thermal Expansion Coefficient Y"))
+        m_alpha[1][1] = params.get<double>("Thermal Expansion Coefficient Y");
+      if (params.isParameter("Thermal Expansion Coefficient Z"))
+        m_alpha[2][2] = params.get<double>("Thermal Expansion Coefficient Z");
+    }
+  }  
+  
   return m_applyThermalStrains;
 }
 

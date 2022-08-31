@@ -429,13 +429,12 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                           detachedNodes);
     }
   }
-  double *fluxDivergence, *quadratureWeights, *temperature;
+  double *fluxDivergence, *temperature, *quadratureWeights=NULL; // quadratureWeights not included yet
   
   dataManager.getData(m_temperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&temperature);
   dataManager.getData(m_fluxDivergenceFieldId, PeridigmField::STEP_NP1)->ExtractView(&fluxDivergence);
 
-
-  Diffusion::computeFlux(modelCoordinates,
+  DIFFUSION::computeFlux(modelCoordinates,
                                 temperature,
                                 neighborhoodList,
                                 quadratureWeights,
