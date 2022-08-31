@@ -450,7 +450,7 @@ bool PeridigmNS::Material::getThermalExpansionCoefficient(const Teuchos::Paramet
   bool m_applyThermalStrains = false;
 
   if (params.isParameter("Apply Thermal Strain")){
-    m_applyThermalStrains = params.get<double>("Apply Thermal Strain"); 
+    m_applyThermalStrains = params.get<bool>("Apply Thermal Strain"); 
     if (params.isParameter("Thermal Expansion Coefficient"))
     {
       m_alpha[0][0] = params.get<double>("Thermal Expansion Coefficient");
