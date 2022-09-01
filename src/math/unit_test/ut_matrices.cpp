@@ -80,6 +80,20 @@ TEUCHOS_UNIT_TEST(matrices, tensorRotation) {
     }
     
 }
+
+TEUCHOS_UNIT_TEST(matrices, distance) {
+    const double tolerance = 2.0e-8;
+
+    TEST_FLOATING_EQUALITY(MATRICES::distance(1.5,1,1,1.5,1,1), 0.0,tolerance); 
+    TEST_FLOATING_EQUALITY(MATRICES::distance(1.5,0,0,0,0,0),   1.5,tolerance); 
+    TEST_FLOATING_EQUALITY(MATRICES::distance(0,-1.5,0,0,0,0),  1.5,tolerance); 
+    TEST_FLOATING_EQUALITY(MATRICES::distance(0,0,1.5,0,0,0),   1.5,tolerance); 
+    TEST_FLOATING_EQUALITY(MATRICES::distance(1.3,8.1,1.3,4.5,2,1.3), 6.888396039717809,tolerance); 
+    TEST_FLOATING_EQUALITY(MATRICES::distance(1.3,8.1,1.3,-4.5,2,1.3), 8.417244204607586,tolerance); 
+ 
+}
+
+
 TEUCHOS_UNIT_TEST(matrices, createRotationMatrix) {
     const double tolerance = 2.0e-8;
         
