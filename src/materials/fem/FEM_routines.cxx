@@ -450,11 +450,12 @@ void setNodalStresses
 {
     int globalId;
     for(int nID=0 ; nID<nnode ; ++nID){
+        globalId = topology[topoPtr + nID];
         for (int i=0 ; i<9 ; ++i){
-            globalId = topology[topoPtr + nID];
             // set the element stresses equal to the element nodel stress
             // to have stresses at the nodes for visualisation
             sigmaNP1[9 * globalId + i] = sigmaNP1[9 * elementID + i];
+            
         }
         
     }

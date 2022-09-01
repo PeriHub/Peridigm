@@ -332,7 +332,6 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         }
        
 
-
       if (FEM::vectorNorm(angles, 3)!=0)rotation=true;
       else rotation = false;
       //FEM::setToZero(&sigmaNP1[9 * elementID], 9);
