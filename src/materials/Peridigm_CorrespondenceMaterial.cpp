@@ -151,9 +151,9 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   }
 
   //m_applyFluxDivergence = getFluxDivergenceCoefficient(params,coefficient);
-  
-  if (params.isParameter("Hencky Strain")){
-    m_applyFluxDivergence = params.get<bool>("Apply Temperature Diffusion");
+  m_applyFluxDivergence = false;
+  if (params.isParameter("Apply Thermal Diffusion")){
+    m_applyFluxDivergence = params.get<bool>("Apply Thermal Diffusion");
     coefficient[0] = params.get<double>("Coefficient");
   }
   
@@ -429,22 +429,23 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                           detachedNodes);
     }
   }
-  double *fluxDivergence, *temperature, *quadratureWeights=NULL; // quadratureWeights not included yet
-  
-  dataManager.getData(m_temperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&temperature);
-  dataManager.getData(m_fluxDivergenceFieldId, PeridigmField::STEP_NP1)->ExtractView(&fluxDivergence);
+  if (m_applyFluxDivergence){
+    double *fluxDivergence, *temperature, *quadratureWeights=NULL; // quadratureWeights not included yet
+    
+    dataManager.getData(m_temperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&temperature);
+    dataManager.getData(m_fluxDivergenceFieldId, PeridigmField::STEP_NP1)->ExtractView(&fluxDivergence);
 
-  DIFFUSION::computeFlux(modelCoordinates,
-                                temperature,
-                                neighborhoodList,
-                                quadratureWeights,
-                                numOwnedPoints,
-                                false,
-                                horizon,
-                                coefficient[0],
-                                volume,
-                                fluxDivergence);
-
+    DIFFUSION::computeFlux(modelCoordinates,
+                                  temperature,
+                                  neighborhoodList,
+                                  quadratureWeights,
+                                  numOwnedPoints,
+                                  false,
+                                  horizon,
+                                  coefficient[0],
+                                  volume,
+                                  fluxDivergence);
+  }
   // Evaluate the Cauchy stress using the routine implemented in the derived class (specific correspondence material model)
   // The general idea is to compute the stress based on:
   //   1) The unrotated rate-of-deformation tensor
