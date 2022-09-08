@@ -109,7 +109,6 @@ namespace PeridigmNS {
     int numInt;
     int nnode;
     std::vector<int> topologyVector;
-    int numElements;
     double *Bx = new double;
     double *By = new double;
     double *Bz = new double;

@@ -161,16 +161,15 @@ double* Bxi
     FEM::derivativeShapeFunctionsLagrangeRecursive(Bxi, order, xi, elCoor);
 
 }
-void getTopology
+std::vector<int> getTopology
 (
 const int numOwnedPoints,
 const int* neighborhoodList,
-const double* nodeType,
-int numElements,
-std::vector<int> topology
+const double* nodeType
 )
 {
-  numElements = 0;
+  std::vector<int> topology;
+  topology.push_back(0);
   int topoPtr = 0;
   for(int i=0 ; i<numOwnedPoints ; ++i){
     
@@ -178,7 +177,7 @@ std::vector<int> topology
     topoPtr++;
     
     if (nodeType[i]==2){
-      numElements += 1;
+      topology[0] += 1;
       topology.push_back(i);
       topology.push_back(numNodes);
       for(int j=0 ; j<numNodes ; ++j){
@@ -187,7 +186,8 @@ std::vector<int> topology
         }
     }
     else{topoPtr+=numNodes;}
-  } 
+  }
+  return topology;
 }
 
 
@@ -478,13 +478,37 @@ void setGlobalForces
     for(int nID=0 ; nID<nnode ; ++nID){
       globalId = topology[topoPtr + nID];
       for (int i=0 ; i<3 ; ++i){  
-          force[3*globalId+i]      += elNodalForces[3*nID+i]  *volume[globalId];
-          force[3 * elementID + i] += force[3 * globalId + i] / nnode;
+          force[3*globalId+i]      += elNodalForces[3*nID+i]  * volume[globalId];
       }
      }
 
 }
- 
+
+
+void setElementCoordinates
+(
+    const int nnode,
+    const int elementID,
+    int topoPtr,
+    const int* topology,
+    const double* nodalCoor,
+    double* elCoor
+)
+{
+    int globalId;
+
+    //setToZero(&elCoor[3 * elementID], 3);
+
+    for(int nID=0 ; nID<nnode ; ++nID){
+      globalId = topology[topoPtr + nID];
+      
+      for (int i=0 ; i<3 ; ++i){    
+          elCoor[3 * elementID + i] += nodalCoor[3 * globalId + i] / nnode;
+      }
+     }
+
+}
+
 void shapeFunctionsLagrangeRecursive
 (
     double* N, 

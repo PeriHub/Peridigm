@@ -75,13 +75,20 @@ const int order,
 const double* xi,
 const double elCoor
 );
-void getTopology(
+std::vector<int> getTopology(
     const int numOwnedPoints,
     const int* neighborhoodList,
-    const double* nodeType,
-    int numElements,
-    std::vector<int> topology);
-
+    const double* nodeType
+);
+void setElementCoordinates
+(
+    const int nnode,
+    const int elementID,
+    int topoPtr,
+    const int* topology,
+    const double* nodalCoor,
+    double* elCoor
+);
 void derivativeShapeFunctionsLagrangeRecursive
 (
 double* B, 

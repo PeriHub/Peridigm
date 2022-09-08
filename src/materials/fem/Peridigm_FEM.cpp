@@ -221,27 +221,11 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
   dataManager.getData(m_nodeTypeFieldId, PeridigmField::STEP_NONE)->ExtractView(&nodeType);
 
   // why it does not work?
-  //FEM::getTopology(numOwnedPoints, neighborhoodList, nodeType, numElements, topologyVector);
-  
-  numElements = 0;
-  int topoPtr = 0;
-  for(int i=0 ; i<numOwnedPoints ; ++i){
-
-    int numNodes = neighborhoodList[topoPtr]; 
-    topoPtr++;
-    
-    if (nodeType[i]==2){
-      numElements += 1;
-      topologyVector.push_back(i); // elementID
-      topologyVector.push_back(numNodes);
-      for(int j=0 ; j<numNodes ; ++j){
-        topologyVector.push_back(neighborhoodList[topoPtr]);
-        topoPtr++;
-        }
-    }
-    else{topoPtr+=numNodes;}
-  } 
-
+  topologyVector = FEM::getTopology(numOwnedPoints, neighborhoodList, nodeType);
+  /*
+   // geht das für mehrere Cores? 
+*/
+std::cout<< topologyVector[0]<<std::endl;
 
 
 }
@@ -292,7 +276,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     bool twoD = false;
     if (m_type!=0) {twoD = true;}
 
-    
+    // if elements change within the list, the memory has to be adapted
     int ndof = 3*nnode;
 
     std::vector<double> dispNodalVector(ndof);
@@ -312,14 +296,20 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     int globalId, numElemNodes;
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     //FEM::getDisplacements(nnode,modelCoordinates, deformedCoor,dispNodal);
-    int topoPtr = 0;
+    int topoPtr = 1;
     int elementID = 0;
-    for(int iID=0 ; iID<numElements ; ++iID){
+     
+    for(int iID=0 ; iID<topology[0] ; ++iID){
+      std::cout<<"checkstart "<<topology[0]<<std::endl;
       // for averaging the element number to which the node is connected has to be known
       elementID = topology[topoPtr];
+ 
+            
       topoPtr++;
       numElemNodes = topology[topoPtr];
       topoPtr++;  
+      
+            std::cout<<"check2 "<<topology[0]<<std::endl;
       for(int i=0 ; i<3 ; ++i){
         angles[i] = nodeAngles[3*elementID+i]; // element angle is already the average of all element nodes            
       }
@@ -331,18 +321,17 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
           }
         }
        
-
+      
       if (FEM::vectorNorm(angles, 3)!=0)rotation=true;
       else rotation = false;
-      //FEM::setToZero(&sigmaNP1[9 * elementID], 9);
-      FEM::setToZero(&elNodalForces[0],3*numElemNodes);
+      FEM::setToZero(&sigmaNP1[9 * elementID], 9);
+      FEM::setToZero(elNodalForces,3*numElemNodes);
 
       
       
       for (int jID=0 ; jID<numInt ; ++jID){
         int intPointPtr = jID*numElemNodes;
         // only if nodes and integration points are equal the topology is suitable here.
-
         detJ=FEM::getJacobian(Bx, By, Bz, numElemNodes, intPointPtr, elNodalCoor, weight[jID], twoD, J, Jinv);
         
         FEM::computeStrain(Bx, By, Bz, dispNodal, intPointPtr, numElemNodes, Jinv, twoD, strain); 
@@ -359,15 +348,17 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         if (rotation){  
           FEM::tensorRotation(angles,sigmaInt,false,sigmaInt);
         }
+        
         FEM::nodalForce(Bx, By, Bz, intPointPtr, numElemNodes, detJ, Jinv, twoD, sigmaInt, elNodalForces);
         // has to be done for each integration point
         // it adds up the different parts of each integration point resulting element force
         FEM::setGlobalStresses(elementID, sigmaInt, sigmaNP1);  
+        
       }
  
       FEM::setNodalStresses(numElemNodes, elementID, topoPtr, topology, sigmaNP1);
       FEM::setGlobalForces(numElemNodes, elementID, topoPtr, topology, elNodalForces, volume, force); 
-       
+      FEM::setElementCoordinates(numElemNodes, elementID, topoPtr, topology, elNodalCoor, deformedCoor); 
        
 
       topoPtr+=numElemNodes;
