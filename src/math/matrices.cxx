@@ -67,7 +67,7 @@ void setToZero(
 )
 {
     for (int i=0 ; i<len ; ++i){
-        A[i] = 0;
+        A[i] = 0.0;
     } 
 }
 
