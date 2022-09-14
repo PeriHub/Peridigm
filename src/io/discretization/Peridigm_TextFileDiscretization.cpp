@@ -350,24 +350,25 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
 
       int localId = rebalancedMap.LID(globalIds[i]);
       if(hasConstantHorizon){
-        if (nodeTypeTemporary[globalIds[i]] == 2) (*rebalancedHorizonForEachPoint)[localId] = horizon_of_element[globalIds[i]];
+        (*rebalancedHorizonForEachPoint)[localId] = constantHorizonValue;
+        if (params->isParameter("Input FEM Topology File")){ 
+          if (nodeTypeTemporary[globalIds[i]] == 2) (*rebalancedHorizonForEachPoint)[localId] = horizon_of_element[globalIds[i]];
+        }
 
-        else (*rebalancedHorizonForEachPoint)[localId] = constantHorizonValue;
-        
       }
       else{
-        if (nodeTypeTemporary[globalIds[i]] == 2) (*rebalancedHorizonForEachPoint)[localId] = horizon_of_element[globalIds[i]];
-        else {
-          double x = rebalancedX[localId*3];
-          double y = rebalancedX[localId*3 + 1];
-          double z = rebalancedX[localId*3 + 2];
-          double horizon = horizonManager.evaluateHorizon(blockName, x, y, z);
-          (*rebalancedHorizonForEachPoint)[localId] = horizon;
+        double x = rebalancedX[localId*3];
+        double y = rebalancedX[localId*3 + 1];
+        double z = rebalancedX[localId*3 + 2];
+        double horizon = horizonManager.evaluateHorizon(blockName, x, y, z);
+        (*rebalancedHorizonForEachPoint)[localId] = horizon;
+        if (params->isParameter("Input FEM Topology File")){ 
+          if (nodeTypeTemporary[globalIds[i]] == 2) (*rebalancedHorizonForEachPoint)[localId] = horizon_of_element[globalIds[i]];
         }
       }
     }
   }
-
+  std::cout<<" rebal done " << myPID<<std::endl;
   // execute neighbor search and update the decomp to include resulting ghosts
   std::shared_ptr<const Epetra_Comm> commSp(comm.getRawPtr(), NonDeleter<const Epetra_Comm>());
   Teuchos::RCP<PDNEIGH::NeighborhoodList> list;
