@@ -200,19 +200,46 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   vector<double> angles;
   vector<double> horizon_of_element;
   vector<int> elementTopo;
+  vector<int> nodeTypeTemporary;
   vector<double> nodeType;
-  getDiscretization(textFileName, coordinates, blockIds, volumes, angles,nodeType);
+  getDiscretization(textFileName, coordinates, blockIds, volumes, angles, nodeType);
   int numFE = 0;
   if (params->isParameter("Input FEM Topology File"))
   {
+    if (myPID == 0) std::cout<<" End Input FEM Topology " <<std::endl;
     getFETopology(topologyFileName, coordinates, blockIds, volumes, angles, horizon_of_element, elementTopo, nodeType, numFE);
-    if(myPID == 0){ 
-      std::shared_ptr<PdBondFilter::BondFilter> bondFilter(new PdBondFilter::PreDefinedTopologyFilter(static_cast<int>(blockIds.size()), numFE, elementTopo));
-      bondFilters.push_back(bondFilter);
+    int numNodes = static_cast<int>(blockIds.size());
+    int etz = static_cast<int>(elementTopo.size());
+    //https://stackoverflow.com/questions/51408632/mpi-bcast-c-stl-vector
+    
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Bcast(&numFE, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&numNodes, 1 , MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&etz, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  
+    if (myPID != 0){
+      elementTopo.resize(etz,0);
+      horizon_of_element.resize(numNodes,0.0);
     }
-  }
-  // Read the text file on the root processor
-
+    nodeTypeTemporary.resize(numNodes,0);
+    if (myPID == 0){ 
+      for(unsigned int i=0 ; i<nodeTypeTemporary.size() ; i++){
+        nodeTypeTemporary[i] = nodeType[i];
+      }
+    } 
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Bcast(elementTopo.data(),  elementTopo.size(), MPI_INT, 0, MPI_COMM_WORLD);
+    // nodeType is double, because int does not exist in the datamanager
+    MPI_Bcast(nodeTypeTemporary.data(),  nodeTypeTemporary.size(), MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(horizon_of_element.data(),  horizon_of_element.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    std::shared_ptr<PdBondFilter::BondFilter> bondFilter(new PdBondFilter::PreDefinedTopologyFilter(numNodes, numFE, elementTopo));
+    bondFilters.push_back(bondFilter);
+ 
+    
+    if (myPID == 0) std::cout<<" End Input FEM Topology " <<std::endl;
+    
+    }
+  
   int numElements = static_cast<int>(blockIds.size());
   TEUCHOS_TEST_FOR_TERMINATION(myPID == 0 && numElements < 1, "**** Error reading discretization text file, no data found.\n");
 
@@ -224,10 +251,12 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   }
 
   // Broadcast necessary data from root processor
+  
   Teuchos::RCP<const Teuchos::Comm<int> > teuchosComm = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD));
+  
   int numGlobalElements;
   reduceAll(*teuchosComm, Teuchos::REDUCE_SUM, 1, &numElements, &numGlobalElements);
-
+  
   // Broadcast the unique block ids so that all processors are aware of the full block list
   // This is necessary because if a processor does not have any elements for a given block, it will be unaware the
   // given block exists, which causes problems downstream
@@ -249,6 +278,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   // Copy data into a decomp object
   int dimension = 3;
   QUICKGRID::Data decomp = QUICKGRID::allocatePdGridData(numElements, dimension);
+
   decomp.globalNumPoints = numGlobalElements;
   memcpy(decomp.myGlobalIDs.get(), &globalIds[0], numElements*sizeof(int)); 
   memcpy(decomp.cellVolume.get(), &volumes[0], numElements*sizeof(double)); 
@@ -272,6 +302,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
     tempBlockIDPtr[i] = blockIds[i];
 
   // call the rebalance function on the current-configuration decomp
+  
   decomp = PDNEIGH::getLoadBalancedDiscretization(decomp);
 
   // create a (throw-away) one-dimensional owned map in the rebalanced configuration
@@ -312,29 +343,27 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
     double constantHorizonValue(0.0);
     if(hasConstantHorizon)
       constantHorizonValue = horizonManager.getBlockConstantHorizonValue(blockName);
-    unsigned int numGlobalIDs = globalIds.size() - numFE;
+    unsigned int numGlobalIDs = globalIds.size();
+    
 
     for(unsigned int i=0 ; i<numGlobalIDs ; ++i){
 
       int localId = rebalancedMap.LID(globalIds[i]);
       if(hasConstantHorizon){
-        (*rebalancedHorizonForEachPoint)[localId] = constantHorizonValue;
+        if (nodeTypeTemporary[globalIds[i]] == 2) (*rebalancedHorizonForEachPoint)[localId] = horizon_of_element[globalIds[i]];
+
+        else (*rebalancedHorizonForEachPoint)[localId] = constantHorizonValue;
+        
       }
       else{
-        double x = rebalancedX[localId*3];
-        double y = rebalancedX[localId*3 + 1];
-        double z = rebalancedX[localId*3 + 2];
-        double horizon = horizonManager.evaluateHorizon(blockName, x, y, z);
-        (*rebalancedHorizonForEachPoint)[localId] = horizon;
-      }
-    }
-
-    if (params->isParameter("Input FEM Topology File"))
-    {
-      for (int i = 0; i < numFE; ++i)
-      {
-        int localId = rebalancedMap.LID(globalIds[numGlobalIDs + i]);
-        (*rebalancedHorizonForEachPoint)[localId] = horizon_of_element[i];
+        if (nodeTypeTemporary[globalIds[i]] == 2) (*rebalancedHorizonForEachPoint)[localId] = horizon_of_element[globalIds[i]];
+        else {
+          double x = rebalancedX[localId*3];
+          double y = rebalancedX[localId*3 + 1];
+          double z = rebalancedX[localId*3 + 2];
+          double horizon = horizonManager.evaluateHorizon(blockName, x, y, z);
+          (*rebalancedHorizonForEachPoint)[localId] = horizon;
+        }
       }
     }
   }
@@ -385,7 +414,7 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string& fileName,
     double coorAvg[3], angAvg[3], volAvg;
     int numOfFiniteElements;
     std::string testString = "";
-    
+    for(unsigned int i=0 ; i<blockIds.size() ; i++) horizon.push_back(0.0);
     if (fileName.compare(testString) != 0)
     {
       ifstream inFile(fileName.c_str());
@@ -408,7 +437,7 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string& fileName,
                istream_iterator<int>(),
                back_inserter<vector<int>>(topo));
 
-          blockIds.push_back(topo[0]);
+          blockIds.push_back(topo[0]);      
           elementTopo.push_back(static_cast<int>(topo.size() - 1));
           // lenDecompElementNodes += static_cast<int>(topo.size()) + 1;
 

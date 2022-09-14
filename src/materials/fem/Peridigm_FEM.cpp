@@ -225,7 +225,7 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
   /*
    // geht das für mehrere Cores? 
 */
-std::cout<< topologyVector[0]<<std::endl;
+
 
 
 }
@@ -298,18 +298,23 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     //FEM::getDisplacements(nnode,modelCoordinates, deformedCoor,dispNodal);
     int topoPtr = 1;
     int elementID = 0;
-     
+//std::cout<< topologyVector[0]<<" numEL"<<std::endl;
+//std::cout<< topologyVector[1]<<" EL1 "<<topologyVector[0]<<std::endl;
+//std::cout<< topologyVector[2]<<" nnnode1 "<<topologyVector[0]<<std::endl;
+//std::cout<< topologyVector[3]<<" N1 "<<topologyVector[0]<<std::endl;
+//std::cout<< topologyVector[4]<<" N2 "<<topologyVector[0]<<std::endl;
+//std::cout<< topologyVector[5]<<" N3 "<<topologyVector[0]<<std::endl;
+//std::cout<< topologyVector[6]<<" N4 "<<topologyVector[0]<<std::endl;
+//std::cout<< topologyVector[7]<<" EL2 "<<topologyVector[0]<<std::endl;
+//std::cout<< topologyVector[8]<<" nnode2 "<<topologyVector[0]<<std::endl;
+
     for(int iID=0 ; iID<topology[0] ; ++iID){
-      std::cout<<"checkstart "<<topology[0]<<std::endl;
       // for averaging the element number to which the node is connected has to be known
-      elementID = topology[topoPtr];
- 
-            
+      elementID = topology[topoPtr];          
       topoPtr++;
       numElemNodes = topology[topoPtr];
       topoPtr++;  
       
-            std::cout<<"check2 "<<topology[0]<<std::endl;
       for(int i=0 ; i<3 ; ++i){
         angles[i] = nodeAngles[3*elementID+i]; // element angle is already the average of all element nodes            
       }
