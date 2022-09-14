@@ -161,9 +161,7 @@ public:
     {
       if (i > lenNodes - numFE - 1)
       {
-        mapping.push_back(count);
-        
-        
+        mapping.push_back(count);       
         for (int j = 0; j < topo[count] + 1; j++)
           topoList.push_back(topo[count + j]);
         count += topo[count] + 1;

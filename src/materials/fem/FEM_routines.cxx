@@ -177,8 +177,8 @@ const double* nodeType
     topoPtr++;
     
     if (nodeType[i]==2){
-      topology[0] += 1;
-      topology.push_back(i);
+      topology[0] += 1; // Number of elements
+      topology.push_back(i); // elementID
       topology.push_back(numNodes);
       for(int j=0 ; j<numNodes ; ++j){
         topology.push_back(neighborhoodList[topoPtr]);
