@@ -86,9 +86,10 @@ namespace DIFFUSION {
         initialDistance = MATRICES::distance(nodeInitialPosition[0], nodeInitialPosition[1], nodeInitialPosition[2], modelCoord[neighborID*3], modelCoord[neighborID*3+1], modelCoord[neighborID*3+2]);
         kernel = 6.0/(pi*horizon[iID]*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
         temperatureDifference = temperature[neighborID] - nodeTemperature;
-        nodeFluxDivergence = coefficient*kernel*temperatureDifference*quadWeight;
+        nodeFluxDivergence = coefficient*kernel*temperatureDifference*quadWeight; 
         //TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(nodeFluxDivergence), "**** NaN detected in DiffusionMaterial::computeFluxDivergence().\n");
         fluxDivergence[iID] += nodeFluxDivergence;
+
         }
     }
   }
