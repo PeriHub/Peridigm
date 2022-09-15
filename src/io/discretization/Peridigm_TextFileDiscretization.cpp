@@ -368,7 +368,6 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
       }
     }
   }
-  std::cout<<" rebal done " << myPID<<std::endl;
   // execute neighbor search and update the decomp to include resulting ghosts
   std::shared_ptr<const Epetra_Comm> commSp(comm.getRawPtr(), NonDeleter<const Epetra_Comm>());
   Teuchos::RCP<PDNEIGH::NeighborhoodList> list;
