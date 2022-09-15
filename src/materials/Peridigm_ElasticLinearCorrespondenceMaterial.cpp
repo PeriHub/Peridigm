@@ -140,7 +140,7 @@ void PeridigmNS::ElasticLinearCorrespondenceMaterial::computeCauchyStress(const 
   dataManager.getData(m_strain, PeridigmField::STEP_NONE)->ExtractView(&strain);
   dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
 
-  CORRESPONDENCE::getStrain(numOwnedPoints,defGrad,alpha, temperature, m_hencky, m_applyThermalStrains, strain);
+  CORRESPONDENCE::getStrain(numOwnedPoints, defGrad, alpha, temperature, m_hencky, m_applyThermalStrains, strain);
 
 
   CORRESPONDENCE::updateElasticCauchyStressAnisotropic(strain,
