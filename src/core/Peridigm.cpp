@@ -1362,6 +1362,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   bool stopAfterOutput = false;
   bool stopAfterAllDamaged = false;
   bool adaptDt = false;
+  bool heatFlux = false;
   if(verletParams->isParameter("Stop before damage initiation")){
       stopBeforeOutput = verletParams->get<bool>("Stop before damage initiation");
   }
@@ -1373,6 +1374,9 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   }
   if(verletParams->isParameter("Adapt dt")){
     adaptDt = verletParams->get<bool>("Adapt dt");
+  }
+  if(verletParams->isParameter("Solve For Temperature")){
+    heatFlux = verletParams->get<bool>("Solve For Temperature");
   }
   // Multiply the time step by the user-supplied safety factor, if provided
   double safetyFactor = 1.0;
@@ -1507,6 +1511,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
   // fill the acceleration vector
   (*a) = (*force);
+  // temperature = deltatemp * flux ??
   for(int i=0 ; i<a->MyLength() ; ++i){
     (*a)[i] += (*externalForce)[i];
     (*a)[i] /= (*density)[i/3];
@@ -1888,10 +1893,16 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     // Copy force from the data manager to the mothership vector
     PeridigmNS::Timer::self().startTimer("Gather/Scatter");
     force->PutScalar(0.0);
+    if (heatFlux) fluxDivergence->PutScalar(0.0);
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
       scratch->PutScalar(0.0);
       blockIt->exportData(scratch, forceDensityFieldId, adaptiveExportStep, Add);
       force->Update(1.0, *scratch, 1.0);
+       if (heatFlux) {
+        scalarScratch->PutScalar(0.0);
+        blockIt->importData(scalarScratch, fluxDivergenceFieldId, PeridigmField::STEP_NP1, Insert);
+        fluxDivergence->Update(1.0, *scalarScratch, 1.0);
+       }
     }
 
     PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
@@ -1923,10 +1934,16 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       (*a)[i] += (*externalForce)[i];
       (*a)[i] /= (*density)[i/3];
       if ((*detachedNodesList)[i/3]!=0) (*a)[i] = 0;
-      // if ((*netDamageField)[i/3]!=0) damageExist = true;
-      // else allNodeDamage = false;
+      //deltaTemp = flux/density*dt -> if flux = flux/volume/alpha
+      //temp(i+1) = flux/rho + temp(i);
+      //deltatemp = temp i+i - temp i;
     }
-
+    if (heatFlux){
+      for(int i=0 ; i<temperature->MyLength() ; ++i){
+        (*deltaTemperature)[i] = (*fluxDivergence)[i] / (*density)[i] * dt;
+        (*temperature)[i] += (*deltaTemperature)[i];
+      }
+    }
     // V^{n+1}   = V^{n+1/2} + (dt/2)*A^{n+1}
     //blas.AXPY(const int N, const double ALPHA, const double *X, double *Y, const int INCX=1, const int INCY=1) const
     blas.AXPY(length, dt2, aPtr, vPtr, 1, 1);
