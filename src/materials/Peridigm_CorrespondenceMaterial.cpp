@@ -155,6 +155,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   if (params.isParameter("Apply Thermal Diffusion")){
     m_applyFluxDivergence = params.get<bool>("Apply Thermal Diffusion");
     coefficient[0] = params.get<double>("Coefficient");
+    coefficient[0] /= params.get<double>("Heat Capacity");
   }
   
   // TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticCorrespondence material model.\n");
@@ -429,6 +430,8 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                           detachedNodes);
     }
   }
+
+
   if (m_applyFluxDivergence){
     double *fluxDivergence, *temperature, *quadratureWeights=NULL; // quadratureWeights not included yet
     
@@ -445,6 +448,9 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                   coefficient[0],
                                   volume,
                                   fluxDivergence);
+  //for(int iID=0 ; iID<numOwnedPoints ; ++iID){
+  //  temperature[iID] += fluxDivergence[iID]*dt;
+  //} 
   }
   // Evaluate the Cauchy stress using the routine implemented in the derived class (specific correspondence material model)
   // The general idea is to compute the stress based on:
@@ -877,7 +883,7 @@ void PeridigmNS::CorrespondenceMaterial::computeJacobianFiniteDifference(const d
 
   PeridigmNS::DegreesOfFreedomManager &dofManager = PeridigmNS::DegreesOfFreedomManager::self();
   bool solveForDisplacement = dofManager.displacementTreatedAsUnknown();
-  // bool solveForTemperature = dofManager.temperatureTreatedAsUnknown();
+  bool solveForTemperature = dofManager.temperatureTreatedAsUnknown();
   int numDof = dofManager.totalNumberOfDegreesOfFreedom();
   int numDisplacementDof = dofManager.numberOfDisplacementDegreesOfFreedom();
   // int numTemperatureDof = dofManager.numberOfTemperatureDegreesOfFreedom();
