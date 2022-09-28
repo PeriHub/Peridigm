@@ -124,7 +124,7 @@ double* detachedNodes
         //Compute Fdot
         numNeighbors = *neighborListPtr; neighborListPtr++;
         
-        for(int n=0; n<numNeighbors; n++, neighborListPtr++){
+        for(int n=0; n<numNeighbors; n++, neighborListPtr++,bondDamage++){
           neighborIndex = *neighborListPtr;    
           neighborModelCoord = modelCoordinates + 3*neighborIndex;
           neighborVel = velocities + 3*neighborIndex;
