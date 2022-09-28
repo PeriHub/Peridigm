@@ -1904,7 +1904,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         fluxDivergence->Update(1.0, *scalarScratch, 1.0);
        }
     }
-
+  //modelEvaluator->evalFlux(workset, true);
     PeridigmNS::Timer::self().stopTimer("Gather/Scatter");
 
     // Check for NaNs in force evaluation
@@ -1940,7 +1940,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     }
     //if (heatFlux){
     //  for(int i=0 ; i<temperature->MyLength() ; ++i){
-    //    (*deltaTemperature)[i] = (*fluxDivergence)[i] / (*density)[i] * dt;
+    //    (*deltaTemperature)[i] = (*fluxDivergence)[i] / (*density)[i] * dt; s[i](x(t),y(t),z(t),t)
     //    (*temperature)[i] += (*deltaTemperature)[i];
     //  }
     //}
