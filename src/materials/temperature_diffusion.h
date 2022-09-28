@@ -62,7 +62,7 @@ void computeFlux
  const double* volume,
  double* fluxDivergence
  );
-void computeHeatFlux_correspondence
+void computeHeatFlowState_correspondence
 ( 
     const double* modelCoord,
     const int numOwnedPoints,

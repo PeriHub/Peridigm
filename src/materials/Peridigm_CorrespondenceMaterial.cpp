@@ -441,7 +441,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
     dataManager.getData(m_temperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&temperature);
     dataManager.getData(m_fluxDivergenceFieldId, PeridigmField::STEP_NP1)->ExtractView(&fluxDivergence);
 
-    DIFFUSION::computeHeatFlux_correspondence(
+    DIFFUSION::computeHeatFlowState_correspondence(
                                   modelCoordinates,
                                   numOwnedPoints,
                                   neighborhoodList,
@@ -1144,7 +1144,7 @@ void PeridigmNS::CorrespondenceMaterial::computeHeatFlowGradient(const double dt
 
 
 
-  
+
 }
 
 

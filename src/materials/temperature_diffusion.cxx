@@ -94,7 +94,7 @@ namespace DIFFUSION {
     }
     
   }
-  void computeHeatFlux_correspondence(    
+  void computeHeatFlowState_correspondence(    
     const double* modelCoord,
     const int numOwnedPoints,
     const int* neighborhoodList,
@@ -112,11 +112,15 @@ namespace DIFFUSION {
     int numNeighbors, neighborID, iID, iNID, bondListIndex;
     double undeformedBondX[3], initialDistance, quadWeight;
     double kernel[3], nodeTemperature, temperatureDifference, nodeFluxDivergence;//, neighborFluxDivergence;
-
+    const double *shapeTensorInv = shapeTensorInverse;
     const double pi = 3.1415; //::value_of_pi();
-    double H[3];
+    std::vector<double> Hvector(3), Qvector(3);
+      
+    double* H = &Hvector[0];
+    double* q = &Qvector[0];
+    
     bondListIndex = 0;
-    for(iID=0 ; iID<numOwnedPoints ; ++iID){
+    for(iID=0 ; iID<numOwnedPoints ; ++iID, shapeTensorInv+=9){
         nodeTemperature = temperature[iID];
         undeformedBondX[0] = modelCoord[iID*3];
         undeformedBondX[1] = modelCoord[iID*3+1];
@@ -142,9 +146,23 @@ namespace DIFFUSION {
           fluxDivergence[iID] += nodeFluxDivergence;
 
         }
-        //MATRICES::MatrixMultiply3x3toVector(H,K,nablaT);
-        //MATRICES::MatrixMultiply3x3toVector(nablaT,kappa,flux);
-        //heatconductionstate = flux*Kinv*dist; // rausgehen
+
+        for(int i=0 ; i<3 ; ++i){ 
+          q[i] = 0.0;
+          for(int j=0 ; i<3 ; ++i){ 
+            q[i] += H[i]*shapeTensorInv[3*i+j]*kernel[i];
+          }  
+        }
+
+        for(int i=0 ; i<3 ; ++i){ 
+          q[i] = 0.0;
+          for(int j=0 ; i<3 ; ++i){ 
+            //https://en.wikipedia.org/wiki/Heat_transfer_physics -> q_k
+            q[i] -= H[i]*shapeTensorInv[3*i+j]*kernel[i];
+          }  
+        }
+
+
     }
   }
 }
