@@ -142,13 +142,6 @@ void MatrixMultiply3x3fromVector
  ScalarT C[][3]
 );
 
-template<typename ScalarT>
-void MatrixMultiply3x3toVector
-(
- const ScalarT A[][3],
- const ScalarT B[][3],
- ScalarT* C
-);
 
 template<typename ScalarT>
 void MatMul

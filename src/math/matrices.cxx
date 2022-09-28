@@ -256,25 +256,6 @@ void MatrixMultiply3x3
 }
 
 template<typename ScalarT>
-void MatrixMultiply3x3toVector
-(
- const ScalarT A[][3],
- const ScalarT B[][3],
- ScalarT* C
-)
-{
-    *(C)   = A[0][0] * B[0][0] + A[0][1] * B[1][0] + A[0][2] * B[2][0];
-    *(C+1) = A[0][0] * B[0][1] + A[0][1] * B[1][1] + A[0][2] * B[2][1];
-    *(C+2) = A[0][0] * B[0][2] + A[0][1] * B[1][2] + A[0][2] * B[2][2];
-    *(C+3) = A[1][0] * B[0][0] + A[1][1] * B[1][0] + A[1][2] * B[2][0];
-    *(C+4) = A[1][0] * B[0][1] + A[1][1] * B[1][1] + A[1][2] * B[2][1];
-    *(C+5) = A[1][0] * B[0][2] + A[1][1] * B[1][2] + A[1][2] * B[2][2];
-    *(C+6) = A[2][0] * B[0][0] + A[2][1] * B[1][0] + A[2][2] * B[2][0];
-    *(C+7) = A[2][0] * B[0][1] + A[2][1] * B[1][1] + A[2][2] * B[2][1];
-    *(C+8) = A[2][0] * B[0][2] + A[2][1] * B[1][2] + A[2][2] * B[2][2];
-}
-
-template<typename ScalarT>
 void MatrixMultiply3x3fromVector
 (
  const ScalarT  A[][3],
@@ -526,19 +507,8 @@ template void MatrixMultiply3x3<Sacado::Fad::DFad<double> >
  Sacado::Fad::DFad<double> C[][3]
 );
 
-template void MatrixMultiply3x3toVector<double>
-(
- const double A[][3],
- const double B[][3],
- double* C
-);
 
-template void MatrixMultiply3x3toVector<Sacado::Fad::DFad<double> >
-(
- const Sacado::Fad::DFad<double> A[][3],
- const Sacado::Fad::DFad<double> B[][3],
- Sacado::Fad::DFad<double>* C
-);
+
 
 template void MatrixMultiply3x3fromVector<double>
 (
