@@ -52,8 +52,7 @@ namespace DIFFUSION {
 void computeFlux
 (
  const double* modelCoord,
- const double* temperatureN,
- double* temperatureNP1,
+ const double* temperature,
  const int* neighborhoodList,
  const double* quadratureWeights,
  const int numOwnedPoints,

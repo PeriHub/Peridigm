@@ -53,8 +53,7 @@ using namespace std;
 namespace DIFFUSION {
   void computeFlux(
     const double* modelCoord,
-    const double* temperatureN,
-    double* temperatureNP1,
+    const double* temperature,
     const int* neighborhoodList,
     const double* quadratureWeights,
     const int numOwnedPoints,
@@ -73,7 +72,7 @@ namespace DIFFUSION {
 
     bondListIndex = 0;
     for(iID=0 ; iID<numOwnedPoints ; ++iID){
-        nodeTemperature = temperatureN[iID];
+        nodeTemperature = temperature[iID];
         nodeInitialPosition[0] = modelCoord[iID*3];
         nodeInitialPosition[1] = modelCoord[iID*3+1];
         nodeInitialPosition[2] = modelCoord[iID*3+2];
@@ -86,28 +85,14 @@ namespace DIFFUSION {
         }
         initialDistance = MATRICES::distance(nodeInitialPosition[0], nodeInitialPosition[1], nodeInitialPosition[2], modelCoord[neighborID*3], modelCoord[neighborID*3+1], modelCoord[neighborID*3+2]);
         kernel = 6.0/(pi*horizon[iID]*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
-        temperatureDifference = temperatureN[neighborID] - nodeTemperature;
+        temperatureDifference = temperature[neighborID] - nodeTemperature;
         nodeFluxDivergence = coefficient*kernel*temperatureDifference*quadWeight; 
         //TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(nodeFluxDivergence), "**** NaN detected in DiffusionMaterial::computeFluxDivergence().\n");
         fluxDivergence[iID] += nodeFluxDivergence;
 
         }
     }
-    neighborhoodListIndex = 0;
-    for(iID=0 ; iID<numOwnedPoints ; ++iID){
-      nodeTemperature = temperatureN[iID];
-      numNeighbors = neighborhoodList[neighborhoodListIndex++];
-      for(iNID=0 ; iNID<numNeighbors ; ++iNID){
-        neighborID = neighborhoodList[neighborhoodListIndex++];
-                quadWeight = volume[neighborID];
-        if (useImprovedQuadrature) {
-            quadWeight = quadratureWeights[bondListIndex++];
-        }
-        initialDistance = MATRICES::distance(nodeInitialPosition[0], nodeInitialPosition[1], nodeInitialPosition[2], modelCoord[neighborID*3], modelCoord[neighborID*3+1], modelCoord[neighborID*3+2]);
-        kernel = 6.0/(pi*horizon[iID]*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
-        temperatureNP1[neighborID]  += fluxDivergence[iID] / (coefficient*kernel*quadWeight) + nodeTemperature ;
-        }
-    }
+    
   }
   void computeHeatFlux_correspondence(    
     const double* modelCoord,
