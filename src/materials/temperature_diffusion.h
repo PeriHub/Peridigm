@@ -52,7 +52,8 @@ namespace DIFFUSION {
 void computeFlux
 (
  const double* modelCoord,
- const double* temperature,
+ const double* temperatureN,
+ double* temperatureNP1,
  const int* neighborhoodList,
  const double* quadratureWeights,
  const int numOwnedPoints,
@@ -62,7 +63,19 @@ void computeFlux
  const double* volume,
  double* fluxDivergence
  );
-
+void computeHeatFlux_correspondence
+( 
+    const double* modelCoord,
+    const int numOwnedPoints,
+    const int* neighborhoodList,
+    const double* shapeTensorInverse,
+    const double* temperature,
+    const double* horizon,
+    const double* kappa,
+    const double* volume,
+    const double* bondDamage,
+    double* fluxDivergence
+   );
 }
 
 #endif // TEMPERATURE_DIFFUSION_H

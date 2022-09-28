@@ -1938,12 +1938,12 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       //temp(i+1) = flux/rho + temp(i);
       //deltatemp = temp i+i - temp i;
     }
-    if (heatFlux){
-      for(int i=0 ; i<temperature->MyLength() ; ++i){
-        (*deltaTemperature)[i] = (*fluxDivergence)[i] / (*density)[i] * dt;
-        (*temperature)[i] += (*deltaTemperature)[i];
-      }
-    }
+    //if (heatFlux){
+    //  for(int i=0 ; i<temperature->MyLength() ; ++i){
+    //    (*deltaTemperature)[i] = (*fluxDivergence)[i] / (*density)[i] * dt;
+    //    (*temperature)[i] += (*deltaTemperature)[i];
+    //  }
+    //}
     // V^{n+1}   = V^{n+1/2} + (dt/2)*A^{n+1}
     //blas.AXPY(const int N, const double ALPHA, const double *X, double *Y, const int INCX=1, const int INCY=1) const
     blas.AXPY(length, dt2, aPtr, vPtr, 1, 1);
