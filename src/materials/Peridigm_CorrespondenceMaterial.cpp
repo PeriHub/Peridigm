@@ -154,8 +154,11 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_applyFluxDivergence = false;
   if (params.isParameter("Apply Thermal Diffusion")){
     m_applyFluxDivergence = params.get<bool>("Apply Thermal Diffusion");
-    coefficient[0] = params.get<double>("Coefficient");
-    coefficient[0] /= params.get<double>("Heat Capacity");
+    kappa[0] = params.get<double>("Coefficient");
+    if (params.isParameter("Coefficient 22"))kappa[1] = params.get<double>("Coefficient 22");
+    else kappa[1] = kappa[0];
+    if (params.isParameter("Coefficient 33"))kappa[2] = params.get<double>("Coefficient 33");
+    else kappa[2] = kappa[0];
   }
   
   // TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticCorrespondence material model.\n");
@@ -433,19 +436,18 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
 
 
   if (m_applyFluxDivergence){
-    double *fluxDivergence, *temperature, *quadratureWeights=NULL; // quadratureWeights not included yet
+    double *fluxDivergence, *temperature; // quadratureWeights not included yet
     
     dataManager.getData(m_temperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&temperature);
     dataManager.getData(m_fluxDivergenceFieldId, PeridigmField::STEP_NP1)->ExtractView(&fluxDivergence);
 
-    DIFFUSION::computeFlux(modelCoordinates,
-                                  temperature,
-                                  neighborhoodList,
-                                  quadratureWeights,
+    DIFFUSION::computeHeatFlux_correspondence(modelCoordinates,
                                   numOwnedPoints,
-                                  false,
+                                  neighborhoodList,
+                                  shapeTensorInverse,
+                                  temperature,
                                   horizon,
-                                  coefficient[0],
+                                  kappa,
                                   volume,
                                   fluxDivergence);
   //for(int iID=0 ; iID<numOwnedPoints ; ++iID){

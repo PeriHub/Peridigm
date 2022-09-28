@@ -167,7 +167,7 @@ namespace PeridigmNS
     double D;
     int m_stabilizationType;
     double C[6][6];
-    double coefficient[3];
+    double kappa[3];
     bool m_planeStress, m_planeStrain;
     bool m_plane = false;
     bool nonLin = false;
