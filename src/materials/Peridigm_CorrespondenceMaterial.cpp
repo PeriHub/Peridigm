@@ -73,7 +73,8 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
       m_unrotatedRateOfDeformationFieldId(-1),
       m_unrotatedCauchyStressPlasticFieldId(-1),
       m_partialStressFieldId(-1),
-      m_hourglassStiffId(-1)
+      m_hourglassStiffId(-1),
+      m_thermalFlowStateFieldId(-1)
 
 {
 
@@ -150,10 +151,9 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     }
   }
 
-  //m_applyFluxDivergence = getFluxDivergenceCoefficient(params,coefficient);
-  m_applyFluxDivergence = false;
-  if (params.isParameter("Apply Thermal Diffusion")){
-    m_applyFluxDivergence = params.get<bool>("Apply Thermal Diffusion");
+  m_applyThermalFlow = false;
+  if (params.isParameter("Apply Thermal Flow")){
+    m_applyThermalFlow = params.get<bool>("Apply Thermal Flow");
     kappa[0] = params.get<double>("Coefficient");
     if (params.isParameter("Coefficient 22"))kappa[1] = params.get<double>("Coefficient 22");
     else kappa[1] = kappa[0];
@@ -188,10 +188,10 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_partialStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Partial_Stress");
   m_detachedNodesFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Detached_Nodes");
   m_hourglassStiffId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Hourglass_Stiffness");
-  if (m_applyFluxDivergence){
-    m_fluxDivergenceFieldId          = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Flux_Divergence");
+  if (m_applyThermalFlow){
+    m_thermalFlowStateFieldId          = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Flux_Divergence"); // reuse of the field
     m_temperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature");
-    m_fieldIds.push_back(m_fluxDivergenceFieldId);
+    m_fieldIds.push_back(m_thermalFlowStateFieldId);
     m_fieldIds.push_back(m_temperatureFieldId);
   }
   m_fieldIds.push_back(m_horizonFieldId);
@@ -435,12 +435,11 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   }
 
 
-  if (m_applyFluxDivergence){
-    double *fluxDivergence, *temperature; // quadratureWeights not included yet
+  if (m_applyThermalFlow){
+    double *thermalFlow, *temperature; // quadratureWeights not included yet
     
     dataManager.getData(m_temperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&temperature);
-    dataManager.getData(m_fluxDivergenceFieldId, PeridigmField::STEP_NP1)->ExtractView(&fluxDivergence);
-
+    dataManager.getData(m_thermalFlowStateFieldId, PeridigmField::STEP_NP1)->ExtractView(&thermalFlow);
     DIFFUSION::computeHeatFlowState_correspondence(
                                   modelCoordinates,
                                   numOwnedPoints,
@@ -448,10 +447,10 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                   shapeTensorInverse,
                                   temperature,
                                   horizon,
-                                  &kappa[0],
+                                  kappa,
                                   volume,
                                   bondDamageNP1,
-                                  fluxDivergence);
+                                  thermalFlow);
   //for(int iID=0 ; iID<numOwnedPoints ; ++iID){
   //  temperature[iID] += fluxDivergence[iID]*dt;
   //} 

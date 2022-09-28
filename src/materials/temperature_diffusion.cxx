@@ -47,7 +47,7 @@
 
 #include "temperature_diffusion.h"
 #include "matrices.h"
-
+#include <vector> 
 
 using namespace std;
 namespace DIFFUSION {
@@ -104,7 +104,7 @@ namespace DIFFUSION {
     const double* kappa,
     const double* volume,
     const double* bondDamage,
-    double* fluxDivergence
+    double* heatFlowState
     )
   {
 
@@ -120,7 +120,8 @@ namespace DIFFUSION {
     double* q = &Qvector[0];
     
     bondListIndex = 0;
-    for(iID=0 ; iID<numOwnedPoints ; ++iID, shapeTensorInv+=9){
+    for(iID=0 ; iID<numOwnedPoints ; ++iID, shapeTensorInv+=9, heatFlowState+=1){
+        *heatFlowState = 0.0;
         nodeTemperature = temperature[iID];
         undeformedBondX[0] = modelCoord[iID*3];
         undeformedBondX[1] = modelCoord[iID*3+1];
@@ -140,26 +141,22 @@ namespace DIFFUSION {
           H[0] += (1-*bondDamage)*(temperature[neighborID] - nodeTemperature)*(modelCoord[neighborID*3] -undeformedBondX[0])*volume[neighborID];
           H[1] += (1-*bondDamage)*(temperature[neighborID] - nodeTemperature)*(modelCoord[neighborID*3+1]-undeformedBondX[1])*volume[neighborID+2];
           H[2] += (1-*bondDamage)*(temperature[neighborID] - nodeTemperature)*(modelCoord[neighborID*3+2]-undeformedBondX[2])*volume[neighborID];
-          
-          //nodeFluxDivergence = coefficient*kernel*temperatureDifference*quadWeight; 
-          //TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(nodeFluxDivergence), "**** NaN detected in DiffusionMaterial::computeFluxDivergence().\n");
-          fluxDivergence[iID] += nodeFluxDivergence;
 
         }
 
         for(int i=0 ; i<3 ; ++i){ 
           q[i] = 0.0;
-          for(int j=0 ; i<3 ; ++i){ 
+          for(int j=0 ; j<3 ; ++j){ 
             q[i] += H[i]*shapeTensorInv[3*i+j]*kernel[i];
           }  
         }
 
         for(int i=0 ; i<3 ; ++i){ 
           q[i] = 0.0;
-          for(int j=0 ; i<3 ; ++i){ 
-            //https://en.wikipedia.org/wiki/Heat_transfer_physics -> q_k
-            q[i] -= H[i]*shapeTensorInv[3*i+j]*kernel[i];
-          }  
+          for(int j=0 ; j<3 ; ++j){ 
+            *heatFlowState += shapeTensorInv[3*i+j]*(modelCoord[neighborID*3+j] -undeformedBondX[j]);
+          }
+          *heatFlowState *= q[i];
         }
 
 
