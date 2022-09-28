@@ -149,8 +149,8 @@ m_hourglassStiffId(-1) {
       
     }
     m_bondDiffSt = 2147483647;
-    if (params.isParameter("Stable Bond Difference"))
-        m_bondDiffSt  = params.get<int>("Stable Bond Difference");
+    if (params.isParameter("Maximum Bond Difference"))
+        m_bondDiffSt  = params.get<int>("Maximum Bond Difference");
 
     if (m_planeStrain==true){
         //m_plane=true;
@@ -467,15 +467,13 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
             }
             bondDamageDiff[nodeId] = bondCheck;
 
-            if(bondCheck>m_bondDiffSt)
-                break;
+            if(bondCheck>m_bondDiffSt)break;
 
             bondIndex += 1;
 
         }
 
-        if(bondCheck>m_bondDiffSt)
-            break;
+        if(bondCheck>m_bondDiffSt)break;
 
     }
     //  Update the element damage (percent of bonds broken)

@@ -1837,8 +1837,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
       bool allBondDiffLow = true;
       for(int i=0 ; i<bondDamageDiffField->MyLength() ; ++i){
-        //if ((*bondDamageDiffField)[i]>0) cout << "bondDamageDiffField: " << (*bondDamageDiffField)[i] << " i: " << i << endl;
-        if ((*bondDamageDiffField)[i]>=bondDiffMax) highNumOfBondDetached = true;
+        // if ((*bondDamageDiffField)[i]>bondDiffMax) cout << "bondDamageDiffField: " << (*bondDamageDiffField)[i] << " i: " << i << " bondDiffMax: " << bondDiffMax <<endl;
+        if ((*bondDamageDiffField)[i]>bondDiffMax) highNumOfBondDetached = true;
         if ((*bondDamageDiffField)[i]>bondDiffSt)
         {
           allBondDiffLow = false;  
@@ -1877,13 +1877,13 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     }
     //
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){    
-    if (blockIt->getMaterialModel()->Name().find("Correspondence")){
-      
-          blockIt->importData(detachedNodesList, detachedNodesFieldId, adaptiveImportStep, Insert);
-          //blockIt->importData(*netDamageField, netDamageFieldId, adaptiveImportStep, Insert);
-      
+      if (blockIt->getMaterialModel()->Name().find("Correspondence")){
+        
+            blockIt->importData(detachedNodesList, detachedNodesFieldId, adaptiveImportStep, Insert);
+            //blockIt->importData(*netDamageField, netDamageFieldId, adaptiveImportStep, Insert);
+        
+      }
     }
-  }
  
  
  
