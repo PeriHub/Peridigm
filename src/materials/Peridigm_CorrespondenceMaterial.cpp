@@ -1134,3 +1134,17 @@ void PeridigmNS::CorrespondenceMaterial::computeJacobianFiniteDifference(const d
       TEUCHOS_TEST_FOR_TERMINATION(true, "**** Unknown Jacobian Type\n");
   }
 }
+void PeridigmNS::CorrespondenceMaterial::computeHeatFlowGradient(const double dt,
+                                                                  const int numOwnedPoints,
+                                                                  const int *ownedIDs,
+                                                                  const int *neighborhoodList,
+                                                                  PeridigmNS::DataManager &dataManager,
+                                                                  const double currentTime) const
+{
+
+
+
+  
+}
+
+

@@ -98,6 +98,14 @@ namespace PeridigmNS
                               const int *neighborhoodList,
                               PeridigmNS::DataManager &dataManager,
                               const double currentTime = 0.0) const;
+    //! Evaluate the heat flow gradient.
+    virtual void computeHeatFlowGradient(const double dt,
+                                    const int numOwnedPoints,
+                                    const int *ownedIDs,
+                                    const int *neighborhoodList,
+                                    PeridigmNS::DataManager &dataManager,
+                                    const double currentTime = 0.0) const;
+                              
     //////////////////////////////////////////////////////////////////////////////////
 
     //! Evaluate the jacobian.

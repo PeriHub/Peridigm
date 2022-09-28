@@ -123,7 +123,7 @@ namespace PeridigmNS {
                const int numOwnedPoints,
                const int* ownedIDs,
                const int* neighborhoodList,
-               PeridigmNS::DataManager& dataManager) {}
+               PeridigmNS::DataManager& dataManager) {};
 
     //! Run calculations at each time step prior to evaulating the internal force.
     virtual void
@@ -131,11 +131,20 @@ namespace PeridigmNS {
                const int numOwnedPoints,
                const int* ownedIDs,
                const int* neighborhoodList,
-               PeridigmNS::DataManager& dataManager) const {}
+               PeridigmNS::DataManager& dataManager) const {};
 
     //! Evaluate the internal force.
     virtual void
     computeForce(const double dt,
+                 const int numOwnedPoints,
+                 const int* ownedIDs,
+                 const int* neighborhoodList,
+                 PeridigmNS::DataManager& dataManager,
+                 const double time = 0.0) const {};
+    
+    //! Evaluate the heat flow gradient.
+    virtual void
+    computeHeatFlowGradient(const double dt,
                  const int numOwnedPoints,
                  const int* ownedIDs,
                  const int* neighborhoodList,
