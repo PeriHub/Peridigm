@@ -109,17 +109,16 @@ namespace DIFFUSION {
   {
 
     int neighborhoodListIndex(0);
-    int numNeighbors, neighborID, iID, iNID, bondListIndex;
-    double undeformedBondX[3], initialDistance, quadWeight;
-    double kernel[3], nodeTemperature, temperatureDifference, nodeFluxDivergence;//, neighborFluxDivergence;
+    int numNeighbors, neighborID(0), iID, iNID;
+    double undeformedBondX[3], initialDistance;
+    double kernel[3], nodeTemperature;
     const double *shapeTensorInv = shapeTensorInverse;
     const double pi = 3.1415; //::value_of_pi();
     std::vector<double> Hvector(3), Qvector(3);
-      
     double* H = &Hvector[0];
     double* q = &Qvector[0];
     
-    bondListIndex = 0;
+
     for(iID=0 ; iID<numOwnedPoints ; ++iID, shapeTensorInv+=9, heatFlowState+=1){
         *heatFlowState = 0.0;
         nodeTemperature = temperature[iID];
@@ -152,11 +151,12 @@ namespace DIFFUSION {
         }
 
         for(int i=0 ; i<3 ; ++i){ 
-          q[i] = 0.0;
           for(int j=0 ; j<3 ; ++j){ 
-            *heatFlowState += shapeTensorInv[3*i+j]*(modelCoord[neighborID*3+j] -undeformedBondX[j]);
+            heatFlowState[iNID] -= shapeTensorInv[3*i+j]*(modelCoord[neighborID*3+j] - undeformedBondX[j]);
+            heatFlowState[neighborID] += shapeTensorInv[3*i+j]*(modelCoord[neighborID*3+j] - undeformedBondX[j]);
           }
-          *heatFlowState *= q[i];
+          heatFlowState[iNID] *= q[i]; // neighbor und Id->
+          heatFlowState[neighborID] *= q[i]; // neighbor und Id->
         }
 
 

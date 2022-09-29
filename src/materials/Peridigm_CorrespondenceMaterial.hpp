@@ -98,13 +98,6 @@ namespace PeridigmNS
                               const int *neighborhoodList,
                               PeridigmNS::DataManager &dataManager,
                               const double currentTime = 0.0) const;
-    //! Evaluate the heat flow gradient.
-    virtual void computeHeatFlowGradient(const double dt,
-                                    const int numOwnedPoints,
-                                    const int *ownedIDs,
-                                    const int *neighborhoodList,
-                                    PeridigmNS::DataManager &dataManager,
-                                    const double currentTime = 0.0) const;
                               
     //////////////////////////////////////////////////////////////////////////////////
 
@@ -195,7 +188,6 @@ namespace PeridigmNS
     int m_hourglassForceDensityFieldId;
     int m_forceDensityFieldId;
     int m_bondDamageFieldId;
-    int m_thermalTimeIntegrationParameterFieldId;
     int m_deformationGradientFieldId;
     int m_shapeTensorInverseFieldId;
     int m_cauchyStressFieldId;

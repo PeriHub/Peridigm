@@ -74,8 +74,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
       m_unrotatedCauchyStressPlasticFieldId(-1),
       m_partialStressFieldId(-1),
       m_hourglassStiffId(-1),
-      m_thermalFlowStateFieldId(-1),
-      m_thermalTimeIntegrationParameterFieldId(-1)
+      m_thermalFlowStateFieldId(-1)
 {
 
   //! \todo Add meaningful asserts on material properties.
@@ -191,10 +190,8 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   if (m_applyThermalFlow){
     m_thermalFlowStateFieldId          = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Flux_Divergence"); // reuse of the field
     m_temperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature");
-    m_thermalTimeIntegrationParameterFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Thermal_Time_Integration_Parameter");
     m_fieldIds.push_back(m_thermalFlowStateFieldId);
     m_fieldIds.push_back(m_temperatureFieldId);
-    m_fieldIds.push_back(m_thermalTimeIntegrationParameterFieldId);
   }
   m_fieldIds.push_back(m_horizonFieldId);
   m_fieldIds.push_back(m_volumeFieldId);
@@ -1135,28 +1132,6 @@ void PeridigmNS::CorrespondenceMaterial::computeJacobianFiniteDifference(const d
       TEUCHOS_TEST_FOR_TERMINATION(true, "**** Unknown Jacobian Type\n");
   }
 }
-void PeridigmNS::CorrespondenceMaterial::computeHeatFlowGradient(const double dt,
-                                                                  const int numOwnedPoints,
-                                                                  const int *ownedIDs,
-                                                                  const int *neighborhoodList,
-                                                                  PeridigmNS::DataManager &dataManager,
-                                                                  const double currentTime) const
-{
-  double *thermalFlow, *timeIntParameter, *bondDamage;
-  dataManager.getData(m_thermalFlowStateFieldId, PeridigmField::STEP_NP1)->ExtractView(&thermalFlow);
-  dataManager.getData(m_thermalTimeIntegrationParameterFieldId, PeridigmField::STEP_NP1)->ExtractView(&timeIntParameter);
-  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
-  int neighborhoodListIndex(0);
-  for(int iID=0 ; iID<numOwnedPoints ; ++iID){
-        *timeIntParameter = -thermalFlow[iID];
-        int numNeighbors = neighborhoodList[neighborhoodListIndex++];
-        
-        for(int iNID=0 ; iNID<numNeighbors ; ++iNID, bondDamage++){
-          int neighborID = neighborhoodList[neighborhoodListIndex++];
-          *timeIntParameter += thermalFlow[neighborID];
-        }
-  }
 
-}
 
 
