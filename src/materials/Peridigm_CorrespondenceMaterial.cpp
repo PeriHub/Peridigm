@@ -193,6 +193,8 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     m_fieldIds.push_back(m_thermalFlowStateFieldId);
     m_fieldIds.push_back(m_temperatureFieldId);
   }
+    m_thermalFlowStateFieldId          = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Flux_Divergence"); // reuse of the field
+   m_fieldIds.push_back(m_thermalFlowStateFieldId); 
   m_fieldIds.push_back(m_horizonFieldId);
   m_fieldIds.push_back(m_volumeFieldId);
   m_fieldIds.push_back(m_modelCoordinatesFieldId);
@@ -450,9 +452,6 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                   volume,
                                   bondDamageNP1,
                                   thermalFlow);
-  //for(int iID=0 ; iID<numOwnedPoints ; ++iID){
-  //  temperature[iID] += fluxDivergence[iID]*dt;
-  //} 
   }
   // Evaluate the Cauchy stress using the routine implemented in the derived class (specific correspondence material model)
   // The general idea is to compute the stress based on:
