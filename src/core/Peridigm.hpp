@@ -426,6 +426,9 @@ namespace PeridigmNS {
     //! Multiphysics flag
     bool analysisHasMultiphysics;
 
+    //! Heat flux flag
+    bool heatFlux;
+    
     //! Flag for computing element-sphere intersections
     bool computeIntersections;
 
@@ -588,6 +591,9 @@ namespace PeridigmNS {
 
     //! Global vector for cell density
     Teuchos::RCP<Epetra_Vector> density;
+
+    //! Global vector for cell heat capacity
+    Teuchos::RCP<Epetra_Vector> heatCapacity;
 
     //! Global vector for cell fluid density
     Teuchos::RCP<Epetra_Vector> fluidDensity;
