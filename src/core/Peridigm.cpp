@@ -110,6 +110,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     analysisHasContact(false),
     analysisHasDataLoader(false),
     analysisHasMultiphysics(false),
+    heatFlux(false),
     computeIntersections(false),
     constructInterfaces(false),
     blockIdFieldId(-1),
@@ -154,6 +155,11 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
       MPI_Finalize();
       exit(0);
     }
+  if(params->isParameter("Solve For Temperature")){ 
+    heatFlux = params->get<bool>("Solve For Temperature");
+    if (heatFlux)std::cout<<"\n**** Heat flux is selected.\n"<< std::endl;
+    else heatFlux = false;
+  }
   peridigmParams = params;
   // set the comm for memory use statistics
   Memstat * memstat = Memstat::Instance();
@@ -722,7 +728,21 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
         (*fluidCompressibility)[mothershipLocalID] = blockFluidCompressibility;
       }
     }
+    
+    if (heatFlux){
+      double blockHeatCapacity = 0.0;
+      Teuchos::RCP<const PeridigmNS::Material> materialModel = blockIt->getMaterialModel();
+      if (blockIt->getMaterialModel()->lookupMaterialProperty("Heat Capacity"))
+        blockHeatCapacity = blockIt->getMaterialModel()->lookupMaterialProperty("Heat Capacity");
+      for(int i=0 ; i<OwnedScalarPointMap->NumMyElements() ; ++i){
+        int globalID = OwnedScalarPointMap->GID(i);
+        int mothershipLocalID = oneDimensionalMap->LID(globalID);
+        (*heatCapacity)[mothershipLocalID] = blockHeatCapacity;
+       
+      }
+    }
   }
+  
 
   // apply initial conditions
   PeridigmNS::Timer::self().startTimer("Apply Initial Conditions");
@@ -883,8 +903,13 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
   // Create mothership vectors
   int numOneDimensionalMothershipVectors = 12;
   bool initializeToZero = true;
-  if(analysisHasMultiphysics)
+  int num = 0;
+  if (heatFlux)
+    numOneDimensionalMothershipVectors += 1;
+  if(analysisHasMultiphysics){
     numOneDimensionalMothershipVectors += 7;
+    num += 7;
+    }
 
   oneDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*oneDimensionalMap, numOneDimensionalMothershipVectors, initializeToZero));
   blockIDs = Teuchos::rcp((*oneDimensionalMothership)(0), false);                    // block ID
@@ -899,7 +924,7 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
   netDamageField = Teuchos::rcp((*oneDimensionalMothership)(9), false);               // damage status
   scalarScratch = Teuchos::rcp((*oneDimensionalMothership)(10), false);               // scratch vector corresponding to oneDimensionalMap
   bondDamageDiffField = Teuchos::rcp((*oneDimensionalMothership)(11), false);         // bondDamage difference
-  
+
   if (analysisHasMultiphysics) {
     fluidPressureU = Teuchos::rcp((*oneDimensionalMothership)(12), false);        // fluid pressure displacement
     fluidPressureY = Teuchos::rcp((*oneDimensionalMothership)(13), false);       // fluid pressure current coordinates at anode
@@ -909,7 +934,9 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
     fluidDensity = Teuchos::rcp((*oneDimensionalMothership)(17), false);              // fluid density at a node
     fluidCompressibility = Teuchos::rcp((*oneDimensionalMothership)(18), false); // fluid compressibility at a node
   }
-
+  if (heatFlux){
+    heatCapacity = Teuchos::rcp((*oneDimensionalMothership)(12+num), false);         // heat capacity
+  }
   int numThreeDimensionalMothershipVectors = 16;
 
   threeDimensionalMothership = Teuchos::rcp(new Epetra_MultiVector(*threeDimensionalMap, numThreeDimensionalMothershipVectors));
@@ -1362,7 +1389,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   bool stopAfterOutput = false;
   bool stopAfterAllDamaged = false;
   bool adaptDt = false;
-  bool heatFlux = false;
+  
   if(verletParams->isParameter("Stop before damage initiation")){
       stopBeforeOutput = verletParams->get<bool>("Stop before damage initiation");
   }
@@ -1375,9 +1402,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   if(verletParams->isParameter("Adapt dt")){
     adaptDt = verletParams->get<bool>("Adapt dt");
   }
-  if(verletParams->isParameter("Solve For Temperature")){
-    heatFlux = verletParams->get<bool>("Solve For Temperature");
-  }
+  
   // Multiply the time step by the user-supplied safety factor, if provided
   double safetyFactor = 1.0;
   if(verletParams->isParameter("Safety Factor")){
@@ -1515,6 +1540,13 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   for(int i=0 ; i<a->MyLength() ; ++i){
     (*a)[i] += (*externalForce)[i];
     (*a)[i] /= (*density)[i/3];
+  }
+  if (heatFlux){
+    for(int i=0 ; i<temperature->MyLength() ; ++i){
+      if ((*heatCapacity)[i] == 0)(*deltaTemperature)[i] = 0.0;
+      else (*deltaTemperature)[i] = (*fluxDivergence)[i] / (*density)[i] / (*heatCapacity)[i] * dt; 
+        (*temperature)[i] += (*deltaTemperature)[i];
+      }
   }
   // Write initial configuration to disk
   PeridigmNS::Timer::self().startTimer("Output");
@@ -1894,13 +1926,14 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     PeridigmNS::Timer::self().startTimer("Gather/Scatter");
     force->PutScalar(0.0);
     if (heatFlux) fluxDivergence->PutScalar(0.0);
+
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
       scratch->PutScalar(0.0);
       blockIt->exportData(scratch, forceDensityFieldId, adaptiveExportStep, Add);
       force->Update(1.0, *scratch, 1.0);
        if (heatFlux) {
         scalarScratch->PutScalar(0.0);
-        blockIt->importData(scalarScratch, fluxDivergenceFieldId, PeridigmField::STEP_NP1, Insert);
+        blockIt->importData(scalarScratch, fluxDivergenceFieldId, adaptiveExportStep, Add);
         fluxDivergence->Update(1.0, *scalarScratch, 1.0);
        }
     }
@@ -1934,16 +1967,15 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       (*a)[i] += (*externalForce)[i];
       (*a)[i] /= (*density)[i/3];
       if ((*detachedNodesList)[i/3]!=0) (*a)[i] = 0;
-      //deltaTemp = flux/density*dt -> if flux = flux/volume/alpha
-      //temp(i+1) = flux/rho + temp(i);
-      //deltatemp = temp i+i - temp i;
+
     }
-    //if (heatFlux){
-    //  for(int i=0 ; i<temperature->MyLength() ; ++i){
-    //    (*deltaTemperature)[i] = (*fluxDivergence)[i] / (*density)[i] * dt; s[i](x(t),y(t),z(t),t)
-    //    (*temperature)[i] += (*deltaTemperature)[i];
-    //  }
-    //}
+    if (heatFlux){
+      for(int i=0 ; i<temperature->MyLength() ; ++i){
+        if ((*heatCapacity)[i] == 0)(*deltaTemperature)[i] = 0.0;
+        else (*deltaTemperature)[i] = (*fluxDivergence)[i] / (*density)[i] / (*heatCapacity)[i] * dt; 
+          (*temperature)[i] += (*deltaTemperature)[i];
+        }
+    }
     // V^{n+1}   = V^{n+1/2} + (dt/2)*A^{n+1}
     //blas.AXPY(const int N, const double ALPHA, const double *X, double *Y, const int INCX=1, const int INCY=1) const
     blas.AXPY(length, dt2, aPtr, vPtr, 1, 1);
