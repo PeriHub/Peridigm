@@ -77,6 +77,7 @@ enum Type {
   RADIUS,
   NEIGHBORHOOD_VOLUME,
   NUMBER_OF_NEIGHBORS,
+  NUMBER_OF_COLL_NEIGHBORS,
   CRITICAL_TIME_STEP,
   DILATATION,
   DAMAGE,
@@ -276,6 +277,7 @@ const Field_NS::FieldSpec WEIGHTED_VOLUME         (Field_ENUM::WEIGHTED_VOLUME, 
 const Field_NS::FieldSpec RADIUS                  (Field_ENUM::RADIUS,                       Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::CONSTANT, "Radius");
 const Field_NS::FieldSpec NEIGHBORHOOD_VOLUME     (Field_ENUM::NEIGHBORHOOD_VOLUME,          Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::CONSTANT, "Neighborhood_Volume");
 const Field_NS::FieldSpec NUMBER_OF_NEIGHBORS     (Field_ENUM::NUMBER_OF_NEIGHBORS,          Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::CONSTANT, "Number_Of_Neighbors");
+const Field_NS::FieldSpec NUMBER_OF_COLL_NEIGHBORS(Field_ENUM::NUMBER_OF_COLL_NEIGHBORS,     Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::CONSTANT, "Number_Of_Coll_Neighbors");
 const Field_NS::FieldSpec CRITICAL_TIME_STEP      (Field_ENUM::CRITICAL_TIME_STEP,           Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::CONSTANT, "Critical_Time_Step");
 const Field_NS::FieldSpec DILATATION              (Field_ENUM::DILATATION,                   Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Dilatation");
 const Field_NS::FieldSpec NUM_NEIGHBORS           (Field_ENUM::NUM_NEIGHBORS,                Field_ENUM::ELEMENT, Field_ENUM::SCALAR, Field_ENUM::CONSTANT, "Num_Neighbors");
@@ -343,6 +345,7 @@ struct FieldSpecMap {
     mymap[RADIUS.getLabel()]                        = RADIUS;
     mymap[NEIGHBORHOOD_VOLUME.getLabel()]           = NEIGHBORHOOD_VOLUME;
     mymap[NUMBER_OF_NEIGHBORS.getLabel()]           = NUMBER_OF_NEIGHBORS;
+    mymap[NUMBER_OF_COLL_NEIGHBORS.getLabel()]      = NUMBER_OF_COLL_NEIGHBORS;
     mymap[CRITICAL_TIME_STEP.getLabel()]            = CRITICAL_TIME_STEP;
     mymap[DILATATION.getLabel()]                    = DILATATION;
     mymap[NUM_NEIGHBORS.getLabel()]                 = NUM_NEIGHBORS;

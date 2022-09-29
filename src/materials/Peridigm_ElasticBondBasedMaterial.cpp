@@ -56,7 +56,7 @@
 PeridigmNS::ElasticBondBasedMaterial::ElasticBondBasedMaterial(const Teuchos::ParameterList &params)
     : Material(params),
       m_bulkModulus(0.0), m_density(0.0), m_horizon(0.0), m_volumeFieldId(-1), m_damageFieldId(-1),
-      m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_forceDensityFieldId(-1), m_bondDamageFieldId(-1)
+      m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_forceDensityFieldId(-1), m_bondDamageFieldId(-1), m_numberOfCollNeighborsFieldId(-1)
 {
   //! \todo Add meaningful asserts on material properties.
   m_bulkModulus = params.get<double>("Bulk Modulus");
@@ -82,6 +82,7 @@ PeridigmNS::ElasticBondBasedMaterial::ElasticBondBasedMaterial(const Teuchos::Pa
   m_coordinatesFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Coordinates");
   m_forceDensityFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Force_Density");
   m_bondDamageFieldId = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage");
+  m_numberOfCollNeighborsFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Number_Of_Coll_Neighbors");
 
   m_fieldIds.push_back(m_volumeFieldId);
   m_fieldIds.push_back(m_damageFieldId);
@@ -89,6 +90,7 @@ PeridigmNS::ElasticBondBasedMaterial::ElasticBondBasedMaterial(const Teuchos::Pa
   m_fieldIds.push_back(m_coordinatesFieldId);
   m_fieldIds.push_back(m_forceDensityFieldId);
   m_fieldIds.push_back(m_bondDamageFieldId);
+  m_fieldIds.push_back(m_numberOfCollNeighborsFieldId);
 }
 
 PeridigmNS::ElasticBondBasedMaterial::~ElasticBondBasedMaterial()
@@ -105,6 +107,9 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
 
   if (m_useCollocationNodes)
   {
+    double *numberOfCollNeighbors;
+    
+    dataManager.getData(m_numberOfCollNeighborsFieldId, PeridigmField::STEP_NONE)->ExtractView(&numberOfCollNeighbors);
 
   // Extract pointers to the underlying data
   // double *bondDamage;
@@ -218,6 +223,31 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
     }
   }
 
+  Coeffs(0, 0) = 0.;
+  Coeffs(0, 1) = 0.;
+  Coeffs(0, 2) = 0.;
+  Coeffs(0, 3) = 0.456;
+  Coeffs(0, 4) = 0.152;
+  Coeffs(0, 5) = 0.;
+  Coeffs(1, 0) = 0.;
+  Coeffs(1, 1) = 0.;
+  Coeffs(1, 2) = 0.;
+  Coeffs(1, 3) = 0.;
+  Coeffs(1, 4) = 0.;
+  Coeffs(1, 5) = 0.152;
+  Coeffs(2, 0) = 0.;
+  Coeffs(2, 1) = 0.;
+  Coeffs(2, 2) = 0.;
+  Coeffs(2, 3) = 0.;
+  Coeffs(2, 4) = 0.;
+  Coeffs(2, 5) = 0.152;
+  Coeffs(3, 0) = 0.;
+  Coeffs(3, 1) = 0.;
+  Coeffs(3, 2) = 0.;
+  Coeffs(3, 3) = 0.152;
+  Coeffs(3, 4) = 0.456;
+  Coeffs(3, 5) = 0.;
+
   double *x;
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
 
@@ -308,7 +338,7 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
         // std::cout << "bondDamageIndex: " << bondDamageIndex << std::endl;
 
       if(!collocationNodeFound){
-        Clouds[iID][cloudNum++] = -1;
+        // Clouds[iID][cloudNum++] = -1;
         // if (x[nodeID * 3] == 0 & x[nodeID * 3 + 1] == -100)
         // {
         //   std::cout << "neighborID: " << "-1" << std::endl;
@@ -322,6 +352,8 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
     neighborhoodListIndex += numNeighbors;
 
     collocationNum += cloudNum + 1;
+    numberOfCollNeighbors[iID] = cloudNum;
+
     cloudNumArray[iID] = cloudNum;
   }
 
