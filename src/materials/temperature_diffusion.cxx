@@ -119,8 +119,8 @@ namespace DIFFUSION {
     double* q = &Qvector[0];
     
 
-    for(iID=0 ; iID<numOwnedPoints ; ++iID, shapeTensorInv+=9, heatFlowState+=1){
-        *heatFlowState = 0.0;
+    for(iID=0 ; iID<numOwnedPoints ; ++iID, shapeTensorInv+=9){
+        
         nodeTemperature = temperature[iID];
         undeformedBondX[0] = modelCoord[iID*3];
         undeformedBondX[1] = modelCoord[iID*3+1];
