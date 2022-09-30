@@ -155,8 +155,8 @@ namespace DIFFUSION {
             heatFlowState[iNID] -= shapeTensorInv[3*i+j]*(modelCoord[neighborID*3+j] - undeformedBondX[j]);
             heatFlowState[neighborID] += shapeTensorInv[3*i+j]*(modelCoord[neighborID*3+j] - undeformedBondX[j]);
           }
-          heatFlowState[iNID] *= q[i]; // neighbor und Id->
-          heatFlowState[neighborID] *= q[i]; // neighbor und Id->
+          heatFlowState[iNID] *= q[i]; 
+          heatFlowState[neighborID] *= q[i]; 
         }
 
 
