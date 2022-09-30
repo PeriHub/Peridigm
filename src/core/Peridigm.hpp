@@ -595,6 +595,9 @@ namespace PeridigmNS {
     //! Global vector for cell heat capacity
     Teuchos::RCP<Epetra_Vector> heatCapacity;
 
+    //! Global vector for cell heat capacity
+    Teuchos::RCP<Epetra_Vector> temp_previous;
+
     //! Global vector for cell fluid density
     Teuchos::RCP<Epetra_Vector> fluidDensity;
 
