@@ -87,7 +87,6 @@ namespace PeridigmNS {
 
     //! Returns the shear modulus of the material.
     virtual double ShearModulus() const = 0;
-
     //! Returns material property value for a given key
     // Only implemented for multiphysics elastic material
     virtual double lookupMaterialProperty(const std::string keyname) const {

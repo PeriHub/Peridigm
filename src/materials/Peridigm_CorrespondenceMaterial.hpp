@@ -77,7 +77,12 @@ namespace PeridigmNS
 
     //! Returns a vector of field IDs corresponding to the variables associated with the material.
     virtual std::vector<int> FieldIds() const { return m_fieldIds; }
-
+    //! Returns the requested material property
+    //! A dummy method here.
+    virtual double lookupMaterialProperty(const std::string keyname) const {
+      double data = 0.0;
+      if  (keyname.compare("Heat Capacity") == 0) data = m_C;
+      return data;}
     //! Initialize the material model.
     virtual void initialize(const double dt,
                             const int numOwnedPoints,
@@ -169,6 +174,7 @@ namespace PeridigmNS
     int m_stabilizationType;
     double C[6][6];
     double kappa[3];
+    double m_C;
     bool m_planeStress, m_planeStrain;
     bool m_plane = false;
     bool nonLin = false;

@@ -59,7 +59,7 @@ using namespace std;
 
 PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::ParameterList &params)
     : Material(params),
-      m_density(0.0), m_hourglassCoefficient(0.0),
+      m_density(0.0), m_hourglassCoefficient(0.0),m_C(0.0),
       m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
       m_horizonFieldId(-1), m_volumeFieldId(-1),
       m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_velocitiesFieldId(-1),
@@ -153,6 +153,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_applyThermalFlow = false;
   if (params.isParameter("Apply Thermal Flow")){
     m_applyThermalFlow = params.get<bool>("Apply Thermal Flow");
+    m_C = params.get<double>( "Heat Capacity");
     kappa[0] = params.get<double>("Coefficient");
     if (params.isParameter("Coefficient 22"))kappa[1] = params.get<double>("Coefficient 22");
     else kappa[1] = kappa[0];
@@ -194,7 +195,8 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     m_fieldIds.push_back(m_temperatureFieldId);
   }
   m_thermalFlowStateFieldId          = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Flux_Divergence"); // reuse of the field
-   m_fieldIds.push_back(m_thermalFlowStateFieldId); 
+  
+  m_fieldIds.push_back(m_thermalFlowStateFieldId); 
   m_fieldIds.push_back(m_horizonFieldId);
   m_fieldIds.push_back(m_volumeFieldId);
   m_fieldIds.push_back(m_modelCoordinatesFieldId);
@@ -901,10 +903,7 @@ void PeridigmNS::CorrespondenceMaterial::computeJacobianFiniteDifference(const d
     velocityFId = fieldManager.getFieldId("Velocity");
     forceDensityFId = fieldManager.getFieldId("Force_Density");
   }
-  // if (solveForTemperature) {
-  //   temperatureFId = fieldManager.getFieldId("Temperature");
-  //   fluxDivergenceFId = fieldManager.getFieldId("Flux_Divergence");
-  // }
+
 
   int neighborhoodListIndex = 0;
   for (int iID = 0; iID < numOwnedPoints; ++iID)

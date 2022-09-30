@@ -77,7 +77,7 @@ namespace PeridigmNS
                                      const double time = 0.0) const;
     //! Returns the requested material property
     //! A dummy method here.
-    virtual double lookupMaterialProperty(const std::string keyname) const { return 0.0; }
+    //virtual double lookupMaterialProperty(const std::string keyname) const { return 0.0; }
 
   protected:
     // field spec ids for all relevant data
