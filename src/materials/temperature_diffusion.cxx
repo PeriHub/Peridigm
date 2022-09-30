@@ -48,7 +48,8 @@
 #include "temperature_diffusion.h"
 #include "matrices.h"
 #include <vector> 
-
+#include <Teuchos_Assert.hpp>
+#include <Epetra_SerialComm.h>
 using namespace std;
 namespace DIFFUSION {
   void computeFlux(
@@ -117,49 +118,47 @@ namespace DIFFUSION {
     std::vector<double> Hvector(3), Qvector(3);
     double* H = &Hvector[0];
     double* q = &Qvector[0];
-    
+    double deltaT = 0.0;
 
     for(iID=0 ; iID<numOwnedPoints ; ++iID, shapeTensorInv+=9){
         
-        nodeTemperature = temperature[iID];
-        undeformedBondX[0] = modelCoord[iID*3];
-        undeformedBondX[1] = modelCoord[iID*3+1];
-        undeformedBondX[2] = modelCoord[iID*3+2];
-        numNeighbors = neighborhoodList[neighborhoodListIndex++];
-        H[0] = 0.0;H[1] = 0.0;H[2] = 0.0;
-        for(iNID=0 ; iNID<numNeighbors ; ++iNID, bondDamage++){
-          neighborID = neighborhoodList[neighborhoodListIndex++];
+      nodeTemperature = temperature[iID];
+      undeformedBondX[0] = modelCoord[iID*3];
+      undeformedBondX[1] = modelCoord[iID*3+1];
+      undeformedBondX[2] = modelCoord[iID*3+2];
+      numNeighbors = neighborhoodList[neighborhoodListIndex++];
+      H[0] = 0.0;H[1] = 0.0;H[2] = 0.0;
+      for(iNID=0 ; iNID<numNeighbors ; ++iNID, bondDamage++){
+        neighborID = neighborhoodList[neighborhoodListIndex++];
           
 
-          initialDistance = MATRICES::distance(undeformedBondX[0], undeformedBondX[1], undeformedBondX[2], modelCoord[neighborID*3], modelCoord[neighborID*3+1], modelCoord[neighborID*3+2]);
-          for(int i=0 ; i<3 ; ++i){ 
-            kernel[i] = 6.0*kappa[i]/(pi*horizon[iID]*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
-            }
-          
-          
-          H[0] += (1-*bondDamage)*(temperature[neighborID] - nodeTemperature)*(modelCoord[neighborID*3] -undeformedBondX[0])*volume[neighborID];
-          H[1] += (1-*bondDamage)*(temperature[neighborID] - nodeTemperature)*(modelCoord[neighborID*3+1]-undeformedBondX[1])*volume[neighborID+2];
-          H[2] += (1-*bondDamage)*(temperature[neighborID] - nodeTemperature)*(modelCoord[neighborID*3+2]-undeformedBondX[2])*volume[neighborID];
-
-        }
-
+        initialDistance = MATRICES::distance(undeformedBondX[0], undeformedBondX[1], undeformedBondX[2], modelCoord[neighborID*3], modelCoord[neighborID*3+1], modelCoord[neighborID*3+2]);
         for(int i=0 ; i<3 ; ++i){ 
-          q[i] = 0.0;
-          for(int j=0 ; j<3 ; ++j){ 
-            q[i] += H[i]*shapeTensorInv[3*i+j]*kernel[i];
-          }  
-        }
-
-        for(int i=0 ; i<3 ; ++i){ 
-          for(int j=0 ; j<3 ; ++j){ 
-            heatFlowState[iNID] -= shapeTensorInv[3*i+j]*(modelCoord[neighborID*3+j] - undeformedBondX[j]);
-            heatFlowState[neighborID] += shapeTensorInv[3*i+j]*(modelCoord[neighborID*3+j] - undeformedBondX[j]);
+          kernel[i] = 6.0*kappa[i]/(pi*horizon[iID]*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
           }
-          heatFlowState[iNID] *= q[i]; 
-          heatFlowState[neighborID] *= q[i]; 
+        
+        deltaT = (temperature[neighborID] - nodeTemperature) * (1-*bondDamage);
+        H[0] += deltaT * (modelCoord[neighborID*3]   - undeformedBondX[0])*volume[neighborID];
+        H[1] += deltaT * (modelCoord[neighborID*3+1] - undeformedBondX[1])*volume[neighborID];
+        H[2] += deltaT * (modelCoord[neighborID*3+2] - undeformedBondX[2])*volume[neighborID];
+      }
+      
+      for(int i=0 ; i<3 ; ++i){ 
+        q[i] = 0.0;
+        for(int j=0 ; j<3 ; ++j){ 
+          q[i] += H[j]*shapeTensorInv[3*j+i]*kernel[i];
+        }  
+      }
+      neighborhoodListIndex -= numNeighbors;
+      for(iNID=0 ; iNID<numNeighbors ; ++iNID){
+        neighborID = neighborhoodList[neighborhoodListIndex++];
+        for(int i=0 ; i<3 ; ++i){ 
+          for(int j=0 ; j<3 ; ++j){ 
+            heatFlowState[iNID] -= shapeTensorInv[3*i+j]*(modelCoord[3*neighborID+j] - undeformedBondX[j]) * q[i];
+            heatFlowState[neighborID] += shapeTensorInv[3*i+j]*(modelCoord[3*neighborID+j] - undeformedBondX[j]) * q[i];;
+          }
         }
-
-
+      }
     }
   }
 }
