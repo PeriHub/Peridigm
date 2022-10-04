@@ -730,10 +730,8 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     }
     
     if (heatFlux){
-      double blockHeatCapacity = 0.0;
-      Teuchos::RCP<const PeridigmNS::Material> materialModel = blockIt->getMaterialModel();
-      if (blockIt->getMaterialModel()->lookupMaterialProperty("Heat Capacity"))
-        blockHeatCapacity = blockIt->getMaterialModel()->lookupMaterialProperty("Heat Capacity");
+      double blockHeatCapacity = 0.0;  
+      blockHeatCapacity = blockIt->getMaterialModel()->lookupMaterialProperty("Heat Capacity");
       for(int i=0 ; i<OwnedScalarPointMap->NumMyElements() ; ++i){
         int globalID = OwnedScalarPointMap->GID(i);
         int mothershipLocalID = oneDimensionalMap->LID(globalID);
@@ -905,7 +903,7 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
   bool initializeToZero = true;
   int num = 0;
   if (heatFlux)
-    numOneDimensionalMothershipVectors += 1;
+    numOneDimensionalMothershipVectors += 2;
   if(analysisHasMultiphysics){
     numOneDimensionalMothershipVectors += 7;
     num += 7;
@@ -936,6 +934,7 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
   }
   if (heatFlux){
     heatCapacity = Teuchos::rcp((*oneDimensionalMothership)(12+num), false);         // heat capacity
+    temp_previous = Teuchos::rcp((*oneDimensionalMothership)(13+num), false);         // heat capacity
   }
   int numThreeDimensionalMothershipVectors = 16;
 
@@ -1467,7 +1466,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   }
 
   // Pointer index into sub-vectors for use with BLAS
-  double *xPtr, *u_previousPtr, *uPtr, *yPtr, *v_previousPtr, *vPtr, *aPtr;
+  double *xPtr, *u_previousPtr, *uPtr, *yPtr, *v_previousPtr, *vPtr, *aPtr, *deltaTPtr, *temp_previousPtr, *tempPtr;
   x->ExtractView( &xPtr );
   u->ExtractView( &uPtr );
   u_previous->ExtractView( &u_previousPtr );
@@ -1475,6 +1474,13 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   v->ExtractView( &vPtr );
   v_previous->ExtractView( &v_previousPtr );
   a->ExtractView( &aPtr );
+  if (heatFlux){
+    deltaTemperature->ExtractView( &deltaTPtr );
+    temp_previous->ExtractView( &temp_previousPtr);
+    temperature->ExtractView( &tempPtr);
+  }
+   
+  
   int length = a->MyLength();
 
   // Set the prescribed displacements (allow for nonzero initial displacements).
@@ -1544,8 +1550,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   if (heatFlux){
     for(int i=0 ; i<temperature->MyLength() ; ++i){
       if ((*heatCapacity)[i] == 0)(*deltaTemperature)[i] = 0.0;
-      else (*deltaTemperature)[i] = (*fluxDivergence)[i] / (*density)[i] / (*heatCapacity)[i] * dt; 
-        (*temperature)[i] += (*deltaTemperature)[i];
+      else (*deltaTemperature)[i] = (*fluxDivergence)[i] / (*density)[i] / (*heatCapacity)[i]; 
       }
   }
   // Write initial configuration to disk
@@ -1623,6 +1628,11 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
           u_previousPtr[i] = uPtr[i];
           v_previousPtr[i] = vPtr[i];
         }
+        if (heatFlux){
+          for(int i=0 ; i<temperature->MyLength() ; ++i){
+           temp_previousPtr[i] = tempPtr[i];  
+          }
+      }
       break;
       case 1: //retry timeStep with reduced dt
         step -= 1;
@@ -1648,6 +1658,11 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
           uPtr[i] = u_previousPtr[i];
           vPtr[i] = v_previousPtr[i];
         }
+      if (heatFlux){
+        for(int i=0 ; i<temperature->MyLength() ; ++i){
+          tempPtr[i] = temp_previousPtr[i];  
+        }
+      }
       break;
       case 2: //normal timeStep with raised dt 
         dt *= dtRaiseFactor;
@@ -1671,6 +1686,11 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         for(int i=0 ; i<y->MyLength() ; ++i){
           u_previousPtr[i] = uPtr[i];
           v_previousPtr[i] = vPtr[i];
+        }
+         if (heatFlux){
+          for(int i=0 ; i<temperature->MyLength() ; ++i){
+            temp_previousPtr[i] = tempPtr[i]; 
+          }
         }
       break;
     }
@@ -1708,7 +1728,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     // V^{n+1/2} = V^{n} + (dt/2)*A^{n}
     // blas.AXPY(const int N,length const double ALPHA, const double *X, double *Y, const int INCX=1, const int INCY=1) const
     blas.AXPY(length, dt2, aPtr, vPtr, 1, 1);
-
+    //if (heatFlux) blas.AXPY(length / 3, dt, deltaTPtr, tempPtr, 1, 1);
     // Set the velocities for dof with kinematic boundary conditions.
     // This will propagate through the Verlet integrator and result in the proper
     // displacement boundary conditions on y and consistent values for v and u.
@@ -1729,12 +1749,19 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       vPtr[i] = vPtr[i] * (1 - numericalDamping);
       yPtr[i] = xPtr[i] + uPtr[i] + dt*vPtr[i] ;
     }
+    if (heatFlux)
+    {
+      for(int i=0 ; i<temperature->MyLength() ; ++i){
+        tempPtr[i] = temp_previousPtr[i] + deltaTPtr[i]; // happens in the determination of deltaT
+      }
+
+    }
     // U^{n+1} = U^{n} + (dt)*V^{n+1/2}
     // blas.AXPY(const int N, const double ALPHA, const double *X, double *Y, const int INCX=1, const int INCY=1) const
     blas.AXPY(length, dt, vPtr, uPtr, 1, 1);
 
     // \todo The velocity copied into the DataManager is actually the midstep velocity, not the NP1 velocity; this can be fixed by creating a midstep velocity field in the DataManager and setting the NP1 value as invalid.
-
+    if (heatFlux) fluxDivergence->PutScalar(0.0);
     // Copy data from mothership vectors to overlap vectors in data manager
     PeridigmNS::Timer::self().startTimer("Gather/Scatter");
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
@@ -1744,6 +1771,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       blockIt->importData(deltaTemperature, deltaTemperatureFieldId, adaptiveImportStep, Insert);
       blockIt->importData(temperature, temperatureFieldId, adaptiveImportStep, Insert);
       blockIt->importData(concentration, concentrationFieldId, adaptiveImportStep, Insert);
+      if (heatFlux) blockIt->importData(fluxDivergence, fluxDivergenceFieldId, adaptiveImportStep, Insert);
     }
     if(analysisHasContact){
       for(contactBlockIt = contactBlocks->begin() ; contactBlockIt != contactBlocks->end() ; contactBlockIt++){
@@ -1931,9 +1959,9 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       scratch->PutScalar(0.0);
       blockIt->exportData(scratch, forceDensityFieldId, adaptiveExportStep, Add);
       force->Update(1.0, *scratch, 1.0);
-       if (heatFlux) {
+      if (heatFlux) {
         scalarScratch->PutScalar(0.0);
-        blockIt->importData(scalarScratch, fluxDivergenceFieldId, adaptiveExportStep, Add);
+        blockIt->exportData(scalarScratch, fluxDivergenceFieldId, adaptiveExportStep, Add);
         fluxDivergence->Update(1.0, *scalarScratch, 1.0);
        }
     }
@@ -1971,10 +1999,10 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     }
     if (heatFlux){
       for(int i=0 ; i<temperature->MyLength() ; ++i){
+        //(*deltaTemperature)[i] = (*externalHeat)[i];
         if ((*heatCapacity)[i] == 0)(*deltaTemperature)[i] = 0.0;
-        else (*deltaTemperature)[i] = (*fluxDivergence)[i] / (*density)[i] / (*heatCapacity)[i] * dt; 
-          (*temperature)[i] += (*deltaTemperature)[i];
-        }
+        else (*deltaTemperature)[i] = -(*fluxDivergence)[i] * dt / ((*density)[i] * (*heatCapacity)[i]); 
+      }
     }
     // V^{n+1}   = V^{n+1/2} + (dt/2)*A^{n+1}
     //blas.AXPY(const int N, const double ALPHA, const double *X, double *Y, const int INCX=1, const int INCY=1) const
