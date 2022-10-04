@@ -115,9 +115,10 @@ namespace DIFFUSION {
     double kernel[3], nodeTemperature;
     const double *shapeTensorInv = shapeTensorInverse;
     const double pi = 3.1415; //::value_of_pi();
-    std::vector<double> Hvector(3), Qvector(3);
+    std::vector<double> Hvector(3), Qvector(3), tempVector(3);
     double* H = &Hvector[0];
     double* q = &Qvector[0];
+    double* temp = &tempVector[0];
     double deltaT = 0.0;
 
     for(iID=0 ; iID<numOwnedPoints ; ++iID, shapeTensorInv+=9){
@@ -127,37 +128,42 @@ namespace DIFFUSION {
       undeformedBondX[1] = modelCoord[iID*3+1];
       undeformedBondX[2] = modelCoord[iID*3+2];
       numNeighbors = neighborhoodList[neighborhoodListIndex++];
+      int secondNeighborhoodListIndex = neighborhoodListIndex;
       H[0] = 0.0;H[1] = 0.0;H[2] = 0.0;
       for(iNID=0 ; iNID<numNeighbors ; ++iNID, bondDamage++){
+       
         neighborID = neighborhoodList[neighborhoodListIndex++];
-          
-
         initialDistance = MATRICES::distance(undeformedBondX[0], undeformedBondX[1], undeformedBondX[2], modelCoord[neighborID*3], modelCoord[neighborID*3+1], modelCoord[neighborID*3+2]);
-        for(int i=0 ; i<3 ; ++i){ 
-          kernel[i] = 6.0*kappa[i]/(pi*horizon[iID]*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
-          }
+        
+        for(int i=0 ; i<3 ; ++i)kernel[i] = 6.0*kappa[i]/(pi*horizon[iID]*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
         
         deltaT = (temperature[neighborID] - nodeTemperature) * (1-*bondDamage);
-        H[0] += deltaT * (modelCoord[neighborID*3]   - undeformedBondX[0])*volume[neighborID];
-        H[1] += deltaT * (modelCoord[neighborID*3+1] - undeformedBondX[1])*volume[neighborID];
-        H[2] += deltaT * (modelCoord[neighborID*3+2] - undeformedBondX[2])*volume[neighborID];
+        
+        for(int i=0 ; i<3 ; ++i)H[i] += deltaT * (modelCoord[neighborID*3+i] - undeformedBondX[i])*volume[neighborID]*kernel[i];
       }
-      
+      if (H[0]!=0){
+
+std::cout<<shapeTensorInv[0]<<" "<<shapeTensorInv[1]<<" "<< shapeTensorInv[3]<< " "<< shapeTensorInv[4]<< std::endl;
+      }
       for(int i=0 ; i<3 ; ++i){ 
         q[i] = 0.0;
         for(int j=0 ; j<3 ; ++j){ 
-          q[i] += H[j]*shapeTensorInv[3*j+i]*kernel[i];
+          q[i] += H[j]*shapeTensorInv[3*i+j];
         }  
       }
-      neighborhoodListIndex -= numNeighbors;
       for(iNID=0 ; iNID<numNeighbors ; ++iNID){
-        neighborID = neighborhoodList[neighborhoodListIndex++];
+        neighborID = neighborhoodList[secondNeighborhoodListIndex++];
         for(int i=0 ; i<3 ; ++i){ 
+          temp[i] = 0.0;
           for(int j=0 ; j<3 ; ++j){ 
-            heatFlowState[iNID] -= shapeTensorInv[3*i+j]*(modelCoord[3*neighborID+j] - undeformedBondX[j]) * q[i];
-            heatFlowState[neighborID] += shapeTensorInv[3*i+j]*(modelCoord[3*neighborID+j] - undeformedBondX[j]) * q[i];;
+            temp[i] += shapeTensorInv[3*i+j]*(modelCoord[3*neighborID+j] - undeformedBondX[j]);   
           }
         }
+        for(int i=0 ; i<3 ; ++i){ 
+          heatFlowState[iNID] -= temp[i] * q[i] * volume[neighborID];
+          heatFlowState[neighborID] += temp[i] * q[i] * volume[neighborID];
+        }
+            
       }
     }
   }
