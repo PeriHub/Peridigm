@@ -1761,7 +1761,6 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     blas.AXPY(length, dt, vPtr, uPtr, 1, 1);
 
     // \todo The velocity copied into the DataManager is actually the midstep velocity, not the NP1 velocity; this can be fixed by creating a midstep velocity field in the DataManager and setting the NP1 value as invalid.
-    if (heatFlux) fluxDivergence->PutScalar(0.0);
     // Copy data from mothership vectors to overlap vectors in data manager
     PeridigmNS::Timer::self().startTimer("Gather/Scatter");
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
@@ -1771,7 +1770,6 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       blockIt->importData(deltaTemperature, deltaTemperatureFieldId, adaptiveImportStep, Insert);
       blockIt->importData(temperature, temperatureFieldId, adaptiveImportStep, Insert);
       blockIt->importData(concentration, concentrationFieldId, adaptiveImportStep, Insert);
-      if (heatFlux) blockIt->importData(fluxDivergence, fluxDivergenceFieldId, adaptiveImportStep, Insert);
     }
     if(analysisHasContact){
       for(contactBlockIt = contactBlocks->begin() ; contactBlockIt != contactBlocks->end() ; contactBlockIt++){
