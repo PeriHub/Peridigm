@@ -454,6 +454,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                   kappa,
                                   volume,
                                   bondDamageNP1,
+                                  m_plane,
                                   thermalFlow);
   }
   // Evaluate the Cauchy stress using the routine implemented in the derived class (specific correspondence material model)
