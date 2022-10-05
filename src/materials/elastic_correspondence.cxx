@@ -843,17 +843,6 @@ template void updateBondLevelElasticCauchyStress<double>
 );
 
 /** Explicit template instantiation for Sacado::Fad::DFad<double>. */
-
-
-
-
-
-
-
-
-
-
-/** Explicit template instantiation for Sacado::Fad::DFad<double>. */
 template<typename ScalarT>
 void createRotatedStiff
 (
