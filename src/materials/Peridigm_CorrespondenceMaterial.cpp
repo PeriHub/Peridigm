@@ -48,7 +48,6 @@
 #include "Peridigm_CorrespondenceMaterial.hpp"
 #include "Peridigm_Field.hpp"
 #include "correspondence.h"
-#include "temperature_diffusion.h"
 #include "matrices.h"
 #include "Peridigm_DegreesOfFreedomManager.hpp"
 #include "elastic_correspondence.h"
@@ -444,7 +443,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
     dataManager.getData(m_temperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&temperature);
     dataManager.getData(m_thermalFlowStateFieldId, PeridigmField::STEP_NP1)->ExtractView(&thermalFlow);
     dataManager.getData(m_thermalFlowStateFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
-    DIFFUSION::computeHeatFlowState_correspondence(
+    CORRESPONDENCE::computeHeatFlowState_correspondence(
                                   modelCoordinates,
                                   numOwnedPoints,
                                   neighborhoodList,

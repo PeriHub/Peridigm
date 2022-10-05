@@ -46,6 +46,7 @@
 //@HEADER
 
 #include "correspondence.h"
+#include "temperature_diffusion.h"
 #include "matrices.h"
 #include "elastic_correspondence.h"
 #include "material_utilities.h"
@@ -3330,6 +3331,38 @@ template void rotateCauchyStress<double>
  double* rotatedCauchyStress,
  int numPoints
  );
+
+
+
+void computeHeatFlowState_correspondence(    
+    const double* modelCoord,
+    const int numOwnedPoints,
+    const int* neighborhoodList,
+    const double* shapeTensorInverse,
+    const double* temperature,
+    const double* horizon,
+    const double* kappa,
+    const double* volume,
+    const double* bondDamage,
+    const bool twoD,
+    double* heatFlowState
+    )
+
+    {
+     DIFFUSION::computeHeatFlowState_correspondence(
+                                  modelCoord,
+                                  numOwnedPoints,
+                                  neighborhoodList,
+                                  shapeTensorInverse,
+                                  temperature,
+                                  horizon,
+                                  kappa,
+                                  volume,
+                                  bondDamage,
+                                  twoD,
+                                  heatFlowState); 
+    }
+
 
 template int computeLogStrain<double>
 (
