@@ -50,7 +50,6 @@
 #include "correspondence.h"
 #include "matrices.h"
 #include "Peridigm_DegreesOfFreedomManager.hpp"
-#include "elastic_correspondence.h"
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
