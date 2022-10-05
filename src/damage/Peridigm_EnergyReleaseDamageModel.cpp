@@ -133,7 +133,6 @@ m_rot(false) {
         m_planeStrain = params.get<bool>("Plane Strain");
         m_Thickness = params.get<double>("Thickness");
     }
-    m_pi = 3.14159;
     m_onlyTension = false;
     if(params.isParameter("Only Tension")){
         m_onlyTension = params.get<bool>("Only Tension");
@@ -370,7 +369,7 @@ PeridigmNS::EnergyReleaseDamageModel::computeDamage(const double dt,
                 //factor = sqrt(75.0 / 4 / M_PI / pow(horizon,5));        // equation (51) MitchelJA_2011; 1/2 is not needed 
                 //factor = 15.0 / weightedVol * sqrt(4.0 / 75.0 * M_PI * pow(horizon,5));        // equation (51) MitchelJA_2011; 1/2 is not needed 
                 
-                quadhorizon =  8.0 /( m_pi * pow(avgHorizon, 4) );
+                quadhorizon =  8.0 /( M_PI * pow(avgHorizon, 4) );
             }
             
 

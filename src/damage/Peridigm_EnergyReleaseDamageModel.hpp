@@ -131,7 +131,6 @@ namespace PeridigmNS {
           return ( sqrt( (a1-b1)*(a1-b1) + (a2-b2)*(a2-b2) + (a3-b3)*(a3-b3) ) );
         }
         
-    double m_pi; 
     double m_criticalEnergyTension;
     double m_criticalEnergyCompression;
     double m_criticalEnergyShear;
