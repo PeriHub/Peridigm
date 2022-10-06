@@ -210,43 +210,44 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
 
   double R = 1.0;
   double E = 3 * m_bulkModulus * (1 - 2 * 0.25);
+  double m_pi = PeridigmNS::value_of_pi();
 
   // std::cout << "E: " << E << std::endl;
   for (int k = 0; k < 4; k++)
   {
     for (int l = 0; l < 6; l++)
     {
-      Coeffs(k, l) = Coeffs(k, l) * ((48.0 * E) / (5 * M_PI * m_horizon * m_horizon * m_horizon ));
+      Coeffs(k, l) = Coeffs(k, l) * ((48.0 * E) / (5 * m_pi * m_horizon * m_horizon * m_horizon ));
       
       // std::cout << "Coeffs(k, l): " << Coeffs(k, l) << std::endl;
       // Coeffs(k,l) = (48.00 * E) / (5.0 * M_PI * (R * R * R));
     }
   }
 
-  Coeffs(0, 0) = 0.;
-  Coeffs(0, 1) = 0.;
-  Coeffs(0, 2) = 0.;
-  Coeffs(0, 3) = 0.456;
-  Coeffs(0, 4) = 0.152;
-  Coeffs(0, 5) = 0.;
-  Coeffs(1, 0) = 0.;
-  Coeffs(1, 1) = 0.;
-  Coeffs(1, 2) = 0.;
-  Coeffs(1, 3) = 0.;
-  Coeffs(1, 4) = 0.;
-  Coeffs(1, 5) = 0.152;
-  Coeffs(2, 0) = 0.;
-  Coeffs(2, 1) = 0.;
-  Coeffs(2, 2) = 0.;
-  Coeffs(2, 3) = 0.;
-  Coeffs(2, 4) = 0.;
-  Coeffs(2, 5) = 0.152;
-  Coeffs(3, 0) = 0.;
-  Coeffs(3, 1) = 0.;
-  Coeffs(3, 2) = 0.;
-  Coeffs(3, 3) = 0.152;
-  Coeffs(3, 4) = 0.456;
-  Coeffs(3, 5) = 0.;
+  // Coeffs(0, 0) = 0.;
+  // Coeffs(0, 1) = 0.;
+  // Coeffs(0, 2) = 0.;
+  // Coeffs(0, 3) = 0.456;
+  // Coeffs(0, 4) = 0.152;
+  // Coeffs(0, 5) = 0.;
+  // Coeffs(1, 0) = 0.;
+  // Coeffs(1, 1) = 0.;
+  // Coeffs(1, 2) = 0.;
+  // Coeffs(1, 3) = 0.;
+  // Coeffs(1, 4) = 0.;
+  // Coeffs(1, 5) = 0.152;
+  // Coeffs(2, 0) = 0.;
+  // Coeffs(2, 1) = 0.;
+  // Coeffs(2, 2) = 0.;
+  // Coeffs(2, 3) = 0.;
+  // Coeffs(2, 4) = 0.;
+  // Coeffs(2, 5) = 0.152;
+  // Coeffs(3, 0) = 0.;
+  // Coeffs(3, 1) = 0.;
+  // Coeffs(3, 2) = 0.;
+  // Coeffs(3, 3) = 0.152;
+  // Coeffs(3, 4) = 0.456;
+  // Coeffs(3, 5) = 0.;
 
   double *x;
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&x);
@@ -330,6 +331,7 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
           // }
           Clouds[iID][cloudNum++] = neighborID;
           collocationNodeFound = true;
+          numberOfCollNeighbors[iID] += 1;
           iNID++;
           break;
         }
@@ -338,7 +340,7 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
         // std::cout << "bondDamageIndex: " << bondDamageIndex << std::endl;
 
       if(!collocationNodeFound){
-        // Clouds[iID][cloudNum++] = -1;
+        Clouds[iID][cloudNum++] = -1;
         // if (x[nodeID * 3] == 0 & x[nodeID * 3 + 1] == -100)
         // {
         //   std::cout << "neighborID: " << "-1" << std::endl;
@@ -352,7 +354,6 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
     neighborhoodListIndex += numNeighbors;
 
     collocationNum += cloudNum + 1;
-    numberOfCollNeighbors[iID] = cloudNum;
 
     cloudNumArray[iID] = cloudNum;
   }
@@ -524,9 +525,8 @@ void PeridigmNS::ElasticBondBasedMaterial::computeForce(const double dt,
 
   if (m_useCollocationNodes)
   {
-  MATERIAL_EVALUATION::computeInternalForceElasticBondBasedCollocation(x, y, cellVolume, bondDamage, force, neighborhoodList, collocationNeighborhoodList, useCollocationNodes, UpdateMat, numOwnedPoints, m_bulkModulus, m_horizon, m_criticalStretch);
+    MATERIAL_EVALUATION::computeInternalForceElasticBondBasedCollocation(x, y, cellVolume, bondDamage, force, neighborhoodList, collocationNeighborhoodList, useCollocationNodes, UpdateMat, numOwnedPoints, m_bulkModulus, m_horizon, m_criticalStretch);
   }else{
-    
-  MATERIAL_EVALUATION::computeInternalForceElasticBondBased(x, y, cellVolume, bondDamage, force, neighborhoodList, numOwnedPoints, m_bulkModulus, m_horizon);
+    MATERIAL_EVALUATION::computeInternalForceElasticBondBased(x, y, cellVolume, bondDamage, force, neighborhoodList, numOwnedPoints, m_bulkModulus, m_horizon);
   }
 }

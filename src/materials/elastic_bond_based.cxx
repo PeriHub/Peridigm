@@ -73,6 +73,7 @@ namespace MATERIAL_EVALUATION
     const double pi = PeridigmNS::value_of_pi();
     double constant = 18.0 * BULK_MODULUS / (pi * horizon * horizon * horizon * horizon);
 
+    int bondId = 0;
     for (int p = 0; p < numOwnedPoints; p++)
     {
 
@@ -85,6 +86,7 @@ namespace MATERIAL_EVALUATION
       volume = volumeOverlap[p];
 
       int numNeighbors = localNeighborList[neighborhoodIndex++];
+      bool print = true;
       for (int n = 0; n < numNeighbors; n++)
       {
 
@@ -115,17 +117,23 @@ namespace MATERIAL_EVALUATION
         fInternalOverlap[3 * neighborId + 0] -= fx * volume;
         fInternalOverlap[3 * neighborId + 1] -= fy * volume;
         fInternalOverlap[3 * neighborId + 2] -= fz * volume;
-        if (neighborId == p){
-          std::cout << " p: " <<  p << std::endl;
-          std::cout << " neighborId: " <<  neighborId << std::endl;
-          std::cout << " fInternalOverlap[3 * p + 0]: " <<  fInternalOverlap[3 * p + 0] << std::endl;
-          std::cout << " fx: " <<  fx << std::endl;
-          std::cout << " neighborY[0]: " <<  neighborY[0] << std::endl;
-          std::cout << " Y[0]: " <<  Y[0] << std::endl;
-          std::cout << " currentBondLength: " <<  currentBondLength << std::endl;
-          std::cout << " neighborVolume: " <<  neighborVolume << std::endl;
+        if (X[0]== 1.5 & X[1]==-9){
+          bondId = p;
+          std::cout << "X[0]: " << X[0] << std::endl;
+          std::cout << "X[1]: " << X[1] << std::endl;
+          std::cout << "neighborX[0]: " << neighborX[0] << std::endl;
+          std::cout << "neighborX[1]: " << neighborX[1] << std::endl;
+          std::cout << "Un1[DPN * n + 0]: " << (neighborY[0] - neighborX[0]) << std::endl;
+          std::cout << "Un1[DPN * n + 1]: " << (neighborY[1] - neighborX[1]) << std::endl;
+          std::cout << "fx: " << fx << std::endl;
+          std::cout << "fy: " << fy << std::endl;
         }
       }
+      
+    }
+    if(bondId!=0){
+      std::cout << "fInternalOverlap[3 * bondId + 0]: " << fInternalOverlap[3 * bondId + 0] << std::endl;
+      std::cout << "fInternalOverlap[3 * bondId + 1]: " << fInternalOverlap[3 * bondId + 1] << std::endl;
     }
   }
 
@@ -151,7 +159,7 @@ namespace MATERIAL_EVALUATION
 
     const double pi = PeridigmNS::value_of_pi();
     double constant = 18.0 * BULK_MODULUS / (pi * horizon * horizon * horizon * horizon);
-
+    int bondId = 0;
     for (int p = 0; p < numOwnedPoints; p++)
     {
 
@@ -169,16 +177,15 @@ namespace MATERIAL_EVALUATION
       if (useCollocationNodes[p] == true)
       {
         neighborhoodIndex += numNeighbors;
-				bool print = true;
         for (int n = 0; n < numCollocationNeighbors; n++)
         {
 
           neighborId = localCollocationNeighborList[collocationNeighborhoodIndex++];
 
-          // if (neighborId == -1)
-					// {
-					// 	continue;
-					// }
+          if (neighborId == -1)
+					{
+						continue;
+					}
 
           neighborX[0] = xOverlap[neighborId * 3];
           neighborX[1] = xOverlap[neighborId * 3 + 1];
@@ -207,27 +214,10 @@ namespace MATERIAL_EVALUATION
           fx = ux * UpdateMat[p].row(0)(n) + uy * UpdateMat[p].row(1)(n);
           fy = ux * UpdateMat[p].row(2)(n) + uy * UpdateMat[p].row(3)(n);
 
-					// if (X[0]== 1.5 & X[1]==-9 & print)
-          // {
-					// 	std::cout << "X[0]: " << X[0] << std::endl;
-					// 	std::cout << "X[1]: " << X[1] << std::endl;
-					// 	std::cout << "neighborX[0]: " << neighborX[0] << std::endl;
-					// 	std::cout << "neighborX[1]: " << neighborX[1] << std::endl;
-          //   std::cout << "Un1[DPN * n + 0]: " << (neighborY[0] - neighborX[0]) << std::endl;
-          //   std::cout << "Un1[DPN * n + 1]: " << (neighborY[1] - neighborX[1]) << std::endl;
-          //   std::cout << "UpdateMat[p].row(0)(n): " << UpdateMat[p].row(0)(n) << std::endl;
-          //   std::cout << "UpdateMat[p].row(1)(n): " << UpdateMat[p].row(1)(n) << std::endl;
-          //   std::cout << "UpdateMat[p].row(2)(n): " << UpdateMat[p].row(2)(n) << std::endl;
-          //   std::cout << "UpdateMat[p].row(3)(n): " << UpdateMat[p].row(3)(n) << std::endl;
-          //   std::cout << "fx: " << fx << std::endl;
-          //   std::cout << "fy: " << fy << std::endl;
-					// 	print = false;
-          // }
-
           // fz = neighborY[0] * UpdateMat[p].row(2)(j) + neighborY[1] * UpdateMat[p].row(3)(j);
           fz = 0.0;
 
-          damageOnBond = bondDamage[bondDamageIndex++];
+          // damageOnBond = bondDamage[bondDamageIndex++];
           
           // for (int k = 0; k < HorizonLengths[i]; k++)
           // {
@@ -240,28 +230,43 @@ namespace MATERIAL_EVALUATION
           // fy = t * (neighborY[1] - Y[1]) / currentBondLength;
           // fz = t * (neighborY[2] - Y[2]) / currentBondLength;
 
-          fInternalOverlap[3 * p + 0] += fx * neighborVolume * (1.0 - damageOnBond);
-          fInternalOverlap[3 * p + 1] += fy * neighborVolume * (1.0 - damageOnBond);
-          fInternalOverlap[3 * p + 2] += fz * neighborVolume * (1.0 - damageOnBond);
-          fInternalOverlap[3 * neighborId + 0] -= fx * volume * (1.0 - damageOnBond);
-          fInternalOverlap[3 * neighborId + 1] -= fy * volume * (1.0 - damageOnBond);
-          fInternalOverlap[3 * neighborId + 2] -= fz * volume * (1.0 - damageOnBond);
+          fInternalOverlap[3 * p + 0] += fx;
+          fInternalOverlap[3 * p + 1] += fy;
+          fInternalOverlap[3 * p + 2] += fz;
+          fInternalOverlap[3 * neighborId + 0] -= fx;
+          fInternalOverlap[3 * neighborId + 1] -= fy;
+          fInternalOverlap[3 * neighborId + 2] -= fz;
+
+          if (X[0]== 1.5 & X[1]==-9){
+            bondId = p;
+            // std::cout << "X[0]: " << X[0] << std::endl;
+            // std::cout << "X[1]: " << X[1] << std::endl;
+            // std::cout << "neighborX[0]: " << neighborX[0] << std::endl;
+            // std::cout << "neighborX[1]: " << neighborX[1] << std::endl;
+            // std::cout << "Un1[DPN * n + 0]: " << (neighborY[0] - neighborX[0]) << std::endl;
+            // std::cout << "Un1[DPN * n + 1]: " << (neighborY[1] - neighborX[1]) << std::endl;
+            // std::cout << "fx: " << fx << std::endl;
+            // std::cout << "fy: " << fy << std::endl;
+          }
+          // fInternalOverlap[3 * neighborId + 0] -= fx * volume * (1.0 - damageOnBond);
+          // fInternalOverlap[3 * neighborId + 1] -= fy * volume * (1.0 - damageOnBond);
+          // fInternalOverlap[3 * neighborId + 2] -= fz * volume * (1.0 - damageOnBond);
           // std::cout << " fInternalOverlap[3 * p + 0]: " <<  fInternalOverlap[3 * p + 0] << std::endl;
           // std::cout << " fInternalOverlap[3 * p + 1]: " <<  fInternalOverlap[3 * p + 1] << std::endl;
           // std::cout << " fInternalOverlap[3 * p + 2]: " <<  fInternalOverlap[3 * p + 2] << std::endl;
           // std::cout << " fInternalOverlap[3 * neighborId + 0]: " <<  fInternalOverlap[3 * neighborId + 0] << std::endl;
           // std::cout << " fInternalOverlap[3 * neighborId + 1]: " <<  fInternalOverlap[3 * neighborId + 1] << std::endl;
           // std::cout << " fInternalOverlap[3 * neighborId + 2]: " <<  fInternalOverlap[3 * neighborId + 2] << std::endl;
-          if (neighborId == p){
-            std::cout << " p: " <<  p << std::endl;
-            std::cout << " neighborId: " <<  neighborId << std::endl;
-            std::cout << " fInternalOverlap[3 * p + 0]: " <<  fInternalOverlap[3 * p + 0] << std::endl;
-            std::cout << " fx: " <<  fx << std::endl;
-            std::cout << " neighborY[0]: " <<  neighborY[0] << std::endl;
-            std::cout << " Y[0]: " <<  Y[0] << std::endl;
-            std::cout << " currentBondLength: " <<  currentBondLength << std::endl;
-            std::cout << " neighborVolume: " <<  neighborVolume << std::endl;
-          }
+          // if (neighborId == p){
+          //   std::cout << " p: " <<  p << std::endl;
+          //   std::cout << " neighborId: " <<  neighborId << std::endl;
+          //   std::cout << " fInternalOverlap[3 * p + 0]: " <<  fInternalOverlap[3 * p + 0] << std::endl;
+          //   std::cout << " fx: " <<  fx << std::endl;
+          //   std::cout << " neighborY[0]: " <<  neighborY[0] << std::endl;
+          //   std::cout << " Y[0]: " <<  Y[0] << std::endl;
+          //   std::cout << " currentBondLength: " <<  currentBondLength << std::endl;
+          //   std::cout << " neighborVolume: " <<  neighborVolume << std::endl;
+          // }
         }
       }
       else
@@ -298,18 +303,13 @@ namespace MATERIAL_EVALUATION
           fInternalOverlap[3 * neighborId + 0] -= fx * volume;
           fInternalOverlap[3 * neighborId + 1] -= fy * volume;
           fInternalOverlap[3 * neighborId + 2] -= fz * volume;
-          if (neighborId == p){
-            std::cout << " p: " <<  p << std::endl;
-            std::cout << " neighborId: " <<  neighborId << std::endl;
-            std::cout << " fInternalOverlap[3 * p + 0]: " <<  fInternalOverlap[3 * p + 0] << std::endl;
-            std::cout << " fx: " <<  fx << std::endl;
-            std::cout << " neighborY[0]: " <<  neighborY[0] << std::endl;
-            std::cout << " Y[0]: " <<  Y[0] << std::endl;
-            std::cout << " currentBondLength: " <<  currentBondLength << std::endl;
-            std::cout << " neighborVolume: " <<  neighborVolume << std::endl;
-          }
+        
         }
       }
+    }
+    if(bondId!=0){
+      std::cout << "fInternalOverlap[3 * bondId + 0]: " << fInternalOverlap[3 * bondId + 0] << std::endl;
+      std::cout << "fInternalOverlap[3 * bondId + 1]: " << fInternalOverlap[3 * bondId + 1] << std::endl;
     }
   }
 
