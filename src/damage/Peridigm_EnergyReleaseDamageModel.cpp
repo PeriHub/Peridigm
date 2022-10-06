@@ -240,6 +240,7 @@ PeridigmNS::EnergyReleaseDamageModel::computeDamage(const double dt,
     double BulkModP1, BulkModP2;
     double ShearModP1, ShearModP2;
     double bondEnergy;
+    double m_pi = PeridigmNS::value_of_pi();
     
     //double thickness;
     //---------------------------
@@ -356,7 +357,7 @@ PeridigmNS::EnergyReleaseDamageModel::computeDamage(const double dt,
             avgHorizon = 0.5*(horizon[nodeId]+horizon[neighborID]);
             
             if(m_planeStrain or m_planeStress){ // m_Thickness is in the volume included (tbd to guarantee this)
-            //factor = 16.0 / 5.0 / weightedVol * sqrt(M_PI / 3.0 * pow(horizon,5)); // Simplified with Mathematica
+            //factor = 16.0 / 5.0 / weightedVol * sqrt(m_pi / 3.0 * pow(horizon,5)); // Simplified with Mathematica
                 quadhorizon =  3.0 /(m_Thickness * pow(horizon[neighborID],3) );
 				if (m_rot){
 					double rad = nodeInitialX[0]*nodeInitialX[0]/maxRad/maxRad;
@@ -365,11 +366,11 @@ PeridigmNS::EnergyReleaseDamageModel::computeDamage(const double dt,
 				}
             }
             else {
-                //yieldValue = 25.0 * yieldStress * yieldStress / 8 / M_PI / pow(horizon,5);
-                //factor = sqrt(75.0 / 4 / M_PI / pow(horizon,5));        // equation (51) MitchelJA_2011; 1/2 is not needed 
-                //factor = 15.0 / weightedVol * sqrt(4.0 / 75.0 * M_PI * pow(horizon,5));        // equation (51) MitchelJA_2011; 1/2 is not needed 
+                //yieldValue = 25.0 * yieldStress * yieldStress / 8 / m_pi / pow(horizon,5);
+                //factor = sqrt(75.0 / 4 / m_pi / pow(horizon,5));        // equation (51) MitchelJA_2011; 1/2 is not needed 
+                //factor = 15.0 / weightedVol * sqrt(4.0 / 75.0 * m_pi * pow(horizon,5));        // equation (51) MitchelJA_2011; 1/2 is not needed 
                 
-                quadhorizon =  8.0 /( M_PI * pow(avgHorizon, 4) );
+                quadhorizon =  8.0 /( m_pi * pow(avgHorizon, 4) );
             }
             
 

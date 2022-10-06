@@ -1302,7 +1302,7 @@ const double* bondDamage
   // placeholder for inclusion of bond damage
   //double bondDamage = 0.0;
 
-  const double pi = M_PI;
+  const double pi = PeridigmNS::value_of_pi();
   double firstPartOfConstant = 18.0*hourglassCoefficient*bulkModulus/pi;
   double constant;
 
@@ -1416,7 +1416,7 @@ const double* bondDamage
   // placeholder for inclusion of bond damage
   //double bondDamage = 0.0;
 
-  const double pi = M_PI;
+  const double pi = PeridigmNS::value_of_pi();
   double firstPartOfConstant = 18.0*hourglassCoefficient*bulkModulus/pi;
   double constant;
   double omega0 = 0.0;

@@ -69,7 +69,7 @@ namespace DIFFUSION {
     double nodeInitialPosition[3], initialDistance, quadWeight;
     double kernel, nodeTemperature, temperatureDifference, nodeFluxDivergence;//, neighborFluxDivergence;
 
-    const double pi = 3.1415; //::value_of_pi();
+    const double pi = PeridigmNS::value_of_pi();
 
     bondListIndex = 0;
     for(iID=0 ; iID<numOwnedPoints ; ++iID){
@@ -115,7 +115,7 @@ namespace DIFFUSION {
     double undeformedBondX[3], initialDistance;
     double kernel, nodeTemperature;
     const double *shapeTensorInv = shapeTensorInverse;
-    const double pi = 3.14159265359; //::value_of_pi();
+    const double pi = PeridigmNS::value_of_pi();
     std::vector<double> Hvector(3), Qvector(3), tempVector(3);
     double* H = &Hvector[0];
     double* q = &Qvector[0];
