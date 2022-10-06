@@ -266,7 +266,7 @@ void updateElasticPerfectlyPlasticCauchyStressNew
   ScalarT* triaxiality = stressTriaxiality;
   const double* flyingPointFlg = flyingPointFlag;
 
-  //ScalarT strainInc[9];
+  ScalarT strainInc[9];
   ScalarT deviatoricStrainInc[9];
   ScalarT deviatoricStressN[9];
   ScalarT deviatoricStressMagnitudeN;
@@ -290,18 +290,18 @@ void updateElasticPerfectlyPlasticCauchyStressNew
     if(*flyingPointFlg < 0.0){
 
       //strainInc = dt * rateOfDef
-      //for(int i = 0; i < 9; i++){
-      //  strainInc[i] = *(rateOfDef+i)*dt;
-      //  deviatoricStrainInc[i] = strainInc[i];
-      //}
+      for(int i = 0; i < 9; i++){
+       strainInc[i] = *(rateOfDef+i)*dt;
+       deviatoricStrainInc[i] = strainInc[i];
+      }
       //
       ////dilatation
       //dilatationInc = strainInc[0] + strainInc[4] + strainInc[8];
       //
       ////deviatoric strain
-      //deviatoricStrainInc[0] -= dilatationInc/3.0;
-      //deviatoricStrainInc[4] -= dilatationInc/3.0;
-      //deviatoricStrainInc[8] -= dilatationInc/3.0;
+      // deviatoricStrainInc[0] -= dilatationInc/3.0;
+      // deviatoricStrainInc[4] -= dilatationInc/3.0;
+      // deviatoricStrainInc[8] -= dilatationInc/3.0;
       //
       ////Compute an elastic ``trail stress''
       //for(int i = 0; i < 9; i++){

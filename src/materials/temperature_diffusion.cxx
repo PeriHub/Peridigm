@@ -112,8 +112,8 @@ namespace DIFFUSION {
 
     int neighborhoodListIndex(0);
     int numNeighbors, neighborID(0), iID, iNID;
-    double undeformedBondX[3], initialDistance;
-    double kernel, nodeTemperature;
+    double undeformedBondX[3];//, initialDistance;
+    double nodeTemperature; //kernel, 
     const double *shapeTensorInv = shapeTensorInverse;
     const double pi = PeridigmNS::value_of_pi();
     std::vector<double> Hvector(3), Qvector(3), tempVector(3);
@@ -134,7 +134,7 @@ namespace DIFFUSION {
       for(iNID=0 ; iNID<numNeighbors ; ++iNID, bondDamage++){
        
         neighborID = neighborhoodList[neighborhoodListIndex++];
-        initialDistance = MATRICES::distance(undeformedBondX[0], undeformedBondX[1], undeformedBondX[2], modelCoord[neighborID*3], modelCoord[neighborID*3+1], modelCoord[neighborID*3+2]);
+        // initialDistance = MATRICES::distance(undeformedBondX[0], undeformedBondX[1], undeformedBondX[2], modelCoord[neighborID*3], modelCoord[neighborID*3+1], modelCoord[neighborID*3+2]);
         deltaT = (temperature[neighborID] - nodeTemperature) * (1-*bondDamage);
         //for(int i=0 ; i<3 ; ++i)kernel[i] = 6.0*kappa[i]/(pi*horizon[iID]*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
         if (twoD)  factor = 6/(pi*horizon[iID]*horizon[iID]*horizon[iID]);
