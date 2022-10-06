@@ -57,7 +57,7 @@ using namespace std;
 
 PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::ParameterList &params)
     : Material(params),
-      m_density(0.0), m_hourglassCoefficient(0.0),m_C(0.0),
+      m_density(0.0), m_C(0.0), m_hourglassCoefficient(0.0),
       m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
       m_horizonFieldId(-1), m_volumeFieldId(-1),
       m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_velocitiesFieldId(-1),
@@ -897,7 +897,7 @@ void PeridigmNS::CorrespondenceMaterial::computeJacobianFiniteDifference(const d
 
   PeridigmNS::DegreesOfFreedomManager &dofManager = PeridigmNS::DegreesOfFreedomManager::self();
   bool solveForDisplacement = dofManager.displacementTreatedAsUnknown();
-  bool solveForTemperature = dofManager.temperatureTreatedAsUnknown();
+  // bool solveForTemperature = dofManager.temperatureTreatedAsUnknown();
   int numDof = dofManager.totalNumberOfDegreesOfFreedom();
   int numDisplacementDof = dofManager.numberOfDisplacementDegreesOfFreedom();
   // int numTemperatureDof = dofManager.numberOfTemperatureDegreesOfFreedom();
