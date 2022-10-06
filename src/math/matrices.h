@@ -49,6 +49,7 @@
 #ifndef MATRICES_H
 #define MATRICES_H
 
+#include "Peridigm_Constants.hpp"
 
 namespace MATRICES {
 

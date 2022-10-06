@@ -680,6 +680,7 @@ namespace PeridigmNS {
     int volumeFieldId;
     int modelCoordinatesFieldId;
     int anglesFieldId;
+    int orientationFieldId;
     int nodeTypeFieldId;
     int coordinatesFieldId;
     int displacementFieldId;

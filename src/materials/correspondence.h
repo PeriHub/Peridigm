@@ -271,6 +271,13 @@ const bool twoD,
 double* heatFlowState
 );
 
+void getOrientations
+  (
+const int numOwnedPoints,
+const double* angles,
+double* orientations
+);
+
 template<typename ScalarT>
 void computeForcesAndStresses
   (

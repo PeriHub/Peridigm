@@ -213,6 +213,7 @@ namespace PeridigmNS
     int m_thermalFlowStateFieldId;
     int m_type;
     int m_modelAnglesId;
+    int m_modelOrientationId;
     int m_deformationGradientNonIncFieldId;
     bool m_plast;
     bool m_adaptHourGlass;
