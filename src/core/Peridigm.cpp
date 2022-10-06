@@ -1728,7 +1728,6 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     // V^{n+1/2} = V^{n} + (dt/2)*A^{n}
     // blas.AXPY(const int N,length const double ALPHA, const double *X, double *Y, const int INCX=1, const int INCY=1) const
     blas.AXPY(length, dt2, aPtr, vPtr, 1, 1);
-    //if (heatFlux) blas.AXPY(length / 3, dt, deltaTPtr, tempPtr, 1, 1);
     // Set the velocities for dof with kinematic boundary conditions.
     // This will propagate through the Verlet integrator and result in the proper
     // displacement boundary conditions on y and consistent values for v and u.
