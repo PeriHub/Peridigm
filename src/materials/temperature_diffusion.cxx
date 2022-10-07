@@ -70,7 +70,7 @@ namespace DIFFUSION {
     double nodeInitialPosition[3], initialDistance, quadWeight;
     double kernel, nodeTemperature, temperatureDifference, nodeFluxDivergence;//, neighborFluxDivergence;
 
-    const double pi = 3.1415; //::value_of_pi();
+    const double pi = PeridigmNS::value_of_pi();
 
     bondListIndex = 0;
     for(iID=0 ; iID<numOwnedPoints ; ++iID){

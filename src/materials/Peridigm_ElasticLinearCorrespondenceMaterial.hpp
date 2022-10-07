@@ -87,10 +87,10 @@ namespace PeridigmNS
     int m_type;
     int m_stabilizationType;
     int m_modelAnglesId;
-    int m_temperatureFieldId;
     int m_deformationGradientFieldId;
     int m_cauchyStressFieldId;
     int m_strain;
+    int m_temperatureFieldId;
     bool m_incremental;
     bool m_hencky;
     bool m_applyThermalStrains;

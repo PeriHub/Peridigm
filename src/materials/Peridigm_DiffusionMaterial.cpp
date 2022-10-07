@@ -58,10 +58,10 @@
 
 PeridigmNS::DiffusionMaterial::DiffusionMaterial(const Teuchos::ParameterList& params)
   : Material(params),
-    m_horizonFieldId(0.0),
     m_coefficient(0.0),
     m_useImprovedQuadrature(false),
     m_volumeFieldId(-1),
+    m_horizonFieldId(0.0),
     m_modelCoordinatesFieldId(-1),
     m_temperatureFieldId(-1),
     m_fluxDivergenceFieldId(-1),

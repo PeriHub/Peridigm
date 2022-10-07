@@ -165,7 +165,7 @@ m_hourglassStiffId(-1) {
         //std::cout<<"WRN: Method 2D Plane Stress --> not fully implemented yet"<<std::endl;
     }
    
-    m_pi = M_PI;
+    m_pi = PeridigmNS::value_of_pi();
 
     if (params.isParameter("Thermal Expansion Coefficient")) {
         m_alpha = params.get<double>("Thermal Expansion Coefficient");

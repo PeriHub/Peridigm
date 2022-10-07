@@ -117,7 +117,8 @@ enum Type {
   BOND_ENERGY,
   HORIZON,
   DETACHED_NODES,
-  LOCAL_ANGLES
+  LOCAL_ANGLES,
+  ORIENTATIONs
 };
 
 enum Length {

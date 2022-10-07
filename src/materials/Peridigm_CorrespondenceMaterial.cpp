@@ -57,7 +57,7 @@ using namespace std;
 
 PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::ParameterList &params)
     : Material(params),
-      m_density(0.0), m_hourglassCoefficient(0.0),m_C(0.0),
+      m_density(0.0), m_C(0.0), m_hourglassCoefficient(0.0),
       m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
       m_horizonFieldId(-1), m_volumeFieldId(-1),
       m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_velocitiesFieldId(-1),
@@ -167,6 +167,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_volumeFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume");
   m_modelCoordinatesFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::VECTOR, PeridigmField::CONSTANT, "Model_Coordinates");
   m_modelAnglesId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::VECTOR, PeridigmField::CONSTANT, "Local_Angles");
+  m_modelOrientationId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::VECTOR, PeridigmField::CONSTANT, "Orientations");
   m_coordinatesFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Coordinates");
   m_velocitiesFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Velocity");
   m_forceDensityFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Force_Density");
@@ -219,6 +220,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_fieldIds.push_back(m_detachedNodesFieldId);
   m_fieldIds.push_back(m_hourglassStiffId);
   m_fieldIds.push_back(m_modelAnglesId);
+  m_fieldIds.push_back(m_modelOrientationId);
 
 }
 
@@ -306,6 +308,15 @@ void PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   shapeTensorErrorMessage +=
       "****         Note that all nodes must have a minimum of three neighbors.  Is the horizon too small?\n";
   TEUCHOS_TEST_FOR_TERMINATION(shapeTensorReturnCode != 0, shapeTensorErrorMessage);
+
+
+  double *pointAngles;
+  double *pointOrientations;
+  dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&pointAngles);
+  dataManager.getData(m_modelOrientationId, PeridigmField::STEP_NONE)->ExtractView(&pointOrientations);
+
+  CORRESPONDENCE::getOrientations(numOwnedPoints,pointAngles,pointOrientations);
+
 }
 
 void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
@@ -886,7 +897,7 @@ void PeridigmNS::CorrespondenceMaterial::computeJacobianFiniteDifference(const d
 
   PeridigmNS::DegreesOfFreedomManager &dofManager = PeridigmNS::DegreesOfFreedomManager::self();
   bool solveForDisplacement = dofManager.displacementTreatedAsUnknown();
-  bool solveForTemperature = dofManager.temperatureTreatedAsUnknown();
+  // bool solveForTemperature = dofManager.temperatureTreatedAsUnknown();
   int numDof = dofManager.totalNumberOfDegreesOfFreedom();
   int numDisplacementDof = dofManager.numberOfDisplacementDegreesOfFreedom();
   // int numTemperatureDof = dofManager.numberOfTemperatureDegreesOfFreedom();

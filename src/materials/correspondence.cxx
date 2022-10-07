@@ -959,6 +959,40 @@ double* detachedNodes
   return returnCode;
 }
 
+void getOrientations
+  (
+    const int numOwnedPoints,
+    const double* angles,
+    double* orientations
+    )
+{
+  const double *pointAnglePtr;
+  double *pointOrientationPtr;
+  const double* pointAngles = angles;
+  double* pointOrientation = orientations;
+
+  std::vector<double> rotMatVector(9);
+  double* rotMat = &rotMatVector[0];
+
+  for(int iID=0 ; iID<numOwnedPoints ; ++iID){
+
+    pointAnglePtr = pointAngles + 3*iID;
+    pointOrientationPtr = pointOrientation + 3*iID;
+
+    double alpha[3];
+
+    alpha[0] = *(pointAnglePtr);
+    alpha[1] = *(pointAnglePtr+1);
+    alpha[2] = *(pointAnglePtr+2);
+
+    MATRICES::createRotationMatrix(alpha, rotMat);
+
+    *(pointOrientationPtr) = rotMat[0];
+    *(pointOrientationPtr+1) = rotMat[3];
+    *(pointOrientationPtr+2) = rotMat[6];
+    
+  }
+}
 
 template void computeForcesAndStresses<Sacado::Fad::DFad<double> >
   (
@@ -1302,7 +1336,7 @@ const double* bondDamage
   // placeholder for inclusion of bond damage
   //double bondDamage = 0.0;
 
-  const double pi = M_PI;
+  const double pi = PeridigmNS::value_of_pi();
   double firstPartOfConstant = 18.0*hourglassCoefficient*bulkModulus/pi;
   double constant;
 
@@ -1416,7 +1450,7 @@ const double* bondDamage
   // placeholder for inclusion of bond damage
   //double bondDamage = 0.0;
 
-  const double pi = M_PI;
+  const double pi = PeridigmNS::value_of_pi();
   double firstPartOfConstant = 18.0*hourglassCoefficient*bulkModulus/pi;
   double constant;
   double omega0 = 0.0;

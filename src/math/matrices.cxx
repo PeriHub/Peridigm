@@ -368,7 +368,7 @@ void createRotationMatrix
 const double* alpha,
 ScalarT* rotMat
 ){
-    const double PI  = 3.141592653589793238463;
+    const double PI  = PeridigmNS::value_of_pi();
     double rad[3];
     std::vector<ScalarT> rotMatXVec(9);
     ScalarT* rotMatX = &rotMatXVec[0];

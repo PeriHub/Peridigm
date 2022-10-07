@@ -3,7 +3,7 @@
 CWD=$(pwd)
 echo $CWD
 
-endings=(*.g *.g.2.* *.g.3.* *.g.4.* *.post *.blot *.e *.e.4.*)
+endings=("*.g" "*.g.2.*" "*.g.3.*" "*.g.4.*" "*.post" "*.blot" "*.e" "*.e.4.*")
 
 for ending in "${endings[@]}"
 do 

@@ -19,7 +19,8 @@ build_job:
     - docker run ${CI_REGISTRY_PATH}peridigm_image /opt/cmake/bin/ctest -T Test --test-dir /Peridigm/build || true
     - CONTAINERNAME=$(docker ps -a --format "{{.Names}}")
     - docker cp $CONTAINERNAME:/Peridigm/build/Testing Testing
-    - if [ -f Testing/Temporary/LastTestsFailed.log ]; then  exit 1; else docker push ${CI_REGISTRY_PATH}peridigm_image; fi
+    - line=$(head -n 1 Testing/TAG)
+    - if [ -f Testing/Temporary/LastTestsFailed_$line.log ]; then  exit 1; else docker push ${CI_REGISTRY_PATH}peridigm_image; fi
   artifacts:
     paths:
       - Testing
