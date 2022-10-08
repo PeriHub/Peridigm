@@ -1749,13 +1749,13 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       vPtr[i] = vPtr[i] * (1 - numericalDamping);
       yPtr[i] = xPtr[i] + uPtr[i] + dt*vPtr[i] ;
     }
-    if (heatFlux)
-    {
-      for(int i=0 ; i<temperature->MyLength() ; ++i){
-        tempPtr[i] = temp_previousPtr[i] + deltaTPtr[i]; // happens in the determination of deltaT
-      }
-
-    }
+    //if (heatFlux)
+    //{
+    //  for(int i=0 ; i<temperature->MyLength() ; ++i){
+    //    tempPtr[i] = temp_previousPtr[i] + deltaTPtr[i]; // happens in the determination of deltaT -> hier wird die Randbedingung eingestellt
+    //  }
+//
+    //}
     // U^{n+1} = U^{n} + (dt)*V^{n+1/2}
     // blas.AXPY(const int N, const double ALPHA, const double *X, double *Y, const int INCX=1, const int INCY=1) const
     blas.AXPY(length, dt, vPtr, uPtr, 1, 1);
@@ -1998,8 +1998,9 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     if (heatFlux){
       for(int i=0 ; i<temperature->MyLength() ; ++i){
         //(*deltaTemperature)[i] = (*externalHeat)[i];
-        if ((*heatCapacity)[i] == 0)(*deltaTemperature)[i] = 0.0;
-        else (*deltaTemperature)[i] = -(*fluxDivergence)[i] * dt / ((*density)[i] * (*heatCapacity)[i]); 
+        if ((*heatCapacity)[i] == 0)deltaTPtr[i] = 0.0;
+        else deltaTPtr[i] = -(*fluxDivergence)[i] * dt / ((*density)[i] * (*heatCapacity)[i]); 
+        tempPtr[i] = temp_previousPtr[i] + deltaTPtr[i];
       }
     }
     // V^{n+1}   = V^{n+1/2} + (dt/2)*A^{n+1}

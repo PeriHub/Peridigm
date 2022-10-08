@@ -168,7 +168,7 @@ namespace DIFFUSION {
           
         }
 
-        for (int i=0 ; i<3 ; ++i)  heatFlowState[iID] -= temp[i] * q[i] * volume[neighborID]; // qj * temp -> Eq (7)
+        for (int i=0 ; i<3 ; ++i)  heatFlowState[iID] += temp[i] * q[i] * volume[neighborID]; // qj * temp -> Eq (7)
         for (int i=0 ; i<3 ; ++i)  heatFlowState[neighborID] += temp[i] * q[i] * volume[iID];
       }
       
