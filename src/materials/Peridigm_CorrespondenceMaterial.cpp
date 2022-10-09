@@ -152,10 +152,10 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   if (params.isParameter("Apply Thermal Flow")){
     m_applyThermalFlow = params.get<bool>("Apply Thermal Flow");
     m_C = params.get<double>( "Heat Capacity");
-    kappa[0] = params.get<double>("Coefficient");
-    if (params.isParameter("Coefficient 22"))kappa[1] = params.get<double>("Coefficient 22");
+    kappa[0] = params.get<double>("Thermal Conductivity");
+    if (params.isParameter("Thermal Conductivity 22"))kappa[1] = params.get<double>("Thermal Conductivity 22");
     else kappa[1] = kappa[0];
-    if (params.isParameter("Coefficient 33"))kappa[2] = params.get<double>("Coefficient 33");
+    if (params.isParameter("Thermal Conductivity 33"))kappa[2] = params.get<double>("Thermal Conductivity 33");
     else kappa[2] = kappa[0];
   }
   
