@@ -1659,7 +1659,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
           uPtr[i] = u_previousPtr[i];
           vPtr[i] = v_previousPtr[i];
         }
-      if (heatFlux){
+      if (heatFlux){ 
         for(int i=0 ; i<temperature->MyLength() ; ++i){
           tempPtr[i] = temp_previousPtr[i];  
         }
@@ -1688,7 +1688,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
           u_previousPtr[i] = uPtr[i];
           v_previousPtr[i] = vPtr[i];
         }
-         if (heatFlux){
+        if (heatFlux){ 
           for(int i=0 ; i<temperature->MyLength() ; ++i){
             temp_previousPtr[i] = tempPtr[i]; 
           }
@@ -1732,6 +1732,12 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     // Set the velocities for dof with kinematic boundary conditions.
     // This will propagate through the Verlet integrator and result in the proper
     // displacement boundary conditions on y and consistent values for v and u.
+    if (heatFlux)
+    {
+      for(int i=0 ; i<temperature->MyLength() ; ++i){
+        tempPtr[i] = temp_previousPtr[i] + deltaTPtr[i]; // happens in the determination of deltaT -> hier wird die Randbedingung eingestellt
+      }
+    }
     PeridigmNS::Timer::self().startTimer("Apply Kinematic B.C.");
     boundaryAndInitialConditionManager->applyBoundaryConditions(timeCurrent, timePrevious);
     PeridigmNS::Timer::self().stopTimer("Apply Kinematic B.C.");
@@ -1749,13 +1755,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       vPtr[i] = vPtr[i] * (1 - numericalDamping);
       yPtr[i] = xPtr[i] + uPtr[i] + dt*vPtr[i] ;
     }
-    //if (heatFlux)
-    //{
-    //  for(int i=0 ; i<temperature->MyLength() ; ++i){
-    //    tempPtr[i] = temp_previousPtr[i] + deltaTPtr[i]; // happens in the determination of deltaT -> hier wird die Randbedingung eingestellt
-    //  }
-//
-    //}
+
     // U^{n+1} = U^{n} + (dt)*V^{n+1/2}
     // blas.AXPY(const int N, const double ALPHA, const double *X, double *Y, const int INCX=1, const int INCY=1) const
     blas.AXPY(length, dt, vPtr, uPtr, 1, 1);
@@ -2000,7 +2000,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         //(*deltaTemperature)[i] = (*externalHeat)[i];
         if ((*heatCapacity)[i] == 0)deltaTPtr[i] = 0.0;
         else deltaTPtr[i] = -(*fluxDivergence)[i] * dt / ((*density)[i] * (*heatCapacity)[i]); 
-        tempPtr[i] = temp_previousPtr[i] + deltaTPtr[i];
+        //tempPtr[i] = temp_previousPtr[i] + (1-numericalDamping) * deltaTPtr[i];
       }
     }
     // V^{n+1}   = V^{n+1/2} + (dt/2)*A^{n+1}
