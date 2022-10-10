@@ -456,7 +456,12 @@ bool PeridigmNS::Material::getThermalExpansionCoefficient(const Teuchos::Paramet
       m_alpha[0][0] = params.get<double>("Thermal Expansion Coefficient");
       m_alpha[1][1] = m_alpha[0][0];
       m_alpha[2][2] = m_alpha[0][0];
-
+      m_alpha[1][0] = 0.0;
+      m_alpha[1][2] = 0.0;
+      m_alpha[2][0] = 0.0;
+      m_alpha[2][1] = 0.0;
+      m_alpha[0][1] = 0.0;
+      m_alpha[0][2] = 0.0; 
       if (params.isParameter("Thermal Expansion Coefficient Y"))
         m_alpha[1][1] = params.get<double>("Thermal Expansion Coefficient Y");
       if (params.isParameter("Thermal Expansion Coefficient Z"))

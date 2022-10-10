@@ -2340,15 +2340,15 @@ void addTemperatureStrain
 )
 {
 
-  *(strain)   += alpha[0][0] * temperature;  
-  *(strain+1) += alpha[0][1] * temperature;
-  *(strain+2) += alpha[0][2] * temperature;
-  *(strain+3) += alpha[1][0] * temperature;
-  *(strain+4) += alpha[1][1] * temperature;
-  *(strain+5) += alpha[1][2] * temperature;
-  *(strain+6) += alpha[2][0] * temperature;
-  *(strain+7) += alpha[2][1] * temperature;
-  *(strain+8) += alpha[2][2] * temperature;
+  *(strain)   -= alpha[0][0] * temperature;  
+  *(strain+1) -= alpha[0][1] * temperature;
+  *(strain+2) -= alpha[0][2] * temperature;
+  *(strain+3) -= alpha[1][0] * temperature;
+  *(strain+4) -= alpha[1][1] * temperature;
+  *(strain+5) -= alpha[1][2] * temperature;
+  *(strain+6) -= alpha[2][0] * temperature;
+  *(strain+7) -= alpha[2][1] * temperature;
+  *(strain+8) -= alpha[2][2] * temperature;
 
 }
 
