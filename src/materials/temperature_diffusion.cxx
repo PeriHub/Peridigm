@@ -124,7 +124,6 @@ namespace DIFFUSION {
     double* Xp = &XpVector[0];
     double* nablaT = &nablaVector[0];
     double tempState = 0.0; //Eq. (2)
-    double factor;
     double temp[3];
     for(iID=0 ; iID<numOwnedPoints ; ++iID, KInv+=9){
       numNeighbors = neighborhoodList[neighborhoodListIndex++];
@@ -134,9 +133,6 @@ namespace DIFFUSION {
         H[i] = 0.0;
         Xp[i] = modelCoord[3*iID+i];
       }
-      if (twoD)  factor = 6.0 / (M_PI * horizon[iID] * horizon[iID] * horizon[iID]);
-      else factor = 6.0 / (M_PI * horizon[iID] * horizon[iID] * horizon[iID] * horizon[iID]);   
-      factor = 1;
 
       for(iNID=0 ; iNID<numNeighbors ; ++iNID, bondDamage++){
         neighborID = neighborhoodList[neighborhoodListIndex++];
@@ -154,7 +150,7 @@ namespace DIFFUSION {
           //std::cout<< nablaT[i]<<std::endl;
         }
       }
-      for (int i=0 ; i<3 ; ++i) q[i] = kappa[i] * factor * nablaT[i]; // heat state
+      for (int i=0 ; i<3 ; ++i) q[i] = kappa[i] * nablaT[i]; // heat state
 
       for(iNID=0 ; iNID<numNeighbors ; ++iNID){
         neighborID = neighborhoodList[secondNeighborhoodListIndex++];
