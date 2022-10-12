@@ -1750,7 +1750,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     // Y^{n+1} = X_{o} + U^{n} + (dt)*V^{n+1/2}
     // \todo Replace with blas call
     // Simple damping
-    //Chen et al. 2018 Peridynamics-Based Fracture Animation for Elastoplastic Solid
+    // Chen et al. 2018 Peridynamics-Based Fracture Animation for Elastoplastic Solid
     for(int i=0 ; i<y->MyLength() ; ++i){
       vPtr[i] = vPtr[i] * (1 - numericalDamping);
       yPtr[i] = xPtr[i] + uPtr[i] + dt*vPtr[i] ;
