@@ -64,6 +64,7 @@ PeridigmNS::ModelEvaluator::evalDamageModel(Teuchos::RCP<Workset> workset) const
 
   for(blockIt = workset->blocks->begin() ; blockIt != workset->blocks->end() ; blockIt++){
 
+    
     Teuchos::RCP<const PeridigmNS::DamageModel> damageModel = blockIt->getDamageModel();
     if(!damageModel.is_null() && blockIt->getDamageEnabled()){
       Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData = blockIt->getNeighborhoodData();
@@ -79,6 +80,22 @@ PeridigmNS::ModelEvaluator::evalDamageModel(Teuchos::RCP<Workset> workset) const
                                  neighborhoodList,
                                  *dataManager);
       PeridigmNS::Timer::self().stopTimer("Evaluate Damage Model:Compute Damage");
+    }
+    Teuchos::RCP<const PeridigmNS::AdditiveModel> additiveModel = blockIt->getAdditiveModel();
+    if(!additiveModel.is_null() && blockIt->getDamageEnabled()){
+      Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData = blockIt->getNeighborhoodData();
+      const int numOwnedPoints = neighborhoodData->NumOwnedPoints();
+      const int* ownedIDs = neighborhoodData->OwnedIDs();
+      const int* neighborhoodList = neighborhoodData->NeighborhoodList();
+      Teuchos::RCP<PeridigmNS::DataManager> dataManager = blockIt->getDataManager();
+      
+      PeridigmNS::Timer::self().startTimer("Evaluate Additive Model:Compute Additive Points");
+      additiveModel->computeAdditive(dt, 
+                                    numOwnedPoints,
+                                    ownedIDs,
+                                    neighborhoodList,
+                                    *dataManager);
+      PeridigmNS::Timer::self().stopTimer("Evaluate Additive Model:Compute Additive Points");
     }
   }
 }

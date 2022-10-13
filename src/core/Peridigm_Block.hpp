@@ -51,6 +51,7 @@
 #include "Peridigm_BlockBase.hpp"
 #include "Peridigm_Material.hpp"
 #include "Peridigm_DamageModel.hpp"
+#include "Peridigm_AdditiveModel.hpp"
 
 namespace PeridigmNS {
 
@@ -99,6 +100,15 @@ namespace PeridigmNS {
       damageModel = damageModel_;
     }
 
+    //! Get the additive model
+    Teuchos::RCP<const PeridigmNS::AdditiveModel> getAdditiveModel(){
+      return additiveModel;
+    }
+
+    //! Set the additive model
+    void setAdditiveModel(Teuchos::RCP<PeridigmNS::AdditiveModel> additiveModel_){
+      additiveModel = additiveModel_;
+    }
     //! Get the material name
     std::string getMaterialName(){
       return blockParams.get<std::string>("Material");
@@ -146,6 +156,10 @@ namespace PeridigmNS {
 
     //! The damage model
     Teuchos::RCP<PeridigmNS::DamageModel> damageModel;
+
+    //! The additive model
+    Teuchos::RCP<PeridigmNS::AdditiveModel> additiveModel;
+    
   };
 
   class DataManagerSynchronizer {

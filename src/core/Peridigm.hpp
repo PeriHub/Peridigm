@@ -82,6 +82,7 @@
 #include "Peridigm_Memstat.hpp"
 #include "Peridigm_Material.hpp"
 #include "Peridigm_DamageModel.hpp"
+#include "Peridigm_AdditiveModel.hpp"
 #include "Peridigm_ContactModel.hpp"
 
 namespace PeridigmNS {
@@ -437,7 +438,8 @@ namespace PeridigmNS {
 
     //! Damage models
     std::map< std::string, Teuchos::RCP<const PeridigmNS::DamageModel> > damageModels;
-
+   //! Damage models
+    std::map< std::string, Teuchos::RCP<const PeridigmNS::AdditiveModel> > additiveModels;
     Teuchos::RCP< PeridigmNS::UserDefinedTimeDependentCriticalStretchDamageModel > CSDamageModel;
 
     Teuchos::RCP<const PeridigmNS::ContactModel> contactModel;
