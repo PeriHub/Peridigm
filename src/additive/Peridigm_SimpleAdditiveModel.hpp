@@ -1,4 +1,4 @@
-/*! \file Peridigm_CriticalStretchDamageModel.hpp */
+/*! \file Peridigm_SimpleAdditiveModel.hpp */
 
 //@HEADER
 // ************************************************************************
@@ -45,10 +45,10 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef PERIDIGM_CRITICALSTRETCHDAMAGEMODEL_HPP
-#define PERIDIGM_CRITICALSTRETCHDAMAGEMODEL_HPP
+#ifndef PERIDIGM_SIMPLEADDITIVEMODEL_HPP
+#define PERIDIGM_SIMPLEADDITIVEMODEL_HPP
 
-#include "Peridigm_DamageModel.hpp"
+#include "Peridigm_AdditiveModel.hpp"
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Epetra_Vector.h>
@@ -57,18 +57,18 @@
 namespace PeridigmNS {
 
   //! Base class defining the Peridigm damage model interface.
-  class CriticalStretchDamageModel : public DamageModel{
+  class SimpleAdditiveModel : public AdditiveModel{
 
   public:
 	
     //! Standard constructor.
-    CriticalStretchDamageModel(const Teuchos::ParameterList& params);
+    SimpleAdditiveModel(const Teuchos::ParameterList& params);
 
     //! Destructor.
-    virtual ~CriticalStretchDamageModel();
+    virtual ~SimpleAdditiveModel();
 
     //! Return name of the model.
-    virtual std::string Name() const { return("Critical Stretch"); }
+    virtual std::string Name() const { return("Simple Additive"); }
 
     //! Returns a vector of field IDs corresponding to the variables associated with the model.
     virtual std::vector<int> FieldIds() const { return m_fieldIds; }
@@ -83,7 +83,7 @@ namespace PeridigmNS {
 
     //! Evaluate the damage
     virtual void
-    computeAddtive(const double dt,
+    computeAdditive(const double dt,
                   const int numOwnedPoints,
                   const int* ownedIDs,
                   const int* neighborhoodList,
@@ -101,8 +101,6 @@ namespace PeridigmNS {
 	  return ( sqrt( (a1-b1)*(a1-b1) + (a2-b2)*(a2-b2) + (a3-b3)*(a3-b3) ) );
 	}
 
-    double m_criticalStretch;
-    double m_alpha;
     bool m_applyThermalStrains;
 
     // field ids for all relevant data
@@ -110,15 +108,15 @@ namespace PeridigmNS {
     int m_volumeFieldId;
     int m_modelCoordinatesFieldId;
     int m_coordinatesFieldId;
-    int m_damageFieldId;
+    int m_detachedNodesFieldId;
     int m_bondDamageFieldId;
     int m_deltaTemperatureFieldId;
-    int m_leftStretchTensorFieldId;
-    int m_shapeTensorInverseFieldId;
-    int m_deformationGradientFieldId;
+    
+    
+    
 
   };
 
 }
 
-#endif // PERIDIGM_CRITICALSTRETCHDAMAGEMODEL_HPP
+#endif // PERIDIGM_SIMPLEADDITIVEMODEL_HPP

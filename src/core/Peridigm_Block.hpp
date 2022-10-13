@@ -130,7 +130,17 @@ namespace PeridigmNS {
         return true;
       }
     }
-
+    //! Get if additive is enabled
+    bool getAdditiveEnabled(){
+      if (blockParams.isParameter("Additive Enabled"))
+      {
+        return blockParams.get<bool>("Additive Enabled");
+      }
+      else
+      {
+        return true;
+      }
+    }
     //! Get the block interfac id
     std::string getBlockInterfaceID(){
       if (blockParams.isParameter("Interface"))

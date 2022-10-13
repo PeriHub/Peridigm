@@ -415,8 +415,8 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   // Additive models
   Teuchos::ParameterList additiveModelParams;
   if(peridigmParams->isSublist("Additive Models"))
-    damageModelParams = peridigmParams->sublist("Additive Models");
-  DamageModelFactory additiveModelFactory;
+    additiveModelParams = peridigmParams->sublist("Additive Models");
+  AdditiveModelFactory additiveModelFactory;
   // Associate material models and damage models with blocks
   for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
 

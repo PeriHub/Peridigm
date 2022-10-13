@@ -63,7 +63,7 @@ PeridigmNS::AdditiveModelFactory::create(const Teuchos::ParameterList& additiveM
   const string& additiveModelName = additiveModelParams.get<string>("Additive Model");
 
   if(additiveModelName == "Simple Additive")
-    additiveModel = Teuchos::rcp( new CriticalStretchadditiveModel(additiveModelParams) );
+    additiveModel = Teuchos::rcp( new SimpleAdditiveModel(additiveModelParams) );
    else {
     string invalidAdditiveModel("\n**** Unrecognized additive model type: ");
     invalidAdditiveModel += additiveModelName;

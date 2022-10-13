@@ -56,7 +56,7 @@
 namespace PeridigmNS {
 
   /*!
-   * \brief A factory class to instantiate DamageModel objects
+   * \brief A factory class to instantiate additve objects
    */
   class AdditiveModelFactory {
   public:
