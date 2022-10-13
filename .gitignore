@@ -29,3 +29,5 @@ src/damage/unit_test/Testing/Temporary/LastTest.log
 .gitignore
 src/materials/unit_test/Testing/Temporary/CTestCostData.txt
 src/materials/unit_test/Testing/Temporary/LastTest.log
+src/additive/unit_test/Testing/Temporary/CTestCostData.txt
+src/additive/unit_test/Testing/Temporary/LastTest.log
