@@ -73,6 +73,7 @@
 #include "Peridigm_Timer.hpp"
 #include "Peridigm_MaterialFactory.hpp"
 #include "Peridigm_DamageModelFactory.hpp"
+#include "Peridigm_AdditiveModelFactory.hpp"
 #include "Peridigm_InterfaceAwareDamageModel.hpp"
 #include "Peridigm_UserDefinedTimeDependentCriticalStretchDamageModel.hpp"
 #include "Peridigm_ShortRangeForceContactModel.hpp"
@@ -411,7 +412,11 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   if(peridigmParams->isSublist("Damage Models"))
     damageModelParams = peridigmParams->sublist("Damage Models");
   DamageModelFactory damageModelFactory;
-
+  // Additive models
+  Teuchos::ParameterList additiveModelParams;
+  if(peridigmParams->isSublist("Additive Models"))
+    damageModelParams = peridigmParams->sublist("Additive Models");
+  DamageModelFactory additiveModelFactory;
   // Associate material models and damage models with blocks
   for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
 
