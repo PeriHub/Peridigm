@@ -3,104 +3,111 @@
 #
 
 # Glob header files in subdirectories
-file (GLOB computeHEADERS
+file(GLOB computeHEADERS
   "${COMPUTE_DIR}/*.hpp"
 )
-file (GLOB contactHEADERS
+file(GLOB contactHEADERS
   "${CONTACT_DIR}/*.hpp"
 )
-file (GLOB coreHEADERS
+file(GLOB coreHEADERS
   "${CORE_DIR}/*.hpp"
 )
-file (GLOB discretizationHEADERS
+file(GLOB discretizationHEADERS
   "${DISCRETIZATION_DIR}/*.hpp"
 )
-file (GLOB damageHEADERS
+file(GLOB damageHEADERS
   "${DAMAGE_DIR}/*.hpp"
 )
-file (GLOB apiHEADERS
+file(GLOB additiveHEADERS
+  "${ADDITIVE_DIR}/*.hpp"
+)
+file(GLOB apiHEADERS
   "${API_DIR}/*.hpp"
 )
-file (GLOB ioHEADERS
+file(GLOB ioHEADERS
   "${IO_DIR}/*.hpp"
 )
-file (GLOB mathHEADERS
+file(GLOB mathHEADERS
   "${MATH_DIR}/*.h"
 )
-file (GLOB materialsHEADERS
+file(GLOB materialsHEADERS
   "${MATERIALS_DIR}/*.hpp"
 )
-file (GLOB FEMHEADERS
+file(GLOB FEMHEADERS
   "${FEM_DIR}/*.hpp"
 )
-file (GLOB quickGridHEADERS
+file(GLOB quickGridHEADERS
   "${QUICK_GRID_DIR}/*.h"
 )
-file (GLOB utilitiesHEADERS
+file(GLOB utilitiesHEADERS
   "${UTILITIES_DIR}/*.h*"
 )
-file (GLOB pdneighHEADERS
+file(GLOB pdneighHEADERS
   "${PDNEIGH_DIR}/*.h"
 )
 
 set(Peridigm_HEADERS
-    ${COMPUTE_DIR}/compute_includes.hpp
-    ${computeHEADERS}
-    ${contactHEADERS}
-    ${coreHEADERS}
-    ${discretizationHEADERS}
-    ${damageHEADERS}
-    ${apiHEADERS}
-    ${ioHEADERS}
-    ${mathHEADERS}
-    ${FEMHEADERS}
-    ${materialsHEADERS}
-    ${quickGridHEADERS}
-    ${utilitiesHEADERS}
-    ${pdneighHEADERS}
-    ${parserHEADERS}
+  ${COMPUTE_DIR}/compute_includes.hpp
+  ${computeHEADERS}
+  ${contactHEADERS}
+  ${coreHEADERS}
+  ${discretizationHEADERS}
+  ${damageHEADERS}
+  ${apiHEADERS}
+  ${ioHEADERS}
+  ${mathHEADERS}
+  ${FEMHEADERS}
+  ${materialsHEADERS}
+  ${quickGridHEADERS}
+  ${utilitiesHEADERS}
+  ${pdneighHEADERS}
+  ${parserHEADERS}
 )
 
 # Glob source files in subdirectories
-file (GLOB computeSOURCES
+file(GLOB computeSOURCES
   "${COMPUTE_DIR}/*.cpp"
 )
-file (GLOB contactSOURCES
+file(GLOB contactSOURCES
   "${CONTACT_DIR}/*.cpp"
 )
-file (GLOB coreSOURCES
+file(GLOB coreSOURCES
   "${CORE_DIR}/*.cpp"
 )
-file (GLOB discretizationSOURCES
+file(GLOB discretizationSOURCES
   "${DISCRETIZATION_DIR}/*.cpp"
 )
-file (GLOB damageSOURCES
+file(GLOB damageSOURCES
   "${DAMAGE_DIR}/*.cpp"
 )
-file (GLOB apiSOURCES
+file(GLOB additiveSOURCES
+  "${ADDITIVE_DIR}/*.cpp"
+)
+file(GLOB apiSOURCES
   "${API_DIR}/*.cpp"
 )
-file (GLOB ioSOURCES
+file(GLOB ioSOURCES
   "${IO_DIR}/*.cpp"
 )
-file (GLOB materialsSOURCES
+file(GLOB materialsSOURCES
   "${MATERIALS_DIR}/*.cpp"
 )
-file (GLOB FEMSOURCES
+file(GLOB FEMSOURCES
   "${FEM_DIR}/*.cpp"
 )
 set(Peridigm_SOURCES
-    ${COMPUTE_DIR}/compute_includes.hpp
-    ${computeSOURCES}
-    ${contactSOURCES}
-    ${coreSOURCES}
-    ${discretizationSOURCES}
-    ${damageSOURCES}
-    ${apiSOURCES}
-    ${ioSOURCES}
-    ${materialsSOURCES}
-    ${FEMSOURCES}
-    ${IMPROVED_QUADRATURE_SOURCES}
+  ${COMPUTE_DIR}/compute_includes.hpp
+  ${computeSOURCES}
+  ${contactSOURCES}
+  ${coreSOURCES}
+  ${discretizationSOURCES}
+  ${damageSOURCES}
+  ${additiveSOURCES}
+  ${apiSOURCES}
+  ${ioSOURCES}
+  ${materialsSOURCES}
+  ${FEMSOURCES}
+  ${IMPROVED_QUADRATURE_SOURCES}
 )
 
 add_library(PeridigmLib ${Peridigm_SOURCES})
@@ -108,18 +115,19 @@ set(Peridigm_LIBRARY PeridigmLib)
 target_compile_definitions(PeridigmLib PRIVATE -D PD_LIB_EXPORTS_MODE)
 
 set(Peridigm_LINK_LIBRARIES
-    ${LCM_LIBRARY}
-    ${Peridigm_LIBRARY}
-    ${PDNEIGH_LIBS}
-    ${MESH_INPUT_LIBS}
-    ${UTILITIES_LIBS}
-    ${PdMaterialUtilitiesLib}
-    ${PdMathUtilitiesLib}
-    ${Trilinos_LIBRARIES}
-    ${REQUIRED_LIBS}
-    ${IMPROVED_QUADRATURE_LIBS}
-    ${PdDamageUtilitiesLib}
-    ${FEMUtilitiesLib}
+  ${LCM_LIBRARY}
+  ${Peridigm_LIBRARY}
+  ${PDNEIGH_LIBS}
+  ${MESH_INPUT_LIBS}
+  ${UTILITIES_LIBS}
+  ${PdMaterialUtilitiesLib}
+  ${PdMathUtilitiesLib}
+  ${Trilinos_LIBRARIES}
+  ${REQUIRED_LIBS}
+  ${IMPROVED_QUADRATURE_LIBS}
+  ${PdAdditiveUtilitiesLib}
+  ${PdDamageUtilitiesLib}
+  ${FEMUtilitiesLib}
 )
 
 add_executable(Peridigm ${CORE_DIR}/Peridigm_Main.cpp)
@@ -134,24 +142,24 @@ endif()
 # Install target for Peridigm main executable
 #
 install(TARGETS Peridigm
-    RUNTIME DESTINATION bin
+  RUNTIME DESTINATION bin
 )
 set_property(TARGET Peridigm
-    PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE
+  PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE
 )
 
 #
 # Add subdirectories
 #
-add_subdirectory (compute/)
-add_subdirectory (core/)
-add_subdirectory (io/)
-add_subdirectory (math/)
-add_subdirectory (materials/)
-add_subdirectory (materials/fem)
-add_subdirectory (damage/)
+add_subdirectory(compute/)
+add_subdirectory(core/)
+add_subdirectory(io/)
+add_subdirectory(math/)
+add_subdirectory(materials/)
+add_subdirectory(materials/fem)
+add_subdirectory(damage/)
 
-IF (INSTALL_PERIDIGM)
+IF(INSTALL_PERIDIGM)
   configure_package_config_file(PeridigmConfig.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/PeridigmConfig.cmake
     INSTALL_DESTINATION ${LIB_INSTALL_DIR}/Peridigm/cmake
@@ -159,12 +167,12 @@ IF (INSTALL_PERIDIGM)
   install(FILES ${Peridigm_HEADERS}
     DESTINATION ${INCLUDE_INSTALL_DIR})
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/PeridigmConfig.cmake
-    DESTINATION ${LIB_INSTALL_DIR}/Peridigm/cmake )
+    DESTINATION ${LIB_INSTALL_DIR}/Peridigm/cmake)
   install(TARGETS PeridigmLib EXPORT peridigm-export
     LIBRARY DESTINATION ${LIB_INSTALL_DIR}
     ARCHIVE DESTINATION ${LIB_INSTALL_DIR})
   FILE(WRITE "${CMAKE_BINARY_DIR}/peridigm-targets.cmake"
-    "set(Peridigm_LIBRARIES ${Peridigm_LIBRARY} ${PDNEIGH_LIBS} ${MESH_INPUT_LIBS} ${UTILITIES_LIBS} ${PdMaterialUtilitiesLib} ${PdDamageUtilitiesLib} ${FEMUtilitiesLib})")
+    "set(Peridigm_LIBRARIES ${Peridigm_LIBRARY} ${PDNEIGH_LIBS} ${MESH_INPUT_LIBS} ${UTILITIES_LIBS} ${PdMaterialUtilitiesLib} ${PdDamageUtilitiesLib} ${FEMUtilitiesLib} ${AdditiveUtilitiesLib})")
   FILE(INSTALL "${CMAKE_BINARY_DIR}/peridigm-targets.cmake"
     DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIB_INSTALL_DIR}/Peridigm/cmake)
-ENDIF ()
+ENDIF()
