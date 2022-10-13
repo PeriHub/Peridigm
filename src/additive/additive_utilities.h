@@ -45,27 +45,26 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef DAMAGE_UTILITIES_H
-#define DAMAGE_UTILITIES_H
+#ifndef ADDITIVE_UTILITIES_H
+#define ADDITIVE_UTILITIES_H
 
 #include <cstdlib>
 
 
-namespace DAMAGE_UTILITIES {
+namespace ADDITIVE_UTILITIES {
 
 
 //! Compute and store the influence function value for each set of bonded material points.
-void calculateDamageIndex
+void deleteAllBonds
 (
     const int numOwnedPoints,
     const int* ownedIDs,
-    const double* vol,
     const int* neighborhoodList,
-    const double* bondDamageNP1,
-    double* totalDamage
+    double* bondDamageNP1,
+    double* detachedNodes
 );
 
 }
 
 
-#endif // DAMAGE_UTILITIES_H
+#endif // ADDITIVE_UTILITIES_H

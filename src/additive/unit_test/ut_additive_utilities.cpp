@@ -65,7 +65,7 @@ TEUCHOS_UNIT_TEST(ut_damage_utilities, deleteAllBonds) {
 
     int n;
 
-    DAMAGE_UTILITIES::deleteAllBonds(numOwnedPoints,ownedIDs,neighborhoodList,bondDamageNP1, detachedNodes);
+    ADDITIVE_UTILITIES::deleteAllBonds(numOwnedPoints,ownedIDs,neighborhoodList,bondDamageNP1, detachedNodes);
     
     for (n=0; n<numOwnedPoints; n++)
         {
