@@ -53,6 +53,7 @@ set(Peridigm_HEADERS
   ${coreHEADERS}
   ${discretizationHEADERS}
   ${damageHEADERS}
+  ${additiveHEADERS}
   ${apiHEADERS}
   ${ioHEADERS}
   ${mathHEADERS}

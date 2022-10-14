@@ -323,7 +323,6 @@ include_directories(
   ${QUICK_GRID_DIR}
   ${PDNEIGH_DIR}
   ${UTILITIES_DIR}
-
   ${BOND_VOL_QUICK_GRID}
 )
 
