@@ -53,14 +53,13 @@
 using namespace std;
 using namespace Teuchos;
 
-TEUCHOS_UNIT_TEST(ut_damage_utilities, deleteAllBonds) {
+TEUCHOS_UNIT_TEST(ut_addtive_utilities, deleteAllBonds) {
 
     int numOwnedPoints=2;
     double totalDamageTest[2] = {0,0};
     int ownedIDs[2]={0,1};
     double totalDamage[2];
     double bondDamageNP1[2] = {0,0};
-    double vol[6] = {1,1};
     int neighborhoodList[4] = {1,1,1,0};
 
     int n;
