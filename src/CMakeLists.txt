@@ -159,6 +159,7 @@ add_subdirectory(math/)
 add_subdirectory(materials/)
 add_subdirectory(materials/fem)
 add_subdirectory(damage/)
+add_subdirectory(additive/)
 
 IF(INSTALL_PERIDIGM)
   configure_package_config_file(PeridigmConfig.cmake.in
@@ -173,7 +174,7 @@ IF(INSTALL_PERIDIGM)
     LIBRARY DESTINATION ${LIB_INSTALL_DIR}
     ARCHIVE DESTINATION ${LIB_INSTALL_DIR})
   FILE(WRITE "${CMAKE_BINARY_DIR}/peridigm-targets.cmake"
-    "set(Peridigm_LIBRARIES ${Peridigm_LIBRARY} ${PDNEIGH_LIBS} ${MESH_INPUT_LIBS} ${UTILITIES_LIBS} ${PdMaterialUtilitiesLib} ${PdDamageUtilitiesLib} ${FEMUtilitiesLib} ${PdAdditiveUtilitiesLib})")
+    "set(Peridigm_LIBRARIES ${Peridigm_LIBRARY} ${PDNEIGH_LIBS} ${MESH_INPUT_LIBS} ${UTILITIES_LIBS} ${PdMaterialUtilitiesLib} ${PdAdditiveUtilitiesLib} ${PdDamageUtilitiesLib} ${FEMUtilitiesLib})")
   FILE(INSTALL "${CMAKE_BINARY_DIR}/peridigm-targets.cmake"
     DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIB_INSTALL_DIR}/Peridigm/cmake)
 ENDIF()
