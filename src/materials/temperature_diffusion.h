@@ -72,6 +72,7 @@ void computeHeatFlowState_correspondence
     const double* horizon,
     const double* kappa,
     const double* volume,
+    const double* detachedNodes,
     const double* bondDamage,
     const bool twoD,
     double* fluxDivergence

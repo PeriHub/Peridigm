@@ -462,6 +462,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                   horizon,
                                   kappa,
                                   volume,
+                                  detachedNodes,
                                   bondDamageNP1,
                                   m_plane,
                                   thermalFlow);

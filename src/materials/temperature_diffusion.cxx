@@ -105,6 +105,7 @@ namespace DIFFUSION {
     const double* horizon,
     const double* kappa,
     const double* volume,
+    const double* detachedNodes,
     const double* bondDamage,
     const bool twoD,
     double* heatFlowState
@@ -127,6 +128,11 @@ namespace DIFFUSION {
     double temp[3];
     for(iID=0 ; iID<numOwnedPoints ; ++iID, KInv+=9){
       numNeighbors = neighborhoodList[neighborhoodListIndex++];
+      if (detachedNodes[iID]!=0){
+        neighborhoodListIndex += numNeighbors;
+        continue; 
+      }
+      
       secondNeighborhoodListIndex = neighborhoodListIndex;
       
       for (int i=0 ; i<3 ; ++i) {
@@ -140,7 +146,7 @@ namespace DIFFUSION {
         tempState = temperature[neighborID] - temperature[iID];
         // sum_j (Tj-Ti)*rij*Vj -> EQ. (8)
         for (int i=0 ; i<3 ; ++i) H[i] += tempState * X[i] * volume[neighborID] * (1 - *bondDamage);
-        
+        std::cout<<*bondDamage<<std::endl;
       }
       // Ki * H -> EQ. (8)
       for (int i=0 ; i<3 ; ++i) {
