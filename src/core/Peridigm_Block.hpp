@@ -119,6 +119,10 @@ namespace PeridigmNS {
       return blockParams.get<std::string>("Damage Model", "None");
     }
 
+   //! Get the additve model name
+    std::string getAdditiveModelName(){
+      return blockParams.get<std::string>("Additive Model", "None");
+    }
     //! Get if damage is enabled
     bool getDamageEnabled(){
       if (blockParams.isParameter("Damage Enabled"))
