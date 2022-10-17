@@ -122,6 +122,22 @@ void PeridigmNS::Block::initializeDamageModel(double timeStep)
                           *dataManager);
 }
 
+void PeridigmNS::Block::initializeAdditiveModel(double timeStep)
+{
+  if(additiveModel.is_null())
+    return;
+
+  TEUCHOS_TEST_FOR_TERMINATION(neighborhoodData.is_null(),
+                      "\n**** Neighborhood data must be set via Block::setNeighborhoodData() prior to calling Block::initializeAdditiveModel()\n");
+  TEUCHOS_TEST_FOR_TERMINATION(dataManager.is_null(),
+                      "\n**** DataManager must be initialized via Block::initializeDataManager() prior to calling Block::initializeAdditiveModel()\n");
+
+  additiveModel->initialize(timeStep,
+                          neighborhoodData->NumOwnedPoints(),
+                          neighborhoodData->OwnedIDs(),
+                          neighborhoodData->NeighborhoodList(),
+                          *dataManager);
+}
 PeridigmNS::DataManagerSynchronizer& PeridigmNS::DataManagerSynchronizer::self() {
   static DataManagerSynchronizer dataManagerSynchronizer;
   return dataManagerSynchronizer;

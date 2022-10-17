@@ -482,6 +482,12 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
         CSDamageModel->evaluateParserDmg(currentValue, previousValue, timeCurrent, timePrevious);
       }
     }
+    string additiveModelName = blockIt->getAdditiveModelName();
+    if(additiveModelName != "None"){
+      Teuchos::ParameterList additiveParams = additiveModelParams.sublist(additiveModelName, true);
+      Teuchos::RCP<PeridigmNS::AdditiveModel> additiveModel = additiveModelFactory.create(additiveParams);
+      blockIt->setAdditiveModel(additiveModel);
+    }
   }
 
   // Instantiate compute manager
@@ -753,11 +759,12 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   boundaryAndInitialConditionManager->applyInitialConditions();
   PeridigmNS::Timer::self().stopTimer("Apply Initial Conditions");
 
-  // Initialize material models and damage models
+  // Initialize material models, damage and additive models
   // Initialization functions require valid initial values, e.g. velocities and displacements.
   for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++) {
     blockIt->initializeMaterialModel();
     blockIt->initializeDamageModel();
+    blockIt->initializeAdditiveModel();
   }
 
   // Initialize the compute classes
@@ -776,6 +783,11 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
       std::vector<int> damageModelFieldIds = blockIt->getDamageModel()->FieldIdsForSynchronizationAfterInitialize();
       fieldIdsForSynchronizationAfterInitialize.insert( fieldIdsForSynchronizationAfterInitialize.end(), damageModelFieldIds.begin(), damageModelFieldIds.end() );
     }
+    string additiveModelName = blockIt->getAdditiveModelName();
+    if(additiveModelName != "None"){
+      std::vector<int> additiveModelFieldIds = blockIt->getAdditiveModel()->FieldIdsForSynchronizationAfterInitialize();
+      fieldIdsForSynchronizationAfterInitialize.insert( fieldIdsForSynchronizationAfterInitialize.end(), additiveModelFieldIds.begin(), additiveModelFieldIds.end() );
+    }
     dataManagerSynchronizer.setFieldIdsToSynchronizeAfterInitialize(fieldIdsForSynchronizationAfterInitialize);
 
     std::vector<int> fieldIdsForSynchronizationAfterPrecompute = blockIt->getMaterialModel()->FieldIdsForSynchronizationAfterPrecompute();
@@ -783,8 +795,14 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
       std::vector<int> damageModelFieldIds = blockIt->getDamageModel()->FieldIdsForSynchronizationAfterPrecompute();
       fieldIdsForSynchronizationAfterPrecompute.insert( fieldIdsForSynchronizationAfterPrecompute.end(), damageModelFieldIds.begin(), damageModelFieldIds.end() );
     }
+    if(additiveModelName != "None"){
+      std::vector<int> additiveModelFieldIds = blockIt->getAdditiveModel()->FieldIdsForSynchronizationAfterPrecompute();
+      fieldIdsForSynchronizationAfterPrecompute.insert( fieldIdsForSynchronizationAfterPrecompute.end(), additiveModelFieldIds.begin(), additiveModelFieldIds.end() );
+    }
     dataManagerSynchronizer.setFieldIdsToSynchronizeAfterPrecompute(fieldIdsForSynchronizationAfterPrecompute);
   }
+  
+
   dataManagerSynchronizer.checkFieldValidity(blocks);
   dataManagerSynchronizer.synchronizeDataAfterInitialize(blocks);
 

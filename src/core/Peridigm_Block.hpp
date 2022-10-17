@@ -163,6 +163,8 @@ namespace PeridigmNS {
     //! Initialize the damage model
     void initializeDamageModel(double timeStep = 1.0);
 
+    //! Initialize the addtive model
+    void initializeAdditiveModel(double timeStep = 1.0);
   protected:
 
     //! The material model
