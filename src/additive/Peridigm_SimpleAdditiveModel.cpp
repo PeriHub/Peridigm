@@ -89,10 +89,14 @@ PeridigmNS::SimpleAdditiveModel::initialize(const double dt,
   double *bondDamage, *detachedNodes;
   
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamage);
+  dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_N)->ExtractView(&detachedNodes);
+  // Initialize damage to zero
+  ADDITIVE_UTILITIES::deleteAllBonds(numOwnedPoints, ownedIDs, neighborhoodList, bondDamage, detachedNodes);
+  
+  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
   dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->ExtractView(&detachedNodes);
   // Initialize damage to zero
   ADDITIVE_UTILITIES::deleteAllBonds(numOwnedPoints, ownedIDs, neighborhoodList, bondDamage, detachedNodes);
-  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)=dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N);
 }
 
 void
