@@ -319,16 +319,25 @@ PeridigmNS::PdQuickGridDiscretization::getInitialX() const
 {
   return initialX;
 }
+
 Teuchos::RCP<Epetra_Vector>
 PeridigmNS::PdQuickGridDiscretization::getPointAngle() const
 {// PLACEHOLDER; not yet supported for PdQuickGrid; please use text file discretization
   return pointAngle;
 }
+
+Teuchos::RCP<Epetra_Vector>
+PeridigmNS::PdQuickGridDiscretization::getPointTime() const
+{// PLACEHOLDER; not yet supported for PdQuickGrid; please use text file discretization
+  return pointTime;
+}
+
 Teuchos::RCP<Epetra_Vector>
 PeridigmNS::PdQuickGridDiscretization::getNodeType() const
 {// PLACEHOLDER; not yet supported for PdQuickGrid; please use text file discretization
   return nodeType;
 }
+
 Teuchos::RCP<Epetra_Vector>
 PeridigmNS::PdQuickGridDiscretization::getHorizon() const
 {

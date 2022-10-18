@@ -100,6 +100,8 @@ namespace PeridigmNS {
     virtual Teuchos::RCP<Epetra_Vector> getInitialX() const = 0;
     //! Get point angle
     virtual Teuchos::RCP<Epetra_Vector> getPointAngle() const = 0;
+    //! Get point time
+    virtual Teuchos::RCP<Epetra_Vector> getPointTime() const = 0;
     //! Get point node type
     virtual Teuchos::RCP<Epetra_Vector> getNodeType() const = 0;
     //! Get the horizon for each node

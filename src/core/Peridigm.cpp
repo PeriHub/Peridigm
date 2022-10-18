@@ -306,6 +306,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   blockIdFieldId                     = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Block_Id");
   horizonFieldId                     = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Horizon");
   volumeFieldId                      = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume");
+  pointTimeFieldId                   = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Point_Time");
 
   if(analysisHasMultiphysics){
     fluidPressureYFieldId            = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Fluid_Pressure_Y");
@@ -418,7 +419,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   if(peridigmParams->isSublist("Additive Models")){
     additiveModelParams = peridigmParams->sublist("Additive Models");
     //! set heat capacity for the additve model
-    blockIt->defineHeatCapacity(additiveModelParams);
+    // blockIt->defineHeatCapacity(additiveModelParams);
   }
   
   AdditiveModelFactory additiveModelFactory;
@@ -491,6 +492,8 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     string additiveModelName = blockIt->getAdditiveModelName();
     if(additiveModelName != "None"){
       Teuchos::ParameterList additiveParams = additiveModelParams.sublist(additiveModelName, true);
+      //! set heat capacity for the additve model
+      blockIt->defineHeatCapacity(additiveParams);
       Teuchos::RCP<PeridigmNS::AdditiveModel> additiveModel = additiveModelFactory.create(additiveParams);
       blockIt->setAdditiveModel(additiveModel);
     }
@@ -508,6 +511,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   // \todo Replace this with a query to the requested output fields, which is why we're forcing this allocation.
   auxiliaryFieldIds.push_back(modelCoordinatesFieldId);
   auxiliaryFieldIds.push_back(anglesFieldId);
+  auxiliaryFieldIds.push_back(pointTimeFieldId);
   auxiliaryFieldIds.push_back(nodeTypeFieldId);
   auxiliaryFieldIds.push_back(coordinatesFieldId);
   auxiliaryFieldIds.push_back(displacementFieldId);
@@ -589,10 +593,11 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     // Warning angles work only for text files and not for other discretizations
     blockIt->importData(peridigmDiscretization->getNodeType(),   nodeTypeFieldId, PeridigmField::STEP_NONE, Insert);
     blockIt->importData(peridigmDiscretization->getPointAngle(),   anglesFieldId, PeridigmField::STEP_NONE, Insert);
+    blockIt->importData(peridigmDiscretization->getPointTime(),  pointTimeFieldId,        PeridigmField::STEP_NONE, Insert);
     blockIt->importData(peridigmDiscretization->getInitialX(),   modelCoordinatesFieldId, PeridigmField::STEP_NONE, Insert);
     blockIt->importData(peridigmDiscretization->getInitialX(),   coordinatesFieldId,      PeridigmField::STEP_N,    Insert);
     blockIt->importData(peridigmDiscretization->getInitialX(),   coordinatesFieldId,      PeridigmField::STEP_NP1,  Insert);
-    blockIt->importData(elementIds,                                 elementIdFieldId,        PeridigmField::STEP_NONE, Insert);
+    blockIt->importData(elementIds,                                 elementIdFieldId,     PeridigmField::STEP_NONE, Insert);
 
     if(analysisHasMultiphysics){
       scalarScratch->PutScalar(0.0);
@@ -952,15 +957,16 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
   netDamageField = Teuchos::rcp((*oneDimensionalMothership)(9), false);               // damage status
   scalarScratch = Teuchos::rcp((*oneDimensionalMothership)(10), false);               // scratch vector corresponding to oneDimensionalMap
   bondDamageDiffField = Teuchos::rcp((*oneDimensionalMothership)(11), false);         // bondDamage difference
+  pointTime = Teuchos::rcp((*oneDimensionalMothership)(12), false);                   // point time
 
   if (analysisHasMultiphysics) {
-    fluidPressureU = Teuchos::rcp((*oneDimensionalMothership)(12), false);        // fluid pressure displacement
-    fluidPressureY = Teuchos::rcp((*oneDimensionalMothership)(13), false);       // fluid pressure current coordinates at anode
-    fluidPressureV = Teuchos::rcp((*oneDimensionalMothership)(14), false);       // fluid pressure first time derv at a node
-    fluidFlow = Teuchos::rcp((*oneDimensionalMothership)(15), false);            // flux through a node
-    fluidPressureDeltaU = Teuchos::rcp((*oneDimensionalMothership)(16), false);  // fluid pressure displacement analogue increment
-    fluidDensity = Teuchos::rcp((*oneDimensionalMothership)(17), false);              // fluid density at a node
-    fluidCompressibility = Teuchos::rcp((*oneDimensionalMothership)(18), false); // fluid compressibility at a node
+    fluidPressureU = Teuchos::rcp((*oneDimensionalMothership)(13), false);        // fluid pressure displacement
+    fluidPressureY = Teuchos::rcp((*oneDimensionalMothership)(14), false);       // fluid pressure current coordinates at anode
+    fluidPressureV = Teuchos::rcp((*oneDimensionalMothership)(15), false);       // fluid pressure first time derv at a node
+    fluidFlow = Teuchos::rcp((*oneDimensionalMothership)(16), false);            // flux through a node
+    fluidPressureDeltaU = Teuchos::rcp((*oneDimensionalMothership)(17), false);  // fluid pressure displacement analogue increment
+    fluidDensity = Teuchos::rcp((*oneDimensionalMothership)(18), false);              // fluid density at a node
+    fluidCompressibility = Teuchos::rcp((*oneDimensionalMothership)(19), false); // fluid compressibility at a node
   }
   if (heatFlux){
     heatCapacity = Teuchos::rcp((*oneDimensionalMothership)(12+num), false);         // heat capacity
@@ -1496,7 +1502,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   }
 
   // Pointer index into sub-vectors for use with BLAS
-  double *xPtr, *u_previousPtr, *uPtr, *yPtr, *v_previousPtr, *vPtr, *aPtr, *deltaTPtr, *temp_previousPtr, *tempPtr;
+  double *xPtr, *u_previousPtr, *uPtr, *yPtr, *v_previousPtr, *vPtr, *aPtr, *ptPtr, *deltaTPtr, *temp_previousPtr, *tempPtr;
   x->ExtractView( &xPtr );
   u->ExtractView( &uPtr );
   u_previous->ExtractView( &u_previousPtr );
@@ -1504,6 +1510,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   v->ExtractView( &vPtr );
   v_previous->ExtractView( &v_previousPtr );
   a->ExtractView( &aPtr );
+  pointTime->ExtractView( &ptPtr );
   if (heatFlux){
     deltaTemperature->ExtractView( &deltaTPtr );
     temp_previous->ExtractView( &temp_previousPtr);

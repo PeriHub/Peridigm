@@ -109,7 +109,9 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
   createBondMapAndCheckForZeroNeighbors(bondMap, oneDimensionalMap, neighborhoodData, numBonds, maxNumBondsPerElem);
 
   // fill cell volumes
-  cellVolume = Teuchos::rcp(new Epetra_Vector(Copy,*oneDimensionalMap,decomp.cellVolume.get()) );
+  cellVolume = Teuchos::rcp(new Epetra_Vector(Copy,*oneDimensionalMap,decomp.cellVolume.get()) ); 
+   // fill point time
+  pointTime = Teuchos::rcp(new Epetra_Vector(Copy,*oneDimensionalMap,decomp.myPointTime.get()) );
 
   // find the minimum element radius
   for(int i=0 ; i<cellVolume->MyLength() ; ++i){
@@ -136,6 +138,7 @@ void PeridigmNS::TextFileDiscretization::getDiscretization(const string& textFil
                                                            vector<int> &blockIds,
                                                            vector<double> &volumes,
                                                            vector<double> &angles,
+                                                           vector<double> &pointTime,
                                                            vector<double> &nodeType
 
 )
@@ -157,14 +160,17 @@ void PeridigmNS::TextFileDiscretization::getDiscretization(const string& textFil
              back_inserter<vector<double> >(data));
         // Check for obvious problems with the data
         // Adapt to coordinate system and without --> to check
-        if (data.size() != 5 && data.size() != 8)
+        if (data.size() != 5 && data.size() != 6 && data.size() != 8)
         {
           string msg = "\n**** Error parsing text file, invalid line: " + str + "\n";
           TEUCHOS_TEST_FOR_EXCEPT_MSG(data.size() != 5, msg);
+          TEUCHOS_TEST_FOR_EXCEPT_MSG(data.size() != 6, msg);
           TEUCHOS_TEST_FOR_EXCEPT_MSG(data.size() != 8, msg);
         }
         bool anglesImport = false;
         if (data.size() == 8) anglesImport = true;
+        bool timeImport  = false;
+        if (data.size() == 6) timeImport  = true;
         // Store the coordinates, block id, volumes and angles
         coordinates.push_back(data[0]);
         coordinates.push_back(data[1]);
@@ -181,7 +187,14 @@ void PeridigmNS::TextFileDiscretization::getDiscretization(const string& textFil
           angles.push_back(0.0);
           angles.push_back(0.0);
           angles.push_back(0.0);
+        }        
+        if (timeImport == true){
+          pointTime.push_back(data[5]);
         }
+        else{
+          pointTime.push_back(0.0);
+        }
+
       }
     }
     inFile.close();
@@ -197,12 +210,13 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   vector<double> coordinates;
   vector<double> volumes;
   vector<int> blockIds;
-  vector<double> angles;
+  vector<double> angles;  
+  vector<double> pointTime;
   vector<double> horizon_of_element;
   vector<int> elementTopo;
   vector<int> nodeTypeTemporary;
   vector<double> nodeType;
-  getDiscretization(textFileName, coordinates, blockIds, volumes, angles, nodeType);
+  getDiscretization(textFileName, coordinates, blockIds, volumes, angles, pointTime, nodeType);
   int numFE = 0;
   if (params->isParameter("Input FEM Topology File"))
   {
@@ -284,6 +298,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   memcpy(decomp.cellVolume.get(), &volumes[0], numElements*sizeof(double)); 
   memcpy(decomp.myX.get(), &coordinates[0], 3*numElements*sizeof(double));
   memcpy(decomp.myAngle.get(), &angles[0], 3*numElements*sizeof(double));
+  memcpy(decomp.myPointTime.get(), &pointTime[0], numElements*sizeof(double));
   // double, because the datamanage won't allow int
   memcpy(decomp.myNodeType.get(), &nodeType[0], numElements*sizeof(double));
   
@@ -671,11 +686,19 @@ PeridigmNS::TextFileDiscretization::getPointAngle() const
 { 
   return pointAngle;
 }
+
+Teuchos::RCP<Epetra_Vector>
+PeridigmNS::TextFileDiscretization::getPointTime() const
+{
+  return pointTime;
+}
+
 Teuchos::RCP<Epetra_Vector>
 PeridigmNS::TextFileDiscretization::getNodeType() const
 {
   return nodeType;
 }
+
 Teuchos::RCP<Epetra_Vector>
 PeridigmNS::TextFileDiscretization::getHorizon() const
 {

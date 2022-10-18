@@ -828,6 +828,13 @@ PeridigmNS::ExodusDiscretization::getPointAngle() const
 {// PLACEHOLDER; not yet supported for Exodus; please use text file discretization
   return pointAngle;
 }
+
+Teuchos::RCP<Epetra_Vector>
+PeridigmNS::ExodusDiscretization::getPointTime() const
+{// PLACEHOLDER; not yet supported for Exodus; please use text file discretization
+  return pointTime;
+}
+
 Teuchos::RCP<Epetra_Vector>
 PeridigmNS::ExodusDiscretization::getNodeType() const
 {// PLACEHOLDER; not yet supported for Exodus; please use text file discretization

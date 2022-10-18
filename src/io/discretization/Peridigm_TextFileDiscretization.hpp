@@ -80,6 +80,8 @@ namespace PeridigmNS {
     virtual Teuchos::RCP<Epetra_Vector> getInitialX() const;
     //! Get point angle
     virtual Teuchos::RCP<Epetra_Vector> getPointAngle() const;
+   //! Get point time
+    virtual Teuchos::RCP<Epetra_Vector> getPointTime() const;
     //! Get node type
     virtual Teuchos::RCP<Epetra_Vector> getNodeType() const;
     //! Get the horizon value for each point.
@@ -131,6 +133,7 @@ namespace PeridigmNS {
                            std::vector<int>& blockIds,
                            std::vector<double>& volumes,
                            std::vector<double>& angles,
+                           std::vector<double>& pointTime,
                            std::vector<double>& nodeType);
     //! Creates a discretization object based on data read from a text file.
     //! With additional topology information which can be used for finite element analysis
@@ -194,6 +197,9 @@ namespace PeridigmNS {
     
     //! Vector containing the point angles
     Teuchos::RCP<Epetra_Vector> pointAngle;
+
+    //! Vector containing the point times
+    Teuchos::RCP<Epetra_Vector> pointTime;
     
     //! Vector containing the node type
     Teuchos::RCP<Epetra_Vector> nodeType;

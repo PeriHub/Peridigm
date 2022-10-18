@@ -136,8 +136,8 @@ namespace PeridigmNS {
     }
 
     //! set heat capacity for the additve model
-    void defineHeatCapacity(Teuchos::ParameterList& addtiveParams){
-        addtiveParams.set("Heat Capacity",heatCapacity);
+    void defineHeatCapacity(Teuchos::ParameterList& additiveParams){
+      additiveParams.set("Heat Capacity",heatCapacity);
     }
 
 

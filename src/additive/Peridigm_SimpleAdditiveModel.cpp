@@ -55,8 +55,6 @@ PeridigmNS::SimpleAdditiveModel::SimpleAdditiveModel(const Teuchos::ParameterLis
   : AdditiveModel(params), m_applyThermalStrains(false), m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_bondDamageFieldId(-1), m_deltaTemperatureFieldId(-1)
 {
   
-
-
   double heatCapacity = params.get<double>("Heat Capacity");
   std::cout<<heatCapacity<<std::endl;
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
