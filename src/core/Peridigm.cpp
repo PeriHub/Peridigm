@@ -407,6 +407,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   // Material models
   Teuchos::ParameterList materialParams = peridigmParams->sublist("Materials", true);
   MaterialFactory materialFactory;
+  blockIt->setHeatCapacity(materialParams);
   // Damage models
   Teuchos::ParameterList damageModelParams;
   if(peridigmParams->isSublist("Damage Models"))
@@ -414,9 +415,14 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   DamageModelFactory damageModelFactory;
   // Additive models
   Teuchos::ParameterList additiveModelParams;
-  if(peridigmParams->isSublist("Additive Models"))
+  if(peridigmParams->isSublist("Additive Models")){
     additiveModelParams = peridigmParams->sublist("Additive Models");
+    //! set heat capacity for the additve model
+    blockIt->defineHeatCapacity(additiveModelParams);
+  }
+  
   AdditiveModelFactory additiveModelFactory;
+  
   // Associate material models and damage models with blocks
   for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
 

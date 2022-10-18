@@ -123,6 +123,24 @@ namespace PeridigmNS {
     std::string getAdditiveModelName(){
       return blockParams.get<std::string>("Additive Model", "None");
     }
+  //! Set the additve model name
+    void setHeatCapacity(const Teuchos::ParameterList& params){
+      if (params.isParameter("Heat Capacity"))
+      {
+        heatCapacity = params.get<double>("Heat Capacity");
+      }
+      else
+      {
+        heatCapacity = 0.0;
+      }
+    }
+
+    //! set heat capacity for the additve model
+    void defineHeatCapacity(Teuchos::ParameterList& addtiveParams){
+        addtiveParams.set("Heat Capacity",heatCapacity);
+    }
+
+
     //! Get if damage is enabled
     bool getDamageEnabled(){
       if (blockParams.isParameter("Damage Enabled"))
@@ -176,6 +194,8 @@ namespace PeridigmNS {
     //! The additive model
     Teuchos::RCP<PeridigmNS::AdditiveModel> additiveModel;
     
+    double heatCapacity;
+
   };
 
   class DataManagerSynchronizer {

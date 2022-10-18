@@ -48,12 +48,17 @@
 #include "Peridigm_SimpleAdditiveModel.hpp"
 #include "Peridigm_Field.hpp"
 #include "additive_utilities.h"
+
 using namespace std;
 
 PeridigmNS::SimpleAdditiveModel::SimpleAdditiveModel(const Teuchos::ParameterList& params)
   : AdditiveModel(params), m_applyThermalStrains(false), m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_bondDamageFieldId(-1), m_deltaTemperatureFieldId(-1)
 {
   
+
+
+  double heatCapacity = params.get<double>("Heat Capacity");
+  std::cout<<heatCapacity<<std::endl;
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   
   m_modelCoordinatesFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::NODE, PeridigmNS::PeridigmField::VECTOR, PeridigmNS::PeridigmField::CONSTANT,"Model_Coordinates");
@@ -107,7 +112,9 @@ PeridigmNS::SimpleAdditiveModel::computeAdditive(const double dt,
                                                       PeridigmNS::DataManager& dataManager) const
 {
   
-  }
+
+
+}
 
 
     
