@@ -1973,17 +1973,6 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
             netDamageField->Update(1.0, *scalarScratch, 1.0);
         }
     }
-    //
-    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){    
-      if (blockIt->getMaterialModel()->Name().find("Correspondence")){
-        
-            blockIt->importData(detachedNodesList, detachedNodesFieldId, adaptiveImportStep, Insert);
-            //blockIt->importData(*netDamageField, netDamageFieldId, adaptiveImportStep, Insert);
-        
-      }
-    }
- 
- 
  
     modelEvaluator->evalModel(workset, true);
     PeridigmNS::Timer::self().stopTimer("Internal Force");
