@@ -138,7 +138,7 @@ PeridigmNS::SimpleAdditiveModel::computeAdditive(const double dt,
 
     if(currentTime - dt < nodePointTime && nodePointTime <= currentTime){
       // export temperature via deltaT -> if factors are multiplied the heat flux is equal deltaT in the time integration in Peridigm.cpp
-      fluxDivergence[nodeId] = printTemperature * heatCapacity * density / dt;
+      fluxDivergence[nodeId] = -printTemperature * heatCapacity * density / dt;
       detachedNodes[nodeId] = 0;
       for (int iNID = 0; iNID < numNeighbors; ++iNID) {
           bondIndex++;
