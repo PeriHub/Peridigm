@@ -176,4 +176,20 @@ namespace DIFFUSION {
       
     }
   }
+  
+  // Peridigm.cpp -> synchro von Detached_nodes
+  
+  //
+  // Peridigm_Correspondence -> Funktionsaufruf + Datenaqkuise
+  // (V_neigbor/ V_Horizon) -> als output einpflegen
+  //---------------------
+  // hier muss Konvektion rein  x x x 0 0 0 
+  // V_neighbor => V[i] + summe V[neighbor]*(1-detachedNodes[neighbor])
+  // (V_neigbor/ V_Horizon) if < 0.8 -> die 0.8 sind default und können definiert werden
+  // V_Horizon = 4/3*pi*delta^3 oder pi*delta^2*h
+  //  then   (T - T_umgebung)  * alpha * A * (1 - (V_neigbor/ V_Horizon)^100) 
+  // surface coorection factor
+  // sqrt^3(V[i])^2 -> alpha*A*surfaceCorrect
+  // surfCorrect = 1 als default
+  // else q = 0
 }
