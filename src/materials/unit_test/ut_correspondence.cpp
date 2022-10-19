@@ -74,15 +74,30 @@ TEUCHOS_UNIT_TEST(correspondence, addTemperatureStrain) {
     num = 9;
     for (m=0; m<9; m++){
         B[m] = num;
-        num++;
-             
+        num++;        
      }   
 
-     CORRESPONDENCE::addTemperatureStrain(A,temperature,B);
+    CORRESPONDENCE::addTemperatureStrain(A,temperature,B);
+    num = 1;
+    for (m=0; m<3; m++){
+             for (n=0; n<3; n++){
+             A[m][n] = num;
+             num++;
+             }
+     }   
 
 
-    
-    double Btest[] =      { 10.5,13.0,15.5,18.0,20.5,23.0,25.5,28.0,30.5};
+    double Btest[9];
+    Btest[0] = 9  - 1  * temperature;  
+    Btest[1] = 10 - 2  * temperature;  
+    Btest[2] = 11 - 3  * temperature;
+    Btest[3] = 12 - 4  * temperature;
+    Btest[4] = 13 - 5  * temperature;
+    Btest[5] = 14 - 6  * temperature;
+    Btest[6] = 15 - 7  * temperature;
+    Btest[7] = 16 - 8  * temperature;
+    Btest[8] = 17 - 9  * temperature;
+
 
     for (n=0; n<9; n++){
 
