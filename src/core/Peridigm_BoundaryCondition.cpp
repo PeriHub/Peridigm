@@ -118,7 +118,7 @@ void PeridigmNS::BoundaryCondition::evaluateParser(const int & localNodeID, doub
   if(success)
     success = rtcFunction->varValueFill(2, (*x)[localNodeID*3 + 2]);
   if(success)
-    success = rtcFunction->varValueFill(4, 0.0);  
+    success = rtcFunction->varValueFill(4, timeCurrent-timePrevious);  
   if(success)
     success = rtcFunction->varValueFill(5, (*temperature)[localNodeID]);
   if(success)
