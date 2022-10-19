@@ -987,4 +987,27 @@ template int EigenVec2D<Sacado::Fad::DFad<double>>(
     const  Sacado::Fad::DFad<double>* a,
      Sacado::Fad::DFad<double>* result
 );
+
+template<typename ScalarT>
+void DIFFTENSOR
+(
+const ScalarT* TENSORN,
+const ScalarT* TENSORNP1, 
+ScalarT* DTENSOR
+)
+  
+{
+    for(int iID=0 ; iID<9 ; ++iID){
+    *(DTENSOR+iID) = *(TENSORNP1+iID)-*(TENSORN+iID);
+  }
+
+}
+
+template void DIFFTENSOR<double>
+(
+const double* TENSORN,
+const double* TENSORNP1, 
+double* DTENSOR
+);
+
 }

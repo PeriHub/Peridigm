@@ -398,7 +398,25 @@ TEUCHOS_UNIT_TEST(matrices, MatrixMultiply3x3) {
         }
 }
 		
+TEUCHOS_UNIT_TEST(matrices, DIFFTENSOR) {
 
+    double A[9];
+    double B[9];
+    double C[9];
+    double Ctest[9];
+    int n;
+
+    for (n=0; n<9; n++) 
+        {
+            A[n]=5*n*n;
+            B[n]=n;
+            C[n]=5*n*n - n;
+        }
+
+    MATRICES::DIFFTENSOR(A,B,Ctest);
+    for (n=0; n<9; n++) TEST_FLOATING_EQUALITY(Ctest[n],C[n],0);
+        
+}
 
 TEUCHOS_UNIT_TEST(matrices, MatrixMultiply3x3fromVector) {
 

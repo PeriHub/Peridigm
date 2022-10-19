@@ -272,6 +272,14 @@ const bool twoD,
 double* heatFlowState
 );
 
+template<typename ScalarT>
+void createRotatedStiff
+(
+const ScalarT C[][6],
+const ScalarT* rotMat,
+ScalarT Cnew[][6]
+);
+
 void getOrientations
   (
 const int numOwnedPoints,
