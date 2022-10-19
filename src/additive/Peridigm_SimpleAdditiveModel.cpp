@@ -56,7 +56,9 @@ PeridigmNS::SimpleAdditiveModel::SimpleAdditiveModel(const Teuchos::ParameterLis
 {
   
   printTemperature = params.get<double>("Print Temperature");
-  timeFactor = params.get<double>("Time Factor");
+  timeFactor  = 1.0;
+  if (params.isParameter("Time Factor"))timeFactor = params.get<double>("Time Factor");
+  
   heatCapacity = params.get<double>("Heat Capacity");
   density = params.get<double>("Density");
   // std::cout<<printTemperature<<std::endl;
@@ -98,7 +100,7 @@ PeridigmNS::SimpleAdditiveModel::initialize(const double dt,
                                                    const int* neighborhoodList,
                                                    PeridigmNS::DataManager& dataManager) const
 {
-  double *bondDamage, *detachedNodes;
+  double *detachedNodes;
   
   
   dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_N)->ExtractView(&detachedNodes);
