@@ -176,5 +176,12 @@ const int size,
 const double thresVal
 );
 
+template<typename ScalarT>
+void DIFFTENSOR
+(
+const ScalarT* TENSORN,
+const ScalarT* TENSORNP1, 
+ScalarT* DTENSOR
+);
 }
 #endif // MATRICES_H

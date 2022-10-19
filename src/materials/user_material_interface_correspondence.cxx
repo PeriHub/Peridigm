@@ -192,10 +192,9 @@ const ScalarT* TENSORN,
 const ScalarT* TENSORNP1, 
 ScalarT* DTENSOR
 )
+  
 {
-  for(int iID=0 ; iID<9 ; ++iID){
-    *(DTENSOR+iID) = *(TENSORNP1+iID)-*(TENSORN+iID);
-  }
+  MATRICES::DIFFTENSOR(TENSORN,TENSORNP1,DTENSOR);
 }
 
 template void DIFFTENSOR<double>
