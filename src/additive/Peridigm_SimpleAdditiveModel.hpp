@@ -118,6 +118,7 @@ namespace PeridigmNS {
     double printTemperature;
     double heatCapacity;
     double density;
+    double timeFactor;
     
   };
 
