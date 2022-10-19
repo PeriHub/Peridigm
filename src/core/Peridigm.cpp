@@ -937,7 +937,7 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
   bondMap = peridigmDisc->getGlobalBondMap();
 
   // Create mothership vectors
-  int numOneDimensionalMothershipVectors = 12;
+  int numOneDimensionalMothershipVectors = 13;
   bool initializeToZero = true;
   int num = 0;
   if (heatFlux)
@@ -972,8 +972,8 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
     fluidCompressibility = Teuchos::rcp((*oneDimensionalMothership)(19), false); // fluid compressibility at a node
   }
   if (heatFlux){
-    heatCapacity = Teuchos::rcp((*oneDimensionalMothership)(12+num), false);         // heat capacity
-    temp_previous = Teuchos::rcp((*oneDimensionalMothership)(13+num), false);         // heat capacity
+    heatCapacity = Teuchos::rcp((*oneDimensionalMothership)(13+num), false);         // heat capacity
+    temp_previous = Teuchos::rcp((*oneDimensionalMothership)(14+num), false);         // heat capacity
   }
   int numThreeDimensionalMothershipVectors = 16;
 
