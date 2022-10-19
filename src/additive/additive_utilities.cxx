@@ -69,16 +69,16 @@ void deleteAllBonds
     int bondIndex = 0;
     int numNeighbors;
     int nodeId, neighborId;
-    double totalDamage;
+    // double totalDamage;
     for (int iID = 0; iID < numOwnedPoints; ++iID) {
         nodeId = ownedIDs[iID];
         numNeighbors = neighborhoodList[neighborhoodListIndex++];
-        detachedNodes[iID] = 1;
-        totalDamage = 0.0;
+        detachedNodes[nodeId] = 1;
+        // totalDamage = 0.0;
         for (int iNID = 0; iNID < numNeighbors; ++iNID) {
             
             neighborhoodListIndex++;
-            bondDamageNP1[bondIndex] = 1;
+            // bondDamageNP1[bondIndex] = 1;
         }
     }
 
