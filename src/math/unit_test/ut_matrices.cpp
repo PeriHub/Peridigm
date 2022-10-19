@@ -410,7 +410,7 @@ TEUCHOS_UNIT_TEST(matrices, DIFFTENSOR) {
         {
             A[n]=5*n*n;
             B[n]=n;
-            C[n]=5*n*n - n;
+            C[n]= n - 5*n*n;
         }
 
     MATRICES::DIFFTENSOR(A,B,Ctest);
