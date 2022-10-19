@@ -1559,12 +1559,19 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   PeridigmNS::Timer::self().stopTimer("Internal Force");
 
   // Copy force from the data manager to the mothership vector
+  
   PeridigmNS::Timer::self().startTimer("Gather/Scatter");
   force->PutScalar(0.0);
+  detachedNodesList->PutScalar(0.0);
   for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
     scratch->PutScalar(0.0);
     blockIt->exportData(scratch, forceDensityFieldId, PeridigmField::STEP_NP1, Add);
     force->Update(1.0, *scratch, 1.0);
+    if (blockIt->getMaterialModel()->Name().find("Correspondence")!=std::string::npos){  
+      scalarScratch->PutScalar(0.0);
+      blockIt->exportData(scalarScratch, detachedNodesFieldId, PeridigmField::STEP_NP1, Add);
+      detachedNodesList->Update(1.0, *scalarScratch, 1.0);
+    }
   }
   if(analysisHasContact){
     contactManager->exportData(contactForce);
@@ -1958,18 +1965,11 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     if (highNumOfBondDetached && dt*dtReduceFactor>=dtMin) continue;
   
       //********************************
-    detachedNodesList->PutScalar(0.0);
     netDamageField->PutScalar(0.0);
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){    
       if (blockIt->getMaterialModel()->Name().find("Correspondence")){
             scalarScratch->PutScalar(0.0);
-            blockIt->exportData(scalarScratch, detachedNodesFieldId, adaptiveExportStep, Add);
-            detachedNodesList->Update(1.0, *scalarScratch, 1.0);
-                    
-        
-            scalarScratch->PutScalar(0.0);
             blockIt->exportData(scalarScratch, netDamageFieldId, adaptiveExportStep, Add);
-          
             netDamageField->Update(1.0, *scalarScratch, 1.0);
         }
     }
@@ -1981,11 +1981,16 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     PeridigmNS::Timer::self().startTimer("Gather/Scatter");
     force->PutScalar(0.0);
     if (heatFlux) fluxDivergence->PutScalar(0.0);
-
+    detachedNodesList->PutScalar(0.0);
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
       scratch->PutScalar(0.0);
       blockIt->exportData(scratch, forceDensityFieldId, adaptiveExportStep, Add);
       force->Update(1.0, *scratch, 1.0);
+      if (blockIt->getMaterialModel()->Name().find("Correspondence")){
+        scalarScratch->PutScalar(0.0);
+        blockIt->exportData(scalarScratch, detachedNodesFieldId, adaptiveExportStep, Add);
+        detachedNodesList->Update(1.0, *scalarScratch, 1.0);
+      }
       if (heatFlux) {
         scalarScratch->PutScalar(0.0);
         blockIt->exportData(scalarScratch, fluxDivergenceFieldId, adaptiveExportStep, Add);
