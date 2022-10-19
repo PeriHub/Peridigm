@@ -956,7 +956,7 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
   deltaTemperature = Teuchos::rcp((*oneDimensionalMothership)(5), false);            // change in temperature
   fluxDivergence = Teuchos::rcp((*oneDimensionalMothership)(6), false);              // divergence of the flux (e.g., heat flux)
   concentrationFluxDivergence = Teuchos::rcp((*oneDimensionalMothership)(7), false); // divergence of the flux of chemical concentration
-  detachedNodesList = Teuchos::rcp((*oneDimensionalMothership)(8), false);          // detached Nodes
+  detachedNodesList = Teuchos::rcp((*oneDimensionalMothership)(8), false);           // detached Nodes
   netDamageField = Teuchos::rcp((*oneDimensionalMothership)(9), false);               // damage status
   scalarScratch = Teuchos::rcp((*oneDimensionalMothership)(10), false);               // scratch vector corresponding to oneDimensionalMap
   bondDamageDiffField = Teuchos::rcp((*oneDimensionalMothership)(11), false);         // bondDamage difference

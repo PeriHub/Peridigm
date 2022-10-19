@@ -130,7 +130,7 @@ double* detachedNodes
           neighborVel = velocities + 3*neighborIndex;
           
          if (detachedNodes[iID]!=0) continue;
-         if (detachedNodes[neighborIndex]!=0) continue;
+         //if (detachedNodes[neighborIndex]!=0) continue;
           
           neighborVolume = volume[neighborIndex];
           undeformedBondX = *(neighborModelCoord)   - *(modelCoord);
@@ -757,7 +757,7 @@ double* detachedNodes
       neighborVel = velocities + 3*neighborIndex;
       
       if (*(detachedNodes+iID)!=0) continue;
-      if (*(detachedNodes+neighborIndex)!=0) continue;
+      //if (*(detachedNodes+neighborIndex)!=0) continue;
       
       neighborVolume = volume[neighborIndex];
       undeformedBondX = *(neighborModelCoord)   - *(modelCoord);

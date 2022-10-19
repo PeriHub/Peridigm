@@ -373,7 +373,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
             } 
             if (modelActive == true){
                 if (detachedNodes[nodeId]!=0) continue;
-                if (detachedNodes[neighborID]!=0) continue;
+                //if (detachedNodes[neighborID]!=0) continue;
                 normEtaSq = 0.0;
                 for (int i = 0; i < 3; ++i){
                     X[i] = x[neighborID*3 + i]   - nodeInitialX[i];
