@@ -56,6 +56,7 @@ PeridigmNS::SimpleAdditiveModel::SimpleAdditiveModel(const Teuchos::ParameterLis
 {
   
   printTemperature = params.get<double>("Print Temperature");
+  timeFactor = params.get<double>("Time Factor");
   heatCapacity = params.get<double>("Heat Capacity");
   density = params.get<double>("Density");
   // std::cout<<printTemperature<<std::endl;
@@ -133,7 +134,7 @@ PeridigmNS::SimpleAdditiveModel::computeAdditive(const double dt,
   {
     nodeId = ownedIDs[iID];
     numNeighbors = neighborhoodList[neighborhoodListIndex++];
-    nodePointTime = pointTime[nodeId];
+    nodePointTime = pointTime[nodeId] * timeFactor;
 
     if(currentTime - dt < nodePointTime && nodePointTime <= currentTime){
       // export temperature via deltaT -> if factors are multiplied the heat flux is equal deltaT in the time integration in Peridigm.cpp
