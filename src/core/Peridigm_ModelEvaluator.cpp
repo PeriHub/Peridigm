@@ -58,6 +58,7 @@ void
 PeridigmNS::ModelEvaluator::evalDamageModel(Teuchos::RCP<Workset> workset) const
 {
   const double dt = workset->timeStep;
+  const double currentTime = workset->currentTime;
   std::vector<PeridigmNS::Block>::iterator blockIt;
 
   // ---- Evaluate Damage ---
@@ -90,7 +91,8 @@ PeridigmNS::ModelEvaluator::evalDamageModel(Teuchos::RCP<Workset> workset) const
       Teuchos::RCP<PeridigmNS::DataManager> dataManager = blockIt->getDataManager();
       
       PeridigmNS::Timer::self().startTimer("Evaluate Additive Model:Compute Additive Points");
-      additiveModel->computeAdditive(dt, 
+      additiveModel->computeAdditive(dt,
+                                    currentTime,
                                     numOwnedPoints,
                                     ownedIDs,
                                     neighborhoodList,

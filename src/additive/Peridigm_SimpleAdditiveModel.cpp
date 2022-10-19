@@ -52,11 +52,15 @@
 using namespace std;
 
 PeridigmNS::SimpleAdditiveModel::SimpleAdditiveModel(const Teuchos::ParameterList& params)
-  : AdditiveModel(params), m_applyThermalStrains(false), m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_bondDamageFieldId(-1), m_deltaTemperatureFieldId(-1)
+  : AdditiveModel(params), m_applyThermalStrains(false), m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_bondDamageFieldId(-1), m_deltaTemperatureFieldId(-1), m_fluxDivergenceFieldId(-1), m_pointTimeFieldId(-1)
 {
   
-  double heatCapacity = params.get<double>("Heat Capacity");
-  std::cout<<heatCapacity<<std::endl;
+  printTemperature = params.get<double>("Print Temperature");
+  heatCapacity = params.get<double>("Heat Capacity");
+  density = params.get<double>("Density");
+  // std::cout<<printTemperature<<std::endl;
+  // std::cout<<heatCapacity<<std::endl;
+  // std::cout<<density<<std::endl;
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   
   m_modelCoordinatesFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::NODE, PeridigmNS::PeridigmField::VECTOR, PeridigmNS::PeridigmField::CONSTANT,"Model_Coordinates");
@@ -64,6 +68,8 @@ PeridigmNS::SimpleAdditiveModel::SimpleAdditiveModel(const Teuchos::ParameterLis
   m_bondDamageFieldId = fieldManager.getFieldId(PeridigmNS::PeridigmField::BOND, PeridigmNS::PeridigmField::SCALAR, PeridigmNS::PeridigmField::TWO_STEP, "Bond_Damage");
   m_volumeFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume");
   m_detachedNodesFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Detached_Nodes");
+  m_fluxDivergenceFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Flux_Divergence");
+  m_pointTimeFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Point_Time");
   if(m_applyThermalStrains)
     m_deltaTemperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature_Change");
 
@@ -73,6 +79,8 @@ PeridigmNS::SimpleAdditiveModel::SimpleAdditiveModel(const Teuchos::ParameterLis
   m_fieldIds.push_back(m_detachedNodesFieldId);
   m_fieldIds.push_back(m_bondDamageFieldId);
   m_fieldIds.push_back(m_volumeFieldId);
+  m_fieldIds.push_back(m_fluxDivergenceFieldId);
+  m_fieldIds.push_back(m_pointTimeFieldId);
   if(m_applyThermalStrains)
     m_fieldIds.push_back(m_deltaTemperatureFieldId);
 
@@ -104,13 +112,47 @@ PeridigmNS::SimpleAdditiveModel::initialize(const double dt,
 
 void
 PeridigmNS::SimpleAdditiveModel::computeAdditive(const double dt,
+                                                      const double currentTime,
                                                       const int numOwnedPoints,
                                                       const int* ownedIDs,
                                                       const int* neighborhoodList,
                                                       PeridigmNS::DataManager& dataManager) const
 {
+  double *fluxDivergence, *pointTime, nodePointTime, *bondDamage, *detachedNodes;
   
+  int neighborhoodListIndex = 0;
+  int bondIndex = 0;
+  int nodeId, numNeighbors, neighborId;
 
+  dataManager.getData(m_fluxDivergenceFieldId, PeridigmField::STEP_NP1)->ExtractView(&fluxDivergence);
+  dataManager.getData(m_pointTimeFieldId, PeridigmField::STEP_NONE)->ExtractView(&pointTime);
+  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
+  dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->ExtractView(&detachedNodes);
+
+  for (int iID = 0; iID < numOwnedPoints; ++iID)
+  {
+    nodeId = ownedIDs[iID];
+    numNeighbors = neighborhoodList[neighborhoodListIndex++];
+    nodePointTime = pointTime[nodeId];
+
+    if(currentTime - dt < nodePointTime && nodePointTime <= currentTime){
+      fluxDivergence[nodeId] = printTemperature * heatCapacity * density;
+      // std::cout<<fluxDivergence[nodeId]<<std::endl;
+      detachedNodes[nodeId] = 0;
+      for (int iNID = 0; iNID < numNeighbors; ++iNID) {
+          
+          neighborId = neighborhoodList[neighborhoodListIndex++];
+          // detachedNodes[neighborId] = 0;
+          // bondDamage[bondIndex] = 0;
+      }
+    }
+    else{
+      for (int iNID = 0; iNID < numNeighbors; ++iNID) {
+        neighborhoodListIndex++;
+      }
+    }
+  }
+  // (*deltaTemperature)[i] = (*fluxDivergence)[i] / (*density)[i] / (*heatCapacity)[i]; 
 
 }
 

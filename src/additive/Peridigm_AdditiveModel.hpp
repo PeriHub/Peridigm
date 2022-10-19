@@ -96,6 +96,7 @@ namespace PeridigmNS {
     //! Evaluate the additive process
     virtual void
     computeAdditive(const double dt,
+                  const double currentTime,
                   const int numOwnedPoints,
                   const int* ownedIDs,
                   const int* neighborhoodList,

@@ -123,7 +123,8 @@ namespace PeridigmNS {
     std::string getAdditiveModelName(){
       return blockParams.get<std::string>("Additive Model", "None");
     }
-  //! Set the additve model name
+
+    //! Set heat capacity for the additve model
     void setHeatCapacity(const Teuchos::ParameterList& params){
       if (params.isParameter("Heat Capacity"))
       {
@@ -135,9 +136,26 @@ namespace PeridigmNS {
       }
     }
 
-    //! set heat capacity for the additve model
+    //! Set heat capacity for the additve model
+    void setDensity(const Teuchos::ParameterList& params){
+      if (params.isParameter("Density"))
+      {
+        density = params.get<double>("Density");
+      }
+      else
+      {
+        density = 0.0;
+      }
+    }
+
+    //! Set heat capacity for the additve model
     void defineHeatCapacity(Teuchos::ParameterList& additiveParams){
       additiveParams.set("Heat Capacity",heatCapacity);
+    }
+
+    //! Set heat density for the additve model
+    void defineDensity(Teuchos::ParameterList& additiveParams){
+      additiveParams.set("Density", density);
     }
 
 
@@ -195,6 +213,8 @@ namespace PeridigmNS {
     Teuchos::RCP<PeridigmNS::AdditiveModel> additiveModel;
     
     double heatCapacity;
+
+    double density;
 
   };
 

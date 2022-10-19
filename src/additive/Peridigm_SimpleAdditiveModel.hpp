@@ -84,6 +84,7 @@ namespace PeridigmNS {
     //! Evaluate the damage
     virtual void
     computeAdditive(const double dt,
+                  const double currentTime,
                   const int numOwnedPoints,
                   const int* ownedIDs,
                   const int* neighborhoodList,
@@ -111,10 +112,13 @@ namespace PeridigmNS {
     int m_detachedNodesFieldId;
     int m_bondDamageFieldId;
     int m_deltaTemperatureFieldId;
+    int m_fluxDivergenceFieldId;
+    int m_pointTimeFieldId;
     
+    double printTemperature;
+    double heatCapacity;
+    double density;
     
-    
-
   };
 
 }

@@ -408,7 +408,6 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   // Material models
   Teuchos::ParameterList materialParams = peridigmParams->sublist("Materials", true);
   MaterialFactory materialFactory;
-  blockIt->setHeatCapacity(materialParams);
   // Damage models
   Teuchos::ParameterList damageModelParams;
   if(peridigmParams->isSublist("Damage Models"))
@@ -452,6 +451,9 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
 
     Teuchos::ParameterList matParams = materialParams.sublist(materialName);
 
+    blockIt->setHeatCapacity(matParams);
+    blockIt->setDensity(matParams);
+
     // Is the material name that of one designed for multiphysics when multiphysics is enabled?
 
     // If the horizon is a constant value, assign it to the material model
@@ -494,6 +496,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
       Teuchos::ParameterList additiveParams = additiveModelParams.sublist(additiveModelName, true);
       //! set heat capacity for the additve model
       blockIt->defineHeatCapacity(additiveParams);
+      blockIt->defineDensity(additiveParams);
       Teuchos::RCP<PeridigmNS::AdditiveModel> additiveModel = additiveModelFactory.create(additiveParams);
       blockIt->setAdditiveModel(additiveModel);
     }
@@ -1660,6 +1663,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         {
           timeCurrent += dt;
         }
+        workset->currentTime = timeCurrent;
 
         for(int i=0 ; i<y->MyLength() ; ++i){
           u_previousPtr[i] = uPtr[i];
