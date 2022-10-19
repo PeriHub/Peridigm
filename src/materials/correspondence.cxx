@@ -594,7 +594,7 @@ double* detachedNodes
       //neighborCoord      = coordinates      + 3*neighborIndex;
       neighborCoordNP1   = coordinatesNP1   + 3*neighborIndex;
       if (*(detachedNodes+iID)!=0) continue;
-      if (*(detachedNodes+neighborIndex)!=0) continue;
+      // if (*(detachedNodes+neighborIndex)!=0) continue;
 
       undeformedBondX = *(neighborModelCoord)   - *(modelCoord);
       undeformedBondY = *(neighborModelCoord+1) - *(modelCoord+1);
