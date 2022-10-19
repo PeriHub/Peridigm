@@ -146,7 +146,7 @@ namespace DIFFUSION {
         tempState = temperature[neighborID] - temperature[iID];
         // sum_j (Tj-Ti)*rij*Vj -> EQ. (8)
         for (int i=0 ; i<3 ; ++i) H[i] += tempState * X[i] * volume[neighborID] * (1 - *bondDamage);
-        std::cout<<*bondDamage<<std::endl;
+        // std::cout<<*bondDamage<<std::endl;
       }
       // Ki * H -> EQ. (8)
       for (int i=0 ; i<3 ; ++i) {
