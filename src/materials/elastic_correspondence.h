@@ -190,16 +190,6 @@ const ScalarT Cstiff[][6],
 const int type
 );
 
-
-template<typename ScalarT>
-void createRotatedStiff
-(
-const ScalarT C[][6],
-const ScalarT* rotMat,
-ScalarT Cnew[][6]
-);
-
-
 }
 
 #endif // ELASTIC_CORRESPONDENCE_H

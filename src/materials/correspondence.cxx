@@ -48,7 +48,6 @@
 #include "correspondence.h"
 #include "temperature_diffusion.h"
 #include "matrices.h"
-#include "elastic_correspondence.h"
 #include "material_utilities.h"
 #include <Sacado.hpp>
 #include <Teuchos_ScalarTraits.hpp>
@@ -3398,6 +3397,67 @@ void computeHeatFlowState_correspondence(
                                   twoD,
                                   heatFlowState); 
     }
+
+/** Explicit template instantiation for Sacado::Fad::DFad<double>. */
+template<typename ScalarT>
+void createRotatedStiff
+(
+const ScalarT C[][6],
+const ScalarT* rotMat,
+ScalarT Cnew[][6]
+){
+    
+     //  rM[0,0]**2     , rM[0,1]**2     , rM[0,2]**2     , 2.*rM[0,1]*rM[0,2]             , 2.*rM[0,0]*rM[0,2]             , 2.*rM[0,0]*rM[0,1]              ],
+     //[ rM[1,0]**2     , rM[1,1]**2     , rM[1,2]**2     , 2.*rM[1,1]*rM[1,2]             , 2.*rM[1,0]*rM[1,2]             , 2.*rM[1,0]*rM[1,1]              ],
+     //[ rM[2,0]**2     , rM[2,1]**2     , rM[2,2]**2     , 2.*rM[2,1]*rM[2,2]             , 2.*rM[2,0]*rM[2,2]             , 2.*rM[2,0]*rM[2,1]              ],
+     //[ rM[1,0]*rM[2,0], rM[1,1]*rM[2,1], rM[1,2]*rM[2,2], rM[1,1]*rM[2,2]+rM[1,2]*rM[2,1], rM[1,0]*rM[2,2]+rM[1,2]*rM[2,0], rM[1,0]*rM[2,1]+rM[1,1]*rM[2,0] ],
+     //[ rM[0,0]*rM[2,0], rM[0,1]*rM[2,1], rM[0,2]*rM[2,2], rM[0,1]*rM[2,2]+rM[0,2]*rM[2,1], rM[0,0]*rM[2,2]+rM[0,2]*rM[2,0], rM[0,0]*rM[2,1]+rM[0,1]*rM[2,0] ],
+     //[ rM[0,0]*rM[1,0], rM[0,1]*rM[1,1], rM[0,2]*rM[1,2], rM[0,1]*rM[1,2]+rM[0,2]*rM[1,1], rM[0,0]*rM[1,2]+rM[0,2]*rM[1,0], rM[0,0]*rM[1,1]+rM[0,1]*rM[1,0] ],
+     //])
+    
+    
+    ScalarT tm[6][6];
+    bool GlobToLoc = false; 
+    if (GlobToLoc){
+    
+        tm[0][0] = *(rotMat)**(rotMat); tm[0][1] = *(rotMat+1)**(rotMat+1); tm[0][2] = *(rotMat+2)**(rotMat+2); tm[0][3] = 2**(rotMat+1)**(rotMat+2); tm[0][4] = 2**(rotMat)**(rotMat+2); tm[0][5] = 2**(rotMat)**(rotMat+1);
+        tm[1][0] = *(rotMat+3)**(rotMat+3); tm[1][1] = *(rotMat+4)**(rotMat+4); tm[1][2] = *(rotMat+5)**(rotMat+5); tm[1][3] = 2**(rotMat+4)**(rotMat+5); tm[1][4] = 2**(rotMat+3)**(rotMat+5); tm[1][5] = 2**(rotMat+3)**(rotMat+4);  
+        tm[2][0] = *(rotMat+6)**(rotMat+6); tm[2][1] = *(rotMat+7)**(rotMat+7); tm[2][2] = *(rotMat+8)**(rotMat+8); tm[2][3] = 2**(rotMat+7)**(rotMat+8); tm[2][4] = 2**(rotMat+6)**(rotMat+8); tm[2][5] = 2**(rotMat+6)**(rotMat+7);
+        tm[3][0] = *(rotMat+3)**(rotMat+6); tm[3][1] = *(rotMat+4)**(rotMat+7); tm[3][2] = *(rotMat+5)**(rotMat+8); tm[3][3] = *(rotMat+4)**(rotMat+8)+*(rotMat+5)**(rotMat+7); tm[3][4] = *(rotMat+3)**(rotMat+8)+*(rotMat+5)**(rotMat+6); tm[3][5] =*(rotMat+3)**(rotMat+7)+*(rotMat+4)**(rotMat+6);
+        tm[4][0] = *(rotMat)**(rotMat+6); tm[4][1] = *(rotMat+1)**(rotMat+7); tm[4][2] = *(rotMat+2)**(rotMat+8); tm[4][3] = *(rotMat+1)**(rotMat+8)+*(rotMat+2)**(rotMat+7); tm[4][4] = *(rotMat)**(rotMat+8)+*(rotMat+2)**(rotMat+6); tm[4][5] =*(rotMat)**(rotMat+7)+*(rotMat+1)**(rotMat+6);
+        tm[5][0] = *(rotMat)**(rotMat+3); tm[5][1] = *(rotMat+1)**(rotMat+4); tm[5][2] = *(rotMat+2)**(rotMat+5); tm[5][3] = *(rotMat+1)**(rotMat+5)+*(rotMat+2)**(rotMat+4); tm[5][4] = *(rotMat)**(rotMat+5)+*(rotMat+2)**(rotMat+3); tm[5][5] =*(rotMat)**(rotMat+4)+*(rotMat+1)**(rotMat+3);
+    }
+    else{
+        tm[0][0] = *(rotMat)**(rotMat);   tm[0][1] = *(rotMat+1)**(rotMat+1);   tm[0][2] = *(rotMat+2)**(rotMat+2);   tm[0][3] = *(rotMat+1)**(rotMat+2); tm[0][4] = *(rotMat)**(rotMat+2); tm[0][5] = *(rotMat)**(rotMat+1);
+        tm[1][0] = *(rotMat+3)**(rotMat+3);   tm[1][1] = *(rotMat+4)**(rotMat+4);   tm[1][2] = *(rotMat+5)**(rotMat+5);   tm[1][3] = *(rotMat+4)**(rotMat+5); tm[1][4] = *(rotMat+3)**(rotMat+5); tm[1][5] = *(rotMat+3)**(rotMat+4);  
+        tm[2][0] = *(rotMat+6)**(rotMat+6);   tm[2][1] = *(rotMat+7)**(rotMat+7);   tm[2][2] = *(rotMat+8)**(rotMat+8);   tm[2][3] = *(rotMat+7)**(rotMat+8); tm[2][4] = *(rotMat+6)**(rotMat+8); tm[2][5] = *(rotMat+6)**(rotMat+7);
+        tm[3][0] = 2**(rotMat+3)**(rotMat+6); tm[3][1] = 2**(rotMat+4)**(rotMat+7); tm[3][2] = 2**(rotMat+5)**(rotMat+8); tm[3][3] = *(rotMat+4)**(rotMat+8)+*(rotMat+5)**(rotMat+7); tm[3][4] = *(rotMat+3)**(rotMat+8)+*(rotMat+5)**(rotMat+6); tm[3][5] =*(rotMat+3)**(rotMat+7)+*(rotMat+4)**(rotMat+6);
+        tm[4][0] = 2**(rotMat)**(rotMat+6); tm[4][1] = 2**(rotMat+1)**(rotMat+7); tm[4][2] = 2**(rotMat+2)**(rotMat+8); tm[4][3] = *(rotMat+1)**(rotMat+8)+*(rotMat+2)**(rotMat+7); tm[4][4] = *(rotMat)**(rotMat+8)+*(rotMat+2)**(rotMat+6); tm[4][5] =*(rotMat)**(rotMat+7)+*(rotMat+1)**(rotMat+6);
+        tm[5][0] = 2**(rotMat)**(rotMat+3); tm[5][1] = 2**(rotMat+1)**(rotMat+4); tm[5][2] = 2**(rotMat+2)**(rotMat+5); tm[5][3] = *(rotMat+1)**(rotMat+5)+*(rotMat+2)**(rotMat+4); tm[5][4] = *(rotMat)**(rotMat+5)+*(rotMat+2)**(rotMat+3); tm[5][5] =*(rotMat)**(rotMat+4)+*(rotMat+1)**(rotMat+3);
+        
+        
+    }
+    ScalarT Ctemp[6][6];
+    bool transpose = true;
+    MATRICES::MatMul(6,tm ,C ,Ctemp, transpose);
+    transpose = false;
+    MATRICES::MatMul(6,Ctemp ,tm ,Cnew, transpose);
+}
+template void createRotatedStiff<Sacado::Fad::DFad<double> >
+(
+const Sacado::Fad::DFad<double> C[][6],
+const Sacado::Fad::DFad<double>* rotMat,
+Sacado::Fad::DFad<double>  Cnew[][6]
+);
+
+
+// Explicit template instantiation for double
+template void createRotatedStiff<double>
+(
+const double C[][6],
+const double* rotMat,
+double Cnew[][6]
+);
 
 
 template int computeLogStrain<double>
