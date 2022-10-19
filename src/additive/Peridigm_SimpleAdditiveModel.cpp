@@ -121,13 +121,14 @@ PeridigmNS::SimpleAdditiveModel::computeAdditive(const double dt,
 {
   double *fluxDivergence, *pointTime, nodePointTime, *bondDamage, *detachedNodes;
   
-  int neighborhoodListIndex = 0;
-  int bondIndex = 0;
-  int nodeId, numNeighbors, neighborId;
+  int neighborhoodListIndex(0);
+  int bondIndex(0);
+  int nodeId, numNeighbors;
 
   dataManager.getData(m_fluxDivergenceFieldId, PeridigmField::STEP_NP1)->ExtractView(&fluxDivergence);
   dataManager.getData(m_pointTimeFieldId, PeridigmField::STEP_NONE)->ExtractView(&pointTime);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
+  *(dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)) = *(dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_N));
   dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->ExtractView(&detachedNodes);
 
   for (int iID = 0; iID < numOwnedPoints; ++iID)
@@ -137,23 +138,19 @@ PeridigmNS::SimpleAdditiveModel::computeAdditive(const double dt,
     nodePointTime = pointTime[nodeId] * timeFactor;
 
     if(currentTime - dt < nodePointTime && nodePointTime <= currentTime){
-      fluxDivergence[nodeId] = printTemperature * heatCapacity * density;
-      // std::cout<<fluxDivergence[nodeId]<<std::endl;
+      // export temperature via deltaT -> if factors are multiplied the heat flux is equal deltaT in the time integration in Peridigm.cpp
+      fluxDivergence[nodeId] = printTemperature * heatCapacity * density / dt;
       detachedNodes[nodeId] = 0;
       for (int iNID = 0; iNID < numNeighbors; ++iNID) {
-          
-          neighborId = neighborhoodList[neighborhoodListIndex++];
-          // detachedNodes[neighborId] = 0;
-          // bondDamage[bondIndex] = 0;
+          bondIndex++;
+          bondDamage[bondIndex] = 0;
       }
     }
     else{
-      for (int iNID = 0; iNID < numNeighbors; ++iNID) {
-        neighborhoodListIndex++;
-      }
+      bondIndex += numNeighbors;
     }
+    neighborhoodListIndex += numNeighbors;
   }
-  // (*deltaTemperature)[i] = (*fluxDivergence)[i] / (*density)[i] / (*heatCapacity)[i]; 
 
 }
 

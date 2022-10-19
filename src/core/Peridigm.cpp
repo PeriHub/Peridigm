@@ -956,7 +956,7 @@ void PeridigmNS::Peridigm::initializeDiscretization(Teuchos::RCP<Discretization>
   deltaTemperature = Teuchos::rcp((*oneDimensionalMothership)(5), false);            // change in temperature
   fluxDivergence = Teuchos::rcp((*oneDimensionalMothership)(6), false);              // divergence of the flux (e.g., heat flux)
   concentrationFluxDivergence = Teuchos::rcp((*oneDimensionalMothership)(7), false); // divergence of the flux of chemical concentration
-  detachedNodesList = Teuchos::rcp((*oneDimensionalMothership)(8), false);          // detached Nodes
+  detachedNodesList = Teuchos::rcp((*oneDimensionalMothership)(8), false);           // detached Nodes
   netDamageField = Teuchos::rcp((*oneDimensionalMothership)(9), false);               // damage status
   scalarScratch = Teuchos::rcp((*oneDimensionalMothership)(10), false);               // scratch vector corresponding to oneDimensionalMap
   bondDamageDiffField = Teuchos::rcp((*oneDimensionalMothership)(11), false);         // bondDamage difference
@@ -2039,8 +2039,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       for(int i=0 ; i<temperature->MyLength() ; ++i){
         //(*deltaTemperature)[i] = (*externalHeat)[i];
         if ((*heatCapacity)[i] == 0)deltaTPtr[i] = 0.0;
-        else deltaTPtr[i] = -(*fluxDivergence)[i] * dt / ((*density)[i] * (*heatCapacity)[i]); 
-        //tempPtr[i] = temp_previousPtr[i] + (1-numericalDamping) * deltaTPtr[i];
+        else deltaTPtr[i] = -(*fluxDivergence)[i] * dt / ((*density)[i] * (*heatCapacity)[i]);
+        if ((*detachedNodesList)[i]!=0)deltaTPtr[i] = 0.0;
       }
     }
     // V^{n+1}   = V^{n+1/2} + (dt/2)*A^{n+1}
