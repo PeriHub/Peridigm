@@ -266,7 +266,6 @@ const Field_NS::FieldSpec FLUID_PRESSURE_U  (Field_ENUM::FLUID_PRESSURE_U,      
 const Field_NS::FieldSpec FLUID_PRESSURE_V  (Field_ENUM::FLUID_PRESSURE_V,      Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Fluid_Pressure_V");
 const Field_NS::FieldSpec FLUX              (Field_ENUM::FLUX,                  Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Flux");
 const Field_NS::FieldSpec FLUX_DENSITY      (Field_ENUM::FLUX_DENSITY,          Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Flux_Density");
-const Field_NS::FieldSpec SPECIFIC_VOLUME              (Field_ENUM::SPECIFIC_VOLUME,   Field_ENUM::NODE, Field_ENUM::SCALAR, Field_ENUM::TWO_STEP, "Specific_Volume");
 
 /*
  * ELEMENT SCALAR FieldSpecs (scalar fields defined over elements)
@@ -339,7 +338,6 @@ struct FieldSpecMap {
     mymap[FLUID_PRESSURE_V.getLabel()]              = FLUID_PRESSURE_V;
     mymap[FLUX.getLabel()]                          = FLUX;
     mymap[FLUX_DENSITY.getLabel()]                  = FLUX_DENSITY;
-    mymap[SPECIFIC_VOLUME.getLabel()]               = SPECIFIC_VOLUME;
     mymap[VOLUME.getLabel()]                        = VOLUME;
     mymap[POINT_TIME.getLabel()]                    = POINT_TIME;
     mymap[DENSITY.getLabel()]                       = DENSITY;
