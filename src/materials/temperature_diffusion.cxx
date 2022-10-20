@@ -207,6 +207,7 @@ namespace DIFFUSION {
       if (detachedNodes[iID]!=0){
         neighborhoodListIndex += numNeighbors;
         bondDamage += numNeighbors;
+        specificVolume[iID] = 0.0;
         continue; 
       }
       neighborhoodVolume = 4.0 / 3.0 * pi * horizon[iID] * horizon[iID] * horizon[iID];
