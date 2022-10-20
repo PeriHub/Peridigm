@@ -3,13 +3,13 @@
 CWD=$(pwd)
 echo $CWD
 
-# for d in test/verification/*/*/ ; do
-for d in test/regression/*/*/ ; do
+for d in test/verification/*/*/ ; do
+# for d in test/regression/*/*/ ; do
 
     echo "$d"
     cd $d
 
-    endings=("*.g" "*.g.2.*" "*.g.3.*" "*.g.4.*" "*.post" "*.blot" "*.e" "*.e.4.*")
+    endings=("*.g" "*.g.2.*" "*.g.3.*" "*.g.4.*" "*.post" "*.blot" "*.e" "*.e.4.*" "*.txt")
 
     for ending in "${endings[@]}"
     do 
