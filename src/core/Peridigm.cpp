@@ -1835,21 +1835,17 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         damageModelVal->PutScalar(0.0); 
         blockIt->importData(damageModelVal, damageModelFieldId, adaptiveImportStep, Insert);
       }
-    //  if (blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
-    //    plasticModelVal->PutScalar(0.0);
-    //    blockIt->importData(plasticModelVal, plasticModelFieldId, adaptiveImportStep, Insert);
-    //  }
-	  if (blockIt->getMaterialModel()->Name().find("Correspondence")){
-	  	piolaStressTimesInvShapeTensorX->PutScalar(0.0); 
-	  	blockIt->importData(piolaStressTimesInvShapeTensorX, piolaStressTimesInvShapeTensorXId, adaptiveImportStep, Insert);
-	  	piolaStressTimesInvShapeTensorY->PutScalar(0.0); 
-	  	blockIt->importData(piolaStressTimesInvShapeTensorY, piolaStressTimesInvShapeTensorYId, adaptiveImportStep, Insert);
-	  	piolaStressTimesInvShapeTensorZ->PutScalar(0.0); 
-	  	blockIt->importData(piolaStressTimesInvShapeTensorZ, piolaStressTimesInvShapeTensorZId, adaptiveImportStep, Insert);
+
+      if (blockIt->getMaterialModel()->Name().find("Correspondence")){
+        piolaStressTimesInvShapeTensorX->PutScalar(0.0); 
+        blockIt->importData(piolaStressTimesInvShapeTensorX, piolaStressTimesInvShapeTensorXId, adaptiveImportStep, Insert);
+        piolaStressTimesInvShapeTensorY->PutScalar(0.0); 
+        blockIt->importData(piolaStressTimesInvShapeTensorY, piolaStressTimesInvShapeTensorYId, adaptiveImportStep, Insert);
+        piolaStressTimesInvShapeTensorZ->PutScalar(0.0); 
+        blockIt->importData(piolaStressTimesInvShapeTensorZ, piolaStressTimesInvShapeTensorZId, adaptiveImportStep, Insert);
+      }
 	  }
-    }
-    // hier muss noch ein check rein, der die Sachen nur fuer die Schadensmodelle durchfuehrt
-    
+      
     modelEvaluator->updateDilatation(workset);
     
     //modelEvaluator->updatePlasticParameter(workset);
@@ -1896,13 +1892,11 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         if (blockIt->getMaterialModel()->Name() == "Elastic" or blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
             blockIt->importData(damageModelVal, damageModelFieldId, adaptiveImportStep, Insert);
         }
-        //if (blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
-        //    blockIt->importData(plasticModelVal, plasticModelFieldId, adaptiveImportStep, Insert);
-        //}
         if (blockIt->getMaterialModel()->Name().find("Correspondence")){
             blockIt->importData(piolaStressTimesInvShapeTensorX, piolaStressTimesInvShapeTensorXId, adaptiveImportStep, Insert);
             blockIt->importData(piolaStressTimesInvShapeTensorY, piolaStressTimesInvShapeTensorYId, adaptiveImportStep, Insert);
             blockIt->importData(piolaStressTimesInvShapeTensorZ, piolaStressTimesInvShapeTensorZId, adaptiveImportStep, Insert);
+            blockIt->importData(detachedNodesList, detachedNodesFieldId, adaptiveImportStep, Insert);
         }
     }
 
