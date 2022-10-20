@@ -163,7 +163,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_applyHeatTransfer = false;
   if (params.isParameter("Apply Heat Transfer")){
     m_applyHeatTransfer = params.get<bool>("Apply Heat Transfer");
-    if (m_applyThermalFlow){
+    if (m_applyHeatTransfer){
       m_alpha = params.get<double>("Heat Transfer Coefficient");
       m_Tenv = params.get<double>("Environmental Temperature");
       m_factor = 1.0;
