@@ -210,7 +210,8 @@ namespace DIFFUSION {
         specificVolume[iID] = 0.0;
         continue; 
       }
-      neighborhoodVolume = 4.0 / 3.0 * pi * horizon[iID] * horizon[iID] * horizon[iID];
+      if (twoD)neighborhoodVolume = pi * horizon[iID] * horizon[iID];
+      else neighborhoodVolume = 4.0 / 3.0 * pi * horizon[iID] * horizon[iID] * horizon[iID];
       specificVol = volume[iID];
       for(iNID=0 ; iNID<numNeighbors ; ++iNID, bondDamage++){
         neighborID = neighborhoodList[neighborhoodListIndex++];
