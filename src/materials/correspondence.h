@@ -285,6 +285,7 @@ const double alpha,
 const double Tenv,
 const double factor,
 const double surfaceCorrection,
+double* specificVolume,
 double* heatFlowState
 );
 

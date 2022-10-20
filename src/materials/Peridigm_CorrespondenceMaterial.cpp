@@ -201,6 +201,8 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_piolaStressTimesInvShapeTensorZId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "PiolaStressTimesInvShapeTensorZ");
   m_partialStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Partial_Stress");
   m_detachedNodesFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Detached_Nodes");
+  m_specificVolumeFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Specific_Volume");
+  
   m_hourglassStiffId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Hourglass_Stiffness");
   if (m_applyThermalFlow){
     
@@ -233,6 +235,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_fieldIds.push_back(m_unrotatedRateOfDeformationFieldId);
   m_fieldIds.push_back(m_partialStressFieldId);
   m_fieldIds.push_back(m_detachedNodesFieldId);
+  m_fieldIds.push_back(m_specificVolumeFieldId);
   m_fieldIds.push_back(m_hourglassStiffId);
   m_fieldIds.push_back(m_modelAnglesId);
   m_fieldIds.push_back(m_modelOrientationId);
@@ -480,6 +483,8 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                   m_plane,
                                   thermalFlow);
     if (m_applyHeatTransfer){
+      double *specificVolume;
+      dataManager.getData(m_specificVolumeFieldId, PeridigmField::STEP_NP1)->ExtractView(&specificVolume);
       CORRESPONDENCE::computeHeatTransfer_correspondence(
                                   numOwnedPoints,
                                   neighborhoodList,
@@ -493,6 +498,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                   m_Tenv,
                                   m_factor,
                                   m_surfaceCorrection,
+                                  specificVolume,
                                   thermalFlow);
 
     }

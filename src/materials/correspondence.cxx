@@ -3411,6 +3411,7 @@ void computeHeatTransfer_correspondence(
     const double Tenv,
     const double factor,
     const double surfaceCorrection,
+    double* specificVolume,
     double* heatFlowState
     )
 
@@ -3429,6 +3430,7 @@ void computeHeatTransfer_correspondence(
                                   Tenv,
                                   factor,
                                   surfaceCorrection,
+                                  specificVolume,
                                   heatFlowState);
     }
 
