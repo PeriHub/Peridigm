@@ -130,6 +130,7 @@ namespace DIFFUSION {
       numNeighbors = neighborhoodList[neighborhoodListIndex++];
       if (detachedNodes[iID]!=0){
         neighborhoodListIndex += numNeighbors;
+        bondDamage += numNeighbors;
         continue; 
       }
       
@@ -192,7 +193,17 @@ namespace DIFFUSION {
     double* specificVolume,
     double* heatFlowState
     )
-    {}
+    {
+ 
+
+
+
+
+
+
+
+
+    }
   // Peridigm.cpp -> synchro von Detached_nodes
   
   //
