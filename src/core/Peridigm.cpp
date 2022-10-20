@@ -343,6 +343,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   detachedNodesFieldId               = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Detached_Nodes");
   netDamageFieldId                   = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Damage");
   bondDamageDiffFieldId              = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Bond_Damage_Diff");
+  specificVolumeFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Specific_Volume");
   // Create field ids that may be required for output
   fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Proc_Num");
 
@@ -529,6 +530,8 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   auxiliaryFieldIds.push_back(bondDamageDiffFieldId);
   auxiliaryFieldIds.push_back(temperatureFieldId);
   auxiliaryFieldIds.push_back(deltaTemperatureFieldId);
+  auxiliaryFieldIds.push_back(specificVolumeFieldId);
+
   
   
   if(analysisHasContact)

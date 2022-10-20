@@ -696,6 +696,7 @@ namespace PeridigmNS {
     int temperatureFieldId;
     int concentrationFieldId;
     int deltaTemperatureFieldId;
+    int specificVolumeFieldId;
     int fluxDivergenceFieldId;
     int concentrationFluxDivergenceFieldId;
     int forceDensityFieldId;
