@@ -175,6 +175,12 @@ namespace PeridigmNS
     double C[6][6];
     double kappa[3];
     double m_C;
+    double m_alpha;
+    double m_Tenv;
+    double m_factor;
+    double m_surfaceCorrection;
+    double m_limit;
+    bool m_applyHeatTransfer;
     bool m_planeStress, m_planeStrain;
     bool m_plane = false;
     bool nonLin = false;
@@ -214,6 +220,7 @@ namespace PeridigmNS
     int m_type;
     int m_modelAnglesId;
     int m_modelOrientationId;
+    int m_specificVolumeFieldId;
     int m_deformationGradientNonIncFieldId;
     bool m_plast;
     bool m_adaptHourGlass;

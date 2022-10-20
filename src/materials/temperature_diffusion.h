@@ -51,32 +51,51 @@ namespace DIFFUSION {
 
 void computeFlux
 (
- const double* modelCoord,
- const double* temperature,
- const int* neighborhoodList,
- const double* quadratureWeights,
- const int numOwnedPoints,
- const bool useImprovedQuadrature,
- const double* horizon,
- const double coefficient,
- const double* volume,
- double* fluxDivergence
- );
+const double* modelCoord,
+const double* temperature,
+const int* neighborhoodList,
+const double* quadratureWeights,
+const int numOwnedPoints,
+const bool useImprovedQuadrature,
+const double* horizon,
+const double coefficient,
+const double* volume,
+double* fluxDivergence
+);
+
 void computeHeatFlowState_correspondence
 ( 
-    const double* modelCoord,
-    const int numOwnedPoints,
-    const int* neighborhoodList,
-    const double* shapeTensorInverse,
-    const double* temperature,
-    const double* horizon,
-    const double* kappa,
-    const double* volume,
-    const double* detachedNodes,
-    const double* bondDamage,
-    const bool twoD,
-    double* fluxDivergence
-   );
+const double* modelCoord,
+const int numOwnedPoints,
+const int* neighborhoodList,
+const double* shapeTensorInverse,
+const double* temperature,
+const double* horizon,
+const double* kappa,
+const double* volume,
+const double* detachedNodes,
+const double* bondDamage,
+const bool twoD,
+double* heatFlowState
+);
+
+void computeHeatTransfer_correspondence(    
+const int numOwnedPoints,
+const int* neighborhoodList,
+const double* volume,
+const double* temperature,
+const double* horizon,
+const double* detachedNodes,
+const double* bondDamage,
+const bool twoD,
+const double alpha,
+const double Tenv,
+const double factor,
+const double surfaceCorrection,
+const double limit,
+double* specificVolume,
+double* heatFlowState
+);
 }
 
 #endif // TEMPERATURE_DIFFUSION_H

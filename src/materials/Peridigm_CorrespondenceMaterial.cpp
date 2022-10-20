@@ -151,14 +151,30 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_applyThermalFlow = false;
   if (params.isParameter("Apply Thermal Flow")){
     m_applyThermalFlow = params.get<bool>("Apply Thermal Flow");
-    m_C = params.get<double>( "Heat Capacity");
-    kappa[0] = params.get<double>("Thermal Conductivity");
-    if (params.isParameter("Thermal Conductivity 22"))kappa[1] = params.get<double>("Thermal Conductivity 22");
-    else kappa[1] = kappa[0];
-    if (params.isParameter("Thermal Conductivity 33"))kappa[2] = params.get<double>("Thermal Conductivity 33");
-    else kappa[2] = kappa[0];
+    if (m_applyThermalFlow){
+      m_C = params.get<double>( "Heat Capacity");
+      kappa[0] = params.get<double>("Thermal Conductivity");
+      if (params.isParameter("Thermal Conductivity 22"))kappa[1] = params.get<double>("Thermal Conductivity 22");
+      else kappa[1] = kappa[0];
+      if (params.isParameter("Thermal Conductivity 33"))kappa[2] = params.get<double>("Thermal Conductivity 33");
+      else kappa[2] = kappa[0];
+    }
   }
-  
+  m_applyHeatTransfer = false;
+  if (params.isParameter("Apply Heat Transfer")){
+    m_applyHeatTransfer = params.get<bool>("Apply Heat Transfer");
+    if (m_applyThermalFlow){
+      m_alpha = params.get<double>("Heat Transfer Coefficient");
+      m_Tenv = params.get<double>("Environmental Temperature");
+      m_factor = 1.0;
+      m_surfaceCorrection = 1.0;
+      m_limit = 0.6;
+      if (params.isParameter("Volume Factor")) m_factor= params.get<double>("Volume Factor");
+      if (params.isParameter("Surface Correction")) m_surfaceCorrection= params.get<double>("Surface Correction");
+      if (params.isParameter("Volume Limit")) m_limit= params.get<double>("Volume Limit");
+       
+    }
+  }
   // TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticCorrespondence material model.\n");
   TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Apply Shear Correction Factor"), "**** Error:  Shear Correction Factor is not supported for the ElasticCorrespondence material model.\n");
 
@@ -186,6 +202,8 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_piolaStressTimesInvShapeTensorZId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "PiolaStressTimesInvShapeTensorZ");
   m_partialStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Partial_Stress");
   m_detachedNodesFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Detached_Nodes");
+  m_specificVolumeFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Specific_Volume");
+  
   m_hourglassStiffId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Hourglass_Stiffness");
   if (m_applyThermalFlow){
     
@@ -218,6 +236,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_fieldIds.push_back(m_unrotatedRateOfDeformationFieldId);
   m_fieldIds.push_back(m_partialStressFieldId);
   m_fieldIds.push_back(m_detachedNodesFieldId);
+  m_fieldIds.push_back(m_specificVolumeFieldId);
   m_fieldIds.push_back(m_hourglassStiffId);
   m_fieldIds.push_back(m_modelAnglesId);
   m_fieldIds.push_back(m_modelOrientationId);
@@ -464,6 +483,27 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                   bondDamageNP1,
                                   m_plane,
                                   thermalFlow);
+    if (m_applyHeatTransfer){
+      double *specificVolume;
+      dataManager.getData(m_specificVolumeFieldId, PeridigmField::STEP_NP1)->ExtractView(&specificVolume);
+      CORRESPONDENCE::computeHeatTransfer_correspondence(
+                                  numOwnedPoints,
+                                  neighborhoodList,
+                                  volume,
+                                  temperature,
+                                  horizon,
+                                  detachedNodes,
+                                  bondDamageNP1,
+                                  m_plane,
+                                  m_alpha,
+                                  m_Tenv,
+                                  m_factor,
+                                  m_surfaceCorrection,
+                                  m_limit,
+                                  specificVolume,
+                                  thermalFlow);
+
+    }
   }
   // Evaluate the Cauchy stress using the routine implemented in the derived class (specific correspondence material model)
   // The general idea is to compute the stress based on:

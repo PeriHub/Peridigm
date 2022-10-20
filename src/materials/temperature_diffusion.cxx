@@ -51,6 +51,7 @@
 #include <cmath> 
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
+#include "Peridigm_Constants.hpp"
 using namespace std;
 namespace DIFFUSION {
   void computeFlux(
@@ -130,6 +131,7 @@ namespace DIFFUSION {
       numNeighbors = neighborhoodList[neighborhoodListIndex++];
       if (detachedNodes[iID]!=0){
         neighborhoodListIndex += numNeighbors;
+        bondDamage += numNeighbors;
         continue; 
       }
       
@@ -176,6 +178,51 @@ namespace DIFFUSION {
       
     }
   }
+  void computeHeatTransfer_correspondence(    
+    const int numOwnedPoints,
+    const int* neighborhoodList,
+    const double* volume,
+    const double* temperature,
+    const double* horizon,
+    const double* detachedNodes,
+    const double* bondDamage,
+    const bool twoD,
+    const double alpha,
+    const double Tenv,
+    const double factor,
+    const double surfaceCorrection,
+    const double limit,
+    double* specificVolume,
+    double* heatFlowState
+    )
+    {
+    const double pi = PeridigmNS::value_of_pi();
+    int iID, iNID;
+    int neighborhoodListIndex(0);
+    int numNeighbors, neighborID;
+    double neighborhoodVolume(0.0), specificVol(0.0);
+
+    for(iID=0 ; iID<numOwnedPoints ; ++iID){
+      numNeighbors = neighborhoodList[neighborhoodListIndex++];
+      if (detachedNodes[iID]!=0){
+        neighborhoodListIndex += numNeighbors;
+        bondDamage += numNeighbors;
+        continue; 
+      }
+      neighborhoodVolume = 4.0 / 3.0 * pi * horizon[iID] * horizon[iID] * horizon[iID];
+      specificVol = volume[iID];
+      for(iNID=0 ; iNID<numNeighbors ; ++iNID, bondDamage++){
+        neighborID = neighborhoodList[neighborhoodListIndex++];
+        specificVol += (1 - *bondDamage) * (1 - detachedNodes[neighborID]) * volume[neighborID];
+      }
+      
+    }
+    specificVolume[iID] = factor * specificVol / neighborhoodVolume;
+    if (specificVolume[iID] < limit){
+      heatFlowState[iID] = -(temperature[iID] - Tenv) * pow(volume[iID],2.0/3.0) * surfaceCorrection * (1-specificVolume[iID]);
+    }
+    // also neighbor? I don't think so, because its an external flow
+  
   
   // Peridigm.cpp -> synchro von Detached_nodes
   
@@ -192,4 +239,5 @@ namespace DIFFUSION {
   // sqrt^3(V[i])^2 -> alpha*A*surfaceCorrect
   // surfCorrect = 1 als default
   // else q = 0
+    }
 }
