@@ -155,6 +155,7 @@ void zoltanQuery_packPointsMultiFunction
 	PDNEIGH::zoltanQuery_packPointsMultiFunction((void*)(&gridData),numGids,numLids,numExport,exportGlobalIds,exportLocalIds,dest,sizes,idxPtr,buffPtr,&zoltanErr);
 	double *X = gridData.myX.get();
 	double *A = gridData.myAngle.get();
+	double *PT = gridData.myPointTime.get();
 	double *N = gridData.myNodeType.get();
 	double *V = gridData.cellVolume.get();
 	int *neighPtr = gridData.neighborhoodPtr.get();
@@ -207,6 +208,12 @@ void zoltanQuery_packPointsMultiFunction
 		for(int d=0;d<dimension;d++){
 			TEST_FLOATING_EQUALITY(a[d],A[dimension*id+d],tolerance);
 		}
+		// extract pointTime
+		tmp+=numBytes;
+		numBytes = sizeof(double);
+		double pt = 0;
+		memcpy((void*)(&pt),(void*)tmp,numBytes);
+		TEST_FLOATING_EQUALITY(pt,PT[id],tolerance);
 		// extract neighborhood
 		tmp+=numBytes;
 		numBytes = sizeof(int);

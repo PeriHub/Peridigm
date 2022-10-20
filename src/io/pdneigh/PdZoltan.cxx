@@ -597,6 +597,9 @@ void zoltanQuery_packPointsMultiFunction
     numBytes = dimension*sizeof(double);
     void *angPtr = (void*)(&A[dimension*id]);
     memcpy((void*)tmp,angPtr,numBytes);
+    
+    // advance buffer pointer
+    tmp += numBytes;
 
     // point times
     numBytes = sizeof(double);
