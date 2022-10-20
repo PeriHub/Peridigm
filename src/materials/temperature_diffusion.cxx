@@ -219,9 +219,14 @@ namespace DIFFUSION {
       }
       
     }
+    // factor is thickness right now-> has to be adapted to allow different volume shape -> area variations
+    /////////////////////////
+    // verification part!!!
+    /////////////////////////
     specificVolume[iID] = factor * specificVol / neighborhoodVolume;
     if (specificVolume[iID] < limit){
-      heatFlowState[iID] = -(temperature[iID] - Tenv) * pow(volume[iID],2.0/3.0) * surfaceCorrection * (1-specificVolume[iID]);
+      if (twoD) heatFlowState[iID] = -(temperature[iID] - Tenv) * sqrt(volume[iID]/factor) * surfaceCorrection * (1-specificVolume[iID]);
+      else heatFlowState[iID] = -(temperature[iID] - Tenv) * pow(volume[iID],2.0/3.0) * surfaceCorrection * (1-specificVolume[iID]);
     }
     // also neighbor? I don't think so, because its an external flow
   
