@@ -3,32 +3,43 @@
 CWD=$(pwd)
 echo $CWD
 
-endings=("*.g" "*.g.2.*" "*.g.3.*" "*.g.4.*" "*.post" "*.blot" "*.e" "*.e.4.*")
+# for d in test/verification/*/*/ ; do
+for d in test/regression/*/*/ ; do
 
-for ending in "${endings[@]}"
-do 
-    # echo $ending
-    matches=$(grep -r -I -H --include="${ending}" "../${ending}" .)
+    echo "$d"
+    cd $d
 
-    for lines in ${matches}
-    do
-        # echo ${lines}
-        IFS=':'
-        read -a strarr <<< "$lines"
-        file=${strarr[0]}
-        link=${strarr[1]}
+    endings=("*.g" "*.g.2.*" "*.g.3.*" "*.g.4.*" "*.post" "*.blot" "*.e" "*.e.4.*")
 
-        dir="$(dirname "${file}")"
-        file="$(basename "${file}")"
+    for ending in "${endings[@]}"
+    do 
+        # echo $ending
+        matches=$(grep -r -I -H --include="${ending}" "../${ending}" .)
 
-        echo Relink ${link} ${dir} ${file}
-        
-        cd $dir
-        rm ${file}
-        ln -s ${link} ${file}
-        cd ${CWD}
+        # echo  matches: $matches end
+        IFS='
+'
+        for lines in ${matches}
+        do
+            # echo lines: ${lines} end
+            IFS=':'
+            read -a strarr <<< "$lines"
+            file=${strarr[0]}
+            link=${strarr[1]}
 
+            dir="$(dirname "${file}")"
+            file="$(basename "${file}")"
+
+            echo Relink ${link} ${dir} ${file}
+            
+            # cd $dir
+            rm ${file}
+            ln -s ${link} ${file}
+
+        done
     done
+
+    cd $CWD
 done
 
 # for d in test/*/*/
