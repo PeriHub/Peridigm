@@ -169,8 +169,10 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
       m_Tenv = params.get<double>("Environmental Temperature");
       m_factor = 1.0;
       m_surfaceCorrection = 1.0;
-      if (params.isParameter("Volume Factor")) m_factor= params.get<double>( "Volume Factor");
-      if (params.isParameter("Surface Correction")) m_surfaceCorrection= params.get<double>( "Surface Correction");
+      m_limit = 0.6;
+      if (params.isParameter("Volume Factor")) m_factor= params.get<double>("Volume Factor");
+      if (params.isParameter("Surface Correction")) m_surfaceCorrection= params.get<double>("Surface Correction");
+      if (params.isParameter("Volume Limit")) m_limit= params.get<double>("Volume Limit");
        
     }
   }
@@ -498,6 +500,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                   m_Tenv,
                                   m_factor,
                                   m_surfaceCorrection,
+                                  m_limit,
                                   specificVolume,
                                   thermalFlow);
 

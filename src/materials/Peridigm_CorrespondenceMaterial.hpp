@@ -179,6 +179,7 @@ namespace PeridigmNS
     double m_Tenv;
     double m_factor;
     double m_surfaceCorrection;
+    double m_limit;
     bool m_applyHeatTransfer;
     bool m_planeStress, m_planeStrain;
     bool m_plane = false;
