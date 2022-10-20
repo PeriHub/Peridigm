@@ -175,6 +175,9 @@ namespace PeridigmNS
     double C[6][6];
     double kappa[3];
     double m_C;
+    double m_alpha;
+    double m_Tenv;
+    bool m_applyHeatTransfer;
     bool m_planeStress, m_planeStrain;
     bool m_plane = false;
     bool nonLin = false;

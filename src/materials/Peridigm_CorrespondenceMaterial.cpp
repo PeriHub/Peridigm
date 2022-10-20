@@ -151,14 +151,24 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_applyThermalFlow = false;
   if (params.isParameter("Apply Thermal Flow")){
     m_applyThermalFlow = params.get<bool>("Apply Thermal Flow");
-    m_C = params.get<double>( "Heat Capacity");
-    kappa[0] = params.get<double>("Thermal Conductivity");
-    if (params.isParameter("Thermal Conductivity 22"))kappa[1] = params.get<double>("Thermal Conductivity 22");
-    else kappa[1] = kappa[0];
-    if (params.isParameter("Thermal Conductivity 33"))kappa[2] = params.get<double>("Thermal Conductivity 33");
-    else kappa[2] = kappa[0];
+    if (m_applyThermalFlow){
+      m_C = params.get<double>( "Heat Capacity");
+      kappa[0] = params.get<double>("Thermal Conductivity");
+      if (params.isParameter("Thermal Conductivity 22"))kappa[1] = params.get<double>("Thermal Conductivity 22");
+      else kappa[1] = kappa[0];
+      if (params.isParameter("Thermal Conductivity 33"))kappa[2] = params.get<double>("Thermal Conductivity 33");
+      else kappa[2] = kappa[0];
+    }
   }
-  
+  m_applyHeatTransfer = false;
+  if (params.isParameter("Apply Heat Transfer")){
+    m_applyHeatTransfer = params.get<bool>("Apply Heat Transfer");
+    if (m_applyThermalFlow){
+      m_C = params.get<double>( "Heat Capacity");
+      m_alpha = params.get<double>("Heat transfer Coefficient");
+      m_Tenv = params.get<double>("Environmental Temperature");
+    }
+  }
   // TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticCorrespondence material model.\n");
   TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Apply Shear Correction Factor"), "**** Error:  Shear Correction Factor is not supported for the ElasticCorrespondence material model.\n");
 
