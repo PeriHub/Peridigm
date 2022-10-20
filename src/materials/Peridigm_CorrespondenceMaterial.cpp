@@ -328,8 +328,6 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
 {
   // Zero out the forces and partial stress
 
-  dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
-  dataManager.getData(m_partialStressFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   dataManager.getData(m_unrotatedRateOfDeformationFieldId, PeridigmField::STEP_NONE)->PutScalar(0.0);
   double *horizon, *volume, *modelCoordinates, *coordinatesN, *coordinatesNP1, *shapeTensorInverse, *deformationGradient, *bondDamage, *bondDamageNP1, *pointAngles, *detachedNodes;
   // double *deformationGradientNonInc;

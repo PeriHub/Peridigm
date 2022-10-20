@@ -56,7 +56,9 @@ PeridigmNS::SimpleAdditiveModel::SimpleAdditiveModel(const Teuchos::ParameterLis
 {
   
   printTemperature = params.get<double>("Print Temperature");
-  timeFactor = params.get<double>("Time Factor");
+  timeFactor  = 1.0;
+  if (params.isParameter("Time Factor"))timeFactor = params.get<double>("Time Factor");
+  
   heatCapacity = params.get<double>("Heat Capacity");
   density = params.get<double>("Density");
   // std::cout<<printTemperature<<std::endl;
@@ -98,17 +100,16 @@ PeridigmNS::SimpleAdditiveModel::initialize(const double dt,
                                                    const int* neighborhoodList,
                                                    PeridigmNS::DataManager& dataManager) const
 {
-  double *bondDamage, *detachedNodes;
+  double *detachedNodes;
   
-  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamage);
+  
   dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_N)->ExtractView(&detachedNodes);
   // Initialize damage to zero
-  ADDITIVE_UTILITIES::deleteAllBonds(numOwnedPoints, ownedIDs, neighborhoodList, bondDamage, detachedNodes);
   
-  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
+  ADDITIVE_UTILITIES::deleteAllBonds(numOwnedPoints, ownedIDs, neighborhoodList, detachedNodes);
   dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->ExtractView(&detachedNodes);
   // Initialize damage to zero
-  ADDITIVE_UTILITIES::deleteAllBonds(numOwnedPoints, ownedIDs, neighborhoodList, bondDamage, detachedNodes);
+  ADDITIVE_UTILITIES::deleteAllBonds(numOwnedPoints, ownedIDs, neighborhoodList, detachedNodes);
 }
 
 void
@@ -139,7 +140,7 @@ PeridigmNS::SimpleAdditiveModel::computeAdditive(const double dt,
 
     if(currentTime - dt < nodePointTime && nodePointTime <= currentTime){
       // export temperature via deltaT -> if factors are multiplied the heat flux is equal deltaT in the time integration in Peridigm.cpp
-      fluxDivergence[nodeId] = printTemperature * heatCapacity * density / dt;
+      fluxDivergence[nodeId] = -printTemperature * heatCapacity * density / dt;
       detachedNodes[nodeId] = 0;
       for (int iNID = 0; iNID < numNeighbors; ++iNID) {
           bondIndex++;

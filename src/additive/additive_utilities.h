@@ -60,7 +60,7 @@ void deleteAllBonds
     const int numOwnedPoints,
     const int* ownedIDs,
     const int* neighborhoodList,
-    double* bondDamageNP1,
+    //double* bondDamageNP1,
     double* detachedNodes
 );
 

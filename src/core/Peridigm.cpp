@@ -1559,12 +1559,19 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   PeridigmNS::Timer::self().stopTimer("Internal Force");
 
   // Copy force from the data manager to the mothership vector
+  
   PeridigmNS::Timer::self().startTimer("Gather/Scatter");
   force->PutScalar(0.0);
+  detachedNodesList->PutScalar(0.0);
   for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
     scratch->PutScalar(0.0);
     blockIt->exportData(scratch, forceDensityFieldId, PeridigmField::STEP_NP1, Add);
     force->Update(1.0, *scratch, 1.0);
+    if (blockIt->getMaterialModel()->Name().find("Correspondence")!=std::string::npos){  
+      scalarScratch->PutScalar(0.0);
+      blockIt->exportData(scalarScratch, detachedNodesFieldId, PeridigmField::STEP_NP1, Add);
+      detachedNodesList->Update(1.0, *scalarScratch, 1.0);
+    }
   }
   if(analysisHasContact){
     contactManager->exportData(contactForce);
@@ -1828,21 +1835,17 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         damageModelVal->PutScalar(0.0); 
         blockIt->importData(damageModelVal, damageModelFieldId, adaptiveImportStep, Insert);
       }
-    //  if (blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
-    //    plasticModelVal->PutScalar(0.0);
-    //    blockIt->importData(plasticModelVal, plasticModelFieldId, adaptiveImportStep, Insert);
-    //  }
-	  if (blockIt->getMaterialModel()->Name().find("Correspondence")){
-	  	piolaStressTimesInvShapeTensorX->PutScalar(0.0); 
-	  	blockIt->importData(piolaStressTimesInvShapeTensorX, piolaStressTimesInvShapeTensorXId, adaptiveImportStep, Insert);
-	  	piolaStressTimesInvShapeTensorY->PutScalar(0.0); 
-	  	blockIt->importData(piolaStressTimesInvShapeTensorY, piolaStressTimesInvShapeTensorYId, adaptiveImportStep, Insert);
-	  	piolaStressTimesInvShapeTensorZ->PutScalar(0.0); 
-	  	blockIt->importData(piolaStressTimesInvShapeTensorZ, piolaStressTimesInvShapeTensorZId, adaptiveImportStep, Insert);
+
+      if (blockIt->getMaterialModel()->Name().find("Correspondence")){
+        piolaStressTimesInvShapeTensorX->PutScalar(0.0); 
+        blockIt->importData(piolaStressTimesInvShapeTensorX, piolaStressTimesInvShapeTensorXId, adaptiveImportStep, Insert);
+        piolaStressTimesInvShapeTensorY->PutScalar(0.0); 
+        blockIt->importData(piolaStressTimesInvShapeTensorY, piolaStressTimesInvShapeTensorYId, adaptiveImportStep, Insert);
+        piolaStressTimesInvShapeTensorZ->PutScalar(0.0); 
+        blockIt->importData(piolaStressTimesInvShapeTensorZ, piolaStressTimesInvShapeTensorZId, adaptiveImportStep, Insert);
+      }
 	  }
-    }
-    // hier muss noch ein check rein, der die Sachen nur fuer die Schadensmodelle durchfuehrt
-    
+      
     modelEvaluator->updateDilatation(workset);
     
     //modelEvaluator->updatePlasticParameter(workset);
@@ -1889,13 +1892,11 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         if (blockIt->getMaterialModel()->Name() == "Elastic" or blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
             blockIt->importData(damageModelVal, damageModelFieldId, adaptiveImportStep, Insert);
         }
-        //if (blockIt->getMaterialModel()->Name() == "Elastic Plastic"){
-        //    blockIt->importData(plasticModelVal, plasticModelFieldId, adaptiveImportStep, Insert);
-        //}
         if (blockIt->getMaterialModel()->Name().find("Correspondence")){
             blockIt->importData(piolaStressTimesInvShapeTensorX, piolaStressTimesInvShapeTensorXId, adaptiveImportStep, Insert);
             blockIt->importData(piolaStressTimesInvShapeTensorY, piolaStressTimesInvShapeTensorYId, adaptiveImportStep, Insert);
             blockIt->importData(piolaStressTimesInvShapeTensorZ, piolaStressTimesInvShapeTensorZId, adaptiveImportStep, Insert);
+            blockIt->importData(detachedNodesList, detachedNodesFieldId, adaptiveImportStep, Insert);
         }
     }
 
@@ -1958,32 +1959,14 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     if (highNumOfBondDetached && dt*dtReduceFactor>=dtMin) continue;
   
       //********************************
-    detachedNodesList->PutScalar(0.0);
     netDamageField->PutScalar(0.0);
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){    
       if (blockIt->getMaterialModel()->Name().find("Correspondence")){
             scalarScratch->PutScalar(0.0);
-            blockIt->exportData(scalarScratch, detachedNodesFieldId, adaptiveExportStep, Add);
-            detachedNodesList->Update(1.0, *scalarScratch, 1.0);
-                    
-        
-            scalarScratch->PutScalar(0.0);
             blockIt->exportData(scalarScratch, netDamageFieldId, adaptiveExportStep, Add);
-          
             netDamageField->Update(1.0, *scalarScratch, 1.0);
         }
     }
-    //
-    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){    
-      if (blockIt->getMaterialModel()->Name().find("Correspondence")){
-        
-            blockIt->importData(detachedNodesList, detachedNodesFieldId, adaptiveImportStep, Insert);
-            //blockIt->importData(*netDamageField, netDamageFieldId, adaptiveImportStep, Insert);
-        
-      }
-    }
- 
- 
  
     modelEvaluator->evalModel(workset, true);
     PeridigmNS::Timer::self().stopTimer("Internal Force");
@@ -1992,11 +1975,16 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     PeridigmNS::Timer::self().startTimer("Gather/Scatter");
     force->PutScalar(0.0);
     if (heatFlux) fluxDivergence->PutScalar(0.0);
-
+    detachedNodesList->PutScalar(0.0);
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){
       scratch->PutScalar(0.0);
       blockIt->exportData(scratch, forceDensityFieldId, adaptiveExportStep, Add);
       force->Update(1.0, *scratch, 1.0);
+      if (blockIt->getMaterialModel()->Name().find("Correspondence")){
+        scalarScratch->PutScalar(0.0);
+        blockIt->exportData(scalarScratch, detachedNodesFieldId, adaptiveExportStep, Add);
+        detachedNodesList->Update(1.0, *scalarScratch, 1.0);
+      }
       if (heatFlux) {
         scalarScratch->PutScalar(0.0);
         blockIt->exportData(scalarScratch, fluxDivergenceFieldId, adaptiveExportStep, Add);

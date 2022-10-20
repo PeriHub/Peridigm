@@ -58,7 +58,7 @@ void deleteAllBonds
     const int numOwnedPoints,
     const int* ownedIDs,
     const int* neighborhoodList,
-    double* bondDamageNP1,
+    //double* bondDamageNP1,
     double* detachedNodes
 ){
 
@@ -74,10 +74,10 @@ void deleteAllBonds
         nodeId = ownedIDs[iID];
         numNeighbors = neighborhoodList[neighborhoodListIndex++];
         detachedNodes[nodeId] = 1;
-        for (int iNID = 0; iNID < numNeighbors; ++iNID) {       
-            neighborhoodListIndex++;
-            bondDamageNP1[bondIndex] = 1;
-        }
+        //for (int iNID = 0; iNID < numNeighbors; ++iNID) {       
+        //    neighborhoodListIndex++;
+        //    bondDamageNP1[bondIndex++] = 1;
+        //}
     }
 
 
