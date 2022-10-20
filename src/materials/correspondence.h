@@ -272,6 +272,22 @@ const bool twoD,
 double* heatFlowState
 );
 
+void computeHeatTransfer_correspondence(    
+const int numOwnedPoints,
+const int* neighborhoodList,
+const double* volume,
+const double* temperature,
+const double* horizon,
+const double* detachedNodes,
+const double* bondDamage,
+const bool twoD,
+const double alpha,
+const double Tenv,
+const double factor,
+const double surfaceCorrection,
+double* heatFlowState
+);
+
 template<typename ScalarT>
 void createRotatedStiff
 (

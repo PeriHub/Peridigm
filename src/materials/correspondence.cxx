@@ -3398,6 +3398,42 @@ void computeHeatFlowState_correspondence(
                                   heatFlowState); 
     }
 
+void computeHeatTransfer_correspondence(    
+    const int numOwnedPoints,
+    const int* neighborhoodList,
+    const double* volume,
+    const double* temperature,
+    const double* horizon,
+    const double* detachedNodes,
+    const double* bondDamage,
+    const bool twoD,
+    const double alpha,
+    const double Tenv,
+    const double factor,
+    const double surfaceCorrection,
+    double* heatFlowState
+    )
+
+    {
+
+      DIFFUSION::computeHeatTransfer_correspondence(
+                                  numOwnedPoints,
+                                  neighborhoodList,
+                                  volume,
+                                  temperature,
+                                  horizon,
+                                  detachedNodes,
+                                  bondDamage,
+                                  twoD,
+                                  alpha,
+                                  Tenv,
+                                  factor,
+                                  surfaceCorrection,
+                                  heatFlowState);
+    }
+
+
+
 /** Explicit template instantiation for Sacado::Fad::DFad<double>. */
 template<typename ScalarT>
 void createRotatedStiff
