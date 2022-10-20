@@ -167,6 +167,11 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
       m_C = params.get<double>( "Heat Capacity");
       m_alpha = params.get<double>("Heat transfer Coefficient");
       m_Tenv = params.get<double>("Environmental Temperature");
+      m_factor = 1.0;
+      m_surfaceCorrection = 1.0;
+      if (params.isParameter("Volume Factor")) m_factor= params.get<double>( "Volume Factor");
+      if (params.isParameter("Surface Correction")) m_surfaceCorrection= params.get<double>( "Surface Correction");
+       
     }
   }
   // TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticCorrespondence material model.\n");
@@ -474,6 +479,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                   bondDamageNP1,
                                   m_plane,
                                   thermalFlow);
+
   }
   // Evaluate the Cauchy stress using the routine implemented in the derived class (specific correspondence material model)
   // The general idea is to compute the stress based on:
