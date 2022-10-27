@@ -1785,7 +1785,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     if (heatFlux)
     {
       for(int i=0 ; i<temperature->MyLength() ; ++i){
-        tempPtr[i] = temp_previousPtr[i] + deltaTPtr[i]; // happens in the determination of deltaT -> hier wird die Randbedingung eingestellt
+        tempPtr[i] = temp_previousPtr[i] * (1-numericalDamping) + deltaTPtr[i]; // happens in the determination of deltaT -> hier wird die Randbedingung eingestellt
       }
     }
     PeridigmNS::Timer::self().startTimer("Apply Kinematic B.C.");
