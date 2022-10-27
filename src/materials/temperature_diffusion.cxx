@@ -216,10 +216,10 @@ namespace DIFFUSION {
       
       specificVol = volume[iID];
       
-      
       for(iNID=0 ; iNID<numNeighbors ; ++iNID, bondDamage++){
         neighborID = neighborhoodList[neighborhoodListIndex++];
-        if (detachedNodes[neighborID]!=0)  specificVol += (1 - *bondDamage) * volume[neighborID];
+        if (detachedNodes[neighborID]==0) specificVol += (1 - *bondDamage) * volume[neighborID];
+        //specificVol += (1 - *bondDamage) *(detachedNodes[neighborID]-1)* volume[neighborID];
       }
       
     
@@ -231,17 +231,44 @@ namespace DIFFUSION {
       specificVolume[iID] = factor * specificVol / neighborhoodVolume;
       if (specificVolume[iID] < limit){
         if (twoD){
+          //heatFlowState[iID] = alpha * (temperature[iID] - Tenv) * sqrt(volume[iID]/factor) * surfaceCorrection * (1-specificVolume[iID]);
           temp =  alpha * (temperature[iID] - Tenv) * sqrt(volume[iID]/factor) * surfaceCorrection;
+          // * (1-specificVolume[iID]);
           }
         else {
           temp = alpha * (temperature[iID] - Tenv) * pow(volume[iID],2.0/3.0) * surfaceCorrection;
+           // * (1-specificVolume[iID]);  
+          
+          //heatFlowState[iID] = alpha * (temperature[iID] - Tenv) * pow(volume[iID],2.0/3.0) * surfaceCorrection * (1-specificVolume[iID]);
           }
-
+        //if (iID == 1)std::cout<<heatFlowState[iID] <<" "<<specificVolume[iID]<< " " << temperature[iID]<<std::endl;
       }
       heatFlowState[iID] += temp*(1-specificVolume[iID]);
-
+      //for(iNID=0 ; iNID<numNeighbors ; ++iNID){
+      //  neighborID = neighborhoodList[secondneighborhoodListIndex++];
+      //  heatFlowState[neighborID] -= temp *  (1 - detachedNodes[neighborID]);
+      //}
      
     }
 
+    
+    // also neighbor? I don't think so, because its an external flow
+  
+  
+  // Peridigm.cpp -> synchro von Detached_nodes
+  
+  //
+  // Peridigm_Correspondence -> Funktionsaufruf + Datenaqkuise
+  // (V_neigbor/ V_Horizon) -> als output einpflegen
+  //---------------------
+  // hier muss Konvektion rein  x x x 0 0 0 
+  // V_neighbor => V[i] + summe V[neighbor]*(1-detachedNodes[neighbor])
+  // (V_neigbor/ V_Horizon) if < 0.8 -> die 0.8 sind default und können definiert werden
+  // V_Horizon = 4/3*pi*delta^3 oder pi*delta^2*h
+  //  then   (T - T_umgebung)  * alpha * A * (1 - (V_neigbor/ V_Horizon)^100) 
+  // surface coorection factor
+  // sqrt^3(V[i])^2 -> alpha*A*surfaceCorrect
+  // surfCorrect = 1 als default
+  // else q = 0
     }
 }
