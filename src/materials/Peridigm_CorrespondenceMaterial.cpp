@@ -365,6 +365,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
 
   dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->ExtractView(&detachedNodes);
+  *(dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)) = *(dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_N));
   // Compute the inverse of the shape tensor and the approximate deformation gradient
   // The approximate deformation gradient will be used by the derived class (specific correspondence material model)
   // to compute the Cauchy stress.
