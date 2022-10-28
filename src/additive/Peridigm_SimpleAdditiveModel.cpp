@@ -52,7 +52,7 @@
 using namespace std;
 
 PeridigmNS::SimpleAdditiveModel::SimpleAdditiveModel(const Teuchos::ParameterList& params)
-  : AdditiveModel(params), m_applyThermalStrains(false), m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_bondDamageFieldId(-1), m_deltaTemperatureFieldId(-1), m_fluxDivergenceFieldId(-1), m_pointTimeFieldId(-1)
+  : AdditiveModel(params), m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_bondDamageFieldId(-1), m_fluxDivergenceFieldId(-1), m_pointTimeFieldId(-1)
 {
   
   printTemperature = params.get<double>("Print Temperature");
@@ -73,10 +73,9 @@ PeridigmNS::SimpleAdditiveModel::SimpleAdditiveModel(const Teuchos::ParameterLis
   m_detachedNodesFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Detached_Nodes");
   m_fluxDivergenceFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Flux_Divergence");
   m_pointTimeFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Point_Time");
-  if(m_applyThermalStrains)
-    m_deltaTemperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature_Change");
 
-
+  int m_specificVolumeFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Specific_Volume");
+  m_fieldIds.push_back(m_specificVolumeFieldId);
   m_fieldIds.push_back(m_modelCoordinatesFieldId);
   m_fieldIds.push_back(m_coordinatesFieldId);
   m_fieldIds.push_back(m_detachedNodesFieldId);
@@ -84,8 +83,7 @@ PeridigmNS::SimpleAdditiveModel::SimpleAdditiveModel(const Teuchos::ParameterLis
   m_fieldIds.push_back(m_volumeFieldId);
   m_fieldIds.push_back(m_fluxDivergenceFieldId);
   m_fieldIds.push_back(m_pointTimeFieldId);
-  if(m_applyThermalStrains)
-    m_fieldIds.push_back(m_deltaTemperatureFieldId);
+
 
 }
 
@@ -129,7 +127,7 @@ PeridigmNS::SimpleAdditiveModel::computeAdditive(const double dt,
   dataManager.getData(m_fluxDivergenceFieldId, PeridigmField::STEP_NP1)->ExtractView(&fluxDivergence);
   dataManager.getData(m_pointTimeFieldId, PeridigmField::STEP_NONE)->ExtractView(&pointTime);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
-  *(dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)) = *(dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_N));
+
   dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->ExtractView(&detachedNodes);
 
   for (int iID = 0; iID < numOwnedPoints; ++iID)
@@ -138,7 +136,7 @@ PeridigmNS::SimpleAdditiveModel::computeAdditive(const double dt,
     numNeighbors = neighborhoodList[neighborhoodListIndex++];
     nodePointTime = pointTime[nodeId] * timeFactor;
 
-    if(currentTime - dt < nodePointTime && nodePointTime <= currentTime){
+    if(currentTime - dt <= nodePointTime && nodePointTime <= currentTime){
       // export temperature via deltaT -> if factors are multiplied the heat flux is equal deltaT in the time integration in Peridigm.cpp
       fluxDivergence[nodeId] = -printTemperature * heatCapacity * density / dt;
       detachedNodes[nodeId] = 0;

@@ -95,14 +95,8 @@ namespace PeridigmNS {
 
   protected:
 
-	//! Computes the distance between nodes (a1, a2, a3) and (b1, b2, b3).
-	inline double distance(double a1, double a2, double a3,
-						   double b1, double b2, double b3) const
-	{
-	  return ( sqrt( (a1-b1)*(a1-b1) + (a2-b2)*(a2-b2) + (a3-b3)*(a3-b3) ) );
-	}
 
-    bool m_applyThermalStrains;
+
 
     // field ids for all relevant data
     std::vector<int> m_fieldIds;
@@ -111,7 +105,6 @@ namespace PeridigmNS {
     int m_coordinatesFieldId;
     int m_detachedNodesFieldId;
     int m_bondDamageFieldId;
-    int m_deltaTemperatureFieldId;
     int m_fluxDivergenceFieldId;
     int m_pointTimeFieldId;
     
