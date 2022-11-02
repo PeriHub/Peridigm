@@ -152,7 +152,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   if (params.isParameter("Apply Thermal Flow")){
     m_applyThermalFlow = params.get<bool>("Apply Thermal Flow");
     if (m_applyThermalFlow){
-      m_C = params.get<double>( "Heat Capacity");
+      m_C = params.get<double>( "Specific Heat Capacity");
       kappa[0] = params.get<double>("Thermal Conductivity");
       if (params.isParameter("Thermal Conductivity 22"))kappa[1] = params.get<double>("Thermal Conductivity 22");
       else kappa[1] = kappa[0];
@@ -165,7 +165,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     m_applyHeatTransfer = params.get<bool>("Apply Heat Transfer");
     if (m_applyHeatTransfer){
       //m_alpha = params.get<double>("Heat Transfer Coefficient");
-      m_alpha = params.get<double>("Heat Transfer Coefficient") * params.get<double>("Density") * params.get<double>( "Heat Capacity");
+      m_alpha = params.get<double>("Heat Transfer Coefficient") * params.get<double>("Density") * params.get<double>( "Specific Heat Capacity");
       m_Tenv = params.get<double>("Environmental Temperature");
       m_factor = 1.0;
       m_surfaceCorrection = 1.0;

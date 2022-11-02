@@ -81,7 +81,7 @@ namespace PeridigmNS
     //! A dummy method here.
     virtual double lookupMaterialProperty(const std::string keyname) const {
       double data = 0.0; // works currently only for elasticlinearelasticorresponce, because all others are set to zero
-      if  (keyname.compare("Heat Capacity") == 0) data = m_C;
+      if  (keyname.compare("Specific Heat Capacity") == 0) data = m_C;
       return data;}
     //! Initialize the material model.
     virtual void initialize(const double dt,

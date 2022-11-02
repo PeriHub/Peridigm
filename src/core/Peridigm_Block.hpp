@@ -126,9 +126,9 @@ namespace PeridigmNS {
 
     //! Set heat capacity for the additve model
     void setHeatCapacity(const Teuchos::ParameterList& params){
-      if (params.isParameter("Heat Capacity"))
+      if (params.isParameter("Specific Heat Capacity"))
       {
-        heatCapacity = params.get<double>("Heat Capacity");
+        heatCapacity = params.get<double>("Specific Heat Capacity");
       }
       else
       {
@@ -150,7 +150,7 @@ namespace PeridigmNS {
 
     //! Set heat capacity for the additve model
     void defineHeatCapacity(Teuchos::ParameterList& additiveParams){
-      additiveParams.set("Heat Capacity",heatCapacity);
+      additiveParams.set("Specific Heat Capacity",heatCapacity);
     }
 
     //! Set heat density for the additve model

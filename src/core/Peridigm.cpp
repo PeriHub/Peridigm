@@ -760,7 +760,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     
     if (heatFlux){
       double blockHeatCapacity = 0.0;  
-      blockHeatCapacity = blockIt->getMaterialModel()->lookupMaterialProperty("Heat Capacity");
+      blockHeatCapacity = blockIt->getMaterialModel()->lookupMaterialProperty("Specific Heat Capacity");
       for(int i=0 ; i<OwnedScalarPointMap->NumMyElements() ; ++i){
         int globalID = OwnedScalarPointMap->GID(i);
         int mothershipLocalID = oneDimensionalMap->LID(globalID);
