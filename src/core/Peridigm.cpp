@@ -1592,7 +1592,6 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
   // fill the acceleration vector
   (*a) = (*force);
-  // temperature = deltatemp * flux ??
   for(int i=0 ; i<a->MyLength() ; ++i){
     (*a)[i] += (*externalForce)[i];
     (*a)[i] /= (*density)[i/3];
