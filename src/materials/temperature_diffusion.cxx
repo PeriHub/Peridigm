@@ -168,7 +168,6 @@ namespace DIFFUSION {
           for (int j=0 ; j<3 ; ++j) {
             temp[i] += KInv[3*i + j] * X[j]; // K * rij -> Eq. (7)
           }
-          //if (nablaT[i]!=0)std::cout<<nablaT[i]<<" " << temp<<std::endl;
           
         }
 
@@ -198,13 +197,12 @@ namespace DIFFUSION {
     {
     const double pi = PeridigmNS::value_of_pi();
     int iID, iNID;
-    int neighborhoodListIndex(0), secondneighborhoodListIndex(0);
+    int neighborhoodListIndex(0);
     int numNeighbors, neighborID;
     double neighborhoodVolume(0.0), specificVol(0.0);
-    double temp;
+    //Selda Oterkus, Erdogan Madenci, and Abigail G. Agwai.  Peridynamicthermal diffusion.Journal of Computational Physics, 265:71–96, 2014.
     for(iID=0 ; iID<numOwnedPoints ; ++iID){
       numNeighbors = neighborhoodList[neighborhoodListIndex++];
-      secondneighborhoodListIndex = neighborhoodListIndex;
       if (detachedNodes[iID]!=0){
         neighborhoodListIndex += numNeighbors;
         bondDamage += numNeighbors;
@@ -219,39 +217,21 @@ namespace DIFFUSION {
       for(iNID=0 ; iNID<numNeighbors ; ++iNID, bondDamage++){
         neighborID = neighborhoodList[neighborhoodListIndex++];
         if (detachedNodes[neighborID]==0) specificVol += (1 - *bondDamage) * volume[neighborID];
-        //specificVol += (1 - *bondDamage) *(detachedNodes[neighborID]-1)* volume[neighborID];
       }
-      
-    
-    // factor is thickness right now-> has to be adapted to allow different volume shape -> area variations
-    /////////////////////////
-    // verification part!!!
-    /////////////////////////
-      temp = 0.0;
       specificVolume[iID] = factor * specificVol / neighborhoodVolume;
+      if (specificVolume[iID]>1)specificVolume[iID]=1;
       if (specificVolume[iID] < limit){
         if (twoD){
-          //heatFlowState[iID] = alpha * (temperature[iID] - Tenv) * sqrt(volume[iID]/factor) * surfaceCorrection * (1-specificVolume[iID]);
-          temp =  alpha * (temperature[iID] - Tenv) * sqrt(volume[iID]/factor) * surfaceCorrection;
-          // * (1-specificVolume[iID]);
-          
+          heatFlowState[iID] +=  alpha * (temperature[iID] - Tenv) / sqrt(volume[iID]) * surfaceCorrection;
           }
         else {
-          temp = alpha * (temperature[iID] - Tenv) * pow(volume[iID],2.0/3.0) * surfaceCorrection;
-           // * (1-specificVolume[iID]);  
-          
-          //heatFlowState[iID] = alpha * (temperature[iID] - Tenv) * pow(volume[iID],2.0/3.0) * surfaceCorrection * (1-specificVolume[iID]);
+          heatFlowState[iID] += alpha * (temperature[iID] - Tenv) * pow(volume[iID],2.0/3.0) * surfaceCorrection;
+
           }
-        //if (iID == 1)std::cout<<heatFlowState[iID] <<" 
-      }
-      heatFlowState[iID] += temp*(1-specificVolume[iID]);
-      //for(iNID=0 ; iNID<numNeighbors ; ++iNID){
-      //  neighborID = neighborhoodList[secondneighborhoodListIndex++];
-      //  heatFlowState[neighborID] -= temp *  (1 - detachedNodes[neighborID]);
-      //}
-     
+
+     }
     }
 
     
-    }
+  }
 }

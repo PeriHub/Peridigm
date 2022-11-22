@@ -175,7 +175,7 @@ namespace PeridigmNS
     double C[6][6];
     double kappa[3];
     double m_C;
-    double m_alpha;
+    double m_kappa;
     double m_Tenv;
     double m_factor;
     double m_surfaceCorrection;

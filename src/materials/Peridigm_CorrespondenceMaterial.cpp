@@ -164,8 +164,8 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   if (params.isParameter("Apply Heat Transfer")){
     m_applyHeatTransfer = params.get<bool>("Apply Heat Transfer");
     if (m_applyHeatTransfer){
-      //m_alpha = params.get<double>("Heat Transfer Coefficient");
-      m_alpha = params.get<double>("Heat Transfer Coefficient") * params.get<double>("Density") * params.get<double>( "Specific Heat Capacity");
+      
+      m_kappa = params.get<double>("Heat Transfer Coefficient");
       m_Tenv = params.get<double>("Environmental Temperature");
       m_factor = 1.0;
       m_surfaceCorrection = 1.0;
@@ -497,7 +497,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                   detachedNodes,
                                   bondDamageNP1,
                                   m_plane,
-                                  m_alpha / dt,
+                                  m_kappa,
                                   m_Tenv,
                                   m_factor,
                                   m_surfaceCorrection,
