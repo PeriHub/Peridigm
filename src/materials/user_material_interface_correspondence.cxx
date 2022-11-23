@@ -65,6 +65,7 @@ const ScalarT* DeformationGradientN,
 const ScalarT* DeformationGradientNP1, 
 const ScalarT* strainN, 
 ScalarT* strainNP1, 
+const ScalarT* unrotatedCauchyStressN,
 ScalarT* unrotatedCauchyStressNP1, 
 const int numPoints, 
 const int nstatev,
@@ -89,6 +90,8 @@ const std::string matname
   const ScalarT* GLStrainN = strainN;
   ScalarT* GLStrainNP1 = strainNP1;
   ScalarT* sigmaNP1 = unrotatedCauchyStressNP1;
+  const ScalarT* sigmaN = unrotatedCauchyStressN;
+  
   bool rotation = false;
   int nshr = 3;
   int nnormal = 3;
@@ -127,7 +130,7 @@ const std::string matname
   }
 
   for(int iID=0 ; iID<numPoints ; ++iID, 
-          coords+=3, defGradN+=9, defGradNP1+=9, GLStrainN+=9,GLStrainNP1+=9,sigmaNP1+=9, angles+=3){
+          coords+=3, defGradN+=9, defGradNP1+=9, GLStrainN+=9,GLStrainNP1+=9,sigmaN+=9,sigmaNP1+=9, angles+=3){
           NOEL = iID;
     if (MATRICES::vectorNorm(angles, 3)!=0)rotation=true;
     else rotation = false;
@@ -141,13 +144,21 @@ const std::string matname
     if (rotation==true){  
       MATRICES::tensorRotation(angles,GLStrainN,true,strainLoc);
       MATRICES::tensorRotation(angles,deps,true,deps);
+      MATRICES::tensorRotation(angles,sigmaN,true,sigmaNP1);
+// old stresses N -> hier rein
+
     }
-    else{for(int jID=0 ; jID<9 ; ++jID)strainLoc[jID]=*(GLStrainN+jID);}
+    else{
+      for(int jID=0 ; jID<9 ; ++jID){
+        strainLoc[jID]=*(GLStrainN+jID);
+        *(sigmaNP1+jID)=*(sigmaN+jID);
+      }
+    }
     
     
     CORRESPONDENCE::GetVoigtNotation(strainLoc, strainLocVoigt);
     CORRESPONDENCE::GetVoigtNotation(deps, depsLocVoigt);
-
+    CORRESPONDENCE::GetVoigtNotation(sigmaNP1LocVoigt, sigmaNP1);
     if (plane_stress){
       CORRESPONDENCE::ReduceComp(sigmaNP1LocVoigt, true);
       CORRESPONDENCE::ReduceComp(strainLocVoigt, true);
@@ -327,6 +338,7 @@ const double* DeformationGradientN,
 const double* DeformationGradientNP1, 
 const double* strainN, 
 double* strainNP1, 
+const double* unrotatedCauchyStressN, 
 double* unrotatedCauchyStressNP1, 
 const int numPoints, 
 const int nstatev,

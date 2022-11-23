@@ -185,7 +185,7 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
   double *angles, *modelCoordinates;
   double *defGradN, *defGradNP1;
   double *GLStrainN, *GLStrainNP1;
-  double *CauchyStressNP1;
+  double *CauchyStressN, *CauchyStressNP1;
   double *RotationN, *RotationNP1;
   // have to be checked if the additional effort is useful or not
   // deactivated for tests with implicit solver
@@ -196,6 +196,7 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NP1)->ExtractView(&defGradNP1);
   dataManager.getData(m_strainFieldId,              PeridigmField::STEP_N)->ExtractView(&GLStrainN);
   dataManager.getData(m_strainFieldId,              PeridigmField::STEP_NP1)->ExtractView(&GLStrainNP1);
+  dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_N)->ExtractView(&CauchyStressN);
   dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&CauchyStressNP1);
   dataManager.getData(m_rotationTensorFieldId, PeridigmField::STEP_N)->ExtractView(&RotationN);
   dataManager.getData(m_rotationTensorFieldId, PeridigmField::STEP_NP1)->ExtractView(&RotationNP1);
@@ -228,6 +229,7 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
                                         defGradNP1, 
                                         GLStrainN,
                                         GLStrainNP1,
+                                        CauchyStressN,
                                         CauchyStressNP1,
                                         numOwnedPoints,
                                         nstatev,
