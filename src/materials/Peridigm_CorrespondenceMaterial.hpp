@@ -173,7 +173,7 @@ namespace PeridigmNS
     double D;
     int m_stabilizationType;
     double C[6][6];
-    double kappa[3];
+    std::vector<double> m_lambda;
     double m_C;
     double m_kappa;
     double m_Tenv;

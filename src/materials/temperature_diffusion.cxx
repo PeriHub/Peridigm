@@ -108,6 +108,7 @@ namespace DIFFUSION {
     const double* volume,
     const double* detachedNodes,
     const double* bondDamage,
+    const double* angles,
     const bool twoD,
     double* heatFlowState
     )
@@ -119,6 +120,8 @@ namespace DIFFUSION {
 
 
     const double *KInv = shapeTensorInverse;
+    std::vector<double> rotatedLambdavector(9);
+    double* rotatedLambda = &rotatedLambdavector[0];
     std::vector<double> Hvector(3), Qvector(3), nablaVector(3), Xvector(3), XpVector(3);
     double* H = &Hvector[0];
     double* X = &Xvector[0];
@@ -158,8 +161,19 @@ namespace DIFFUSION {
           //std::cout<< nablaT[i]<<std::endl;
         }
       }
-      for (int i=0 ; i<3 ; ++i) q[i] = lambda[i] * nablaT[i]; // heat state
-
+      if (MATRICES::vectorNorm(angles, 3)!=0){  
+        MATRICES::tensorRotation(angles,lambda,true,rotatedLambda);
+        for (int i=0 ; i<3 ; ++i) {
+          q[i] = 0.0;
+          for (int j=0 ; j<3 ; ++j) {
+            q[i] += rotatedLambda[3*i + j] * nablaT[j];
+            //std::cout<< nablaT[i]<<std::endl;
+          }
+        }
+      }
+      else{
+        for (int i=0 ; i<3 ; ++i) q[i] = lambda[4*i] * nablaT[i]; // heat state
+      }
       for(iNID=0 ; iNID<numNeighbors ; ++iNID){
         neighborID = neighborhoodList[secondNeighborhoodListIndex++];
         for (int i=0 ; i<3 ; ++i)X[i] = modelCoord[3*neighborID+i] - Xp[i];
@@ -168,9 +182,7 @@ namespace DIFFUSION {
           for (int j=0 ; j<3 ; ++j) {
             temp[i] += KInv[3*i + j] * X[j]; // K * rij -> Eq. (7)
           }
-          
         }
-
         for (int i=0 ; i<3 ; ++i)  heatFlowState[iID] -= temp[i] * q[i] * volume[neighborID]; // qj * temp -> Eq (7)
         for (int i=0 ; i<3 ; ++i)  heatFlowState[neighborID] += temp[i] * q[i] * volume[iID];
       }

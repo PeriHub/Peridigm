@@ -264,10 +264,11 @@ const int* neighborhoodList,
 const double* shapeTensorInverse,
 const double* temperature,
 const double* horizon,
-const double* kappa,
+const double* lambda,
 const double* volume,
 const double* detachedNodes,
 const double* bondDamage,
+const double* angles,
 const bool twoD,
 double* heatFlowState
 );

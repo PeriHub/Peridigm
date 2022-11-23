@@ -153,11 +153,17 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     m_applyThermalFlow = params.get<bool>("Apply Thermal Flow");
     if (m_applyThermalFlow){
       m_C = params.get<double>( "Specific Heat Capacity");
-      kappa[0] = params.get<double>("Thermal Conductivity");
-      if (params.isParameter("Thermal Conductivity 22"))kappa[1] = params.get<double>("Thermal Conductivity 22");
-      else kappa[1] = kappa[0];
-      if (params.isParameter("Thermal Conductivity 33"))kappa[2] = params.get<double>("Thermal Conductivity 33");
-      else kappa[2] = kappa[0];
+      m_lambda.push_back(params.get<double>("Thermal Conductivity"));
+      m_lambda.push_back(0.0);
+      m_lambda.push_back(0.0);
+      m_lambda.push_back(0.0);
+      if (params.isParameter("Thermal Conductivity 22"))m_lambda.push_back(params.get<double>("Thermal Conductivity 22"));
+      else m_lambda.push_back(params.get<double>("Thermal Conductivity")) ;
+      m_lambda.push_back(0.0);
+      m_lambda.push_back(0.0);
+      m_lambda.push_back(0.0);
+      if (params.isParameter("Thermal Conductivity 33"))m_lambda.push_back(params.get<double>("Thermal Conductivity 33"));
+      else m_lambda.push_back(params.get<double>("Thermal Conductivity")) ;
     }
   }
   m_applyHeatTransfer = false;
@@ -472,6 +478,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
     dataManager.getData(m_temperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&temperature);
     dataManager.getData(m_thermalFlowStateFieldId, PeridigmField::STEP_NP1)->ExtractView(&thermalFlow);
     dataManager.getData(m_thermalFlowStateFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
+    const double* lambda = &m_lambda[0];
     CORRESPONDENCE::computeHeatFlowState_correspondence(
                                   modelCoordinates,
                                   numOwnedPoints,
@@ -479,10 +486,11 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                   shapeTensorInverse,
                                   temperature,
                                   horizon,
-                                  kappa,
+                                  lambda,
                                   volume,
                                   detachedNodes,
                                   bondDamageNP1,
+                                  pointAngles,
                                   m_plane,
                                   thermalFlow);
     if (m_applyHeatTransfer){
