@@ -104,7 +104,7 @@ namespace DIFFUSION {
     const double* shapeTensorInverse,
     const double* temperature,
     const double* horizon,
-    const double* kappa,
+    const double* lambda,
     const double* volume,
     const double* detachedNodes,
     const double* bondDamage,
@@ -158,7 +158,7 @@ namespace DIFFUSION {
           //std::cout<< nablaT[i]<<std::endl;
         }
       }
-      for (int i=0 ; i<3 ; ++i) q[i] = kappa[i] * nablaT[i]; // heat state
+      for (int i=0 ; i<3 ; ++i) q[i] = lambda[i] * nablaT[i]; // heat state
 
       for(iNID=0 ; iNID<numNeighbors ; ++iNID){
         neighborID = neighborhoodList[secondNeighborhoodListIndex++];
