@@ -385,7 +385,7 @@ ScalarT* rotMat
  
 
     // x - direction
-    *(rotMatX) = 1;   *(rotMatX+1) = 0;           *(rotMatX+2) = 0;
+    *(rotMatX)   = 1; *(rotMatX+1) = 0;           *(rotMatX+2) = 0;
     *(rotMatX+3) = 0; *(rotMatX+4) = cos(rad[0]); *(rotMatX+5) = -sin(rad[0]);
     *(rotMatX+6) = 0; *(rotMatX+7) = sin(rad[0]); *(rotMatX+8) =  cos(rad[0]);
     // y - direction
@@ -393,7 +393,7 @@ ScalarT* rotMat
     *(rotMatY+3) = 0;            *(rotMatY+4) = 1; *(rotMatY+5) = 0;
     *(rotMatY+6) = -sin(rad[1]); *(rotMatY+7) = 0; *(rotMatY+8) = cos(rad[1]);
     // z - direction
-    *(rotMatZ) = cos(rad[2]);   *(rotMatZ+1) = -sin(rad[2]); *(rotMatZ+2) = 0;
+    *(rotMatZ)   = cos(rad[2]); *(rotMatZ+1) = -sin(rad[2]); *(rotMatZ+2) = 0;
     *(rotMatZ+3) = sin(rad[2]); *(rotMatZ+4) =  cos(rad[2]); *(rotMatZ+5) = 0;
     *(rotMatZ+6) = 0;           *(rotMatZ+7) = 0;            *(rotMatZ+8) = 1;
     
