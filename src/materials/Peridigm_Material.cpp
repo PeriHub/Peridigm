@@ -472,7 +472,7 @@ bool PeridigmNS::Material::getThermalExpansionCoefficient(const Teuchos::Paramet
   return m_applyThermalStrains;
 }
 
-void PeridigmNS::Material::getStiffnessmatrix(const Teuchos::ParameterList & params, double C[][6], bool pstrain, bool pstress) const
+void PeridigmNS::Material::getStiffnessmatrix(const Teuchos::ParameterList& params, double C[][6], bool pstrain, bool pstress) const
 {
   double ctemp[6][6];
           
@@ -480,6 +480,7 @@ void PeridigmNS::Material::getStiffnessmatrix(const Teuchos::ParameterList & par
     {
     for(int jID=0 ; jID<6 ; ++jID){
       C[iID][jID]=0.0;
+      ctemp[iID][jID]=0.0;
     }
   }
 
