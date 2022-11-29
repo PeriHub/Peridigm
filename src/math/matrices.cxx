@@ -349,8 +349,7 @@ void tensorRotation
     ScalarT* temp = &tempVec[0];
     ScalarT A = 1;
     MATRICES::createRotationMatrix(angles,rotMat);
-    //MATRICES::TransposeMatrix(rotMat,rotMatT);
-    // geomNL
+
     if (globToLoc){
         MATRICES::MatrixMultiply(true,  false, A, rotMat,tensorIn, temp);
         MATRICES::MatrixMultiply(false, false, A, temp,rotMat,tensorOut);
