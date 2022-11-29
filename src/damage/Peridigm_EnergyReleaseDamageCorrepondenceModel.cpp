@@ -450,7 +450,7 @@ PeridigmNS::EnergyReleaseDamageCorrepondenceModel::computeDamage(const double dt
                 }
                 else
                 {
-                   quadhorizon =  3 /( avgHorizon * avgHorizon * avgHorizon * m_Thickness );
+                   quadhorizon =  3 /( m_pi * avgHorizon * avgHorizon * avgHorizon * m_Thickness );
                 }
 
                 critIso = bondEnergyNP1[bondIndex]/(criticalEnergyTension*quadhorizon);
