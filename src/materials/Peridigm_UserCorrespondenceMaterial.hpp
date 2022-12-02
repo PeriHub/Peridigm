@@ -89,6 +89,8 @@ namespace PeridigmNS {
     // field spec ids for all relevant data
     // should be adapted in future release to the specific needs of properties
     // is now set to 100 properties for one material
+    double alpha[3][3];
+
     int nprops;
     double *userProperties = new double;
     int m_type;
@@ -101,8 +103,11 @@ namespace PeridigmNS {
     int m_modelAnglesId;
     int m_flyingPointFlagFieldId;
     int m_rotationTensorFieldId;
+    int m_temperatureFieldId;
+    int m_deltaTemperatureFieldId;
     bool m_planeStrain;
     bool m_planeStress;
+    bool m_applyThermalStrains;
     std::string matName;
   };
 }

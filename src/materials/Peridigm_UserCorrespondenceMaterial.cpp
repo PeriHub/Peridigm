@@ -99,6 +99,8 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
   {
     userProperties[iID-1] = params.get<double>(prop + std::to_string(iID));
   }
+  
+  m_applyThermalStrains = getThermalExpansionCoefficient(params,alpha);
  
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   
@@ -108,7 +110,16 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
   m_deformationGradientFieldId          = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Deformation_Gradient");
   m_modelAnglesId                       = fieldManager.getFieldId(PeridigmField::NODE   , PeridigmField::VECTOR, PeridigmField::CONSTANT     , "Local_Angles");
   m_flyingPointFlagFieldId              = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Flying_Point_Flag");
-  m_rotationTensorFieldId               = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Rotation_Tensor");
+  m_rotationTensorFieldId               = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Rotation_Tensor"); 
+  
+  if (m_applyThermalStrains)
+  {
+    m_temperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature");
+    m_deltaTemperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature_Change");
+    m_fieldIds.push_back(m_temperatureFieldId);
+    m_fieldIds.push_back(m_deltaTemperatureFieldId);
+  }
+
   nstatev = 0;
   if (params.isParameter("Number of State Vars")){
     nstatev = params.get<int>("Number of State Vars");
@@ -124,7 +135,11 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
       prop = "State_Parameter_Field_";
       for(int iID=0 ; iID<nstat ; ++iID)
       {
-        m_state[iID]                = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, prop + std::to_string(iID+1));
+        if (params.isParameter(prop + std::to_string(iID+1))){
+          m_state[iID]                = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, prop + std::to_string(iID+1));
+        }else{
+          m_state[iID] = 0.0;
+        }
         m_fieldIds.push_back(m_state[iID]);
       }
     }
@@ -178,7 +193,7 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
   ///////////////
   //PLACEHOLDER//
   ///////////////
-  double *temperature = NULL, *dtemperature = NULL;
+  double *temperature = NULL, *dTemperature = NULL;
   // double time = 0.0;
   //////////////////////////////
 
@@ -200,8 +215,13 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
   dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&CauchyStressNP1);
   dataManager.getData(m_rotationTensorFieldId, PeridigmField::STEP_N)->ExtractView(&RotationN);
   dataManager.getData(m_rotationTensorFieldId, PeridigmField::STEP_NP1)->ExtractView(&RotationNP1);
- 
   
+  if (m_applyThermalStrains)
+  {
+    dataManager.getData(m_temperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&temperature);
+    dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&dTemperature);
+  }
+
   double *flyingPointFlag;
   dataManager.getData(m_flyingPointFlagFieldId, PeridigmField::STEP_N)->ExtractView(&flyingPointFlag);
 
@@ -240,7 +260,7 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
                                         time,
                                         dt,
                                         temperature,
-                                        dtemperature,
+                                        dTemperature,
                                         RotationN,
                                         RotationNP1,
                                         m_planeStress,

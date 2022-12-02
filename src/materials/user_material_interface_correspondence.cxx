@@ -150,7 +150,7 @@ const std::string matname
     }
     else{
       for(int jID=0 ; jID<9 ; ++jID){
-        strainLoc[jID]=*(GLStrainN+jID);
+        *(strainLoc+jID)=*(GLStrainN+jID);
         *(sigmaNP1+jID)=*(sigmaN+jID);
       }
     }
@@ -169,12 +169,14 @@ const std::string matname
       CORRESPONDENCE::ReduceComp(strainLocVoigt, false);
       CORRESPONDENCE::ReduceComp(depsLocVoigt, false);
     }
-
+    std::cout<<"Run UMAT"<<std::endl;
+    std::cout<<*(temp)<<std::endl;
     CORRESPONDENCE::UMATINT(sigmaNP1LocVoigt,statev,DDSDDE,&SSE,&SPD,&SCD,&RPL,
     DDSDDT, DRPLDE,&DRPLDT,strainLocVoigt,depsLocVoigt,timeArray,&dtime,temp,dtemp,
     &PREDEF,&DPRED,matnameArray,&nnormal,&nshr,&nstresscomp,&nstatev,props,
     &nprops,coords,drot,&PNEWDT,&CELENT,defGradN,defGradNP1,
     &NOEL,&NPT,&KSLAY,&KSPT,&JSTEP,&KINC,&nname);
+    std::cout<<"Umat finished"<<std::endl;
 
     if (plane_stress){
       CORRESPONDENCE::ExtendToSixComp(sigmaNP1LocVoigt, true);
