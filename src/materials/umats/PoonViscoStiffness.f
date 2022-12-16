@@ -402,7 +402,6 @@ C===============================================================================
      5 E_L, E_T, NU_LT, NU_TT, G_LT 
 C
       REAL*8 RELAXATION
-      print *, "Here1"  
 C==================================================================================      
 C     ANZAHL DER PRONY-PARAMETER
 C==================================================================================
@@ -553,7 +552,6 @@ C===============================================================================
       DO K1=1,NTENS
        STRAININC(K1)=DSTRAN(K1)
       END DO
-      print *, "Here2"  
 C==================================================================================
 C  BERECHNUNG DER STEIFIGKEITEN, WENN SIMULATIONSTEMPERATUR OBERHALB DER MESSDATEN IST
 C================================================================================== 
@@ -753,30 +751,30 @@ C===============================================================================
 C    UPDATE STRESS
 C==================================================================================
 C     STRESS 1
-      print *, "STRESS: "  
-      DO K1=1,NTENS
-            print *, STRESS(K1)  
-      END DO
-      print *, "STRAN: "  
-      DO K1=1,NTENS
-            print *, STRAN(K1)  
-      END DO
-      print *, "DSTRAN: "  
-      DO K1=1,NTENS
-            print *, DSTRAN(K1)  
-      END DO
-      print *, "STRAININC: "  
-      DO K1=1,NTENS
-            print *, STRAININC(K1)  
-      END DO
-      print *, "NC11STATE: "  
-      DO K1=1,NTENS
-            print *, NC11STATE(K1)  
-      END DO
-      print *, "C11STATE: "  
-      DO K1=1,NTENS
-            print *, C11STATE(K1)  
-      END DO
+C      print *, "STRESS: "  
+C      DO K1=1,NTENS
+C            print *, STRESS(K1)  
+C      END DO
+C      print *, "STRAN: "  
+C      DO K1=1,NTENS
+C            print *, STRAN(K1)  
+C      END DO
+C      print *, "DSTRAN: "  
+C      DO K1=1,NTENS
+C            print *, DSTRAN(K1)  
+C      END DO
+C      print *, "STRAININC: "  
+C      DO K1=1,NTENS
+C            print *, STRAININC(K1)  
+C      END DO
+C      print *, "NC11STATE: "  
+C      DO K1=1,NTENS
+C            print *, NC11STATE(K1)  
+C      END DO
+C      print *, "C11STATE: "  
+C      DO K1=1,NTENS
+C            print *, C11STATE(K1)  
+C      END DO
       STRESS(1) = STRESS(1) + C11 * STRAININC(1) 
      1           + C12 * STRAININC(2) + C12 * STRAININC(3)
       DO K1=1,NPC11  
@@ -829,10 +827,6 @@ C     STRESS 6
       END DO
       DO K1=1,NPC23 
             STRESS(6) = STRESS(6) - (NC662STATE(K1) - C662STATE(K1))
-      END DO    
-      print *, "STRESS: "  
-      DO K1=1,6
-            print *, STRESS(K1)  
       END DO
 C==================================================================================
 C     BERECHNUNG STEIFIGKEITSMATRIX
@@ -910,10 +904,6 @@ C     SPANNUNGSBERECHNUNG
             DO K1=1,NTENS                                                     
                STRESS(K2) = STRESS(K2) + DDSDDE(K2,K1)*STRAININC(K1)                
             END DO                                                            
-         END DO      
-         print *, "STRESS: "  
-         DO K1=1,6
-               print *, STRESS(K1)  
          END DO
       END IF
 C==================================================================================
@@ -998,8 +988,7 @@ C     C662STATE, [C23 PART]
       DO K1=1,NPC23
          K2= START +K1
          SVAR(K2) = NC662STATE(K1)
-      END DO 
-      print *, "Here3"  
+      END DO  
       RETURN
       END 
 C
