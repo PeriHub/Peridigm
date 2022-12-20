@@ -101,6 +101,9 @@ PeridigmNS::ElasticLinearCorrespondenceMaterial::ElasticLinearCorrespondenceMate
   m_fieldIds.push_back(m_deformationGradientFieldId);
   m_fieldIds.push_back(m_cauchyStressFieldId);
   m_fieldIds.push_back(m_strain);
+  
+  m_vonMisesStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Von_Mises_Stress");
+  m_fieldIds.push_back(m_vonMisesStressFieldId);
 }
 
 PeridigmNS::ElasticLinearCorrespondenceMaterial::~ElasticLinearCorrespondenceMaterial()
@@ -118,6 +121,8 @@ void PeridigmNS::ElasticLinearCorrespondenceMaterial::initialize(const double dt
                                                  ownedIDs,
                                                  neighborhoodList,
                                                  dataManager);
+                                                 
+  dataManager.getData(m_vonMisesStressFieldId, PeridigmField::STEP_NONE)->PutScalar(0.0);
 
 
 }
@@ -136,6 +141,10 @@ void PeridigmNS::ElasticLinearCorrespondenceMaterial::computeCauchyStress(const 
   dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&CauchyStressNP1);
 
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NP1)->ExtractView(&defGrad);
+
+  double *vonMisesStress;
+  dataManager.getData(m_vonMisesStressFieldId, PeridigmField::STEP_NONE)->ExtractView(&vonMisesStress);
+
   if (m_applyThermalStrains) dataManager.getData(m_temperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&temperature);
   dataManager.getData(m_strain, PeridigmField::STEP_NONE)->ExtractView(&strain);
   dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
@@ -152,4 +161,6 @@ void PeridigmNS::ElasticLinearCorrespondenceMaterial::computeCauchyStress(const 
                                                        m_type,
                                                        dt
                                                        );
+
+  CORRESPONDENCE::getVonMisesStress(numOwnedPoints, CauchyStressNP1, vonMisesStress);
 }

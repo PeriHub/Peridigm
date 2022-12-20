@@ -93,6 +93,7 @@ namespace PeridigmNS {
     double m_flawSize;
     double m_flawMagnitude;
     double C[6][6];
+    double alpha[3][3];
     int m_type;
     int m_stabilizationType;
     int m_modelAnglesId;
@@ -100,6 +101,7 @@ namespace PeridigmNS {
     int m_deformationGradientFieldId;
     bool m_incremental;
     bool m_hencky;
+    bool m_applyThermalStrains;
     // field spec ids for all relevant data
     int m_modelCoordinatesFieldId;
     int m_unrotatedRateOfDeformationFieldId;
@@ -107,6 +109,7 @@ namespace PeridigmNS {
     int m_vonMisesStressFieldId;
     int m_equivalentPlasticStrainFieldId;
     int m_unrotatedCauchyStressPlasticFieldId;
+    int m_strain;
   };
 }
 

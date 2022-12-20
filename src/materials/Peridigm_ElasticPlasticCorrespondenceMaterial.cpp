@@ -49,6 +49,7 @@
 #include "Peridigm_Field.hpp"
 #include "elastic_plastic_correspondence.h"
 #include "elastic_correspondence.h"
+#include "correspondence.h"
 #include "material_utilities.h"
 #include <Teuchos_Assert.hpp>
 
@@ -57,7 +58,7 @@ using namespace std;
 PeridigmNS::ElasticPlasticCorrespondenceMaterial::ElasticPlasticCorrespondenceMaterial(const Teuchos::ParameterList& params)
   : CorrespondenceMaterial(params),
     m_yieldStress(0.0),m_modelCoordinatesFieldId(-1),
-    m_unrotatedRateOfDeformationFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_vonMisesStressFieldId(-1), m_equivalentPlasticStrainFieldId(-1), m_unrotatedCauchyStressPlasticFieldId(-1)
+    m_unrotatedRateOfDeformationFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_vonMisesStressFieldId(-1), m_equivalentPlasticStrainFieldId(-1), m_deviatoricStrainIncFieldId(-1), m_unrotatedCauchyStressPlasticFieldId(-1)
 {
   TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the selected correspondence material model.\n");
 
@@ -71,6 +72,7 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::ElasticPlasticCorrespondenceMa
   m_vonMisesStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Von_Mises_Stress");
   m_equivalentPlasticStrainFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Equivalent_Plastic_Strain");
   m_deformationGradientFieldId        = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Deformation_Gradient");
+  m_strain = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Strain");
   
   m_fieldIds.push_back(m_modelCoordinatesFieldId);
   m_fieldIds.push_back(m_unrotatedRateOfDeformationFieldId);
@@ -78,6 +80,7 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::ElasticPlasticCorrespondenceMa
   m_fieldIds.push_back(m_unrotatedCauchyStressPlasticFieldId);
   m_fieldIds.push_back(m_vonMisesStressFieldId);
   m_fieldIds.push_back(m_equivalentPlasticStrainFieldId);
+  m_fieldIds.push_back(m_strain);
   // m_deformationGradientFieldId          = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Deformation_Gradient");
   m_modelAnglesId                       = fieldManager.getFieldId(PeridigmField::NODE   , PeridigmField::VECTOR, PeridigmField::CONSTANT     , "Local_Angles");
   m_fieldIds.push_back(m_modelAnglesId);
@@ -108,6 +111,7 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::ElasticPlasticCorrespondenceMa
       m_hencky = params.get<bool>("Hencky Strain");
   }
   getStiffnessmatrix(params, C, m_planeStrain, m_planeStress);
+  m_applyThermalStrains = getThermalExpansionCoefficient(params,alpha);
   
 
   
@@ -156,12 +160,11 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::computeCauchyStress(const doub
 
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  double *defGrad, *angles;
+  double *defGrad, *angles, *temperature, *strain;
   // have to be checked if the additional effort is useful or not
   // deactivated for tests with implicit solver
 
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NP1)->ExtractView(&defGrad);
-  dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
 
   // CORRESPONDENCE::updateElasticCauchyStressAnisotropic(defGrad, 
   //                                           unrotatedCauchyStressN,
@@ -177,15 +180,33 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::computeCauchyStress(const doub
   double *vonMisesStress;
   dataManager.getData(m_vonMisesStressFieldId, PeridigmField::STEP_NONE)->ExtractView(&vonMisesStress);
 
-  CORRESPONDENCE::updateElasticCauchyStress(unrotatedRateOfDeformation, 
-                                            unrotatedCauchyStressN, 
-                                            unrotatedCauchyStressNP1,
-                                            vonMisesStress,
-                                            numOwnedPoints,
-                                            m_bulkModulus,
-                                            m_shearModulus,
-                                            dt);
+  if (m_applyThermalStrains) dataManager.getData(m_temperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&temperature);
+  dataManager.getData(m_strain, PeridigmField::STEP_NONE)->ExtractView(&strain);
+  dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
+
+  CORRESPONDENCE::getStrain(numOwnedPoints, defGrad, alpha, temperature, m_hencky, m_applyThermalStrains, strain);
+  
+  CORRESPONDENCE::updateElasticCauchyStressAnisotropic(strain,
+                                                       unrotatedCauchyStressN,
+                                                       unrotatedCauchyStressNP1,
+                                                       numOwnedPoints,
+                                                       C,
+                                                       angles,
+                                                       m_type,
+                                                       dt
+                                                       );
+
+  // CORRESPONDENCE::updateElasticCauchyStress(unrotatedRateOfDeformation, 
+  //                                           unrotatedCauchyStressN, 
+  //                                           unrotatedCauchyStressNP1,
+  //                                           vonMisesStress,
+  //                                           numOwnedPoints,
+  //                                           m_bulkModulus,
+  //                                           m_shearModulus,
+  //                                           dt);
                                             
+  CORRESPONDENCE::getVonMisesStress(numOwnedPoints, unrotatedCauchyStressNP1, vonMisesStress);
+
   double  *equivalentPlasticStrainN, *equivalentPlasticStrainNP1;
   dataManager.getData(m_vonMisesStressFieldId, PeridigmField::STEP_NONE)->ExtractView(&vonMisesStress);
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_NP1)->ExtractView(&equivalentPlasticStrainNP1);
@@ -198,7 +219,7 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::computeCauchyStress(const doub
                                                             unrotatedCauchyStressNP1, 
                                                             vonMisesStress,
                                                             equivalentPlasticStrainN, 
-                                                            equivalentPlasticStrainNP1, 
+                                                            equivalentPlasticStrainNP1,
                                                             numOwnedPoints, 
                                                             m_bulkModulus, 
                                                             m_shearModulus, 
