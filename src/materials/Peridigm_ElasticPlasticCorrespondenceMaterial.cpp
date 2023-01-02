@@ -72,7 +72,7 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::ElasticPlasticCorrespondenceMa
   m_vonMisesStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Von_Mises_Stress");
   m_equivalentPlasticStrainFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Equivalent_Plastic_Strain");
   m_deformationGradientFieldId        = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Deformation_Gradient");
-  m_strain = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Unrotated_Strain");
+  m_strain = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Unrotated_Strain");
   
   m_fieldIds.push_back(m_modelCoordinatesFieldId);
   m_fieldIds.push_back(m_unrotatedRateOfDeformationFieldId);
@@ -160,7 +160,7 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::computeCauchyStress(const doub
 
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  double *defGrad, *angles, *temperature, *strain;
+  double *defGrad, *angles, *temperature, *strainN, *strainNP1;
   // have to be checked if the additional effort is useful or not
   // deactivated for tests with implicit solver
 
@@ -181,12 +181,13 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::computeCauchyStress(const doub
   dataManager.getData(m_vonMisesStressFieldId, PeridigmField::STEP_NONE)->ExtractView(&vonMisesStress);
 
   if (m_applyThermalStrains) dataManager.getData(m_temperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&temperature);
-  dataManager.getData(m_strain, PeridigmField::STEP_NONE)->ExtractView(&strain);
+  dataManager.getData(m_strain, PeridigmField::STEP_NP1)->ExtractView(&strainNP1);
+  dataManager.getData(m_strain, PeridigmField::STEP_N)->ExtractView(&strainN);
   dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
 
-  CORRESPONDENCE::getStrain(numOwnedPoints, defGrad, alpha, temperature, m_hencky, m_applyThermalStrains, strain);
+  CORRESPONDENCE::getStrain(numOwnedPoints, defGrad, alpha, temperature, m_hencky, m_applyThermalStrains, strainNP1);
   
-  CORRESPONDENCE::updateElasticCauchyStressAnisotropic(strain,
+  CORRESPONDENCE::updateElasticCauchyStressAnisotropic(strainNP1,
                                                        unrotatedCauchyStressN,
                                                        unrotatedCauchyStressNP1,
                                                        numOwnedPoints,
@@ -208,21 +209,17 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::computeCauchyStress(const doub
   CORRESPONDENCE::getVonMisesStress(numOwnedPoints, unrotatedCauchyStressNP1, vonMisesStress);
 
   double  *equivalentPlasticStrainN, *equivalentPlasticStrainNP1;
-  dataManager.getData(m_vonMisesStressFieldId, PeridigmField::STEP_NONE)->ExtractView(&vonMisesStress);
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_NP1)->ExtractView(&equivalentPlasticStrainNP1);
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_N)->ExtractView(&equivalentPlasticStrainN);
-  double *modelCoordinates;
-  dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&modelCoordinates);
                                                     
-  CORRESPONDENCE::updateElasticPerfectlyPlasticCauchyStress(unrotatedRateOfDeformation, 
-                                                            unrotatedCauchyStressN, 
+  CORRESPONDENCE::updateElasticPerfectlyPlasticCauchyStress(unrotatedCauchyStressN, 
                                                             unrotatedCauchyStressNP1, 
                                                             vonMisesStress,
+                                                            strainN,
+                                                            strainNP1,
                                                             equivalentPlasticStrainN, 
                                                             equivalentPlasticStrainNP1,
-                                                            numOwnedPoints, 
-                                                            m_bulkModulus, 
+                                                            numOwnedPoints,
                                                             m_shearModulus, 
-                                                            m_yieldStress, 
-                                                            dt);
+                                                            m_yieldStress);
 }

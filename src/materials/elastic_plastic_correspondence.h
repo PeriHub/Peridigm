@@ -114,17 +114,16 @@ void updateElasticPerfectlyPlasticCauchyStress
 template<typename ScalarT>
 void updateElasticPerfectlyPlasticCauchyStress
 (
-    const ScalarT* unrotatedRateOfDeformation, 
     const ScalarT* cauchyStressN, 
     ScalarT* cauchyStressNP1, 
     ScalarT* vonMisesStress,
+    const ScalarT* strainN,
+    const ScalarT* strainNP1,
     const ScalarT* equivalentPlasticStrainN,
     ScalarT* equivalentPlasticStrainNP1,
-    const int numPoints, 
-    const double bulkMod,
+    const int numPoints,
     const double shearMod,
-    const double yieldStress,
-    const double dt
+    const double yieldStress
 );
 
 template<typename ScalarT>
