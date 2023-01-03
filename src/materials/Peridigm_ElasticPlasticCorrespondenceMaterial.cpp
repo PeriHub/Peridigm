@@ -187,24 +187,24 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::computeCauchyStress(const doub
 
   CORRESPONDENCE::getStrain(numOwnedPoints, defGrad, alpha, temperature, m_hencky, m_applyThermalStrains, strainNP1);
   
-  CORRESPONDENCE::updateElasticCauchyStressAnisotropic(strainNP1,
-                                                       unrotatedCauchyStressN,
-                                                       unrotatedCauchyStressNP1,
-                                                       numOwnedPoints,
-                                                       C,
-                                                       angles,
-                                                       m_type,
-                                                       dt
-                                                       );
+  // CORRESPONDENCE::updateElasticCauchyStressAnisotropic(strainNP1,
+  //                                                      unrotatedCauchyStressN,
+  //                                                      unrotatedCauchyStressNP1,
+  //                                                      numOwnedPoints,
+  //                                                      C,
+  //                                                      angles,
+  //                                                      m_type,
+  //                                                      dt
+  //                                                      );
 
-  // CORRESPONDENCE::updateElasticCauchyStress(unrotatedRateOfDeformation, 
-  //                                           unrotatedCauchyStressN, 
-  //                                           unrotatedCauchyStressNP1,
-  //                                           vonMisesStress,
-  //                                           numOwnedPoints,
-  //                                           m_bulkModulus,
-  //                                           m_shearModulus,
-  //                                           dt);
+  CORRESPONDENCE::updateElasticCauchyStress(unrotatedRateOfDeformation, 
+                                            unrotatedCauchyStressN, 
+                                            unrotatedCauchyStressNP1,
+                                            vonMisesStress,
+                                            numOwnedPoints,
+                                            m_bulkModulus,
+                                            m_shearModulus,
+                                            dt);
                                             
   CORRESPONDENCE::getVonMisesStress(numOwnedPoints, unrotatedCauchyStressNP1, vonMisesStress);
 
@@ -212,14 +212,14 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::computeCauchyStress(const doub
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_NP1)->ExtractView(&equivalentPlasticStrainNP1);
   dataManager.getData(m_equivalentPlasticStrainFieldId, PeridigmField::STEP_N)->ExtractView(&equivalentPlasticStrainN);
                                                     
-  CORRESPONDENCE::updateElasticPerfectlyPlasticCauchyStress(unrotatedCauchyStressN, 
+  CORRESPONDENCE::updateElasticPerfectlyPlasticCauchyStress(unrotatedRateOfDeformation, 
+                                                            unrotatedCauchyStressN, 
                                                             unrotatedCauchyStressNP1, 
                                                             vonMisesStress,
-                                                            strainN,
-                                                            strainNP1,
                                                             equivalentPlasticStrainN, 
                                                             equivalentPlasticStrainNP1,
                                                             numOwnedPoints,
                                                             m_shearModulus, 
-                                                            m_yieldStress);
+                                                            m_yieldStress, 
+                                                            dt);
 }

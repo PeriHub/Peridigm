@@ -440,19 +440,20 @@ void updateElasticPerfectlyPlasticCauchyStressNew
 template<typename ScalarT>
 void updateElasticPerfectlyPlasticCauchyStress
 (
+    const ScalarT* unrotatedRateOfDeformation, 
     const ScalarT* cauchyStressN, 
     ScalarT* cauchyStressNP1, 
     ScalarT* vonMisesStress,
-    const ScalarT* strainN,
-    const ScalarT* strainNP1,
     const ScalarT* equivalentPlasticStrainN,
     ScalarT* equivalentPlasticStrainNP1,
     const int numPoints, 
     const double shearMod,
-    const double yieldStress
+    const double yieldStress,
+    const double dt
 )
 {
   
+  const ScalarT* rateOfDef = unrotatedRateOfDeformation;
   const ScalarT* stressN = cauchyStressN;
   ScalarT* stressNP1 = cauchyStressNP1;
 
@@ -461,6 +462,7 @@ void updateElasticPerfectlyPlasticCauchyStress
   const ScalarT* eqpsN = equivalentPlasticStrainN;
   ScalarT* eqpsNP1 = equivalentPlasticStrainNP1;
 
+  ScalarT strainInc[9];
   ScalarT deviatoricStrainInc[9];
   ScalarT deviatoricStressN[9];
   ScalarT deviatoricStressMagnitudeN;
@@ -471,27 +473,40 @@ void updateElasticPerfectlyPlasticCauchyStress
   ScalarT tempA[9];
   ScalarT tempB[9];
 
+  ScalarT dilatationInc;
   ScalarT sphericalStressN;
   ScalarT sphericalStressNP1;
   ScalarT tempScalar;
   ScalarT yieldFunction;
 
-  for(int iID=0 ; iID<numPoints ; ++iID, stressN+=9,
+  for(int iID=0 ; iID<numPoints ; ++iID, rateOfDef+=9, stressN+=9,
       stressNP1+=9, ++vmStress,++eqpsN,++eqpsNP1){
 
+      sphericalStressNP1 = (*(stressNP1) + *(stressNP1+4) + *(stressNP1+8))/3.0;
+      
+      // Compute the ``trial'' von Mises stress
+      for(int i = 0; i < 9; i++){
+          deviatoricStressNP1[i] = *(stressNP1+i);
+      }
+      deviatoricStressNP1[0] -= sphericalStressNP1;
+      deviatoricStressNP1[4] -= sphericalStressNP1;
+      deviatoricStressNP1[8] -= sphericalStressNP1;
+
+      // Compute \sigma_ij * \sigma_ij
+      tempScalar = 0.0;
+      for(int j = 0; j < 3; j++){
+          for (int i = 0; i < 3; i++) {
+              tempScalar += deviatoricStressNP1[i+3*j] * deviatoricStressNP1[i+3*j];
+          }
+      }
+      
       yieldFunction = yieldStress;
 
       //If true, the step is plastic and we need to return to the yield
       //surface.  
+      // std::cout<<*vmStress<<std::endl;
       if(*vmStress > yieldFunction){
         
-       // Compute \sigma_ij * \sigma_ij
-        tempScalar = 0.0;
-        for(int j = 0; j < 3; j++){
-            for (int i = 0; i < 3; i++) {
-                tempScalar += stressNP1[i+3*j] * stressNP1[i+3*j];
-            }
-        }
         // Avoid divide-by-zero
         deviatoricStressMagnitudeNP1 = std::max(1.0e-20,sqrt(tempScalar));
         //For perfectly plastic deformations we just have a constant factor to 
@@ -503,8 +518,6 @@ void updateElasticPerfectlyPlasticCauchyStress
           deviatoricStressNP1[i] *= tempScalar; 
             *(stressNP1+i) = deviatoricStressNP1[i];
         }
-
-        sphericalStressNP1 = (*(stressNP1) + *(stressNP1+4) + *(stressNP1+8))/3.0;
 
         // Update the Cauchy Stress
         *stressNP1 += sphericalStressNP1;
@@ -555,8 +568,22 @@ void updateElasticPerfectlyPlasticCauchyStress
         //zero
         deviatoricStressMagnitudeN = std::max(1.0e-20,sqrt(tempScalar));
 
+        //strainInc = dt * rateOfDef
+        for(int i = 0; i < 9; i++){
+            strainInc[i] = *(rateOfDef+i)*dt;
+            deviatoricStrainInc[i] = strainInc[i];
+        }
+
+        //dilatation
+        dilatationInc = strainInc[0] + strainInc[4] + strainInc[8];
+
+        //deviatoric strain
+        deviatoricStrainInc[0] -= dilatationInc/3.0;
+        deviatoricStrainInc[4] -= dilatationInc/3.0;
+        deviatoricStrainInc[8] -= dilatationInc/3.0;
+
         for (int i = 0; i < 9; i++) {
-          deviatoricStrainInc[i] = strainNP1[i] - strainN[i];
+          // deviatoricStrainInc[i] = strainNP1[i] - strainN[i];
           //tempA -- The plastic deviatoric strain increment tensor \Delta e_{plastic} = \Delta e_{total} - \Delta e_{elastic}
           tempA[i] = deviatoricStrainInc[i] - (deviatoricStressNP1[i] - deviatoricStressN[i]) / 2.0 / shearMod;
           //tempB -- Deviatoric stress increment.  This is effectively an average of the deviatoric stress 
@@ -1583,16 +1610,16 @@ template void updateElasticPerfectlyPlasticCauchyStressNew<double>
 
 template void updateElasticPerfectlyPlasticCauchyStress<double>
 (
+    const double* unrotatedRateOfDeformation, 
     const double* cauchyStressN, 
     double* cauchyStressNP1, 
     double* vonMisesStress,
-    const double* strainN,
-    const double* strainNP1,
     const double* equivalentPlasticStrainN,
     double* equivalentPlasticStrainNP1,
     const int numPoints, 
     const double shearMod,
-    const double yieldStress
+    const double yieldStress,
+    const double dt
 );
 
 template void updateElasticPerfectlyPlasticCauchyStress<double>
@@ -1738,15 +1765,15 @@ template void updateElasticPerfectlyPlasticCauchyStress<Sacado::Fad::DFad<double
 
 template void updateElasticPerfectlyPlasticCauchyStress<Sacado::Fad::DFad<double> >
 (
+    const Sacado::Fad::DFad<double>* unrotatedRateOfDeformation, 
     const Sacado::Fad::DFad<double>* cauchyStressN, 
     Sacado::Fad::DFad<double>* cauchyStressNP1, 
     Sacado::Fad::DFad<double>* vonMisesStress,
-    const Sacado::Fad::DFad<double>* strainN,
-    const Sacado::Fad::DFad<double>* strainNP1,
     const Sacado::Fad::DFad<double>* equivalentPlasticStrainN,
     Sacado::Fad::DFad<double>* equivalentPlasticStrainNP1,
     const int numPoints, 
     const double shearMod,
-    const double yieldStress
+    const double yieldStress,
+    const double dt
 );
 } 
