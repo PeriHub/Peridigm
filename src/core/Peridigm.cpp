@@ -2071,7 +2071,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       break;
     }	
   }
-  displayProgress("Explicit time integration", 100.0);
+  displayProgress("Explicit time integration", 100);
   *out << "\n\n";
 }
 
@@ -5120,33 +5120,20 @@ Teuchos::RCP< map< string, vector<int> > > PeridigmNS::Peridigm::getExodusNodeSe
   return exodusNodeSets;
 }
 
-void PeridigmNS::Peridigm::displayProgress(string title, double percentComplete){
+void PeridigmNS::Peridigm::displayProgress(string title, int percentComplete){
 
-  int numMarks = 20;
+    std::string bar;
 
-  static bool firstCall = true;
+    for (int i = 0; i < 50; i++) {
+        if (i < (percentComplete / 2)) {
+            bar.replace(i, 1, "=");
+        } else {
+            bar.replace(i, 1, " ");
+        }
+    }
 
-  if(firstCall)
-    firstCall = false;
-  else
-    for(int i=0 ; i<(numMarks + 16 + (int)title.size()) ; ++i) *out << "\b";
-
-  percentComplete = double(int(percentComplete));
-
-  stringstream ssPercentComplete;
-  ssPercentComplete << int(percentComplete);
-  int stringSize = ssPercentComplete.str().size();
-
-  stringstream ss;
-  ss << title << " [";
-  for(int i=0 ; i<int(percentComplete*(numMarks+2-stringSize)/100.0) ; i++)
-    ss << "=";
-  ss << ssPercentComplete.str() << "% Complete";
-  for(int i=int(percentComplete*(numMarks+2-stringSize)/100.0) ; i<(numMarks+2-stringSize) ; i++)
-    ss << "=";
-  ss << "] ";
-
-  *out << ss.str();
+    std::cout << "\r" << title << " [" << bar << "] " << percentComplete << "%     ";
+    std::cout.flush();
 }
 
 void PeridigmNS::Peridigm::writeRestart(Teuchos::RCP<Teuchos::ParameterList> solverParams){
