@@ -99,6 +99,8 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
   {
     userProperties[iID-1] = params.get<double>(prop + std::to_string(iID));
   }
+  
+  m_applyThermalStrains = getThermalExpansionCoefficient(params,alpha);
  
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   
@@ -108,7 +110,16 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
   m_deformationGradientFieldId          = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Deformation_Gradient");
   m_modelAnglesId                       = fieldManager.getFieldId(PeridigmField::NODE   , PeridigmField::VECTOR, PeridigmField::CONSTANT     , "Local_Angles");
   m_flyingPointFlagFieldId              = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Flying_Point_Flag");
-  m_rotationTensorFieldId               = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Rotation_Tensor");
+  m_rotationTensorFieldId               = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Rotation_Tensor"); 
+  
+  if (m_applyThermalStrains)
+  {
+    m_temperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature");
+    m_deltaTemperatureFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Temperature_Change");
+    m_fieldIds.push_back(m_temperatureFieldId);
+    m_fieldIds.push_back(m_deltaTemperatureFieldId);
+  }
+
   nstatev = 0;
   if (params.isParameter("Number of State Vars")){
     nstatev = params.get<int>("Number of State Vars");
@@ -116,15 +127,18 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
     TEUCHOS_TEST_FOR_TERMINATION(nstatev<1, 
      "****         The number of state variables must be greater than zero.\n");
 
-    int nstat = int(ceil(nstatev / 9.0));
-    if (nstat > 0) {
+    if (nstatev > 0) {
 
       delete m_state;
-      m_state = new int[nstat];
+      m_state = new int[nstatev];
       prop = "State_Parameter_Field_";
-      for(int iID=0 ; iID<nstat ; ++iID)
+      for(int iID=0 ; iID<nstatev ; ++iID)
       {
-        m_state[iID]                = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, prop + std::to_string(iID+1));
+        if (params.isParameter(prop + std::to_string(iID+1))){
+          m_state[iID]                = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, prop + std::to_string(iID+1));
+        }else{
+          m_state[iID] = 0.0;
+        }
         m_fieldIds.push_back(m_state[iID]);
       }
     }
@@ -178,7 +192,7 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
   ///////////////
   //PLACEHOLDER//
   ///////////////
-  double *temperature = NULL, *dtemperature = NULL;
+  double *temperature = NULL, *dTemperature = NULL;
   // double time = 0.0;
   //////////////////////////////
 
@@ -200,29 +214,35 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
   dataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&CauchyStressNP1);
   dataManager.getData(m_rotationTensorFieldId, PeridigmField::STEP_N)->ExtractView(&RotationN);
   dataManager.getData(m_rotationTensorFieldId, PeridigmField::STEP_NP1)->ExtractView(&RotationNP1);
- 
   
+  if (m_applyThermalStrains)
+  {
+    dataManager.getData(m_temperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&temperature);
+    dataManager.getData(m_deltaTemperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&dTemperature);
+  }
+
   double *flyingPointFlag;
   dataManager.getData(m_flyingPointFlagFieldId, PeridigmField::STEP_N)->ExtractView(&flyingPointFlag);
 
-  double *statev = new double[nstatev*numOwnedPoints];
+  std::vector<double> statevVec(nstatev*numOwnedPoints);
+  double* statev = &statevVec[0];
   // fill with data
-  int nstat = int(ceil(nstatev / 9.0));
-  if (nstat > 0) {
+
+  if (nstatev > 0) {
       double *stat;
-      int tensorLen = 9;
-      for(int iID=0 ; iID<nstat ; ++iID)
+      for(int iID=0 ; iID<nstatev ; ++iID)
       { 
         dataManager.getData(m_state[iID], PeridigmField::STEP_NONE)->ExtractView(&stat);
-        for(int jID=0 ; jID<tensorLen*numOwnedPoints; ++jID){
-          statev[iID*tensorLen*numOwnedPoints + jID] = stat[jID];
+        for(int jID=0 ; jID<numOwnedPoints; ++jID){
+          statev[iID*numOwnedPoints + jID] = stat[jID];
         }
       }
   }
 
   // CORRESPONDENCE::computeGreenLagrangeStrain(defGradNP1,GLStrainNP1,flyingPointFlag,numOwnedPoints);
   // dataManager.getData(m_strainFieldId, PeridigmField::STEP_NP1)->ExtractView(&GLStrainNP1);
-  double* props = new double[nprops]; //temp;
+  std::vector<double> propsVec(nprops);
+  double* props = &propsVec[0];
   for(int iID=0 ; iID<nprops ; ++iID){props[iID] = userProperties[iID];}
   CORRESPONDENCE::userMaterialInterface(modelCoordinates,
                                         defGradN, 
@@ -240,21 +260,20 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
                                         time,
                                         dt,
                                         temperature,
-                                        dtemperature,
+                                        dTemperature,
                                         RotationN,
                                         RotationNP1,
                                         m_planeStress,
                                         m_planeStrain,
                                         matName);
 
-   if (nstat > 0) {
+   if (nstatev > 0) {
       double *stat;
-      int tensorLen = 9;
-      for(int iID=0 ; iID<nstat ; ++iID)
+      for(int iID=0 ; iID<nstatev ; ++iID)
       { 
         dataManager.getData(m_state[iID], PeridigmField::STEP_NONE)->ExtractView(&stat);
-        for(int jID=0 ; jID<tensorLen*numOwnedPoints; ++jID){
-          stat[jID] = statev[iID*tensorLen*numOwnedPoints + jID];
+        for(int jID=0 ; jID<numOwnedPoints; ++jID){
+          stat[jID] = statev[iID*numOwnedPoints + jID];
         }
       }
   }                                           

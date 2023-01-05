@@ -94,6 +94,7 @@ namespace PeridigmNS
     bool m_incremental;
     bool m_hencky;
     bool m_applyThermalStrains;
+    int m_vonMisesStressFieldId;
     
   };
 }

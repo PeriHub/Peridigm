@@ -120,8 +120,7 @@ void updateElasticPerfectlyPlasticCauchyStress
     ScalarT* vonMisesStress,
     const ScalarT* equivalentPlasticStrainN,
     ScalarT* equivalentPlasticStrainNP1,
-    const int numPoints, 
-    const double bulkMod,
+    const int numPoints,
     const double shearMod,
     const double yieldStress,
     const double dt

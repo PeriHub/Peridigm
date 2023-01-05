@@ -2364,6 +2364,57 @@ const double temperature,
 double* strain
 );
 
+
+template<typename ScalarT>
+void getVonMisesStress
+(
+  const int numPoints,
+  const ScalarT* sigmaNP1,
+  ScalarT* vmStress
+)
+{
+  ScalarT deviatoricStressNP1[9];
+  ScalarT sphericalStressNP1;
+  ScalarT tempScalar;
+
+  for(int iID=0 ; iID<numPoints ; ++iID, sigmaNP1+=9, ++vmStress){
+
+    sphericalStressNP1 = (*(sigmaNP1) + *(sigmaNP1+4) + *(sigmaNP1+8))/3.0;
+
+    // Compute the ``trial'' von Mises stress
+    for(int i = 0; i < 9; i++){
+      deviatoricStressNP1[i] = *(sigmaNP1+i);
+    }
+    deviatoricStressNP1[0] -= sphericalStressNP1;
+    deviatoricStressNP1[4] -= sphericalStressNP1;
+    deviatoricStressNP1[8] -= sphericalStressNP1;
+
+    // Compute \sigma_ij * \sigma_ij
+    tempScalar = 0.0;
+    for(int j = 0; j < 3; j++){
+      for(int i = 0; i < 3; i++){
+        tempScalar += deviatoricStressNP1[i+3*j] * deviatoricStressNP1[i+3*j];
+      }
+    }
+
+    *vmStress = sqrt(3.0/2.0*tempScalar);
+  }
+
+}
+
+template void getVonMisesStress<Sacado::Fad::DFad<double>>
+(
+const int numPoints,
+const Sacado::Fad::DFad<double>* sigmaNP1,
+Sacado::Fad::DFad<double>* vmStress
+);
+template void getVonMisesStress<double>
+(
+const int numPoints,
+const double* sigmaNP1,
+double* vmStress
+);
+
 template<typename ScalarT>
 void getStrain
 (

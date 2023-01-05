@@ -141,6 +141,14 @@ ScalarT* strain
 );
 
 template<typename ScalarT>
+void getVonMisesStress
+(
+const int numPoints,
+const ScalarT* sigmaNP1,
+ScalarT* vmStress
+);
+
+template<typename ScalarT>
 void addTemperatureStrain
 (
 const double alpha[][3],
