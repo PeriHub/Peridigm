@@ -105,6 +105,7 @@ namespace PeridigmNS {
     int m_horizonFieldId;
     int m_volumeFieldId;
     int m_coordinatesFieldId;
+    int m_damageFieldId;
     int m_jacobianDeterminantFieldId;
     int m_undamagedWeightedVolumeFieldId;
  };

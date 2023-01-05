@@ -49,6 +49,7 @@
 #include "Peridigm_Field.hpp"
 #include "material_utilities.h" // to use Influence Function 
 #include "correspondence.h" // to compute weighted volume
+#include "damage_utilities.h"
 
 using namespace std;
 
@@ -65,6 +66,7 @@ PeridigmNS::VonMisesStressDamageModel::VonMisesStressDamageModel(const Teuchos::
     m_horizonFieldId(-1), 
     m_volumeFieldId(-1),
     m_coordinatesFieldId(-1), 
+    m_damageFieldId(-1),
     m_jacobianDeterminantFieldId(-1),
     m_undamagedWeightedVolumeFieldId(-1)
 {
@@ -90,6 +92,7 @@ PeridigmNS::VonMisesStressDamageModel::VonMisesStressDamageModel(const Teuchos::
   m_horizonFieldId                                 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Horizon");
   m_volumeFieldId                                  = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume");
   m_coordinatesFieldId                             = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR, PeridigmField::TWO_STEP, "Coordinates");
+  m_damageFieldId                                  = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Damage");
   m_jacobianDeterminantFieldId                     = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Jacobian_Determinant");
   m_undamagedWeightedVolumeFieldId                 = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Undamaged_Weighted_Volume");
 
@@ -100,6 +103,7 @@ PeridigmNS::VonMisesStressDamageModel::VonMisesStressDamageModel(const Teuchos::
   m_fieldIds.push_back(m_horizonFieldId);
   m_fieldIds.push_back(m_volumeFieldId);
   m_fieldIds.push_back(m_coordinatesFieldId);
+  m_fieldIds.push_back(m_damageFieldId);
   m_fieldIds.push_back(m_jacobianDeterminantFieldId);
   m_fieldIds.push_back(m_undamagedWeightedVolumeFieldId);
 }
@@ -117,6 +121,13 @@ PeridigmNS::VonMisesStressDamageModel::initialize(const double dt,
 {
   dataManager.getData(m_brokenBondVolumeAveragedFieldId, PeridigmField::STEP_N)->PutScalar(0.0);
   dataManager.getData(m_brokenBondVolumeAveragedFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
+
+  double *damage, *bondDamage, *vol;
+  dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
+  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
+  dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&vol);
+  // Initialize damage to zero
+  DAMAGE_UTILITIES::calculateDamageIndex(numOwnedPoints,ownedIDs,vol,neighborhoodList,bondDamage, damage);
 }
 
 void
@@ -134,10 +145,11 @@ PeridigmNS::VonMisesStressDamageModel::computeDamage(const double dt,
   dataManager.getData(m_brokenBondVolumeAveragedFieldId, PeridigmField::STEP_NP1)->ExtractView(&brokenBondVolumeAveragedNP1);
   dataManager.getData(m_brokenBondVolumeAveragedFieldId, PeridigmField::STEP_N)->ExtractView(&brokenBondVolumeAveragedN);
 
-  double *horizon, *volume, *coordinates;
+  double *horizon, *volume, *coordinates, *damage;
   double *undamagedWeightedVolume, *jacobianDeterminant;
   dataManager.getData(m_horizonFieldId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
   dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&volume);
+  dataManager.getData(m_damageFieldId, PeridigmField::STEP_NP1)->ExtractView(&damage);
   dataManager.getData(m_coordinatesFieldId, PeridigmField::STEP_NP1)->ExtractView(&coordinates);
   dataManager.getData(m_undamagedWeightedVolumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&undamagedWeightedVolume);
   dataManager.getData(m_jacobianDeterminantFieldId, PeridigmField::STEP_N)->ExtractView(&jacobianDeterminant);
@@ -208,4 +220,7 @@ PeridigmNS::VonMisesStressDamageModel::computeDamage(const double dt,
     if(*brokenBondVolumeAveragedNP1 > m_criticalDamageToNeglectMaterialPoint) // to prevent cases that only a couple of bonds are left, causing instability issues. 
       *flyingPointFlag = 1.0;
   }
+
+  //  Update the element damage (percent of bonds broken)
+  DAMAGE_UTILITIES::calculateDamageIndex(numOwnedPoints,ownedIDs,volume,neighborhoodList,bondDamage, damage);
 }
