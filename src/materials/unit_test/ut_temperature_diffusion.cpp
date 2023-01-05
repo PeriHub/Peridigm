@@ -1,4 +1,4 @@
-//! \file temperature_diffusion.h
+/*! \file ut_temperature_diffusion.cpp */
 
 //@HEADER
 // ************************************************************************
@@ -44,73 +44,67 @@
 //
 // ************************************************************************
 //@HEADER
-#ifndef TEMPERATURE_DIFFUSION_H
-#define TEMPERATURE_DIFFUSION_H
 
-namespace DIFFUSION {
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+#include "Teuchos_UnitTestRepository.hpp"
+#include "temperature_diffusion.h"
 
-void computeFlux
-(
-const double* modelCoord,
-const double* temperature,
-const int* neighborhoodList,
-const double* quadratureWeights,
-const int numOwnedPoints,
-const bool useImprovedQuadrature,
-const double* horizon,
-const double coefficient,
-const double* volume,
-double* fluxDivergence
-);
+using namespace std;
+using namespace Teuchos;
 
-void computeHeatFlowState_correspondence
-( 
-const double* modelCoord,
-const int numOwnedPoints,
-const int* neighborhoodList,
-const double* shapeTensorInverse,
-const double* temperature,
-const double* horizon,
-const double* lambda,
-const double* volume,
-const double* detachedNodes,
-const double* bondDamage,
-const double* angles,
-const bool twoD,
-double* heatFlowState
-);
+TEUCHOS_UNIT_TEST(temperature_diffusion, computeHeatTransfer_correspondence) {
+    const double tolerance = 1.0e-15;
 
-void computeHeatTransfer_correspondence(    
-const int numOwnedPoints,
-const int* neighborhoodList,
-const double* volume,
-const double* temperature,
-const double* horizon,
-const double* detachedNodes,
-const double* bondDamage,
-const bool twoD,
-const double alpha,
-const double Tenv,
-const double factor,
-const double surfaceCorrection,
-const double limit,
-double* specificVolume,
-double* heatFlowState
-);
-void computeHeatTransfer_PaperFit_correspondence(    
-    const int numOwnedPoints,
-    const int* neighborhoodList,
-    const double* modelCoord,
-    const double* volume,
-    const double* temperature,
-    const double* horizon,
-    const double* detachedNodes,
-    const double limit,
-    const bool twoD,
-    const double alpha,
-    const double Tenv,
-    double* heatFlowState
-    );
+    
+   // int numOwnedPoints = 1;
+   // int* neighborhoodList,
+   // double* volume,
+   // double* temperature,
+   // double* horizon,
+   // double* detachedNodes,
+   // double* bondDamage,
+   // bool twoD,
+   // double alpha,
+   // double Tenv,
+   // double factor,
+   // double surfaceCorrection,
+   // double limit,
+   // double* specificVolume,
+   // double* heatFlowState
+
+    DIFFUSION::computeHeatTransfer_correspondence(A,temperature,B);
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+
+
+    //for (n=0; n<9; n++){
+//
+    //        TEST_FLOATING_EQUALITY(B[n],Btest[n],tolerance);
+    //    
+    //}
+
+
 }
 
-#endif // TEMPERATURE_DIFFUSION_H
+
+int main
+(int argc, char* argv[])
+{
+  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+}

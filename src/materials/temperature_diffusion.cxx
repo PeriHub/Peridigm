@@ -246,4 +246,55 @@ namespace DIFFUSION {
 
     
   }
+
+void computeHeatTransfer_PaperFit_correspondence(    
+    const int numOwnedPoints,
+    const int* neighborhoodList,
+    const double* modelCoord,
+    const double* volume,
+    const double* temperature,
+    const double* horizon,
+    const double* detachedNodes,
+    const double limit,
+    const bool twoD,
+    const double alpha,
+    const double Tenv,
+    double* heatFlowState
+    )
+    {
+    int iID;
+    double limitHarcoded = -0.0044;
+    double TenvHardCoded = -130;
+    double TenvHardCodedHeater = 0.0;
+    double alphaHardCoded = 4000;
+    //Selda Oterkus, Erdogan Madenci, and Abigail G. Agwai.  Peridynamicthermal diffusion.Journal of Computational Physics, 265:71–96, 2014.
+    for(iID=0 ; iID<numOwnedPoints ; ++iID){
+      
+      if (modelCoord[3*iID] < limitHarcoded){
+        if (twoD){
+          heatFlowState[iID] +=  alphaHardCoded * (temperature[iID] - TenvHardCoded) / sqrt(volume[iID]);
+          }
+        else {
+          heatFlowState[iID] += alphaHardCoded * (temperature[iID] - TenvHardCoded) * pow(volume[iID],2.0/3.0) ;
+
+          }
+     }
+    if (modelCoord[3*iID] > limitHarcoded+0.005){
+        if (twoD){
+          heatFlowState[iID] +=  alphaHardCoded * (temperature[iID] - TenvHardCodedHeater) / sqrt(volume[iID]);
+          }
+        else {
+          heatFlowState[iID] += alphaHardCoded * (temperature[iID] - TenvHardCodedHeater) * pow(volume[iID],2.0/3.0) ;
+
+          }
+     }
+
+
+
+    }
+
+    
+  }
+
+
 }
