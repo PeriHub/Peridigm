@@ -1430,7 +1430,10 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   bool stopAfterOutput = false;
   bool stopAfterAllDamaged = false;
   bool adaptDt = false;
-  
+  bool deformCalulation = true;
+  if(verletParams->isParameter("Calculate Deformation")){ 
+      deformCalulation = verletParams->get<bool>("Calculate Deformation");
+    }
   if(verletParams->isParameter("Stop before damage initiation")){
       stopBeforeOutput = verletParams->get<bool>("Stop before damage initiation");
   }
@@ -1592,10 +1595,14 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
   // fill the acceleration vector
   (*a) = (*force);
-  for(int i=0 ; i<a->MyLength() ; ++i){
-    (*a)[i] += (*externalForce)[i];
-    (*a)[i] /= (*density)[i/3];
+
+  if (deformCalulation){
+    for(int i=0 ; i<a->MyLength() ; ++i){
+      (*a)[i] += (*externalForce)[i];
+      (*a)[i] /= (*density)[i/3];
+    }
   }
+  else{a->PutScalar(0.0);}
   if (heatFlux){
     for(int i=0 ; i<temperature->MyLength() ; ++i){
       if ((*heatCapacity)[i] == 0)(*deltaTemperature)[i] = 0.0;
@@ -1998,6 +2005,9 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
     // Check for NaNs in force evaluation
     // We'd like to know now because a NaN will likely cause a difficult-to-unravel crash downstream.
+      if (deformCalulation==false){    
+        force->PutScalar(0.0);
+      }
     for(int i=0 ; i<force->MyLength() ; ++i)
      TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite((*force)[i]), "**** NaN returned by force evaluation.\n");
 
@@ -2019,12 +2029,19 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     (*a) = (*force);
     // bool damageExist = false;
     // bool allNodeDamage = true;
-    for(int i=0 ; i<a->MyLength() ; ++i){
-      (*a)[i] += (*externalForce)[i];
-      (*a)[i] /= (*density)[i/3];
-      if ((*detachedNodesList)[i/3]!=0) (*a)[i] = 0;
+    if (deformCalulation){
+      for(int i=0 ; i<a->MyLength() ; ++i){
+        (*a)[i] += (*externalForce)[i];
+        (*a)[i] /= (*density)[i/3];
+        if ((*detachedNodesList)[i/3]!=0) (*a)[i] = 0;
 
+      }
     }
+    else{
+      a->PutScalar(0.0);
+      force->PutScalar(0.0);
+      }
+
     if (heatFlux){
       for(int i=0 ; i<temperature->MyLength() ; ++i){
         //(*deltaTemperature)[i] = (*externalHeat)[i];
@@ -3139,7 +3156,7 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
         safetyFactor = verletSolverParams->get<double>("Safety Factor");
       verletParams.set("Safety Factor", safetyFactor);
     }
-    
+
     copyParameters<double>(verletSolverParams,"Numerical Damping", verletParams);
     copyParameters<double>(verletSolverParams,"Safety Factor", verletParams);
     copyParameters<bool>(verletSolverParams,"Adapt dt", verletParams);
