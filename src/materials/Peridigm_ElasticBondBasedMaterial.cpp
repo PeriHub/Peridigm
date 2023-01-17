@@ -275,35 +275,38 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
   {
 
     int numNeighbors = neighborhoodList[neighborhoodListIndex++];
+
+    numberOfCollNeighbors[iID] = 0;
     
     // if (iID == 183242 | iID == 183243 ){
     // if (iID == 146335){
-      useCollocationNodes[iID] = m_useCollocationNodes;
-    // }
-    // else
-    // {
-    //   useCollocationNodes[iID] = false;
-    // }
+    if (numNeighbors==48){
+      useCollocationNodes[iID] = true;
+    }
+    else
+    {
+      useCollocationNodes[iID] = false;
+    }
 
     nodeID = ownedIDs[iID];
 
     cloudNum = 0;
 
-
+    if (useCollocationNodes[iID]){
     for (int j = 0; j < AuxNodesNo; ++j)
     {
       bool collocationNodeFound = false;
 
       double xAuxNode = AuxNodes[j][0] + x[nodeID * 3];
       double yAuxNode = AuxNodes[j][1] + x[nodeID * 3 + 1];
+      
       // double zAuxNode = AuxNodes[j][2] + x[nodeID*3+2];
 
       // if (x[nodeID * 3] == 0 & x[nodeID * 3 + 1] == -100)
       // {
         // std::cout << "numNeighbors: " << numNeighbors << std::endl;
       // }
-      iNID = 0;
-      for (iNID; iNID < numNeighbors; ++iNID)
+      for (iNID = 0; iNID < numNeighbors; ++iNID)
       {
         // damageOnBond = bondDamage[bondDamageIndex++];
         // std::cout << "bondDamageIndex: " << bondDamageIndex << std::endl;
@@ -347,6 +350,7 @@ void PeridigmNS::ElasticBondBasedMaterial::initialize(const double dt,
         // }
       }
 
+    }
     }
     // bondDamageIndex += numNeighbors;
     // std::cout << "bondDamageIndex: " << bondDamageIndex << std::endl;

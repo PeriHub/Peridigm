@@ -239,14 +239,14 @@ namespace MATERIAL_EVALUATION
 
           if (X[0]== 1.5 & X[1]==-9){
             bondId = p;
-            // std::cout << "X[0]: " << X[0] << std::endl;
-            // std::cout << "X[1]: " << X[1] << std::endl;
-            // std::cout << "neighborX[0]: " << neighborX[0] << std::endl;
-            // std::cout << "neighborX[1]: " << neighborX[1] << std::endl;
-            // std::cout << "Un1[DPN * n + 0]: " << (neighborY[0] - neighborX[0]) << std::endl;
-            // std::cout << "Un1[DPN * n + 1]: " << (neighborY[1] - neighborX[1]) << std::endl;
-            // std::cout << "fx: " << fx << std::endl;
-            // std::cout << "fy: " << fy << std::endl;
+            std::cout << "X[0]: " << X[0] << std::endl;
+            std::cout << "X[1]: " << X[1] << std::endl;
+            std::cout << "neighborX[0]: " << neighborX[0] << std::endl;
+            std::cout << "neighborX[1]: " << neighborX[1] << std::endl;
+            std::cout << "Un1[DPN * n + 0]: " << (neighborY[0] - neighborX[0]) << std::endl;
+            std::cout << "Un1[DPN * n + 1]: " << (neighborY[1] - neighborX[1]) << std::endl;
+            std::cout << "fx: " << fx << std::endl;
+            std::cout << "fy: " << fy << std::endl;
           }
           // fInternalOverlap[3 * neighborId + 0] -= fx * volume * (1.0 - damageOnBond);
           // fInternalOverlap[3 * neighborId + 1] -= fy * volume * (1.0 - damageOnBond);
