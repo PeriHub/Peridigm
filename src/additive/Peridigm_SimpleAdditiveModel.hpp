@@ -107,7 +107,7 @@ namespace PeridigmNS {
     int m_bondDamageFieldId;
     int m_fluxDivergenceFieldId;
     int m_pointTimeFieldId;
-    
+    bool m_damage;
     double printTemperature;
     double heatCapacity;
     double density;
