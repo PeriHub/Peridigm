@@ -97,6 +97,60 @@ namespace DIFFUSION {
     }
     
   }
+  void computeHeatFlowState_bondbased(    
+    const double* modelCoord,
+    const int numOwnedPoints,
+    const int* neighborhoodList,
+    const double* temperature,
+    const double* horizon,
+    const double lambda,
+    const double* volume,
+    const double* detachedNodes,
+    const double* bondDamage,
+    const bool twoD,
+    double* heatFlowState
+    )
+  {
+    // based on "A Review of Peridynamics (PD) Theory of Diffusion Based Problems"
+    // DOI: 10.1155/2021/7782326
+    int neighborhoodListIndex(0);
+    int numNeighbors, neighborID(0), iID, iNID;
+
+    std::vector<double> Xvector(3);
+    double* X = &Xvector[0];
+    double tempState = 0.0; //Eq. (2)
+    double nodeTemperature;
+    double initialDistance, kernel;
+
+    const double pi = PeridigmNS::value_of_pi();
+    for(iID=0 ; iID<numOwnedPoints ; ++iID){
+
+        numNeighbors = neighborhoodList[neighborhoodListIndex++];
+        if (detachedNodes[iID]!=0){
+          neighborhoodListIndex += numNeighbors;
+          bondDamage += numNeighbors;
+          continue; 
+        }
+        nodeTemperature = temperature[iID];
+        X[0] = modelCoord[iID*3];
+        X[1] = modelCoord[iID*3+1];
+        X[2] = modelCoord[iID*3+2];
+        for(iNID=0 ; iNID<numNeighbors ; ++iNID, bondDamage++){
+        neighborID = neighborhoodList[neighborhoodListIndex++];
+        if (detachedNodes[neighborID]!=0)continue; 
+        initialDistance = MATRICES::distance(X[0], X[1], X[2], modelCoord[neighborID*3], modelCoord[neighborID*3+1], modelCoord[neighborID*3+2]);
+        if (twoD) kernel = 6.0/(pi*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
+        else kernel = 6.0/(pi*horizon[iID]*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
+        tempState = (1 - *bondDamage) * temperature[neighborID] - nodeTemperature;
+
+        heatFlowState[iID] -= lambda*kernel*tempState*volume[neighborID]; 
+
+        }
+    }
+
+
+  }
+
   void computeHeatFlowState_correspondence(    
     const double* modelCoord,
     const int numOwnedPoints,
@@ -130,39 +184,9 @@ namespace DIFFUSION {
     double* Xp = &XpVector[0];
     double* nablaT = &nablaVector[0];
     double tempState = 0.0; //Eq. (2)
-    double temp[3], nodeTemperature;
-    double initialDistance, kernel;
+    double temp[3];
 
-    const double pi = PeridigmNS::value_of_pi();
-    for(iID=0 ; iID<numOwnedPoints ; ++iID){
-
-        numNeighbors = neighborhoodList[neighborhoodListIndex++];
-        if (detachedNodes[iID]!=0){
-          neighborhoodListIndex += numNeighbors;
-          bondDamage += numNeighbors;
-          continue; 
-        }
-        nodeTemperature = temperature[iID];
-        X[0] = modelCoord[iID*3];
-        X[1] = modelCoord[iID*3+1];
-        X[2] = modelCoord[iID*3+2];
-        for(iNID=0 ; iNID<numNeighbors ; ++iNID, bondDamage++){
-        neighborID = neighborhoodList[neighborhoodListIndex++];
-        if (detachedNodes[neighborID]!=0)continue; 
-        initialDistance = MATRICES::distance(X[0], X[1], X[2], modelCoord[neighborID*3], modelCoord[neighborID*3+1], modelCoord[neighborID*3+2]);
-        if (twoD) kernel = 6.0/(pi*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
-        else kernel = 6.0/(pi*horizon[iID]*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
-        tempState = (1 - *bondDamage) * temperature[neighborID] - nodeTemperature;
-        //nodeFluxDivergence = lambda[0]*kernel*tempState*volume[neighborID]; 
-        //TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(nodeFluxDivergence), "**** NaN detected in DiffusionMaterial::computeFluxDivergence().\n");
-        heatFlowState[iID] -= lambda[0]*kernel*tempState*volume[neighborID]; 
-        //heatFlowState[neighborID] -= lambda[0]*kernel*tempState*volume[iID]; 
-
-        }
-    }
-
-
-    /*
+        
     for(iID=0 ; iID<numOwnedPoints ; ++iID, KInv+=9){
       numNeighbors = neighborhoodList[neighborhoodListIndex++];
       if (detachedNodes[iID]!=0){
@@ -180,6 +204,7 @@ namespace DIFFUSION {
 
       for(iNID=0 ; iNID<numNeighbors ; ++iNID, bondDamage++){
         neighborID = neighborhoodList[neighborhoodListIndex++];
+        if (detachedNodes[neighborID]!=0) continue; 
         for (int i=0 ; i<3 ; ++i) X[i] = modelCoord[3*neighborID+i] - Xp[i];
         tempState = (temperature[neighborID] - temperature[iID]) * volume[neighborID] * (1 - *bondDamage);
         // sum_j (Tj-Ti)*rij*Vj -> EQ. (8)
@@ -229,7 +254,7 @@ namespace DIFFUSION {
       }
       
     }
-    */
+    
   }
   void computeHeatTransfer(    
     const int numOwnedPoints,

@@ -278,6 +278,7 @@ const double* detachedNodes,
 const double* bondDamage,
 const double* angles,
 const bool twoD,
+const bool bondbased,
 double* heatFlowState
 );
 

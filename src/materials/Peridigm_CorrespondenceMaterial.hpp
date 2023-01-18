@@ -182,6 +182,7 @@ namespace PeridigmNS
     double m_limit;
     bool m_applyHeatTransfer;
     bool m_planeStress, m_planeStrain;
+    bool m_bondbased = true;
     bool m_plane = false;
     bool nonLin = false;
     bool lin = true;

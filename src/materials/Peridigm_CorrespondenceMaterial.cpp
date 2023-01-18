@@ -81,6 +81,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_density = params.get<double>("Density");
 
   m_stabilizationType = 0;
+  m_bondbased = true;
   m_plane = false;
   nonLin = true;
   linRateOfDeformation = true;
@@ -114,6 +115,9 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   //     m_plast = true; // does not work. we have to check
   //
   // }
+ if (params.isParameter("Thermal Bond Based"))
+    m_bondbased = params.get<bool>("Thermal Bond Based");
+  
   m_applyAutomaticDifferentiationJacobian = false;
   if (params.isParameter("Accumulated Plastic"))
     m_plast = params.get<bool>("Accumulated Plastic");
@@ -492,6 +496,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                   bondDamageNP1,
                                   pointAngles,
                                   m_plane,
+                                  m_bondbased,
                                   thermalFlow);
     if (m_applyHeatTransfer){
       double *specificVolume;

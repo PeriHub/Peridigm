@@ -3435,25 +3435,45 @@ void computeHeatFlowState(
     const double* bondDamage,
     const double* angles,
     const bool twoD,
+    const bool bondbased,
     double* heatFlowState
     )
 
     {
-     DIFFUSION::computeHeatFlowState_correspondence(
-                                  modelCoord,
-                                  numOwnedPoints,
-                                  neighborhoodList,
-                                  shapeTensorInverse,
-                                  temperature,
-                                  horizon,
-                                  lambda,
-                                  volume,
-                                  detachedNodes,
-                                  bondDamage,
-                                  angles,
-                                  twoD,
-                                  heatFlowState); 
-    }
+
+      if (bondbased){
+        DIFFUSION::computeHeatFlowState_bondbased(
+                                      modelCoord,
+                                      numOwnedPoints,
+                                      neighborhoodList,
+                                      temperature,
+                                      horizon,
+                                      lambda[0],
+                                      volume,
+                                      detachedNodes,
+                                      bondDamage,
+                                      twoD,
+                                      heatFlowState); 
+      }
+      else{
+        DIFFUSION::computeHeatFlowState_correspondence(
+                                      modelCoord,
+                                      numOwnedPoints,
+                                      neighborhoodList,
+                                      shapeTensorInverse,
+                                      temperature,
+                                      horizon,
+                                      lambda,
+                                      volume,
+                                      detachedNodes,
+                                      bondDamage,
+                                      angles,
+                                      twoD,
+                                      heatFlowState); 
+      }
+
+      }
+        
 
 void computeHeatTransfer(    
     const int numOwnedPoints,

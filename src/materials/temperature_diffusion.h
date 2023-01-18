@@ -79,7 +79,19 @@ const double* angles,
 const bool twoD,
 double* heatFlowState
 );
-
+void computeHeatFlowState_bondbased(    
+const double* modelCoord,
+const int numOwnedPoints,
+const int* neighborhoodList,
+const double* temperature,
+const double* horizon,
+const double lambda,
+const double* volume,
+const double* detachedNodes,
+const double* bondDamage,
+const bool twoD,
+double* heatFlowState
+);
 void computeHeatTransfer(    
 const int numOwnedPoints,
 const int* neighborhoodList,
