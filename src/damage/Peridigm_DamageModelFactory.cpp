@@ -47,6 +47,7 @@
 
 #include <Teuchos_Assert.hpp>
 #include "Peridigm_DamageModelFactory.hpp"
+#include "Peridigm_VonMisesStressDamageModel.hpp"
 #include "Peridigm_CriticalStretchDamageModel.hpp"
 #include "Peridigm_UserDefinedTimeDependentCriticalStretchDamageModel.hpp"
 #include "Peridigm_InterfaceAwareDamageModel.hpp"
@@ -66,6 +67,8 @@ PeridigmNS::DamageModelFactory::create(const Teuchos::ParameterList& damageModel
 
   if(damageModelName == "Critical Stretch")
     damageModel = Teuchos::rcp( new CriticalStretchDamageModel(damageModelParams) );
+  else if(damageModelName == "Von Mises Stress")
+    damageModel = Teuchos::rcp( new VonMisesStressDamageModel(damageModelParams) );
   else if(damageModelName == "Interface Aware")
     damageModel = Teuchos::rcp( new InterfaceAwareDamageModel(damageModelParams) );
   else if(damageModelName == "Time Dependent Critical Stretch")
@@ -81,7 +84,7 @@ PeridigmNS::DamageModelFactory::create(const Teuchos::ParameterList& damageModel
   else {
     string invalidDamageModel("\n**** Unrecognized damage model type: ");
     invalidDamageModel += damageModelName;
-    invalidDamageModel += ", must be \"Critical Stretch\", \"Time Dependent Critical Stretch\", \"Interface Aware\", \"Critical Energy\", \"Critical Energy Correspondence\", or \"Initial Damage\".\n";
+    invalidDamageModel += ", must be \"Critical Stretch\", \"Von Mises Stress\", \"Time Dependent Critical Stretch\", \"Interface Aware\", \"Critical Energy\", \"Critical Energy Correspondence\", or \"Initial Damage\".\n";
     TEUCHOS_TEST_FOR_TERMINATION(true, invalidDamageModel);
   }
 

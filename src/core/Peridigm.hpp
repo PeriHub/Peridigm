@@ -388,7 +388,7 @@ namespace PeridigmNS {
     void setTimeStep(double timeStep) { workset->timeStep = timeStep; }
 
     //! Display a progress bar
-    void displayProgress(std::string title, double percentComplete);
+    void displayProgress(std::string title, int percentComplete);
 
     //! Display information about memory usage
     void printMemoryStats(){Memstat * memstat = Memstat::Instance(); memstat->printStats();};
