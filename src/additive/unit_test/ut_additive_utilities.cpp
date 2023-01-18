@@ -58,15 +58,15 @@ TEUCHOS_UNIT_TEST(ut_addtive_utilities, deleteAllBonds) {
     int numOwnedPoints=2;
     double detachedNodes[2] = {0,0};
     int ownedIDs[2]={0,1};
-    double bondDamage[2] = {0,1}; 
+
     int neighborhoodList[4] = {1,1,1,0};
 
     int n;
 
-    ADDITIVE_UTILITIES::deleteAllBonds(numOwnedPoints,ownedIDs,neighborhoodList,bondDamage,detachedNodes);
+    ADDITIVE_UTILITIES::deleteAllBonds(numOwnedPoints,ownedIDs,neighborhoodList,detachedNodes);
     
     for (n=0; n<numOwnedPoints; n++) TEST_FLOATING_EQUALITY(detachedNodes[n],1.0,0.0);
-    for (n=0; n<numOwnedPoints; n++) TEST_FLOATING_EQUALITY(bondDamage[n],1.0,0.0);
+
 }
 
 int main

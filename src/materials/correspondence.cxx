@@ -1217,6 +1217,7 @@ void computeForcesAndStresses
     for(int n=0; n<numNeighbors; n++, neighborListPtr++){
 
       neighborIndex = *neighborListPtr;
+      if (detachedNodes[neighborIndex]) continue;
       neighborModelCoordinatesPtr = modelCoordinates + 3*neighborIndex;
       neighborDeformedCoordinatesNP1Ptr = coorNP1 + 3*neighborIndex;
 

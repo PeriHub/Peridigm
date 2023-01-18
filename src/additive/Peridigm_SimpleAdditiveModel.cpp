@@ -58,7 +58,7 @@ PeridigmNS::SimpleAdditiveModel::SimpleAdditiveModel(const Teuchos::ParameterLis
   printTemperature = params.get<double>("Print Temperature");
   timeFactor  = 1.0;
   if (params.isParameter("Time Factor"))timeFactor = params.get<double>("Time Factor");
-  m_damage = params.get<bool>("Damage Model Active");
+  
   heatCapacity = params.get<double>("Specific Heat Capacity");
   density = params.get<double>("Density");
   // std::cout<<printTemperature<<std::endl;
@@ -98,17 +98,16 @@ PeridigmNS::SimpleAdditiveModel::initialize(const double dt,
                                                    const int* neighborhoodList,
                                                    PeridigmNS::DataManager& dataManager) const
 {
-  double *detachedNodes, *bondDamage;
+  double *detachedNodes;
   
   
   dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_N)->ExtractView(&detachedNodes);
   // Initialize damage to zero
-  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N)->ExtractView(&bondDamage);
-  ADDITIVE_UTILITIES::deleteAllBonds(numOwnedPoints, ownedIDs, neighborhoodList, bondDamage, detachedNodes);
+  
+  ADDITIVE_UTILITIES::deleteAllBonds(numOwnedPoints, ownedIDs, neighborhoodList, detachedNodes);
   dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->ExtractView(&detachedNodes);
-  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
   // Initialize damage to zero
-  ADDITIVE_UTILITIES::deleteAllBonds(numOwnedPoints, ownedIDs, neighborhoodList, bondDamage, detachedNodes);
+  ADDITIVE_UTILITIES::deleteAllBonds(numOwnedPoints, ownedIDs, neighborhoodList, detachedNodes);
 }
 
 void
@@ -127,11 +126,10 @@ PeridigmNS::SimpleAdditiveModel::computeAdditive(const double dt,
 
   dataManager.getData(m_fluxDivergenceFieldId, PeridigmField::STEP_NP1)->ExtractView(&fluxDivergence);
   dataManager.getData(m_pointTimeFieldId, PeridigmField::STEP_NONE)->ExtractView(&pointTime);
-  
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
 
   dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->ExtractView(&detachedNodes);
-  if (m_damage == false) *dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)=*dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_N);
+
   for (int iID = 0; iID < numOwnedPoints; ++iID)
   {
     nodeId = ownedIDs[iID];

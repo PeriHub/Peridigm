@@ -496,6 +496,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
     if (m_applyHeatTransfer){
       double *specificVolume;
       dataManager.getData(m_specificVolumeFieldId, PeridigmField::STEP_NP1)->ExtractView(&specificVolume);
+   
       CORRESPONDENCE::computeHeatTransfer_correspondence(
                                   numOwnedPoints,
                                   neighborhoodList,
@@ -512,6 +513,8 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                   m_limit,
                                   specificVolume,
                                   thermalFlow);
+
+
 
     }
   }
@@ -587,7 +590,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   double *hourglassStiff;
 
   dataManager.getData(m_hourglassStiffId, PeridigmField::STEP_NONE)->ExtractView(&hourglassStiff);
-
+  
   CORRESPONDENCE::computeForcesAndStresses(
       numOwnedPoints,
       neighborhoodList,

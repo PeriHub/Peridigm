@@ -118,6 +118,7 @@ namespace DIFFUSION {
     int neighborhoodListIndex(0), secondNeighborhoodListIndex(0);
     int numNeighbors, neighborID(0), iID, iNID;
 
+// bonddamage muss rein-> die nicht aktiven Nachbarn werden mitgenutzt !!!,
 
     const double *KInv = shapeTensorInverse;
     std::vector<double> rotatedLambdavector(9);
@@ -129,7 +130,39 @@ namespace DIFFUSION {
     double* Xp = &XpVector[0];
     double* nablaT = &nablaVector[0];
     double tempState = 0.0; //Eq. (2)
-    double temp[3];
+    double temp[3], nodeTemperature;
+    double initialDistance, kernel;
+
+    const double pi = PeridigmNS::value_of_pi();
+    for(iID=0 ; iID<numOwnedPoints ; ++iID){
+
+        numNeighbors = neighborhoodList[neighborhoodListIndex++];
+        if (detachedNodes[iID]!=0){
+          neighborhoodListIndex += numNeighbors;
+          bondDamage += numNeighbors;
+          continue; 
+        }
+        nodeTemperature = temperature[iID];
+        X[0] = modelCoord[iID*3];
+        X[1] = modelCoord[iID*3+1];
+        X[2] = modelCoord[iID*3+2];
+        for(iNID=0 ; iNID<numNeighbors ; ++iNID, bondDamage++){
+        neighborID = neighborhoodList[neighborhoodListIndex++];
+        if (detachedNodes[neighborID]!=0)continue; 
+        initialDistance = MATRICES::distance(X[0], X[1], X[2], modelCoord[neighborID*3], modelCoord[neighborID*3+1], modelCoord[neighborID*3+2]);
+        if (twoD) kernel = 6.0/(pi*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
+        else kernel = 6.0/(pi*horizon[iID]*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
+        tempState = (1 - *bondDamage) * temperature[neighborID] - nodeTemperature;
+        //nodeFluxDivergence = lambda[0]*kernel*tempState*volume[neighborID]; 
+        //TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(nodeFluxDivergence), "**** NaN detected in DiffusionMaterial::computeFluxDivergence().\n");
+        heatFlowState[iID] -= lambda[0]*kernel*tempState*volume[neighborID]; 
+        //heatFlowState[neighborID] -= lambda[0]*kernel*tempState*volume[iID]; 
+
+        }
+    }
+
+
+    /*
     for(iID=0 ; iID<numOwnedPoints ; ++iID, KInv+=9){
       numNeighbors = neighborhoodList[neighborhoodListIndex++];
       if (detachedNodes[iID]!=0){
@@ -148,9 +181,9 @@ namespace DIFFUSION {
       for(iNID=0 ; iNID<numNeighbors ; ++iNID, bondDamage++){
         neighborID = neighborhoodList[neighborhoodListIndex++];
         for (int i=0 ; i<3 ; ++i) X[i] = modelCoord[3*neighborID+i] - Xp[i];
-        tempState = temperature[neighborID] - temperature[iID];
+        tempState = (temperature[neighborID] - temperature[iID]) * volume[neighborID] * (1 - *bondDamage);
         // sum_j (Tj-Ti)*rij*Vj -> EQ. (8)
-        for (int i=0 ; i<3 ; ++i) H[i] += tempState * X[i] * volume[neighborID] * (1 - *bondDamage);
+        for (int i=0 ; i<3 ; ++i) H[i] += tempState * X[i] ;
         // std::cout<<*bondDamage<<std::endl;
       }
       // Ki * H -> EQ. (8)
@@ -167,12 +200,16 @@ namespace DIFFUSION {
           q[i] = 0.0;
           for (int j=0 ; j<3 ; ++j) {
             q[i] += rotatedLambda[3*i + j] * nablaT[j];
-            //std::cout<< nablaT[i]<<std::endl;
           }
         }
       }
       else{
-        for (int i=0 ; i<3 ; ++i) q[i] = lambda[4*i] * nablaT[i]; // heat state
+        for (int i=0 ; i<3 ; ++i) {
+          q[i] = 0.0;
+          for (int j=0 ; j<3 ; ++j) {
+            q[i] += lambda[3*i + j] * nablaT[j];
+          }
+        }
       }
       for(iNID=0 ; iNID<numNeighbors ; ++iNID){
         neighborID = neighborhoodList[secondNeighborhoodListIndex++];
@@ -183,11 +220,16 @@ namespace DIFFUSION {
             temp[i] += KInv[3*i + j] * X[j]; // K * rij -> Eq. (7)
           }
         }
-        for (int i=0 ; i<3 ; ++i)  heatFlowState[iID] -= temp[i] * q[i] * volume[neighborID]; // qj * temp -> Eq (7)
+        // bond damage muss hier noch rein
+         // qj * temp -> Eq (6) both must be negative, because rij is equal
+        //for (int i=0 ; i<3 ; ++i)  heatFlowState[iID] += temp[i] * q[i] * volume[neighborID];
+        //for (int i=0 ; i<3 ; ++i)  heatFlowState[neighborID] += temp[i] * q[i] * volume[iID];
+        for (int i=0 ; i<3 ; ++i)  heatFlowState[iID] -= temp[i] * q[i] * volume[neighborID];
         for (int i=0 ; i<3 ; ++i)  heatFlowState[neighborID] += temp[i] * q[i] * volume[iID];
       }
       
     }
+    */
   }
   void computeHeatTransfer_correspondence(    
     const int numOwnedPoints,
@@ -234,63 +276,16 @@ namespace DIFFUSION {
       if (specificVolume[iID]>1)specificVolume[iID]=1;
       if (specificVolume[iID] < limit){
         if (twoD){
+          // sqrt(volume[iID]) -> calculate dx
+          //heatFlowState[iID] +=  alpha * (temperature[iID] - Tenv) / sqrt(volume[iID]) * surfaceCorrection;
           heatFlowState[iID] +=  alpha * (temperature[iID] - Tenv) / sqrt(volume[iID]) * surfaceCorrection;
           }
         else {
-          heatFlowState[iID] += alpha * (temperature[iID] - Tenv) * pow(volume[iID],2.0/3.0) * surfaceCorrection;
+          heatFlowState[iID] += alpha * (temperature[iID] - Tenv) / pow(volume[iID],2.0/3.0) * surfaceCorrection;
 
           }
 
      }
-    }
-
-    
-  }
-
-void computeHeatTransfer_PaperFit_correspondence(    
-    const int numOwnedPoints,
-    const int* neighborhoodList,
-    const double* modelCoord,
-    const double* volume,
-    const double* temperature,
-    const double* horizon,
-    const double* detachedNodes,
-    const double limit,
-    const bool twoD,
-    const double alpha,
-    const double Tenv,
-    double* heatFlowState
-    )
-    {
-    int iID;
-    double limitHarcoded = -0.0044;
-    double TenvHardCoded = -130;
-    double TenvHardCodedHeater = 0.0;
-    double alphaHardCoded = 4000;
-    //Selda Oterkus, Erdogan Madenci, and Abigail G. Agwai.  Peridynamicthermal diffusion.Journal of Computational Physics, 265:71–96, 2014.
-    for(iID=0 ; iID<numOwnedPoints ; ++iID){
-      
-      if (modelCoord[3*iID] < limitHarcoded){
-        if (twoD){
-          heatFlowState[iID] +=  alphaHardCoded * (temperature[iID] - TenvHardCoded) / sqrt(volume[iID]);
-          }
-        else {
-          heatFlowState[iID] += alphaHardCoded * (temperature[iID] - TenvHardCoded) * pow(volume[iID],2.0/3.0) ;
-
-          }
-     }
-    if (modelCoord[3*iID] > limitHarcoded+0.005){
-        if (twoD){
-          heatFlowState[iID] +=  alphaHardCoded * (temperature[iID] - TenvHardCodedHeater) / sqrt(volume[iID]);
-          }
-        else {
-          heatFlowState[iID] += alphaHardCoded * (temperature[iID] - TenvHardCodedHeater) * pow(volume[iID],2.0/3.0) ;
-
-          }
-     }
-
-
-
     }
 
     
