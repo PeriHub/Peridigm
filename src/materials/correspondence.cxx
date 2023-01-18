@@ -163,15 +163,15 @@ double* detachedNodes
         
         // Compute Fdot
         MATRICES::MatrixMultiply(false, false, One, FdotFirstTerm, shapeTensorInv, Fdot);
-
-        // Compute the inverse of the deformation gradient, Finverse
-        if (type==true){
-            inversionReturnCode = MATRICES::Invert2by2Matrix(defGrad, determinant, Finverse);
+        if (detachedNodes[iID]==0) {
+          // Compute the inverse of the deformation gradient, Finverse
+          if (type==true){
+              inversionReturnCode = MATRICES::Invert2by2Matrix(defGrad, determinant, Finverse);
+          }
+          else{
+              inversionReturnCode = MATRICES::Invert3by3Matrix(defGrad, determinant, Finverse);
+              }
         }
-        else{
-            inversionReturnCode = MATRICES::Invert3by3Matrix(defGrad, determinant, Finverse);
-            }
-
         std::string matrixInversionErrorMessage =
           "**** Error:  Correspondence ::getLinearUnrotatedRateOfDeformation() failed to invert deformation gradient.\n";
         TEUCHOS_TEST_FOR_TERMINATION(inversionReturnCode != 0, matrixInversionErrorMessage);
@@ -792,15 +792,17 @@ double* detachedNodes
     MATRICES::MatrixMultiply(false, false, One, FdotFirstTerm, shapeTensorInv, Fdot);
 
     // Compute the inverse of the deformation gradient, Finverse
-    if (type==true){
-        inversionReturnCode = MATRICES::Invert2by2Matrix(defGrad, determinant, Finverse);
-    }
-    else{
-        inversionReturnCode = MATRICES::Invert3by3Matrix(defGrad, determinant, Finverse);
-        }
-    if(inversionReturnCode > 0){
-        returnCode = 2;
-        return returnCode;
+    if (detachedNodes[iID]==0) {
+      if (type==true){
+          inversionReturnCode = MATRICES::Invert2by2Matrix(defGrad, determinant, Finverse);
+      }
+      else{
+          inversionReturnCode = MATRICES::Invert3by3Matrix(defGrad, determinant, Finverse);
+          }
+      if(inversionReturnCode > 0){
+          returnCode = 2;
+          return returnCode;
+      }
     }
     // Compute the Eulerian velocity gradient L = Fdot * Finv
     MATRICES::MatrixMultiply(false, false, One, Fdot, Finverse, eulerianVelGrad);
@@ -867,16 +869,17 @@ double* detachedNodes
     *(temp+8) = traceV - *(leftStretchN+8);
 
     // Compute the inverse of the temp matrix
-    if (type==true){
-        inversionReturnCode = MATRICES::Invert2by2Matrix(temp, determinant, tempInv);
+    if (detachedNodes[iID]==0) {
+      if (type==true){
+          inversionReturnCode = MATRICES::Invert2by2Matrix(temp, determinant, tempInv);
+      }
+      else{
+          inversionReturnCode = MATRICES::Invert3by3Matrix(temp, determinant, tempInv);
+          }
+      if(inversionReturnCode > 0){
+        returnCode = inversionReturnCode;
+        return returnCode;}
     }
-    else{
-        inversionReturnCode = MATRICES::Invert3by3Matrix(temp, determinant, tempInv);
-        }
-    if(inversionReturnCode > 0){
-      returnCode = inversionReturnCode;
-      return returnCode;}
-
     //Find omega vector, i.e. \omega = w +  (trace(V) I - V)^(-1) * z (T&F Eq. 12)
     omegaX =  wX + *(tempInv)   * zX + *(tempInv+1) * zY + *(tempInv+2) * zZ;
     omegaY =  wY + *(tempInv+3) * zX + *(tempInv+4) * zY + *(tempInv+5) * zZ;
