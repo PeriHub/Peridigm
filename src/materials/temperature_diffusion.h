@@ -80,7 +80,7 @@ const bool twoD,
 double* heatFlowState
 );
 
-void computeHeatTransfer_correspondence(    
+void computeHeatTransfer(    
 const int numOwnedPoints,
 const int* neighborhoodList,
 const double* volume,

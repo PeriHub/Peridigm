@@ -265,7 +265,7 @@ bool transpose
 template<typename ScalarT>
 void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints);
 
-void computeHeatFlowState_correspondence(    
+void computeHeatFlowState(    
 const double* modelCoord,
 const int numOwnedPoints,
 const int* neighborhoodList,
@@ -281,7 +281,7 @@ const bool twoD,
 double* heatFlowState
 );
 
-void computeHeatTransfer_correspondence(    
+void computeHeatTransfer(    
     const int numOwnedPoints,
     const int* neighborhoodList,
     const double* volume,

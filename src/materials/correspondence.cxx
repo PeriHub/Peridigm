@@ -3422,7 +3422,7 @@ template void rotateCauchyStress<double>
 
 
 
-void computeHeatFlowState_correspondence(    
+void computeHeatFlowState(    
     const double* modelCoord,
     const int numOwnedPoints,
     const int* neighborhoodList,
@@ -3455,7 +3455,7 @@ void computeHeatFlowState_correspondence(
                                   heatFlowState); 
     }
 
-void computeHeatTransfer_correspondence(    
+void computeHeatTransfer(    
     const int numOwnedPoints,
     const int* neighborhoodList,
     const double* volume,
@@ -3475,7 +3475,7 @@ void computeHeatTransfer_correspondence(
 
    {
     
-    DIFFUSION::computeHeatTransfer_correspondence(
+    DIFFUSION::computeHeatTransfer(
                                  numOwnedPoints,
                                  neighborhoodList,
                                  volume,
@@ -3493,107 +3493,6 @@ void computeHeatTransfer_correspondence(
                                  heatFlowState);
    
    
-/*
-    
-    
-    const double pi = PeridigmNS::value_of_pi();
-    int iID, iNID;
-    int neighborhoodListIndex(0), secondNeighborhoodListIndex(0);
-    int numNeighbors, neighborID;
-    double neighborhoodVolume(0.0), specificVol(0.0);
-    const double *KInv = shapeTensorInverse;
-   std::vector<double> rotatedLambdavector(9);
-   double* rotatedLambda = &rotatedLambdavector[0];
-   std::vector<double> Hvector(3), Qvector(3), nablaVector(3), Xvector(3), XpVector(3);
-   double* H = &Hvector[0];
-   double* X = &Xvector[0];
-   double* q = &Qvector[0];
-   double* Xp = &XpVector[0];
-   double* nablaT = &nablaVector[0];
-   double tempState = 0.0; //Eq. (2)
-   double temp[3];
-   //Selda Oterkus, Erdogan Madenci, and Abigail G. Agwai.  Peridynamicthermal diffusion.Journal of Computational Physics, 265:71–96, //2014.
-   for(iID=0 ; iID<numOwnedPoints ; ++iID, KInv+=9){
-     numNeighbors = neighborhoodList[neighborhoodListIndex++];
-     if (detachedNodes[iID]!=0){
-       neighborhoodListIndex += numNeighbors;
-       bondDamage += numNeighbors;
-       specificVolume[iID] = 0.0;
-       continue; 
-     }
-     secondNeighborhoodListIndex = neighborhoodListIndex;
-     for (int i=0 ; i<3 ; ++i) {
-       H[i] = 0.0;
-       Xp[i] = modelCoord[3*iID+i];
-     }
-     if (twoD)neighborhoodVolume = pi * horizon[iID] * horizon[iID];
-     else neighborhoodVolume = 4.0 / 3.0 * pi * horizon[iID] * horizon[iID] * horizon[iID];
-      
-      specificVol = volume[iID];
-      
-      for(iNID=0 ; iNID<numNeighbors ; ++iNID, bondDamage++){
-        neighborID = neighborhoodList[neighborhoodListIndex++];
-        if (detachedNodes[neighborID]==0) specificVol += (1 - *bondDamage) * volume[neighborID];
-    
-        for (int i=0 ; i<3 ; ++i) X[i] = modelCoord[3*neighborID+i] - Xp[i];
-        tempState = temperature[neighborID] - Tenv;
-        // sum_j (Tj-Ti)*rij*Vj -> EQ. (8)
-        for (int i=0 ; i<3 ; ++i) H[i] += tempState * X[i] * volume[neighborID] * (1 - *bondDamage);
-
-      }
-      specificVolume[iID] = factor * specificVol / neighborhoodVolume;
-      if (specificVolume[iID]>1)specificVolume[iID]=1;
-      if (specificVolume[iID] < limit){
-        if (twoD){
-          heatFlowState[iID] +=  alpha * (temperature[iID] - Tenv) * sqrt(volume[iID]) * surfaceCorrection;
-          }
-        else {
-          heatFlowState[iID] += alpha * (temperature[iID] - Tenv) * pow(volume[iID],2.0/3.0) * surfaceCorrection;
-
-       }
-          for (int i=0 ; i<3 ; ++i) {
-              nablaT[i] = 0.0;
-              for (int j=0 ; j<3 ; ++j) {
-                nablaT[i] += KInv[3*i + j] * H[j];
-                //std::cout<< nablaT[i]<<std::endl;
-              }
-            }
-            if (MATRICES::vectorNorm(angles, 3)!=0){  
-              MATRICES::tensorRotation(angles,lambda,true,rotatedLambda);
-              for (int i=0 ; i<3 ; ++i) {
-                q[i] = 0.0;
-                for (int j=0 ; j<3 ; ++j) {
-                  q[i] += rotatedLambda[3*i + j] * nablaT[j];
-                  //std::cout<< nablaT[i]<<std::endl;
-                }
-              }
-            }
-            else{
-              for (int i=0 ; i<3 ; ++i) q[i] = lambda[4*i] * nablaT[i]; // heat state
-            }
-            for(iNID=0 ; iNID<numNeighbors ; ++iNID){
-              neighborID = neighborhoodList[secondNeighborhoodListIndex++];
-              for (int i=0 ; i<3 ; ++i)X[i] = modelCoord[3*neighborID+i] - Xp[i];
-              for (int i=0 ; i<3 ; ++i){
-                temp[i] = 0.0;
-                for (int j=0 ; j<3 ; ++j) {
-                  temp[i] += KInv[3*i + j] * X[j]; // K * rij -> Eq. (7)
-                }
-              }
-              
-              
-              for (int i=0 ; i<3 ; ++i)  heatFlowState[neighborID] += temp[i] * q[i] * volume[iID];
-              for (int i=0 ; i<3 ; ++i)  heatFlowState[iID] -= temp[i] * q[i] * volume[neighborID];
-            }
-     
-     }
-    }
-    
-    */
-    
-    
-    
-    
     
     }
 

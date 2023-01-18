@@ -479,7 +479,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
     dataManager.getData(m_thermalFlowStateFieldId, PeridigmField::STEP_NP1)->ExtractView(&thermalFlow);
     dataManager.getData(m_thermalFlowStateFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
     const double* lambda = &m_lambda[0];
-    CORRESPONDENCE::computeHeatFlowState_correspondence(
+    CORRESPONDENCE::computeHeatFlowState(
                                   modelCoordinates,
                                   numOwnedPoints,
                                   neighborhoodList,
@@ -497,7 +497,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
       double *specificVolume;
       dataManager.getData(m_specificVolumeFieldId, PeridigmField::STEP_NP1)->ExtractView(&specificVolume);
    
-      CORRESPONDENCE::computeHeatTransfer_correspondence(
+      CORRESPONDENCE::computeHeatTransfer(
                                   numOwnedPoints,
                                   neighborhoodList,
                                   volume,
