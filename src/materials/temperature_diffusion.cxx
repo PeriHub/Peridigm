@@ -141,7 +141,7 @@ namespace DIFFUSION {
         initialDistance = MATRICES::distance(X[0], X[1], X[2], modelCoord[neighborID*3], modelCoord[neighborID*3+1], modelCoord[neighborID*3+2]);
         if (twoD) kernel = 6.0/(pi*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
         else kernel = 6.0/(pi*horizon[iID]*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
-        tempState = (1 - *bondDamage) * temperature[neighborID] - nodeTemperature;
+        tempState = (1 - *bondDamage) * (temperature[neighborID] - nodeTemperature);
 
         heatFlowState[iID] -= lambda*kernel*tempState*volume[neighborID]; 
 
@@ -303,10 +303,10 @@ namespace DIFFUSION {
         if (twoD){
           // sqrt(volume[iID]) -> calculate dx
           //heatFlowState[iID] +=  alpha * (temperature[iID] - Tenv) / sqrt(volume[iID]) * surfaceCorrection;
-          heatFlowState[iID] +=  alpha * (temperature[iID] - Tenv) / sqrt(volume[iID]) * surfaceCorrection;
+          heatFlowState[iID] =  alpha * (temperature[iID] - Tenv) / sqrt(volume[iID]) * surfaceCorrection;
           }
         else {
-          heatFlowState[iID] += alpha * (temperature[iID] - Tenv) / pow(volume[iID],2.0/3.0) * surfaceCorrection;
+          heatFlowState[iID] = alpha * (temperature[iID] - Tenv) / pow(volume[iID],2.0/3.0) * surfaceCorrection;
 
           }
 
