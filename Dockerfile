@@ -1,4 +1,4 @@
-FROM harbor.fa-services.intra.dlr.de/hess_ja/trilinos
+FROM jthesse/trilinos
 MAINTAINER Jan-Timo Hesse <jan-timo.hesse@dlr.de>
 
 ENV HOME /root
