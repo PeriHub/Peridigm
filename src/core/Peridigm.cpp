@@ -2378,10 +2378,10 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
 
     bool damageExist = false;
     //bool allNodeDamage = true;
-    for(int i=0 ; i<a->MyLength() ; ++i){
-      if ((*netDamageField)[i/3]!=0) damageExist = true;
-      //else allNodeDamage = false;
-    }
+    // for(int i=0 ; i<a->MyLength() ; ++i){
+    //   if ((*netDamageField)[i/3]!=0) damageExist = true;
+    //   //else allNodeDamage = false;
+    // }
 
     modelEvaluator->evalModel(workset, damageExist);
     PeridigmNS::Timer::self().stopTimer("Internal Force");
@@ -3128,10 +3128,15 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
         (*u)[i] += finalSolution[i];
     }
 
+    bool damageExist = false;
+    for(int i=0 ; i<a->MyLength() ; ++i){
+      if ((*netDamageField)[i/3]!=0) damageExist = true;
+    }
+    
     // Write output for completed load step
     PeridigmNS::Timer::self().startTimer("Output");
     synchDataManagers();
-    outputManager->write(blocks, timeCurrent);
+    outputManager->write(blocks, timeCurrent, damageExist);
     PeridigmNS::Timer::self().stopTimer("Output");
 
     // swap state N and state NP1
@@ -4924,8 +4929,15 @@ double PeridigmNS::Peridigm::computeQuasiStaticResidual(Teuchos::RCP<Epetra_Vect
   modelEvaluator->evalDamageModel(workset);
   PeridigmNS::Timer::self().stopTimer("Evaluate Damage Model");
 
+  bool damageExist = false;
+  bool allNodeDamage = true;
+  for(int i=0 ; i<a->MyLength() ; ++i){
+    if ((*netDamageField)[i/3]!=0) damageExist = true;
+    else allNodeDamage = false;
+  }
+
   PeridigmNS::Timer::self().startTimer("Internal Force");
-  modelEvaluator->evalModel(workset, true);
+  modelEvaluator->evalModel(workset, damageExist);
   PeridigmNS::Timer::self().stopTimer("Internal Force");
 
   // Copy force from the data manager to the mothership vector
