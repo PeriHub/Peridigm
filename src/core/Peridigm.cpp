@@ -1426,26 +1426,18 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     userDefinedTimeStep = verletParams->get<double>("Fixed dt");
     dt = userDefinedTimeStep;
   }
-  bool stopBeforeOutput = false;
-  bool stopAfterOutput = false;
-  bool stopAfterAllDamaged = false;
-  bool adaptDt = false;
-  bool deformCalulation = true;
-  if(verletParams->isParameter("Calculate Deformation")){ 
-      deformCalulation = verletParams->get<bool>("Calculate Deformation");
-    }
-  if(verletParams->isParameter("Stop before damage initiation")){
-      stopBeforeOutput = verletParams->get<bool>("Stop before damage initiation");
+
+  bool stopBeforeOutput = solverParams->get("Stop before damage initiation", false);
+  bool stopAfterOutput = solverParams->get("Stop after damage initiation", false);
+  int numberOfDamageSteps = 0;
+  int endStepAfterDamage = 0;
+  if(stopAfterOutput){
+    endStepAfterDamage = solverParams->get("End step after damage", 0);
   }
-  if(verletParams->isParameter("Stop after damage initiation")){
-      stopAfterOutput = verletParams->get<bool>("Stop after damage initiation");
-  }
-  if(verletParams->isParameter("Stop after all nodes damaged")){
-      stopAfterAllDamaged = verletParams->get<bool>("Stop after all nodes damaged");
-  }
-  if(verletParams->isParameter("Adapt dt")){
-    adaptDt = verletParams->get<bool>("Adapt dt");
-  }
+  bool stopAfterAllDamaged = solverParams->get("Stop after all nodes damaged", false);
+
+  bool deformCalulation = verletParams->get("Calculate Deformation", true);
+  bool adaptDt = verletParams->get("Adapt dt", false);
   
   // Multiply the time step by the user-supplied safety factor, if provided
   double safetyFactor = 1.0;
@@ -2056,6 +2048,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
     PeridigmNS::Timer::self().startTimer("Output");
     synchDataManagers();
+
     if ((stopBeforeOutput && damageExist) | (allNodeDamage && stopAfterAllDamaged)){ 
         if (allNodeDamage) std::cout<<"Break before all nodes damaged."<<std::endl;
         else std::cout<<"Break before damage."<<std::endl;
@@ -2066,12 +2059,16 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         dataLoader->loadData(timeCurrent, blocks);
       }
         outputManager->write(blocks, timeCurrent, damageExist, true);
-        std::cout<<"Break after damage."<<std::endl;
-        stopPeridigm=true;
+        if(numberOfDamageSteps==endStepAfterDamage){
+          std::cout<<"Break after damage."<<std::endl;
+          stopPeridigm=true;
+        }
+        numberOfDamageSteps++;
     }
     if(analysisHasDataLoader){
       dataLoader->loadData(timeCurrent, blocks);
     }
+
     outputManager->write(blocks, timeCurrent, damageExist);
     PeridigmNS::Timer::self().stopTimer("Output");
 
@@ -2665,6 +2662,16 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
     unknownsDeltaU->ExtractView( &unknownsDeltaUPtr );
   }
 
+  bool stopPeridigm = false;
+
+  bool stopBeforeOutput = solverParams->get("Stop before damage initiation", false);
+  bool stopAfterOutput = solverParams->get("Stop after damage initiation", false);
+  int numberOfDamageSteps = 0;
+  int endStepAfterDamage = 0;
+  if(stopAfterOutput){
+    endStepAfterDamage = solverParams->get("End step after damage", 0);
+  }
+  // bool stopAfterAllDamaged = solverParams->get("Stop after all nodes damaged", false);
   bool performJacobianDiagnostics = solverParams->get("Jacobian Diagnostics", false);
 
   // "NOXQuasiStatic" parameter list
@@ -3128,20 +3135,58 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
         (*u)[i] += finalSolution[i];
     }
 
-    bool damageExist = false;
-    for(int i=0 ; i<a->MyLength() ; ++i){
-      if ((*netDamageField)[i/3]!=0) damageExist = true;
+    netDamageField->PutScalar(0.0);
+    for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){    
+      if (blockIt->getMaterialModel()->Name().find("Correspondence")){
+            scalarScratch->PutScalar(0.0);
+            blockIt->exportData(scalarScratch, netDamageFieldId, PeridigmField::STEP_NP1, Add);
+            netDamageField->Update(1.0, *scalarScratch, 1.0);
+        }
     }
-    
+
+    bool damageExist = false;
+    bool allNodeDamage = true;
+    for(int i=0 ; i<u->MyLength() ; ++i){
+      if ((*netDamageField)[i/3]!=0) damageExist = true;
+      else allNodeDamage = false;
+    }
+
     // Write output for completed load step
     PeridigmNS::Timer::self().startTimer("Output");
     synchDataManagers();
+
+    if (stopBeforeOutput && damageExist){ 
+      if (allNodeDamage) std::cout<<"Break before all nodes damaged."<<std::endl;
+      else std::cout<<"Break before damage."<<std::endl;
+      stopPeridigm=true;
+    }
+    if (stopAfterOutput && damageExist){ 
+      // if(analysisHasDataLoader){
+      //   dataLoader->loadData(timeCurrent, blocks);
+      // }
+      outputManager->write(blocks, timeCurrent, damageExist, true);
+        if(numberOfDamageSteps==endStepAfterDamage){
+          std::cout<<"Break after damage."<<std::endl;
+          stopPeridigm=true;
+        }
+        numberOfDamageSteps++;
+    }
+
     outputManager->write(blocks, timeCurrent, damageExist);
     PeridigmNS::Timer::self().stopTimer("Output");
 
     // swap state N and state NP1
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++)
         blockIt->updateState();
+
+	  MpiBoolGather(&stopPeridigm, true);
+    MPI_Bcast(&stopPeridigm, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+
+    // mpi cancel
+    if (stopPeridigm)
+    {
+      break;
+    }	
   }
 
   if(switchToExplicit && failedQS){
@@ -4929,15 +4974,17 @@ double PeridigmNS::Peridigm::computeQuasiStaticResidual(Teuchos::RCP<Epetra_Vect
   modelEvaluator->evalDamageModel(workset);
   PeridigmNS::Timer::self().stopTimer("Evaluate Damage Model");
 
-  bool damageExist = false;
-  bool allNodeDamage = true;
-  for(int i=0 ; i<a->MyLength() ; ++i){
-    if ((*netDamageField)[i/3]!=0) damageExist = true;
-    else allNodeDamage = false;
+  netDamageField->PutScalar(0.0);
+  for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++){    
+    if (blockIt->getMaterialModel()->Name().find("Correspondence")){
+          scalarScratch->PutScalar(0.0);
+          blockIt->exportData(scalarScratch, netDamageFieldId, PeridigmField::STEP_NP1, Add);
+          netDamageField->Update(1.0, *scalarScratch, 1.0);
+      }
   }
 
   PeridigmNS::Timer::self().startTimer("Internal Force");
-  modelEvaluator->evalModel(workset, damageExist);
+  modelEvaluator->evalModel(workset, true);
   PeridigmNS::Timer::self().stopTimer("Internal Force");
 
   // Copy force from the data manager to the mothership vector
