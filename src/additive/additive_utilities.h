@@ -48,9 +48,6 @@
 #ifndef ADDITIVE_UTILITIES_H
 #define ADDITIVE_UTILITIES_H
 
-#include <cstdlib>
-
-
 namespace ADDITIVE_UTILITIES {
 
 
