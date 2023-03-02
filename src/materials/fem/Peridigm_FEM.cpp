@@ -226,7 +226,11 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
    // geht das für mehrere Cores? 
 */
 
+      /*
+        finding coupling coefficients
+        FEM::findCouplingNodes();
 
+      */
 
 }
 void
@@ -314,7 +318,10 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
       topoPtr++;
       numElemNodes = topology[topoPtr];
       topoPtr++;  
-      
+      //
+      // if statement for coupling nodes
+      // elementID is then -1 -> PD nodes which are inside of this element
+      // the transfer function is calculated above
       for(int i=0 ; i<3 ; ++i){
         angles[i] = nodeAngles[3*elementID+i]; // element angle is already the average of all element nodes            
       }
@@ -362,6 +369,12 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
       }
  
       FEM::setNodalStresses(numElemNodes, elementID, topoPtr, topology, sigmaNP1);
+      /*
+        if coupling occur here the identifivation and so on has to be done some how, comparable to setGlobalForces
+        the transfer function value is know and pre calculated during init phase
+        FEM::setCouplingNodes();
+
+      */
       FEM::setGlobalForces(numElemNodes, elementID, topoPtr, topology, elNodalForces, volume, force); 
       FEM::setElementCoordinates(numElemNodes, elementID, topoPtr, topology, elNodalCoor, deformedCoor); 
        
