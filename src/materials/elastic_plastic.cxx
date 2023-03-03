@@ -48,7 +48,7 @@
 #include <Sacado.hpp>
 #include "elastic_plastic.h"
 #include "Peridigm_Constants.hpp"
-#include "material_utilities.h"
+
 namespace MATERIAL_EVALUATION {
 
 template<typename ScalarT>
@@ -265,11 +265,16 @@ void computeInternalForceIsotropicElasticPlastic
       /*
        * Assemble pair wise force function
        */
-      ScalarT fx = t * Y[0] / dY;
-      ScalarT fy = t * Y[1] / dY;
-      ScalarT fz = t * Y[2] / dY;
+      ScalarT fx = t * dx_Y / dY;
+      ScalarT fy = t * dy_Y / dY;
+      ScalarT fz = t * dz_Y / dY;
 
-      MATERIAL_EVALUATION::setForces(fx, fy, fz, selfCellVolume, cellVolume, fOwned, &fInternalOverlap[3*localId]);
+      *(fOwned+0) += fx*cellVolume;
+      *(fOwned+1) += fy*cellVolume;
+      *(fOwned+2) += fz*cellVolume;
+      fInternalOverlap[3*localId+0] -= fx*selfCellVolume;
+      fInternalOverlap[3*localId+1] -= fy*selfCellVolume;
+      fInternalOverlap[3*localId+2] -= fz*selfCellVolume;
     }
   }
 }
