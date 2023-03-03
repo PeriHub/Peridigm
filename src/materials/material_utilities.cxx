@@ -281,16 +281,14 @@ double computeWeightedVolume
   double cellVolume;
   const int *neighPtr = localNeighborList;
   int numNeigh = *neighPtr; neighPtr++;
+  const int dof = 3;
+  std::vector<double> dxVector(dof); double* dx = &dxVector[0];
   for(int n=0;n<numNeigh;n++,neighPtr++){
     int localId = *neighPtr;
     cellVolume = volumeOverlap[localId];
     const double *XP = &xOverlap[3*localId];
-    double dx = XP[0]-X[0];
-    double dy = XP[1]-X[1];
-    double dz = XP[2]-X[2];
-    double zetaSquared = dx*dx+dy*dy+dz*dz;
-    double d = sqrt(zetaSquared);
-    m+=omega(d,horizon)*(zetaSquared)*cellVolume;
+    double d = getDiffAndLen(X, XP, dof, dx);
+    m+=omega(d,horizon)*(d*d)*cellVolume;
   }
 
   return m;
@@ -318,6 +316,8 @@ void computeDeviatoricDilatation
   double *theta = dilatationOwned;
   double cellVolume;
   const int *neighPtr = localNeighborList;
+  const int dof = 3;
+  std::vector<double> dxVector(dof); double* dx = &dxVector[0];
   for(int p=0; p<numOwnedPoints;p++, xOwned+=3, yOwned+=3, m++, theta++){
     int numNeigh = *neighPtr; neighPtr++;
     const double *X = xOwned;
@@ -328,11 +328,8 @@ void computeDeviatoricDilatation
       cellVolume = v[localId];
       const double *XP = &xOverlap[3*localId];
       //const double *YP = &yOverlap[3*localId];
-      double dx = XP[0]-X[0];
-      double dy = XP[1]-X[1];
-      double dz = XP[2]-X[2];
-      double zetaSquared = dx*dx+dy*dy+dz*dz;
-      double d = sqrt(zetaSquared);
+
+      double d = getDiffAndLen(X, XP, dof, dx);
       double omega = OMEGA(d,horizon);
       double e = (*epd);
       *theta += 3.0*omega*(1.0-*bondDamage)*d*e*cellVolume/(*m);
@@ -366,25 +363,25 @@ void computeDilatation
   ScalarT *theta = dilatationOwned;
   double cellVolume;
   const int *neighPtr = localNeighborList;
+  const int dof = 3;
+  std::vector<double> dxVector(dof); double* dx = &dxVector[0];
   for(int p=0; p<numOwnedPoints;p++, xOwned+=3, yOwned+=3, deltaT++, m++, theta++){
     int numNeigh = *neighPtr; neighPtr++;
     const double *X = xOwned;
     const ScalarT *Y = yOwned;
     *theta = ScalarT(0.0);
+
     for(int n=0;n<numNeigh;n++,neighPtr++,bondDamage++){
       int localId = *neighPtr;
       cellVolume = v[localId];
       const double *XP = &xOverlap[3*localId];
       const ScalarT *YP = &yOverlap[3*localId];
-      double X_dx = XP[0]-X[0];
-      double X_dy = XP[1]-X[1];
-      double X_dz = XP[2]-X[2];
-      double zetaSquared = X_dx*X_dx+X_dy*X_dy+X_dz*X_dz;
+
       ScalarT Y_dx = YP[0]-Y[0];
       ScalarT Y_dy = YP[1]-Y[1];
       ScalarT Y_dz = YP[2]-Y[2];
       ScalarT dY = Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz;
-      double d = sqrt(zetaSquared);
+      double d = getDiffAndLen(X, XP, dof, dx);
       ScalarT e = sqrt(dY);
       e -= d;
       if(deltaTemperature)
