@@ -93,9 +93,13 @@ void computeInternalForceLinearElastic
     double gamma=0;
 
     const int *neighPtr = localNeighborList;
-    double cellVolume, alpha, X_dx[3], zeta = 0.0, omega;
+    double cellVolume, alpha,  zeta = 0.0, omega;
     const int dof = 3;
-    ScalarT Y_dx[3], dY = 0.0, t=0.0, fx, fy, fz, e, c1=0;
+    ScalarT  dY = 0.0, t=0.0, fx, fy, fz, e, c1=0;
+    std::vector<double> X_dxVector(dof);
+    double* X_dx = &X_dxVector[0];
+    std::vector<ScalarT> Y_dxVector(dof);
+    ScalarT* Y_dx = &Y_dxVector[0];
     for(int p=0;p<numOwnedPoints;p++, xOwned +=3, yOwned +=3, fOwned+=3, psOwned+=9, deltaT++, m++, theta++){
 
         int numNeigh = *neighPtr; neighPtr++;

@@ -251,8 +251,12 @@ void computeInternalForceLinearElasticPV
   ScalarT *fOwned = fInternalOverlap;
   const int dof = 3;
   const int *neighPtr = localNeighborList;
-  double alpha, X_dx[3], zeta, omega, selfCellVolume, neighborCellVolume;
-  ScalarT Y_dx[3], dY, t, fx, fy, fz, e, c1;
+  double alpha,  zeta = 0.0, omega, selfCellVolume, neighborCellVolume;
+  ScalarT  dY = 0.0, t, fx, fy, fz, e, c1;
+  std::vector<double> X_dxVector(dof);
+  double* X_dx = &X_dxVector[0];
+  std::vector<ScalarT> Y_dxVector(dof);
+  ScalarT* Y_dx = &Y_dxVector[0];
   for(int p=0;p<numOwnedPoints;p++, xOwned +=3, yOwned +=3, fOwned+=3, deltaT++, m++, theta++){
 
     int numNeigh = *neighPtr; neighPtr++;

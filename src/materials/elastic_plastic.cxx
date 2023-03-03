@@ -160,9 +160,13 @@ void computeInternalForceIsotropicElasticPlastic
   ScalarT *fOwned = fInternalOverlap;
 
   const int *neighPtr = localNeighborList;
-  double cellVolume, alpha, X_dx[3], zeta = 0.0, edpN;
-    ScalarT Y_dx[3], dY = 0.0, ed, tdTrial, t, ti, td;
+  double cellVolume, alpha, zeta = 0.0, edpN;
+  ScalarT  dY = 0.0, ed, tdTrial, t, ti, td;
   const int dof = 3;
+  std::vector<double> X_dxVector(dof);
+  double* X_dx = &X_dxVector[0];
+  std::vector<ScalarT> Y_dxVector(dof);
+  ScalarT* Y_dx = &Y_dxVector[0];
   for(int p=0;p<numOwnedPoints;p++, xOwned +=3, yOwned +=3, fOwned+=3, m++, theta++, lambdaN++, lambdaNP1++){
 
     int numNeigh = *neighPtr; neighPtr++;
