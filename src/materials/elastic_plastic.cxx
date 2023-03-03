@@ -160,8 +160,13 @@ void computeInternalForceIsotropicElasticPlastic
   ScalarT *fOwned = fInternalOverlap;
 
   const int *neighPtr = localNeighborList;
-  double cellVolume, alpha, dx_X, dy_X, dz_X, zeta, edpN;
-    ScalarT dx_Y, dy_Y, dz_Y, dY, ed, tdTrial, t, ti, td;
+  double cellVolume, alpha, zeta = 0.0, edpN;
+  ScalarT  dY = 0.0, ed, tdTrial, t, ti, td;
+  const int dof = 3;
+  std::vector<double> X_dxVector(dof);
+  double* X_dx = &X_dxVector[0];
+  std::vector<ScalarT> Y_dxVector(dof);
+  ScalarT* Y_dx = &Y_dxVector[0];
   for(int p=0;p<numOwnedPoints;p++, xOwned +=3, yOwned +=3, fOwned+=3, m++, theta++, lambdaN++, lambdaNP1++){
 
     int numNeigh = *neighPtr; neighPtr++;
@@ -203,14 +208,9 @@ void computeInternalForceIsotropicElasticPlastic
       cellVolume = v[localId];
       const double *XP = &xOverlap[3*localId];
       const ScalarT *YP = &yNP1Overlap[3*localId];
-      dx_X = XP[0]-X[0];
-      dy_X = XP[1]-X[1];
-      dz_X = XP[2]-X[2];
-      zeta = sqrt(dx_X*dx_X+dy_X*dy_X+dz_X*dz_X);
-      dx_Y = YP[0]-Y[0];
-      dy_Y = YP[1]-Y[1];
-      dz_Y = YP[2]-Y[2];
-      dY = sqrt(dx_Y*dx_Y+dy_Y*dy_Y+dz_Y*dz_Y);
+      MATERIAL_EVALUATION::getDiffAndLen(XP,X,dof,X_dx,zeta);
+      MATERIAL_EVALUATION::getDiffAndLen(YP,Y,dof,Y_dx,dY);
+      
       /*
        * Deviatoric extension state
        */
@@ -265,9 +265,9 @@ void computeInternalForceIsotropicElasticPlastic
       /*
        * Assemble pair wise force function
        */
-      ScalarT fx = t * dx_Y / dY;
-      ScalarT fy = t * dy_Y / dY;
-      ScalarT fz = t * dz_Y / dY;
+      ScalarT fx = t * Y[0] / dY;
+      ScalarT fy = t * Y[1] / dY;
+      ScalarT fz = t * Y[2] / dY;
 
       MATERIAL_EVALUATION::setForces(fx, fy, fz, selfCellVolume, cellVolume, fOwned, &fInternalOverlap[3*localId]);
     }

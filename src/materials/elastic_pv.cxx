@@ -249,10 +249,14 @@ void computeInternalForceLinearElasticPV
   const double *neighborVolume = neighborVolumePtr;
   const ScalarT *theta = dilatationOwned;
   ScalarT *fOwned = fInternalOverlap;
-
+  const int dof = 3;
   const int *neighPtr = localNeighborList;
-  double alpha, X_dx, X_dy, X_dz, zeta, omega, selfCellVolume, neighborCellVolume;
-  ScalarT Y_dx, Y_dy, Y_dz, dY, t, fx, fy, fz, e, c1;
+  double alpha,  zeta = 0.0, omega, selfCellVolume, neighborCellVolume;
+  ScalarT  dY = 0.0, t, fx, fy, fz, e, c1;
+  std::vector<double> X_dxVector(dof);
+  double* X_dx = &X_dxVector[0];
+  std::vector<ScalarT> Y_dxVector(dof);
+  ScalarT* Y_dx = &Y_dxVector[0];
   for(int p=0;p<numOwnedPoints;p++, xOwned +=3, yOwned +=3, fOwned+=3, deltaT++, m++, theta++){
 
     int numNeigh = *neighPtr; neighPtr++;
@@ -264,14 +268,8 @@ void computeInternalForceLinearElasticPV
       int localId = *neighPtr;
       const double *XP = &xOverlap[3*localId];
       const ScalarT *YP = &yOverlap[3*localId];
-      X_dx = XP[0]-X[0];
-      X_dy = XP[1]-X[1];
-      X_dz = XP[2]-X[2];
-      zeta = sqrt(X_dx*X_dx+X_dy*X_dy+X_dz*X_dz);
-      Y_dx = YP[0]-Y[0];
-      Y_dy = YP[1]-Y[1];
-      Y_dz = YP[2]-Y[2];
-      dY = sqrt(Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz);
+      MATERIAL_EVALUATION::getDiffAndLen(XP,X,dof,X_dx,zeta);
+      MATERIAL_EVALUATION::getDiffAndLen(YP,Y,dof,Y_dx,dY);
       e = dY - zeta;
       if(deltaTemperature)
         e -= thermalExpansionCoefficient*(*deltaT)*zeta;
@@ -279,9 +277,9 @@ void computeInternalForceLinearElasticPV
       // c1 = omega*(*theta)*(9.0*K-15.0*MU)/(3.0*(*m));
       c1 = omega*(*theta)*(3.0*K/(*m)-alpha/3.0);
       t = (1.0-*bondDamage)*(c1 * zeta + (1.0-*bondDamage) * omega * alpha * e);
-      fx = t * Y_dx / dY;
-      fy = t * Y_dy / dY;
-      fz = t * Y_dz / dY;
+      fx = t * Y_dx[0] / dY;
+      fy = t * Y_dx[1] / dY;
+      fz = t * Y_dx[2] / dY;
 
       if(selfVolumePtr != 0 && neighborVolumePtr != 0){
         selfCellVolume = *selfVolume;
