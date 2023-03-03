@@ -199,7 +199,13 @@ double scalarInfluenceFunction(
     double zeta, 
     double horizon
 );
-
+template<typename ScalarT>
+ScalarT getDiffAndLen(
+  const ScalarT* A, 
+  const ScalarT* B, 
+  const int dof,
+  ScalarT* C
+  );
 void computeDeviatoricDilatation
 (
     const double* xOverlap,
