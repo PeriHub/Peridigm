@@ -90,22 +90,10 @@ void computeInternalForceLinearElastic
   ScalarT *fOwned = fInternalOverlap;
   ScalarT *psOwned = partialStressOverlap;
 
-<<<<<<< HEAD
   const int *neighPtr = localNeighborList;
   double cellVolume, alpha, X_dx, X_dy, X_dz, zeta, omega;
   ScalarT Y_dx, Y_dy, Y_dz, dY, t, fx, fy, fz, e, c1;
   for(int p=0;p<numOwnedPoints;p++, xOwned +=3, yOwned +=3, fOwned+=3, psOwned+=9, deltaT++, m++, theta++){
-=======
-    const int *neighPtr = localNeighborList;
-    double cellVolume, alpha,  zeta = 0.0, omega;
-    const int dof = 3;
-    ScalarT  dY = 0.0, t=0.0, fx, fy, fz, e, c1=0;
-    std::vector<double> X_dxVector(dof);
-    double* X_dx = &X_dxVector[0];
-    std::vector<ScalarT> Y_dxVector(dof);
-    ScalarT* Y_dx = &Y_dxVector[0];
-    for(int p=0;p<numOwnedPoints;p++, xOwned +=3, yOwned +=3, fOwned+=3, psOwned+=9, deltaT++, m++, theta++){
->>>>>>> 9718734ce5cbbccefdbaefef1aeb69b33ea0bc13
 
     int numNeigh = *neighPtr; neighPtr++;
     const double *X = xOwned;
@@ -126,7 +114,6 @@ void computeInternalForceLinearElastic
       Y_dz = YP[2]-Y[2];
       dY = sqrt(Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz);
       e = dY - zeta;
-            
       if(deltaTemperature)
         e -= thermalExpansionCoefficient*(*deltaT)*zeta;
       omega = scalarInfluenceFunction(zeta,horizon);
