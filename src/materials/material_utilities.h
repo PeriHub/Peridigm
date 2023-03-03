@@ -125,14 +125,8 @@ void setForces(
   ScalarT *fOwned,
   ScalarT *fNeigh
   );
-template<typename ScalarT>
-void getDiffAndLen(
-  const ScalarT* A, 
-  const ScalarT* B, 
-  const int dof, 
-  ScalarT* len,
-  ScalarT dist          
-);
+
+
 /**
  * Call this function on a single point 'X'
  * NOTE: neighPtr to should point to 'numNeigh' for 'X'

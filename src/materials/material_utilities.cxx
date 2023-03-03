@@ -164,39 +164,7 @@ template void setPartialStresses<double>(
     const double vol,
     double *partialStressPtr);
 
-template<typename ScalarT>
-void getDiffAndLen(
-  const ScalarT* A, 
-  const ScalarT* B, 
-  const int dof, 
-  ScalarT* len,
-  ScalarT dist          
-)
-{
-  dist = 0.0;
-  for(int dofn=0;dofn<dof;dofn++){
-       len[dofn] = A[dofn]-B[dofn];
-       dist += len[dofn]*len[dofn];
-    }        
-    dist = sqrt(dist);
-}
 
-template void getDiffAndLen<Sacado::Fad::DFad<double> >
-(
-  const Sacado::Fad::DFad<double>* A, 
-  const Sacado::Fad::DFad<double>* B, 
-  const int dof, 
-  Sacado::Fad::DFad<double>* len,
-  Sacado::Fad::DFad<double> dist 
-);
-
-template void getDiffAndLen<double>(
-  const double* A, 
-  const double* B, 
-  const int dof, 
-  double* len,
-  double dist  
-);
 
 
 template<typename ScalarT>
