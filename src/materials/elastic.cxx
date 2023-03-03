@@ -91,8 +91,13 @@ void computeInternalForceLinearElastic
   ScalarT *psOwned = partialStressOverlap;
 
   const int *neighPtr = localNeighborList;
-  double cellVolume, alpha, X_dx, X_dy, X_dz, zeta, omega;
-  ScalarT Y_dx, Y_dy, Y_dz, dY, t, fx, fy, fz, e, c1;
+  double cellVolume, alpha, zeta, omega;
+  ScalarT dY, t, fx, fy, fz, e, c1;
+  const int dof = 3;
+  std::vector<double> X_dxVector(dof)  ; double*  X_dx = &X_dxVector[0];
+  std::vector<ScalarT> Y_dxVector(dof) ; ScalarT*  Y_dx = &Y_dxVector[0];
+
+
   for(int p=0;p<numOwnedPoints;p++, xOwned +=3, yOwned +=3, fOwned+=3, psOwned+=9, deltaT++, m++, theta++){
 
     int numNeigh = *neighPtr; neighPtr++;
@@ -105,14 +110,9 @@ void computeInternalForceLinearElastic
       cellVolume = v[localId];
       const double *XP = &xOverlap[3*localId];
       const ScalarT *YP = &yOverlap[3*localId];
-      X_dx = XP[0]-X[0];
-      X_dy = XP[1]-X[1];
-      X_dz = XP[2]-X[2];
-      zeta = sqrt(X_dx*X_dx+X_dy*X_dy+X_dz*X_dz);
-      Y_dx = YP[0]-Y[0];
-      Y_dy = YP[1]-Y[1];
-      Y_dz = YP[2]-Y[2];
-      dY = sqrt(Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz);
+
+      zeta = MATERIAL_EVALUATION::getDiffAndLen(X,XP,dof,X_dx);
+      dY = MATERIAL_EVALUATION::getDiffAndLen(Y,YP,dof,Y_dx);
       e = dY - zeta;
       if(deltaTemperature)
         e -= thermalExpansionCoefficient*(*deltaT)*zeta;
@@ -120,17 +120,17 @@ void computeInternalForceLinearElastic
       // c1 = omega*(*theta)*(9.0*K-15.0*MU)/(3.0*(*m));
       c1 = omega*(*theta)*(3.0*K/(*m)-alpha/3.0);
       t = (1.0-*bondDamage)*(c1 * zeta + (1.0-*bondDamage) * omega * alpha * e);
-      fx = t * Y_dx / dY;
-      fy = t * Y_dy / dY;
-      fz = t * Y_dz / dY;
+      fx = t * Y_dx[0] / dY;
+      fy = t * Y_dx[1] / dY;
+      fz = t * Y_dx[2] / dY;
 
-            MATERIAL_EVALUATION::setForces(fx, fy, fz, selfCellVolume, cellVolume, fOwned, &fInternalOverlap[3 * localId]);
-            if(partialStressOverlap != 0){
-              MATERIAL_EVALUATION::setPartialStresses(fx, fy, fz, X_dx, X_dy, X_dz, cellVolume, psOwned);
-            }
-        }
-    
+      MATERIAL_EVALUATION::setForces(fx, fy, fz, selfCellVolume, cellVolume, fOwned, &fInternalOverlap[3 * localId]);
+      if(partialStressOverlap != 0){
+        MATERIAL_EVALUATION::setPartialStresses(fx, fy, fz, X_dx[0], X_dx[1], X_dx[2], cellVolume, psOwned);
+      }
     }
+    
+  }
 }
 
 /** Explicit template instantiation for double. */

@@ -98,6 +98,9 @@ void computeInternalForceViscoelasticStandardLinearSolid
 
   const int *neighPtr = localNeighborList;
   double cellVolume, dx, dy, dz, zeta, dYN, dYNp1, t, ti, td, edN, edNp1, delta_ed;
+  const int dof = 3;
+  std::vector<double> X_dxVector(dof) ; double*  X_dx = &X_dxVector[0];
+  std::vector<double> Y_dxVector(dof) ; double*  Y_dx = &Y_dxVector[0];
   for(int p=0;p<numOwnedPoints;p++, xOwned +=3, yNOwned +=3, yNP1Owned +=3, fOwned+=3, m++, thetaN++, thetaNp1++){
 
     int numNeigh = *neighPtr; neighPtr++;
@@ -120,7 +123,8 @@ void computeInternalForceViscoelasticStandardLinearSolid
       dy = XP[1]-X[1];
       dz = XP[2]-X[2];
       zeta = sqrt(dx*dx+dy*dy+dz*dz);
-
+      zeta = MATERIAL_EVALUATION::getDiffAndLen(X,XP,dof,X_dx);
+      
       /*
        * JAM:damage state
        * Some additional analysis (pencil and paper) may be required with
@@ -146,10 +150,7 @@ void computeInternalForceViscoelasticStandardLinearSolid
       /*
        * COMPUTE edN
        */
-      dx = YPN[0]-YN[0];
-      dy = YPN[1]-YN[1];
-      dz = YPN[2]-YN[2];
-      dYN = sqrt(dx*dx+dy*dy+dz*dz);
+      dYN = MATERIAL_EVALUATION::getDiffAndLen(YN,YPN,dof,Y_dx);
       /*
        */
       edN = damageN * (dYN - zeta) - eiN;
@@ -157,10 +158,7 @@ void computeInternalForceViscoelasticStandardLinearSolid
       /*
        * COMPUTE edNp1
        */
-      dx = YPNP1[0]-YNP1[0];
-      dy = YPNP1[1]-YNP1[1];
-      dz = YPNP1[2]-YNP1[2];
-      dYNp1 = sqrt(dx*dx+dy*dy+dz*dz);
+      dYNp1 = MATERIAL_EVALUATION::getDiffAndLen(YNP1,YPNP1,dof,Y_dx);
       edNp1 = damageNp1 * (dYNp1 - zeta) - eiNp1;
 
       /*
@@ -186,9 +184,9 @@ void computeInternalForceViscoelasticStandardLinearSolid
        * Note that damage has already been applied once to 'td' (through ed) above.
        */
       t = damageNp1 * (ti + td);
-      double fx = t * dx / dYNp1;
-      double fy = t * dy / dYNp1;
-      double fz = t * dz / dYNp1;
+      double fx = t * Y_dx[0] / dYNp1;
+      double fy = t * Y_dx[1] / dYNp1;
+      double fz = t * Y_dx[2] / dYNp1;
 
       MATERIAL_EVALUATION::setForces(fx, fy, fz, selfCellVolume, cellVolume, fOwned, &fInternalOverlap[3 * localId]);
     }

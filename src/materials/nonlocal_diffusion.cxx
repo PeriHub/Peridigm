@@ -105,8 +105,8 @@ void computeInternalFluidFlow
   ScalarT *flowOwned = flowInternalOverlap;
   const int *neighPtr = localNeighborList;
   double cellVolume;
-  ScalarT dPressure, Y_dx, Y_dy, Y_dz, dY, q;
-
+  ScalarT dPressure, dY, q;
+  const int dof = 3;
 // Compute the trace of owned permeability
   // tr(K) = K_11 + K_22 + K_33
   // TODO: this is a placeholder. This statement is not physically correct
@@ -134,15 +134,7 @@ void computeInternalFluidFlow
     //X_dz = XP[2]-X[2];
     //zeta = sqrt(X_dx*X_dx+X_dy*X_dy+X_dz*X_dz);
 
-    Y_dx = YP[0]-Y[0];
-    Y_dy = YP[1]-Y[1];
-    Y_dz = YP[2]-Y[2];
-    dY = sqrt(Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz);
-
-    // We need the actual components of dY organized for indexing by number.
-    bondComponents[0] = Y_dx;
-    bondComponents[1] = Y_dy;
-    bondComponents[2] = Y_dz;
+    dY = MATERIAL_EVALUATION::getDiffAndLen(Y,YP,dof,bondComponents);
     //omega = scalarInfluenceFunction(zeta,horizon);
 
     // Pressure potential

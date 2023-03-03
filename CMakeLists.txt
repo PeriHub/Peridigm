@@ -168,7 +168,14 @@ ELSE()
 ENDIF()
 
 #
-
+# set(Eigen3_DIR CACHE PATH "Path to Eigen directory")
+# SET(CMAKE_PREFIX_PATH ${EIGEN_DIR} ${CMAKE_PREFIX_PATH})
+# FIND_PACKAGE(Eigen3 3.4 REQUIRED NO_MODULE)
+MESSAGE("Eigen installation:")
+MESSAGE("   Eigen3_DIR = ${Eigen3_DIR}")
+# MESSAGE("   Eigen3_VERSION = ${Eigen3_VERSION}")  
+MESSAGE("")
+include_directories(${Eigen3_DIR}) 
 # Enable CJL development features
 #
 IF(USE_CJL)
