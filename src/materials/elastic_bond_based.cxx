@@ -66,46 +66,42 @@ void computeInternalForceElasticBondBased
     double horizon
 )
 {
-  double volume, neighborVolume, X[3], neighborX[3], initialBondLength, damageOnBond;
-  ScalarT Y[3], neighborY[3], currentBondLength, stretch, t, fx, fy, fz;
+  const double *xOwned = xOverlap;
+  const ScalarT *yOwned = yOverlap;
+  double volume, neighborVolume, damageOnBond;
+  ScalarT stretch, t, fx, fy, fz, zeta, dY;
   int neighborhoodIndex(0), bondDamageIndex(0), neighborId;
 
   const double pi = PeridigmNS::value_of_pi();
   double constant = 18.0*BULK_MODULUS/(pi*horizon*horizon*horizon*horizon);
-
+  const int dof = 3;
+  std::vector<double> X_dxVector(dof)  ; double*  X_dx = &X_dxVector[0];
+  std::vector<ScalarT> Y_dxVector(dof) ; ScalarT*  Y_dx = &Y_dxVector[0];
   for(int p=0 ; p<numOwnedPoints ; p++){
 
-    X[0] = xOverlap[p*3];
-    X[1] = xOverlap[p*3+1];
-    X[2] = xOverlap[p*3+2];
-    Y[0] = yOverlap[p*3];
-    Y[1] = yOverlap[p*3+1];
-    Y[2] = yOverlap[p*3+2];
+    const double *X = xOwned;
+    const ScalarT *Y = yOwned;
     volume = volumeOverlap[p];
 
     int numNeighbors = localNeighborList[neighborhoodIndex++];
-    for(int n=0; n<numNeighbors; n++){
+    for(int n=0; n<numNeighbors; n++, xOwned +=3, yOwned +=3){
 
       neighborId = localNeighborList[neighborhoodIndex++];
-      neighborX[0] = xOverlap[neighborId*3];
-      neighborX[1] = xOverlap[neighborId*3+1];
-      neighborX[2] = xOverlap[neighborId*3+2];
-      neighborY[0] = yOverlap[neighborId*3];
-      neighborY[1] = yOverlap[neighborId*3+1];
-      neighborY[2] = yOverlap[neighborId*3+2];
+      const double *XP = &xOverlap[3*neighborId];
+      const ScalarT *YP = &yOverlap[3*neighborId];
       neighborVolume = volumeOverlap[neighborId];
       
-      initialBondLength = std::sqrt( (neighborX[0]-X[0])*(neighborX[0]-X[0]) + (neighborX[1]-X[1])*(neighborX[1]-X[1]) + (neighborX[2]-X[2])*(neighborX[2]-X[2]) );
-      currentBondLength = std::sqrt( (neighborY[0]-Y[0])*(neighborY[0]-Y[0]) + (neighborY[1]-Y[1])*(neighborY[1]-Y[1]) + (neighborY[2]-Y[2])*(neighborY[2]-Y[2]) );
-      stretch = (currentBondLength - initialBondLength)/initialBondLength;
+      zeta = MATERIAL_EVALUATION::getDiffAndLen(X,XP,dof,X_dx);
+      dY = MATERIAL_EVALUATION::getDiffAndLen(Y,YP,dof,Y_dx);
+      stretch = (dY - zeta)/zeta;
 
       damageOnBond = bondDamage[bondDamageIndex++];
 
       t = 0.5*(1.0 - damageOnBond)*stretch*constant;
 
-      fx = t * (neighborY[0] - Y[0]) / currentBondLength;
-      fy = t * (neighborY[1] - Y[1]) / currentBondLength;
-      fz = t * (neighborY[2] - Y[2]) / currentBondLength;
+      fx = t * Y_dx[0] / dY;
+      fy = t * Y_dx[1] / dY;
+      fz = t * Y_dx[2] / dY;
       MATERIAL_EVALUATION::setForces(fx, fy, fz, volume, neighborVolume, &fInternalOverlap[3*p], &fInternalOverlap[3*neighborId]);
 
     }

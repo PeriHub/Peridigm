@@ -71,22 +71,18 @@ ScalarT computeDeviatoricForceStateNorm
   ScalarT norm=0.0;
   const double *v = volumeOverlap;
   double cellVolume, dx_X, dy_X, dz_X, zeta, edpN;
-    ScalarT dx_Y, dy_Y, dz_Y, dY, ed, tdTrial;
-
+  ScalarT dx_Y, dy_Y, dz_Y, dY, ed, tdTrial;
+  const int dof = 3;
+  std::vector<double> X_dxVector(dof)  ; double*  X_dx = &X_dxVector[0];
+  std::vector<ScalarT> Y_dxVector(dof) ; ScalarT*  Y_dx = &Y_dxVector[0];
   for(int n=0;n<numNeigh;n++, neighPtr++, bondDamage++, deviatoricPlasticExtensionState++){
     int localId = *neighPtr;
     cellVolume = v[localId];
     const double *XP = &xOverlap[3*localId];
     const ScalarT *YP = &yOverlap[3*localId];
-    dx_X = XP[0]-X[0];
-    dy_X = XP[1]-X[1];
-    dz_X = XP[2]-X[2];
-    zeta = sqrt(dx_X*dx_X+dy_X*dy_X+dz_X*dz_X);
-    dx_Y = YP[0]-Y[0];
-    dy_Y = YP[1]-Y[1];
-    dz_Y = YP[2]-Y[2];
-    dY = sqrt(dx_Y*dx_Y+dy_Y*dy_Y+dz_Y*dz_Y);
 
+    zeta = MATERIAL_EVALUATION::getDiffAndLen(X,XP,dof,X_dx);
+    dY = MATERIAL_EVALUATION::getDiffAndLen(Y,YP,dof,Y_dx);
     /*
      * Deviatoric extension state
      */
