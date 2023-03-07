@@ -87,7 +87,20 @@ TEUCHOS_UNIT_TEST(material_utilities, getDiffAndLen) {
     
 
 }
+TEUCHOS_UNIT_TEST(material_utilities, getStretch) {
+    const double tolerance = 1.0e-15;
+    double A;
 
+    A = MATERIAL_EVALUATION::getStretch(5.5,5.5);
+    TEST_FLOATING_EQUALITY(A,0.0,tolerance);
+    A = MATERIAL_EVALUATION::getStretch(5.6,-5.6);
+    TEST_FLOATING_EQUALITY(A,-11.2,tolerance);
+    A = MATERIAL_EVALUATION::getStretch(2.0,0.0);
+    TEST_FLOATING_EQUALITY(A,-2.0,tolerance);
+    A = MATERIAL_EVALUATION::getStretch(0.0,2.0);
+    TEST_FLOATING_EQUALITY(A,2.0,tolerance);
+
+}
 
 
 int main

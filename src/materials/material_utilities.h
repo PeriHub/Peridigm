@@ -206,6 +206,12 @@ ScalarT getDiffAndLen(
   const int dof,
   ScalarT* C
   );
+
+template<typename ScalarT>
+  ScalarT getStretch(
+  const double A, 
+  const ScalarT B
+  );
 void computeDeviatoricDilatation
 (
     const double* xOverlap,
