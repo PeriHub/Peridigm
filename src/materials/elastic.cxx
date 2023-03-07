@@ -113,7 +113,7 @@ void computeInternalForceLinearElastic
 
       zeta = MATERIAL_EVALUATION::getDiffAndLen(X,XP,dof,X_dx);
       dY = MATERIAL_EVALUATION::getDiffAndLen(Y,YP,dof,Y_dx);
-      e = dY - zeta;
+      e = MATERIAL_EVALUATION::getStretch(zeta,dY);
       if(deltaTemperature)
         e -= thermalExpansionCoefficient*(*deltaT)*zeta;
       omega = scalarInfluenceFunction(zeta,horizon);
