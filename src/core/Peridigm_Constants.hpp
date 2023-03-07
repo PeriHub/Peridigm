@@ -51,6 +51,11 @@ namespace PeridigmNS {
   static constexpr double value_of_pi() noexcept {
     return static_cast<double>( 3.141592653589793238462643383279502884L );
   }
+  // use this routine regularly to get dof
+  static constexpr int dof() noexcept {
+    return static_cast<int>( 3 );
+  }
+
 
 }
 
