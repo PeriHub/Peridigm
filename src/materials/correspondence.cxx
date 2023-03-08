@@ -105,8 +105,11 @@ double* detachedNodes
     std::vector<ScalarT> eulerianVelGradVector(9) ; ScalarT* eulerianVelGrad = &eulerianVelGradVector[0];
     ScalarT determinant;
     ScalarT One = 1.0;
-    ScalarT velStateX, velStateY, velStateZ;
-    double undeformedBondX, undeformedBondY, undeformedBondZ, undeformedBondLength;
+     const int dof = PeridigmNS::dof();
+    std::vector<double> X_dxVector(dof)  ; double*  X_dx = &X_dxVector[0];
+    std::vector<ScalarT> velStateVector(dof)  ; double*  velState = &velStateVector[0];
+    ScalarT dummy;
+    double undeformedBondLength;
     double neighborVolume, omega, scalarTemp; 
     int inversionReturnCode(0);
 
@@ -133,32 +136,20 @@ double* detachedNodes
          //if (detachedNodes[neighborIndex]!=0) continue;
           
           neighborVolume = volume[neighborIndex];
-          undeformedBondX = *(neighborModelCoord)   - *(modelCoord);
-          undeformedBondY = *(neighborModelCoord+1) - *(modelCoord+1);
-          undeformedBondZ = *(neighborModelCoord+2) - *(modelCoord+2);
-          undeformedBondLength = sqrt(undeformedBondX*undeformedBondX +
-                                      undeformedBondY*undeformedBondY +
-                                      undeformedBondZ*undeformedBondZ);
 
+          undeformedBondLength = MATERIAL_EVALUATION::getDiffAndLen(modelCoord,neighborModelCoord,dof,X_dx);
           // The velState is the relative difference in velocities of the nodes at
           // each end of a bond. i.e., v_j - v_i
-          velStateX = *(neighborVel)   - *(vel);
-          velStateY = *(neighborVel+1) - *(vel+1);
-          velStateZ = *(neighborVel+2) - *(vel+2);
-
+          dummy = MATERIAL_EVALUATION::getDiffAndLen(vel,neighborVel,dof,velState);
           omega = MATERIAL_EVALUATION::scalarInfluenceFunction(undeformedBondLength, *delta);
 
           scalarTemp = (1.0 - *bondDamage) * omega * neighborVolume;
          // scalarTemp =  omega * neighborVolume;
-          *(FdotFirstTerm)   += scalarTemp * velStateX * undeformedBondX;
-          *(FdotFirstTerm+1) += scalarTemp * velStateX * undeformedBondY;
-          *(FdotFirstTerm+2) += scalarTemp * velStateX * undeformedBondZ;
-          *(FdotFirstTerm+3) += scalarTemp * velStateY * undeformedBondX;
-          *(FdotFirstTerm+4) += scalarTemp * velStateY * undeformedBondY;
-          *(FdotFirstTerm+5) += scalarTemp * velStateY * undeformedBondZ;
-          *(FdotFirstTerm+6) += scalarTemp * velStateZ * undeformedBondX;
-          *(FdotFirstTerm+7) += scalarTemp * velStateZ * undeformedBondY;
-          *(FdotFirstTerm+8) += scalarTemp * velStateZ * undeformedBondZ;
+         for(int i=0; i<dof; i++){
+            for(int j=0; j<dof; j++){
+              *(FdotFirstTerm + i*dof + j) += scalarTemp * velState[i] * X_dx[j];
+            }
+         }
         }
         
         // Compute Fdot
