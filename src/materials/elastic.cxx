@@ -121,8 +121,8 @@ void computeInternalForceLinearElastic
       // c1 = omega*(*theta)*(9.0*K-15.0*MU)/(3.0*(*m));
       c1 = omega*(*theta)*(3.0*K/(*m)-alpha/3.0);
       t = (1.0-*bondDamage)*(c1 * zeta + (1.0-*bondDamage) * omega * alpha * e);
-      for (int i=0;i<dof;i++)f[i] = t*Y_dx[i] / dY;
 
+      MATERIAL_EVALUATION::getProjectedForces(t,Y_dx,dY,dof,f);
 
       MATERIAL_EVALUATION::setForces(f[0], f[1], f[2], selfCellVolume, cellVolume, fOwned, &fInternalOverlap[dof * localId]);
       if(partialStressOverlap != 0){

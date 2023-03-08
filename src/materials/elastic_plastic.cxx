@@ -158,9 +158,10 @@ void computeInternalForceIsotropicElasticPlastic
   const int *neighPtr = localNeighborList;
   double cellVolume, alpha, zeta, edpN;
   ScalarT  dY, ed, tdTrial, t, ti, td;
-  const int dof = 3;
+  const int dof = PeridigmNS::dof();
   std::vector<double> X_dxVector(dof)  ; double*  X_dx = &X_dxVector[0];
   std::vector<ScalarT> Y_dxVector(dof) ; ScalarT*  Y_dx = &Y_dxVector[0];
+  std::vector<ScalarT> f_Vector(dof) ; ScalarT*  f = &f_Vector[0];
   for(int p=0;p<numOwnedPoints;p++, xOwned +=3, yOwned +=3, fOwned+=3, m++, theta++, lambdaN++, lambdaNP1++){
 
     int numNeigh = *neighPtr; neighPtr++;
@@ -182,10 +183,10 @@ void computeInternalForceIsotropicElasticPlastic
      * Evaluate yield function
      */
     double pointWiseYieldValue =  yieldValue;
-    ScalarT f = tdNorm * tdNorm / 2 - pointWiseYieldValue;
+    ScalarT yield = tdNorm * tdNorm / 2 - pointWiseYieldValue;
     bool elastic = true;
 
-    if(f>0){
+    if(yield>0){
       /*
        * This step is incrementally plastic
        */
@@ -258,11 +259,10 @@ void computeInternalForceIsotropicElasticPlastic
       /*
        * Assemble pair wise force function
        */
-      ScalarT fx = t * Y_dx[0] / dY;
-      ScalarT fy = t * Y_dx[1] / dY;
-      ScalarT fz = t * Y_dx[2] / dY;
+      MATERIAL_EVALUATION::getProjectedForces(t,Y_dx,dY,dof,f);
 
-      MATERIAL_EVALUATION::setForces(fx, fy, fz, selfCellVolume, cellVolume, fOwned, &fInternalOverlap[3 * localId]);
+      MATERIAL_EVALUATION::setForces(f[0], f[1], f[2], selfCellVolume, cellVolume, fOwned, &fInternalOverlap[3 * localId]);
+
     }
   }
 }

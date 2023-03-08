@@ -69,7 +69,7 @@ void computeInternalForceElasticBondBased
   const double *xOwned = xOverlap;
   const ScalarT *yOwned = yOverlap;
   double volume, neighborVolume, damageOnBond;
-  ScalarT stretch, t, fx, fy, fz, zeta, dY;
+  ScalarT stretch, t, zeta, dY;
   int neighborhoodIndex(0), bondDamageIndex(0), neighborId;
 
   const double pi = PeridigmNS::value_of_pi();
@@ -77,6 +77,7 @@ void computeInternalForceElasticBondBased
   const int dof = 3;
   std::vector<double> X_dxVector(dof)  ; double*  X_dx = &X_dxVector[0];
   std::vector<ScalarT> Y_dxVector(dof) ; ScalarT*  Y_dx = &Y_dxVector[0];
+  std::vector<ScalarT> f_Vector(dof) ; ScalarT*  f = &f_Vector[0];
   for(int p=0 ; p<numOwnedPoints ; p++){
 
     const double *X = xOwned;
@@ -99,10 +100,8 @@ void computeInternalForceElasticBondBased
 
       t = 0.5*(1.0 - damageOnBond)*stretch*constant;
 
-      fx = t * Y_dx[0] / dY;
-      fy = t * Y_dx[1] / dY;
-      fz = t * Y_dx[2] / dY;
-      MATERIAL_EVALUATION::setForces(fx, fy, fz, volume, neighborVolume, &fInternalOverlap[3*p], &fInternalOverlap[3*neighborId]);
+      MATERIAL_EVALUATION::getProjectedForces(t,Y_dx,dY,dof,f);
+      MATERIAL_EVALUATION::setForces(f[0], f[1], f[2], volume, neighborVolume, &fInternalOverlap[3*p], &fInternalOverlap[3*neighborId]);
 
     }
   }

@@ -252,10 +252,11 @@ void computeInternalForceLinearElasticPV
 
   const int *neighPtr = localNeighborList;
   double alpha, zeta, omega, selfCellVolume, neighborCellVolume;
-  ScalarT dY, t, fx, fy, fz, e, c1;
-  const int dof = 3;
+  ScalarT dY, t, e, c1;
+  const int dof = PeridigmNS::dof();
   std::vector<double> X_dxVector(dof)  ; double*  X_dx = &X_dxVector[0];
   std::vector<ScalarT> Y_dxVector(dof) ; ScalarT*  Y_dx = &Y_dxVector[0];
+  std::vector<ScalarT> f_Vector(dof) ; ScalarT*  f = &f_Vector[0];
   for(int p=0;p<numOwnedPoints;p++, xOwned +=3, yOwned +=3, fOwned+=3, deltaT++, m++, theta++){
 
     int numNeigh = *neighPtr; neighPtr++;
@@ -276,9 +277,8 @@ void computeInternalForceLinearElasticPV
       // c1 = omega*(*theta)*(9.0*K-15.0*MU)/(3.0*(*m));
       c1 = omega*(*theta)*(3.0*K/(*m)-alpha/3.0);
       t = (1.0-*bondDamage)*(c1 * zeta + (1.0-*bondDamage) * omega * alpha * e);
-      fx = t * Y_dx[0] / dY;
-      fy = t * Y_dx[1] / dY;
-      fz = t * Y_dx[2] / dY;
+
+      MATERIAL_EVALUATION::getProjectedForces(t,Y_dx,dY,dof,f);
 
       if(selfVolumePtr != 0 && neighborVolumePtr != 0){
         selfCellVolume = *selfVolume;
@@ -288,8 +288,10 @@ void computeInternalForceLinearElasticPV
         selfCellVolume = volumeOverlap[p];
         neighborCellVolume = volumeOverlap[localId];
       }
+      
 
-      MATERIAL_EVALUATION::setForces(fx, fy, fz, selfCellVolume, neighborCellVolume, fOwned, &fInternalOverlap[3*localId]);
+      MATERIAL_EVALUATION::setForces(f[0], f[1], f[2], selfCellVolume, neighborCellVolume, fOwned, &fInternalOverlap[3 * localId]);
+     
     }
   }
 }
