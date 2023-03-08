@@ -124,9 +124,15 @@ void setForces(
   const double volNeigh, 
   ScalarT *fOwned,
   ScalarT *fNeigh
-  );
-
-
+);
+template<typename ScalarT>
+void getProjectedForces(
+  const ScalarT t,
+  const ScalarT* Y_dx,
+  const ScalarT dY,
+  const int dof,
+  ScalarT* f
+);
 /**
  * Call this function on a single point 'X'
  * NOTE: neighPtr to should point to 'numNeigh' for 'X'

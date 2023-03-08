@@ -103,6 +103,36 @@ TEUCHOS_UNIT_TEST(material_utilities, getStretch) {
     TEST_FLOATING_EQUALITY(A,2.0,tolerance);
 
 }
+TEUCHOS_UNIT_TEST(material_utilities, getProjectedForces) {
+    const double tolerance = 1.0e-15;
+    double t;
+    std::vector<double> AVector(3);
+    double* A = &AVector[0]; 
+    int dof = 3;
+    double B;
+    std::vector<double> fVector(3);
+    double* f = &fVector[0]; 
+    std::vector<double> fTestVector(3);
+    double* fTest = &fTestVector[0]; 
+
+    A[0] = 1; A[1]=2; A[2]=-1;
+    B = sqrt(A[0]*A[0]+A[1]*A[1]+A[2]*A[2]);
+    t = 10;
+    MATERIAL_EVALUATION::getProjectedForces(t,A,B,dof,f);
+    fTest[0] = 10/B; fTest[1] = 2*10/B; fTest[2] = -10/B;
+    for (int m=0; m<dof; m++) TEST_FLOATING_EQUALITY(f[m],fTest[m],tolerance);    
+    dof = 2;
+    A[0] = -1; A[1]=5;
+    B = sqrt(A[0]*A[0]+A[1]*A[1]);
+    t = 10;
+    MATERIAL_EVALUATION::getProjectedForces(t,A,B,dof,f);
+    fTest[0] = -10/B; fTest[1] = 5*10/B; fTest[2] = 0.0;
+    for (int m=0; m<dof; m++) TEST_FLOATING_EQUALITY(f[m],fTest[m],tolerance);    
+
+
+}
+
+
 
 
 int main

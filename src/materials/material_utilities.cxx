@@ -162,10 +162,36 @@ template void setPartialStresses<double>(
     const double X_dy,
     const double X_dz,
     const double vol,
-    double *partialStressPtr);
+    double *partialStressPtr
+    );
 
-
-
+template<typename ScalarT>
+void getProjectedForces(
+  const ScalarT t,
+  const ScalarT* Y_dx,
+  const ScalarT dY,
+  const int dof,
+  ScalarT* f
+)
+{
+  for (int i=0;i<dof;i++){
+    f[i] = t * Y_dx[i] / dY;
+  }
+}
+template void getProjectedForces<double>(
+  const double t,
+  const double* Y_dx,
+  const double dY,
+  const int dof,
+  double* f
+  );
+template void getProjectedForces<Sacado::Fad::DFad<double>>(
+  const Sacado::Fad::DFad<double> t,
+  const Sacado::Fad::DFad<double>* Y_dx,
+  const Sacado::Fad::DFad<double> dY,
+  const int dof,
+  Sacado::Fad::DFad<double>* f
+  );
 template<typename ScalarT>
 ScalarT getStretch(
   const double A, 
