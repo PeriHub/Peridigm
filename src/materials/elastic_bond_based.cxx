@@ -74,7 +74,7 @@ void computeInternalForceElasticBondBased
 
   const double pi = PeridigmNS::value_of_pi();
   double constant = 18.0*BULK_MODULUS/(pi*horizon*horizon*horizon*horizon);
-  const int dof = 3;
+  const int dof = PeridigmNS::dof();
   std::vector<double> X_dxVector(dof)  ; double*  X_dx = &X_dxVector[0];
   std::vector<ScalarT> Y_dxVector(dof) ; ScalarT*  Y_dx = &Y_dxVector[0];
   std::vector<ScalarT> f_Vector(dof) ; ScalarT*  f = &f_Vector[0];

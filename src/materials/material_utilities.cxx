@@ -356,7 +356,7 @@ double computeWeightedVolume
   double cellVolume;
   const int *neighPtr = localNeighborList;
   int numNeigh = *neighPtr; neighPtr++;
-  const int dof = 3;
+  const int dof = PeridigmNS::dof();
   std::vector<double> dxVector(dof); double* dx = &dxVector[0];
   for(int n=0;n<numNeigh;n++,neighPtr++){
     int localId = *neighPtr;
@@ -391,7 +391,7 @@ void computeDeviatoricDilatation
   double *theta = dilatationOwned;
   double cellVolume;
   const int *neighPtr = localNeighborList;
-  const int dof = 3;
+  const int dof = PeridigmNS::dof();
   std::vector<double> dxVector(dof); double* dx = &dxVector[0];
   for(int p=0; p<numOwnedPoints;p++, xOwned+=3, yOwned+=3, m++, theta++){
     int numNeigh = *neighPtr; neighPtr++;
@@ -438,7 +438,7 @@ void computeDilatation
   ScalarT *theta = dilatationOwned;
   double cellVolume;
   const int *neighPtr = localNeighborList;
-  const int dof = 3;
+  const int dof = PeridigmNS::dof();
   std::vector<double> dxVector(dof); double* dx = &dxVector[0];
   for(int p=0; p<numOwnedPoints;p++, xOwned+=3, yOwned+=3, deltaT++, m++, theta++){
     int numNeigh = *neighPtr; neighPtr++;

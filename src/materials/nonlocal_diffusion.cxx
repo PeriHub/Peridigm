@@ -106,7 +106,7 @@ void computeInternalFluidFlow
   const int *neighPtr = localNeighborList;
   double cellVolume;
   ScalarT dPressure, dY, q;
-  const int dof = 3;
+  const int dof = PeridigmNS::dof();
 // Compute the trace of owned permeability
   // tr(K) = K_11 + K_22 + K_33
   // TODO: this is a placeholder. This statement is not physically correct
