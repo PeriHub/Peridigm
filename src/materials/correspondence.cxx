@@ -105,22 +105,23 @@ double* detachedNodes
     std::vector<ScalarT> eulerianVelGradVector(9) ; ScalarT* eulerianVelGrad = &eulerianVelGradVector[0];
     ScalarT determinant;
     ScalarT One = 1.0;
-    ScalarT velStateX, velStateY, velStateZ;
-    double undeformedBondX, undeformedBondY, undeformedBondZ, undeformedBondLength;
+    const int dof = PeridigmNS::dof();
+    std::vector<double> X_dxVector(dof)  ; double*  X_dx = &X_dxVector[0];
+    std::vector<ScalarT> velStateVector(dof)  ; double*  velState = &velStateVector[0];
+    ScalarT dummy;
+    double undeformedBondLength;
     double neighborVolume, omega, scalarTemp; 
     int inversionReturnCode(0);
 
     int neighborIndex, numNeighbors;
     const int *neighborListPtr = neighborhoodList;
     //int returnCode;
-    for(int iID=0 ; iID<numPoints ; ++iID, delta++, modelCoord+=3, vel+=3,
+    for(int iID=0 ; iID<numPoints ; ++iID, delta++, modelCoord+=dof, vel+=dof,
         shapeTensorInv+=9, rateOfDef+=9, defGrad+=9){
 
         // Initialize data
-        *(FdotFirstTerm)   = 0.0 ; *(FdotFirstTerm+1) = 0.0 ;  *(FdotFirstTerm+2) = 0.0;
-        *(FdotFirstTerm+3) = 0.0 ; *(FdotFirstTerm+4) = 0.0 ;  *(FdotFirstTerm+5) = 0.0;
-        *(FdotFirstTerm+6) = 0.0 ; *(FdotFirstTerm+7) = 0.0 ;  *(FdotFirstTerm+8) = 0.0;
         
+        MATRICES::setToZero(FdotFirstTerm, dof*dof);
         //Compute Fdot
         numNeighbors = *neighborListPtr; neighborListPtr++;
         
@@ -133,32 +134,16 @@ double* detachedNodes
          //if (detachedNodes[neighborIndex]!=0) continue;
           
           neighborVolume = volume[neighborIndex];
-          undeformedBondX = *(neighborModelCoord)   - *(modelCoord);
-          undeformedBondY = *(neighborModelCoord+1) - *(modelCoord+1);
-          undeformedBondZ = *(neighborModelCoord+2) - *(modelCoord+2);
-          undeformedBondLength = sqrt(undeformedBondX*undeformedBondX +
-                                      undeformedBondY*undeformedBondY +
-                                      undeformedBondZ*undeformedBondZ);
 
+          undeformedBondLength = MATERIAL_EVALUATION::getDiffAndLen(modelCoord,neighborModelCoord,dof,X_dx);
           // The velState is the relative difference in velocities of the nodes at
           // each end of a bond. i.e., v_j - v_i
-          velStateX = *(neighborVel)   - *(vel);
-          velStateY = *(neighborVel+1) - *(vel+1);
-          velStateZ = *(neighborVel+2) - *(vel+2);
-
+          dummy = MATERIAL_EVALUATION::getDiffAndLen(vel,neighborVel,dof,velState);
           omega = MATERIAL_EVALUATION::scalarInfluenceFunction(undeformedBondLength, *delta);
 
           scalarTemp = (1.0 - *bondDamage) * omega * neighborVolume;
          // scalarTemp =  omega * neighborVolume;
-          *(FdotFirstTerm)   += scalarTemp * velStateX * undeformedBondX;
-          *(FdotFirstTerm+1) += scalarTemp * velStateX * undeformedBondY;
-          *(FdotFirstTerm+2) += scalarTemp * velStateX * undeformedBondZ;
-          *(FdotFirstTerm+3) += scalarTemp * velStateY * undeformedBondX;
-          *(FdotFirstTerm+4) += scalarTemp * velStateY * undeformedBondY;
-          *(FdotFirstTerm+5) += scalarTemp * velStateY * undeformedBondZ;
-          *(FdotFirstTerm+6) += scalarTemp * velStateZ * undeformedBondX;
-          *(FdotFirstTerm+7) += scalarTemp * velStateZ * undeformedBondY;
-          *(FdotFirstTerm+8) += scalarTemp * velStateZ * undeformedBondZ;
+          MATERIAL_EVALUATION::PDTensorProduct(scalarTemp,dof,velState,X_dx,FdotFirstTerm);
         }
         
         // Compute Fdot
@@ -560,7 +545,7 @@ double* detachedNodes
   std::vector<ScalarT> shapeTensorVector(9);
   ScalarT* shapeTensor = &shapeTensorVector[0];
   ScalarT shapeTensorDeterminant;
-
+  const int dof = PeridigmNS::dof();
   std::vector<ScalarT> defGradFirstTermVector(9);
   ScalarT* defGradFirstTerm = &defGradFirstTermVector[0];
 
@@ -575,13 +560,9 @@ double* detachedNodes
         shapeTensorInv+=9, defGrad+=9){
   
     //double bondCheck(0.0), bondCheckNP1(0.0);
-    *(shapeTensor)   = 0.0 ; *(shapeTensor+1) = 0.0 ; *(shapeTensor+2) = 0.0 ;
-    *(shapeTensor+3) = 0.0 ; *(shapeTensor+4) = 0.0 ; *(shapeTensor+5) = 0.0 ;
-    *(shapeTensor+6) = 0.0 ; *(shapeTensor+7) = 0.0 ; *(shapeTensor+8) = 0.0 ;
-    *(defGradFirstTerm)   = 0.0 ; *(defGradFirstTerm+1) = 0.0 ; *(defGradFirstTerm+2) = 0.0 ;
-    *(defGradFirstTerm+3) = 0.0 ; *(defGradFirstTerm+4) = 0.0 ; *(defGradFirstTerm+5) = 0.0 ;
-    *(defGradFirstTerm+6) = 0.0 ; *(defGradFirstTerm+7) = 0.0 ; *(defGradFirstTerm+8) = 0.0 ;
 
+    MATRICES::setToZero(shapeTensor, dof*dof);
+    MATRICES::setToZero(defGradFirstTerm, dof*dof);
     numNeighbors = *neighborListPtr; neighborListPtr++;
 
     for(int n=0; n<numNeighbors; n++, neighborListPtr++, bondDamageNP1++){
@@ -598,7 +579,7 @@ double* detachedNodes
       undeformedBondX = *(neighborModelCoord)   - *(modelCoord);
       undeformedBondY = *(neighborModelCoord+1) - *(modelCoord+1);
       undeformedBondZ = *(neighborModelCoord+2) - *(modelCoord+2);
-      
+      //MATERIAL_EVALUATION::getDiffAndLen(Y,YP,dof,Y_dx);
       // its increment independent to avoid problems with the influence function
       // currently the horizon does not realy deform
       undeformedBondLength = sqrt(undeformedBondX*undeformedBondX +
@@ -608,9 +589,9 @@ double* detachedNodes
       deformedBondX = *(neighborCoordNP1)   - *(coord);
       deformedBondY = *(neighborCoordNP1+1) - *(coord+1);
       deformedBondZ = *(neighborCoordNP1+2) - *(coord+2);
-      
+      //MATERIAL_EVALUATION::getDiffAndLen(Y,YP,dof,Y_dx);
       omega = MATERIAL_EVALUATION::scalarInfluenceFunction(undeformedBondLength, *delta);
-
+      //MATERIAL_EVALUATION::PDTensorProduct(scal,dof,)
 
       temp = (1.0 - *bondDamageNP1) * omega * neighborVolume;
       
@@ -658,9 +639,8 @@ double* detachedNodes
         if(inversionReturnCode > 0){
            
           returnCode = inversionReturnCode;
-          *(shapeTensorInv)   = 0.0 ; *(shapeTensorInv+1) = 0.0 ; *(shapeTensorInv+2) = 0.0 ;
-          *(shapeTensorInv+3) = 0.0 ; *(shapeTensorInv+4) = 0.0 ; *(shapeTensorInv+5) = 0.0 ;
-          *(shapeTensorInv+6) = 0.0 ; *(shapeTensorInv+7) = 0.0 ; *(shapeTensorInv+8) = 0.0 ;
+
+          MATRICES::setToZero(shapeTensorInv, dof*dof);
           *(defGrad)   = 1.0 ;     *(defGrad+1) = 0.0 ;     *(defGrad+2) = 0.0 ;
           *(defGrad+3) = 0.0 ;     *(defGrad+4) = 1.0 ;     *(defGrad+5) = 0.0 ;
           *(defGrad+6) = 0.0 ;     *(defGrad+7) = 0.0 ;     *(defGrad+8) = 1.0 ;
@@ -736,6 +716,7 @@ double* detachedNodes
   ScalarT traceV, Omega, OmegaSq, scaleFactor1, scaleFactor2;
   double undeformedBondX, undeformedBondY, undeformedBondZ, undeformedBondLength;
   double neighborVolume, omega, scalarTemp; 
+  const int dof = PeridigmNS::dof();
   int inversionReturnCode(0);
   int neighborIndex, numNeighbors;
   const int *neighborListPtr = neighborhoodList;
@@ -744,9 +725,7 @@ double* detachedNodes
         unrotRateOfDef+=9, defGrad+=9){
 
     // Initialize data
-    *(FdotFirstTerm)   = 0.0 ; *(FdotFirstTerm+1) = 0.0 ;  *(FdotFirstTerm+2) = 0.0;
-    *(FdotFirstTerm+3) = 0.0 ; *(FdotFirstTerm+4) = 0.0 ;  *(FdotFirstTerm+5) = 0.0;
-    *(FdotFirstTerm+6) = 0.0 ; *(FdotFirstTerm+7) = 0.0 ;  *(FdotFirstTerm+8) = 0.0;
+    MATRICES::setToZero(FdotFirstTerm, dof*dof);
     
     //Compute Fdot
     numNeighbors = *neighborListPtr; neighborListPtr++;

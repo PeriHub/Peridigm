@@ -47,10 +47,10 @@
 
 #include <cmath>
 #include <iostream>
+
 #include "viscoelastic.h"
 #include "material_utilities.h"
-using std::cout;
-using std::endl;
+
 namespace MATERIAL_EVALUATION {
 
 void computeInternalForceViscoelasticStandardLinearSolid
@@ -97,10 +97,12 @@ void computeInternalForceViscoelasticStandardLinearSolid
   double *fOwned = fInternalOverlap;
 
   const int *neighPtr = localNeighborList;
-  double cellVolume, dx, dy, dz, zeta, dYN, dYNp1, t, ti, td, edN, edNp1, delta_ed;
-  const int dof = 3;
+  double cellVolume, zeta, dYN, dYNp1, t, ti, td, edN, edNp1, delta_ed;
+  const int dof = PeridigmNS::dof();
   std::vector<double> X_dxVector(dof) ; double*  X_dx = &X_dxVector[0];
   std::vector<double> Y_dxVector(dof) ; double*  Y_dx = &Y_dxVector[0];
+  std::vector<double> f_Vector(dof) ; double*  f = &f_Vector[0];
+
   for(int p=0;p<numOwnedPoints;p++, xOwned +=3, yNOwned +=3, yNP1Owned +=3, fOwned+=3, m++, thetaN++, thetaNp1++){
 
     int numNeigh = *neighPtr; neighPtr++;
@@ -119,10 +121,7 @@ void computeInternalForceViscoelasticStandardLinearSolid
       const double *XP    = &xOverlap[3*localId];
       const double *YPN   = &yNOverlap[3*localId];
       const double *YPNP1 = &yNP1Overlap[3*localId];
-      dx = XP[0]-X[0];
-      dy = XP[1]-X[1];
-      dz = XP[2]-X[2];
-      zeta = sqrt(dx*dx+dy*dy+dz*dz);
+
       zeta = MATERIAL_EVALUATION::getDiffAndLen(X,XP,dof,X_dx);
       
       /*
@@ -184,11 +183,9 @@ void computeInternalForceViscoelasticStandardLinearSolid
        * Note that damage has already been applied once to 'td' (through ed) above.
        */
       t = damageNp1 * (ti + td);
-      double fx = t * Y_dx[0] / dYNp1;
-      double fy = t * Y_dx[1] / dYNp1;
-      double fz = t * Y_dx[2] / dYNp1;
 
-      MATERIAL_EVALUATION::setForces(fx, fy, fz, selfCellVolume, cellVolume, fOwned, &fInternalOverlap[3 * localId]);
+      MATERIAL_EVALUATION::getProjectedForces(t,Y_dx,dYNp1,dof,f);
+      MATERIAL_EVALUATION::setForces(f[0], f[1], f[2], selfCellVolume, cellVolume, fOwned, &fInternalOverlap[3 * localId]);
     }
   }
 }

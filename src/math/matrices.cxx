@@ -60,16 +60,29 @@
 #include <string> 
 
 namespace MATRICES {
-
+template<typename ScalarT>
 void setToZero(
-    double* A,
-    int len
+    ScalarT* A,
+    const int len
 )
 {
     for (int i=0 ; i<len ; ++i){
         A[i] = 0.0;
     } 
 }
+template void setToZero<double>
+(
+double* A,
+const int len
+);
+
+template void setToZero<Sacado::Fad::DFad<double>>
+(
+Sacado::Fad::DFad<double>* A,
+const int len
+);
+
+
 
 template<typename ScalarT>
 int Invert2by2Matrix

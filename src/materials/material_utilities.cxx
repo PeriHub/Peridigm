@@ -178,6 +178,36 @@ void getProjectedForces(
     f[i] = t * Y_dx[i] / dY;
   }
 }
+
+template<typename ScalarT>
+void PDTensorProduct(
+  const ScalarT scal,
+  const int dof,
+  const ScalarT* A,
+  const double* B,
+  ScalarT* C
+)
+{
+  for(int i=0; i<dof; i++){
+     for(int j=0; j<dof; j++){
+       *(C + i*dof + j) += scal * A[i] * B[j];
+     }
+  }
+}
+template void PDTensorProduct<double>(
+  const double scal,
+  const int dof,
+  const double* A,
+  const double* B,
+  double* C
+);
+template void PDTensorProduct<Sacado::Fad::DFad<double>>(
+  const Sacado::Fad::DFad<double> scal,
+  const int dof,
+  const Sacado::Fad::DFad<double>* A,
+  const double* B,
+  Sacado::Fad::DFad<double>* C
+);
 template void getProjectedForces<double>(
   const double t,
   const double* Y_dx,
@@ -326,7 +356,7 @@ double computeWeightedVolume
   double cellVolume;
   const int *neighPtr = localNeighborList;
   int numNeigh = *neighPtr; neighPtr++;
-  const int dof = 3;
+  const int dof = PeridigmNS::dof();
   std::vector<double> dxVector(dof); double* dx = &dxVector[0];
   for(int n=0;n<numNeigh;n++,neighPtr++){
     int localId = *neighPtr;
@@ -361,7 +391,7 @@ void computeDeviatoricDilatation
   double *theta = dilatationOwned;
   double cellVolume;
   const int *neighPtr = localNeighborList;
-  const int dof = 3;
+  const int dof = PeridigmNS::dof();
   std::vector<double> dxVector(dof); double* dx = &dxVector[0];
   for(int p=0; p<numOwnedPoints;p++, xOwned+=3, yOwned+=3, m++, theta++){
     int numNeigh = *neighPtr; neighPtr++;
@@ -408,7 +438,7 @@ void computeDilatation
   ScalarT *theta = dilatationOwned;
   double cellVolume;
   const int *neighPtr = localNeighborList;
-  const int dof = 3;
+  const int dof = PeridigmNS::dof();
   std::vector<double> dxVector(dof); double* dx = &dxVector[0];
   for(int p=0; p<numOwnedPoints;p++, xOwned+=3, yOwned+=3, deltaT++, m++, theta++){
     int numNeigh = *neighPtr; neighPtr++;

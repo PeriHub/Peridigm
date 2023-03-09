@@ -72,7 +72,7 @@ ScalarT computeDeviatoricForceStateNorm
   const double *v = volumeOverlap;
   double cellVolume, zeta, edpN;
   ScalarT dY, ed, tdTrial;
-  const int dof = 3;
+  const int dof = PeridigmNS::dof();
   std::vector<double> X_dxVector(dof)  ; double*  X_dx = &X_dxVector[0];
   std::vector<ScalarT> Y_dxVector(dof) ; ScalarT*  Y_dx = &Y_dxVector[0];
   for(int n=0;n<numNeigh;n++, neighPtr++, bondDamage++, deviatoricPlasticExtensionState++){
