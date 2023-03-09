@@ -178,6 +178,36 @@ void getProjectedForces(
     f[i] = t * Y_dx[i] / dY;
   }
 }
+
+template<typename ScalarT>
+void PDTensorProduct(
+  const ScalarT scal,
+  const int dof,
+  const ScalarT* A,
+  const double* B,
+  ScalarT* C
+)
+{
+  for(int i=0; i<dof; i++){
+     for(int j=0; j<dof; j++){
+       *(C + i*dof + j) += scal * A[i] * B[j];
+     }
+  }
+}
+template void PDTensorProduct<double>(
+  const double scal,
+  const int dof,
+  const double* A,
+  const double* B,
+  double* C
+);
+template void PDTensorProduct<Sacado::Fad::DFad<double>>(
+  const Sacado::Fad::DFad<double> scal,
+  const int dof,
+  const Sacado::Fad::DFad<double>* A,
+  const double* B,
+  Sacado::Fad::DFad<double>* C
+);
 template void getProjectedForces<double>(
   const double t,
   const double* Y_dx,

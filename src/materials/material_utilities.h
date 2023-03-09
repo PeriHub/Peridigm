@@ -133,6 +133,14 @@ void getProjectedForces(
   const int dof,
   ScalarT* f
 );
+template<typename ScalarT>
+void PDTensorProduct(
+  const ScalarT scal,
+  const int dof,
+  const ScalarT* A,
+  const double* B,
+  ScalarT* C
+);
 /**
  * Call this function on a single point 'X'
  * NOTE: neighPtr to should point to 'numNeigh' for 'X'
