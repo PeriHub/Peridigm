@@ -455,8 +455,8 @@ void computeDilatation
 
       ScalarT dY = getDiffAndLen(Y, YP, dof, dydump);
       double d = getDiffAndLen(X, XP, dof, dxdump);
-      ScalarT e = sqrt(dY);
-      e -= d;
+      ScalarT e = dY - d;
+      
       if(deltaTemperature)
         e -= thermalExpansionCoefficient*(*deltaT)*d;
       double omega = OMEGA(d,horizon);
@@ -764,7 +764,7 @@ double computeDilatation
     const double *YP = &yOverlap[3*localId];
     double dY = getDiffAndLen(Y, YP, dof, dump);
     double omega = OMEGA(d,horizon);
-    double e = sqrt(dY)-d;
+    double e = dY-d;
     theta += 3.0*omega*(1.0-bondDamage)*d*e*(*bondVolume)/m;
 
   }
