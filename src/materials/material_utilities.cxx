@@ -439,7 +439,8 @@ void computeDilatation
   double cellVolume;
   const int *neighPtr = localNeighborList;
   const int dof = PeridigmNS::dof();
-  std::vector<double> dxVector(dof); double* dx = &dxVector[0];
+  std::vector<double> dxVector(dof); double* dxdump = &dxVector[0];
+  std::vector<ScalarT> dyVector(dof); ScalarT* dydump = &dyVector[0];
   for(int p=0; p<numOwnedPoints;p++, xOwned+=3, yOwned+=3, deltaT++, m++, theta++){
     int numNeigh = *neighPtr; neighPtr++;
     const double *X = xOwned;
@@ -452,11 +453,8 @@ void computeDilatation
       const double *XP = &xOverlap[3*localId];
       const ScalarT *YP = &yOverlap[3*localId];
 
-      ScalarT Y_dx = YP[0]-Y[0];
-      ScalarT Y_dy = YP[1]-Y[1];
-      ScalarT Y_dz = YP[2]-Y[2];
-      ScalarT dY = Y_dx*Y_dx+Y_dy*Y_dy+Y_dz*Y_dz;
-      double d = getDiffAndLen(X, XP, dof, dx);
+      ScalarT dY = getDiffAndLen(Y, YP, dof, dydump);
+      double d = getDiffAndLen(X, XP, dof, dxdump);
       ScalarT e = sqrt(dY);
       e -= d;
       if(deltaTemperature)
@@ -527,6 +525,9 @@ double computeDilatation
   const double *v = volumeOverlap;
   double m = weightedVolume;
   double theta = 0.0;
+  const int dof = PeridigmNS::dof();
+  std::vector<double> dumbVector(dof); double* dump = &dumbVector[0];
+
   int numNeigh=*neighPtr; neighPtr++;
   for(int n=0;n<numNeigh;n++,neighPtr++){
 
@@ -534,19 +535,11 @@ double computeDilatation
     double cellVolume = v[localId];
 
     const double *XP = &xOverlap[3*localId];
-    double dx = XP[0]-X[0];
-    double dy = XP[1]-X[1];
-    double dz = XP[2]-X[2];
-    double zetaSquared = dx*dx+dy*dy+dz*dz;
-
     const double *YP = &yOverlap[3*localId];
-    dx = YP[0]-Y[0];
-    dy = YP[1]-Y[1];
-    dz = YP[2]-Y[2];
-    double dY = dx*dx+dy*dy+dz*dz;
-    double d = sqrt(zetaSquared);
+    double dY = getDiffAndLen(Y, YP, dof, dump);
+    double d = getDiffAndLen(X, XP, dof, dump);
     double omega = OMEGA(d,horizon);
-    double e = sqrt(dY)-d;
+    double e = dY-d;
     theta += 3.0*omega*(1.0-bondDamage)*d*e*cellVolume/m;
 
   }
@@ -569,8 +562,9 @@ double compute_norm_2_deviatoric_extension
 {
 
   const double *v = volumeOverlap;
-  double cellVolume, dx, dy, dz, zeta, dY, ed;
-
+  double cellVolume, zeta, dY, ed;
+  const int dof = PeridigmNS::dof();
+  std::vector<double> dumbVector(dof); double* dump = &dumbVector[0];
   /*
    * Compute weighted volume
    */
@@ -594,19 +588,14 @@ double compute_norm_2_deviatoric_extension
     int localId = *neighPtr;
     cellVolume = v[localId];
     const double *XP = &xOverlap[3*localId];
-    dx = XP[0]-X[0];
-    dy = XP[1]-X[1];
-    dz = XP[2]-X[2];
-    zeta = sqrt(dx*dx+dy*dy+dz*dz);
 
     /*
      * Deformation State
      */
     const double *YP = &yOverlap[3*localId];
-    dx = YP[0]-Y[0];
-    dy = YP[1]-Y[1];
-    dz = YP[2]-Y[2];
-    dY = sqrt(dx*dx+dy*dy+dz*dz);
+
+    dY = getDiffAndLen(Y, YP, dof, dump);
+    zeta = getDiffAndLen(X, XP, dof, dump);
 
     /*
      * Deviatoric extension state
@@ -722,19 +711,17 @@ double computeWeightedVolume
   double m=0.0;
   const int *neighPtr = localNeighborList;
   const double *bond_volume = bondVolume;
+  const int dof = PeridigmNS::dof();
+  std::vector<double> dumbVector(dof); double* dump = &dumbVector[0];
   int numNeigh = *neighPtr; neighPtr++;
 //  std::cout << NAMESPACE <<"computeWeightedVolume\n";
 //  std::cout << "\tnumber of neighbors = " << numNeigh << std::endl;
   for(int n=0;n<numNeigh;n++,neighPtr++,bond_volume++){
     int localId = *neighPtr;
     const double *XP = &xOverlap[3*localId];
-    double dx = XP[0]-X[0];
-    double dy = XP[1]-X[1];
-    double dz = XP[2]-X[2];
-        double zetaSquared = dx*dx+dy*dy+dz*dz;
-        double d = sqrt(zetaSquared);
-        double omega = OMEGA(d,horizon);
-    m+=omega*(zetaSquared)*(*bond_volume);
+    double d = getDiffAndLen(X, XP, dof, dump);
+    double omega = OMEGA(d,horizon);
+    m+=omega*(d*d)*(*bond_volume);
   }
 
   return m;
@@ -765,23 +752,17 @@ double computeDilatation
   double bondDamage=0.0;
   double m = weightedVolume;
   double theta = 0.0;
+  const int dof = PeridigmNS::dof();
+  std::vector<double> dumbVector(dof); double* dump = &dumbVector[0];
   int numNeigh=*neighPtr; neighPtr++;
   for(int n=0;n<numNeigh;n++,neighPtr++, bondVolume++){
 
     int localId = *neighPtr;
 
     const double *XP = &xOverlap[3*localId];
-    double dx = XP[0]-X[0];
-    double dy = XP[1]-X[1];
-    double dz = XP[2]-X[2];
-    double zetaSquared = dx*dx+dy*dy+dz*dz;
-
+    double d = getDiffAndLen(X, XP, dof, dump);
     const double *YP = &yOverlap[3*localId];
-    dx = YP[0]-Y[0];
-    dy = YP[1]-Y[1];
-    dz = YP[2]-Y[2];
-    double dY = dx*dx+dy*dy+dz*dz;
-    double d = sqrt(zetaSquared);
+    double dY = getDiffAndLen(Y, YP, dof, dump);
     double omega = OMEGA(d,horizon);
     double e = sqrt(dY)-d;
     theta += 3.0*omega*(1.0-bondDamage)*d*e*(*bondVolume)/m;
@@ -804,8 +785,9 @@ double compute_norm_2_deviatoric_extension
 )
 {
 
-  double dx, dy, dz, zeta, dY, ed;
-
+  double zeta, dY, ed;
+  const int dof = PeridigmNS::dof();
+  std::vector<double> dumbVector(dof); double* dump = &dumbVector[0];
   /*
    * Compute weighted volume
    */
@@ -829,19 +811,9 @@ double compute_norm_2_deviatoric_extension
     int localId = *neighPtr;
 
     const double *XP = &xOverlap[3*localId];
-    dx = XP[0]-X[0];
-    dy = XP[1]-X[1];
-    dz = XP[2]-X[2];
-    zeta = sqrt(dx*dx+dy*dy+dz*dz);
-
-    /*
-     * Deformation State
-     */
+    zeta = getDiffAndLen(X, XP, dof, dump);
     const double *YP = &yOverlap[3*localId];
-    dx = YP[0]-Y[0];
-    dy = YP[1]-Y[1];
-    dz = YP[2]-Y[2];
-    dY = sqrt(dx*dx+dy*dy+dz*dz);
+    dY = getDiffAndLen(Y, YP, dof, dump);
 
     /*
      * Deviatoric extension state
