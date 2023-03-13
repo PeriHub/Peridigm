@@ -136,17 +136,17 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
   
   
 
-  m_fieldIds.push_back(m_modelCoordinatesFieldId);
-  m_fieldIds.push_back(m_coordinatesFieldId);
-  m_fieldIds.push_back(m_forceDensityFieldId);
-  m_fieldIds.push_back(m_displacementFieldId);
+  m_fieldIds_fem.push_back(m_modelCoordinatesFieldId);
+  m_fieldIds_fem.push_back(m_coordinatesFieldId);
+  m_fieldIds_fem.push_back(m_forceDensityFieldId);
+  m_fieldIds_fem.push_back(m_displacementFieldId);
 
-  m_fieldIds.push_back(m_unrotatedCauchyStressFieldId);
-  m_fieldIds.push_back(m_cauchyStressFieldId);
+  m_fieldIds_fem.push_back(m_unrotatedCauchyStressFieldId);
+  m_fieldIds_fem.push_back(m_cauchyStressFieldId);
 
-  m_fieldIds.push_back(m_partialStressFieldId);
-  m_fieldIds.push_back(m_modelAnglesId);
-  m_fieldIds.push_back(m_nodeTypeFieldId);
+  m_fieldIds_fem.push_back(m_partialStressFieldId);
+  m_fieldIds_fem.push_back(m_modelAnglesId);
+  m_fieldIds_fem.push_back(m_nodeTypeFieldId);
 }
 
 PeridigmNS::FEMMaterial::~FEMMaterial()
@@ -154,7 +154,7 @@ PeridigmNS::FEMMaterial::~FEMMaterial()
 }
 
 void
-PeridigmNS::FEMMaterial::initialize(const double dt,
+PeridigmNS::FEMMaterial::initializeFem(const double dt,
                             const int numOwnedPoints,
                             const int* ownedIDs,
                             const int* neighborhoodList,
@@ -234,7 +234,7 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
 
 }
 void
-PeridigmNS::FEMMaterial::computeForce(const double dt,
+PeridigmNS::FEMMaterial::computeForceFem(const double dt,
                               const int numOwnedPoints,
                               const int* ownedIDs,
                               const int* neighborhoodList,
@@ -354,7 +354,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
           FEM::tensorRotation(angles,strain,true,strain);
         }
         
-        computeCauchyStress(strain, sigmaInt);
+        computeCauchyStressFem(strain, sigmaInt);
         
         // rotation back
         if (rotation){  

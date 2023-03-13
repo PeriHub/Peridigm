@@ -269,7 +269,7 @@ namespace PeridigmNS {
     //! Finite-difference probe length
     double m_finiteDifferenceProbeLength;
 
-  private:
+  public: // changed to public due to virtual inheritance, dont sure if that is right
 
     //! Default constructor with no arguments, private to prevent use.
     Material(){}

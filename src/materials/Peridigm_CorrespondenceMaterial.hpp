@@ -54,7 +54,7 @@
 namespace PeridigmNS
 {
 
-  class CorrespondenceMaterial : public Material
+  class CorrespondenceMaterial : public virtual Material
   {
   public:
     //! Constructor.

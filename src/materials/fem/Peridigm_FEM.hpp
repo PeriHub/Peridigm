@@ -57,7 +57,7 @@
 
 namespace PeridigmNS {
 
-  class FEMMaterial : public Material{
+  class FEMMaterial : public virtual Material{
   public:
 
     //! Constructor.
@@ -70,30 +70,30 @@ namespace PeridigmNS {
     virtual std::string Name() const { return("FEM Base Class"); }
 
     //! Returns the density of the material.
-    virtual double Density() const { return m_density; }
+    virtual double DensityFem() const { return m_density_fem; }
 
     //! Returns the bulk modulus of the material.
-    virtual double BulkModulus() const { return m_bulkModulus; }
+    virtual double BulkModulusFem() const { return m_bulkModulus_fem; }
 
     //! Returns the shear modulus of the material.
-    virtual double ShearModulus() const { return m_shearModulus; }
+    virtual double ShearModulusFem() const { return m_shearModulus_fem; }
 
     //! Returns a vector of field IDs corresponding to the variables associated with the material.
-    virtual std::vector<int> FieldIds() const { return m_fieldIds; }
+    virtual std::vector<int> FieldIdsFem() const { return m_fieldIds_fem; }
 
     //! Initialize the material model.
-    virtual void initialize(const double dt,
+    virtual void initializeFem(const double dt,
                             const int numOwnedPoints,
                             const int* ownedIDs,
                             const int* neighborhoodList,
                             PeridigmNS::DataManager& dataManager);
 
     //! Evaluate the Cauchy stress (pure virtual function, must be implemented by derived correspondence material models).
-    virtual void computeCauchyStress(const double* strain,
+    virtual void computeCauchyStressFem(const double* strain,
                                      double* stress) const = 0;
 
     //! Evaluate the internal force.
-    virtual void computeForce(const double dt,
+    virtual void computeForceFem(const double dt,
                               const int numOwnedPoints,
                               const int* ownedIDs,
                               const int* neighborhoodList,
@@ -103,9 +103,9 @@ namespace PeridigmNS {
 
 
   protected:
-    double m_density;
-    double m_bulkModulus;
-    double m_shearModulus;
+    double m_density_fem;
+    double m_bulkModulus_fem;
+    double m_shearModulus_fem;
     int numInt;
     int nnode;
     std::vector<int> topologyVector;
@@ -115,7 +115,7 @@ namespace PeridigmNS {
 
     double *weightVector  = new double;
     // field spec ids for all relevant data
-    std::vector<int> m_fieldIds;
+    std::vector<int> m_fieldIds_fem;
 
     int m_modelCoordinatesFieldId;
     int m_coordinatesFieldId;

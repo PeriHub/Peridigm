@@ -49,12 +49,13 @@
 #include "Peridigm_Field.hpp"
 #include "elastic_correspondence.h"
 #include "material_utilities.h"
+#include "FEM_routines.h"
 #include <Teuchos_Assert.hpp>
 
 using namespace std;
 
 PeridigmNS::CoupledElasticCorrespondenceMaterial::CoupledElasticCorrespondenceMaterial(const Teuchos::ParameterList& params)
-  : CorrespondenceMaterial(params),
+  : CorrespondenceMaterial(params), FEMMaterial(params),
     m_applyThermalStrains(false),
     m_alpha(0.0),
     m_temperatureFieldId(-1),
@@ -85,6 +86,24 @@ PeridigmNS::CoupledElasticCorrespondenceMaterial::CoupledElasticCorrespondenceMa
 
 PeridigmNS::CoupledElasticCorrespondenceMaterial::~CoupledElasticCorrespondenceMaterial()
 {
+}
+
+void
+PeridigmNS::CoupledElasticCorrespondenceMaterial::initialize(const double dt,
+                                          const int numOwnedPoints,
+                                          const int* ownedIDs,
+                                          const int* topology,
+                                          PeridigmNS::DataManager& dataManager)
+
+{
+      
+  PeridigmNS::FEMMaterial::initializeFem(dt,
+                                      numOwnedPoints,
+                                      ownedIDs,
+                                      topology,
+                                      dataManager);
+
+                             
 }
 
 void

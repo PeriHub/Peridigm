@@ -49,10 +49,11 @@
 #define PERIDIGM_COUPLEDELASTICCORRESPONDENCEMATERIAL_HPP
 
 #include "Peridigm_CorrespondenceMaterial.hpp"
+#include "Peridigm_FEM.hpp"
 
 namespace PeridigmNS {
 
-  class CoupledElasticCorrespondenceMaterial : public CorrespondenceMaterial{
+  class CoupledElasticCorrespondenceMaterial : public CorrespondenceMaterial, public FEMMaterial{
   public:
 
     //! Constructor.
@@ -64,12 +65,21 @@ namespace PeridigmNS {
     //! Return name of material type
     virtual std::string Name() const { return("Coupled Elastic Correspondence"); }
 
+    //! Evaluate the Cauchy stress. --> call from Peridigm_CorrespondenceMaterial.cpp
+    virtual void initialize(const double dt, 
+                            const int numOwnedPoints, 
+                            const int* ownedIDs,
+                            const int* topology,
+                            PeridigmNS::DataManager& dataManager);
+
     //! Evaluate the Cauchy stress.
     virtual void computeCauchyStress(const double dt,
                                      const int numOwnedPoints,
                                      PeridigmNS::DataManager& dataManager,
                                      const double time = 0.0) const;
 
+    // virtual void computeCauchyStressFem(const double* strain,                                                  
+    //                                  double* sigmaInt) const;
     //! Returns the requested material property
     //! A dummy method here.
     virtual double lookupMaterialProperty(const std::string keyname) const {return 0.0;}
