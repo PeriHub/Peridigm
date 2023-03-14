@@ -65,18 +65,63 @@ namespace PeridigmNS {
     //! Return name of material type
     virtual std::string Name() const { return("Coupled Elastic Correspondence"); }
 
+    //! Returns the density of the material.
+    virtual double Density() const override { return CorrespondenceMaterial::Density(); }
+
+    //! Returns the bulk modulus of the material.
+    virtual double BulkModulus() const override { return CorrespondenceMaterial::BulkModulus(); }
+
+    //! Returns the shear modulus of the material.
+    virtual double ShearModulus() const override { return CorrespondenceMaterial::ShearModulus(); }
+
+    //! Returns a vector of field IDs corresponding to the variables associated with the material.
+    virtual std::vector<int> FieldIds() const override { return CorrespondenceMaterial::FieldIds(); }
+
     //! Evaluate the Cauchy stress. --> call from Peridigm_CorrespondenceMaterial.cpp
     virtual void initialize(const double dt, 
                             const int numOwnedPoints, 
                             const int* ownedIDs,
                             const int* topology,
                             PeridigmNS::DataManager& dataManager);
-
-    //! Evaluate the Cauchy stress.
+    
+    //! Evaluate the PD Cauchy stress.
     virtual void computeCauchyStress(const double dt,
                                      const int numOwnedPoints,
                                      PeridigmNS::DataManager& dataManager,
-                                     const double time = 0.0) const;
+                                     const double time = 0.0) const override;
+
+    //! Evaluate the FE Cauchy stress.
+    virtual void computeCauchyStress(const double* strain,
+                                     double* stress) const override;
+
+    // //! Evaluate the Cauchy stress.
+    // void computeCauchyStress(const double dt,
+    //                           const int numOwnedPoints,
+    //                           PeridigmNS::DataManager& dataManager,
+    //                           const double* strain,
+    //                           double* stress,
+    //                           const double time = 0.0) const { 
+    //                             CorrespondenceMaterial::computeCauchyStress(dt,
+    //                               numOwnedPoints,
+    //                               dataManager,
+    //                               time); 
+    //                             FEMMaterial::computeCauchyStress(strain,stress); 
+    //                           }
+
+    //! Evaluate the internal force.
+    virtual void computeForce(const double dt,
+                              const int numOwnedPoints,
+                              const int* ownedIDs,
+                              const int* neighborhoodList,
+                              PeridigmNS::DataManager& dataManager,
+                              const double currentTime) const override { 
+                                CorrespondenceMaterial::computeForce(dt,
+                                  numOwnedPoints,
+                                  ownedIDs,
+                                  neighborhoodList,
+                                  dataManager,
+                                  currentTime); 
+                              }
 
     // virtual void computeCauchyStressFem(const double* strain,                                                  
     //                                  double* sigmaInt) const;
@@ -94,6 +139,9 @@ namespace PeridigmNS {
     int m_deltaTemperatureFieldId;
     int m_unrotatedRateOfDeformationFieldId;
     int m_unrotatedCauchyStressFieldId;
+    
+    double C[6][6];
+    int m_type;
   };
 }
 
