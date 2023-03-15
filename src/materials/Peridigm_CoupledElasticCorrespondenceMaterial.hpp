@@ -114,14 +114,7 @@ namespace PeridigmNS {
                               const int* ownedIDs,
                               const int* neighborhoodList,
                               PeridigmNS::DataManager& dataManager,
-                              const double currentTime) const override { 
-                                CorrespondenceMaterial::computeForce(dt,
-                                  numOwnedPoints,
-                                  ownedIDs,
-                                  neighborhoodList,
-                                  dataManager,
-                                  currentTime); 
-                              }
+                              const double currentTime) const override;
 
     // virtual void computeCauchyStressFem(const double* strain,                                                  
     //                                  double* sigmaInt) const;
@@ -139,7 +132,7 @@ namespace PeridigmNS {
     int m_deltaTemperatureFieldId;
     int m_unrotatedRateOfDeformationFieldId;
     int m_unrotatedCauchyStressFieldId;
-    
+
     double C[6][6];
     int m_type;
   };

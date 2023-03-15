@@ -277,3 +277,25 @@ PeridigmNS::CoupledElasticCorrespondenceMaterial::computeCauchyStress(const doub
   CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(strain, sigmaInt, C, m_type);                                                               
                                            
 }
+
+void
+PeridigmNS::CoupledElasticCorrespondenceMaterial::computeForce(const double dt,
+                                          const int numOwnedPoints,
+                                          const int* ownedIDs,
+                                          const int* neighborhoodList,
+                                          PeridigmNS::DataManager& dataManager,
+                                          const double currentTime) const
+{
+  CorrespondenceMaterial::computeForce(dt,
+    numOwnedPoints,
+    ownedIDs,
+    neighborhoodList,
+    dataManager,
+    currentTime); 
+  FEMMaterial::computeForce(dt,
+    numOwnedPoints,
+    ownedIDs,
+    neighborhoodList,
+    dataManager,
+    currentTime); 
+}
