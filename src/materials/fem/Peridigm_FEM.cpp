@@ -133,6 +133,7 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
   m_cauchyStressFieldId               = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Cauchy_Stress");
   m_partialStressFieldId              = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Partial_Stress");
   m_nodeTypeFieldId                   = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Node_Type");
+  m_detachedNodesFieldId              = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Detached_Nodes");
   
   
 
@@ -147,6 +148,7 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
   m_fieldIds.push_back(m_partialStressFieldId);
   m_fieldIds.push_back(m_modelAnglesId);
   m_fieldIds.push_back(m_nodeTypeFieldId);
+  m_fieldIds.push_back(m_detachedNodesFieldId);
 }
 
 PeridigmNS::FEMMaterial::~FEMMaterial()
@@ -218,10 +220,12 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
   }
   FEM::setWeights(numIntDir,twoD,weightsx,weightsy,weightsz,weights);
   double *nodeType;
+  double *detachedNodes;
   dataManager.getData(m_nodeTypeFieldId, PeridigmField::STEP_NONE)->ExtractView(&nodeType);
+  dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_N)->ExtractView(&detachedNodes);
 
   // why it does not work?
-  topologyVector = FEM::getTopology(numOwnedPoints, neighborhoodList, nodeType);
+  topologyVector = FEM::getTopology(numOwnedPoints, ownedIDs, neighborhoodList, nodeType, detachedNodes);
   /*
    // geht das für mehrere Cores? 
 */

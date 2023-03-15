@@ -129,6 +129,7 @@ namespace PeridigmNS {
     int m_deformationGradientFieldId;
     int m_volumeFieldId;
     int m_nodeTypeFieldId;
+    int m_detachedNodesFieldId;
     int order[3];
     int numIntDir[3];
     bool twoD;

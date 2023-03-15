@@ -164,21 +164,26 @@ double* Bxi
 std::vector<int> getTopology
 (
 const int numOwnedPoints,
+const int* ownedIDs,
 const int* neighborhoodList,
-const double* nodeType
+const double* nodeType,
+double* detachedNodes
 )
 {
   std::vector<int> topology;
   topology.push_back(0);
   int topoPtr = 0;
-  for(int i=0 ; i<numOwnedPoints ; ++i){
-    
+  int nodeId;
+  for(int iID=0 ; iID<numOwnedPoints ; ++iID){
+    nodeId = ownedIDs[iID];
     int numNodes = neighborhoodList[topoPtr];
     topoPtr++;
-    
-    if (nodeType[i]==2){
+
+    detachedNodes[nodeId]=1;
+
+    if (nodeType[nodeId]==2){
       topology[0] += 1; // Number of elements
-      topology.push_back(i); // elementID
+      topology.push_back(nodeId); // elementID
       topology.push_back(numNodes);
       for(int j=0 ; j<numNodes ; ++j){
         topology.push_back(neighborhoodList[topoPtr]);
