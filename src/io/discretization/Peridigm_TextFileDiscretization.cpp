@@ -220,7 +220,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   int numFE = 0;
   if (params->isParameter("Input FEM Topology File"))
   {
-    if (myPID == 0) std::cout<<" End Input FEM Topology " <<std::endl;
+    if (myPID == 0) std::cout<<" Input FEM Topology " <<std::endl;
     getFETopology(topologyFileName, coordinates, blockIds, volumes, angles, horizon_of_element, elementTopo, nodeType, numFE);
     int numNodes = static_cast<int>(blockIds.size());
     int etz = static_cast<int>(elementTopo.size());
