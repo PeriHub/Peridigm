@@ -174,20 +174,26 @@ double* detachedNodes
   topology.push_back(0);
   int topoPtr = 0;
   int nodeId;
+  int numberOfFeNodes;
+  int numberOfPdNodes;
   for(int iID=0 ; iID<numOwnedPoints ; ++iID){
     nodeId = ownedIDs[iID];
-    int numNodes = neighborhoodList[topoPtr];
-    topoPtr++;
+    int numNodes = neighborhoodList[topoPtr++];
 
     detachedNodes[nodeId]=1;
 
     if (nodeType[nodeId]==2){
-      topology[0] += 1; // Number of elements
-      topology.push_back(nodeId); // elementID
-      topology.push_back(numNodes);
-      for(int j=0 ; j<numNodes ; ++j){
-        topology.push_back(neighborhoodList[topoPtr]);
-        topoPtr++;
+        numberOfFeNodes = 4;
+        topology[0] += 1; // Number of elements
+        topology.push_back(nodeId); // elementID
+        topology.push_back(numberOfFeNodes);
+        numberOfPdNodes = numNodes - numberOfFeNodes;
+        for(int j=0 ; j<numberOfFeNodes ; ++j){
+            topology.push_back(neighborhoodList[topoPtr++]);
+        }
+        topology.push_back(numberOfPdNodes);
+        for(int j=0 ; j<numberOfPdNodes ; ++j){
+            topology.push_back(neighborhoodList[topoPtr++]);
         }
     }
     else{topoPtr+=numNodes;}
@@ -423,6 +429,141 @@ void setWeights
     }
 
 }
+void setCouplingStiffnessMatrix
+(
+    const double* undeformedCoor,
+    int topoPtr,
+    const int* topology,
+    double* couplingStiffnessMatrix
+)
+{
+    double kappa = 10e4;
+    int globalId;
+    int elementID;
+    int numElemNodes, numPdNodes;
+
+    for(int iID=0 ; iID<topology[0] ; ++iID){
+        // for averaging the element number to which the node is connected has to be known
+        elementID = topology[topoPtr++];
+        numElemNodes = topology[topoPtr++];
+
+        double x[4];
+        double y[4];
+        double z[4];
+
+        for(int nID=0 ; nID<numElemNodes ; nID++, topoPtr++){
+            globalId = topology[topoPtr];
+
+            // Extract coordinates of ith element nodes
+            x[nID] = undeformedCoor[3*globalId+0];
+            y[nID] = undeformedCoor[3*globalId+1];
+            z[nID] = undeformedCoor[3*globalId+2];
+
+        }
+
+        numPdNodes = topology[topoPtr++];
+
+        double* coord = new double[numPdNodes * 3];
+
+        for(int nID=0 ; nID<numPdNodes ; nID++, topoPtr++){
+            globalId = topology[topoPtr];
+            for(int j = 0; j < 3; j++){
+                coord[nID * 3 + j] =undeformedCoor[3*globalId+j];
+            }
+        }
+
+        // Compute distances from point 1 to the other three points
+        double dist13 = sqrt(pow((x[2]-x[0]),2) + pow((y[2]-y[0]),2));
+        double dist12 = sqrt(pow((x[1]-x[0]),2) + pow((y[1]-y[0]),2));
+        double dist14 = sqrt(pow((x[3]-x[0]),2) + pow((y[3]-y[0]),2));
+        
+        // Find the farthest point
+        double max_dist = std::max({dist13, dist12, dist14});
+        double min_dist = std::min({dist13, dist12, dist14});
+        
+        // std::cout << coord[0][0] <<std::endl;
+        // std::cout << coord[0][1] <<std::endl;
+        // std::cout << coord[0][2] <<std::endl;
+        std::cout << x[0] <<std::endl;
+        std::cout << x[1] <<std::endl;
+        std::cout << x[2] <<std::endl;
+        std::cout << x[3] <<std::endl;
+        std::cout << y[0] <<std::endl;
+        std::cout << y[1] <<std::endl;
+        std::cout << y[2] <<std::endl;
+        std::cout << y[3] <<std::endl;
+        std::cout << max_dist <<std::endl;
+        std::cout << min_dist <<std::endl;
+
+        double ksi = 0, eta = 0;
+        
+        int ipd = 0;
+
+        // Compute ksi and eta accordingly
+        if (max_dist == dist13) {
+            ksi = 2 * (coord[ipd * 3 + 0] - (x[2]+x[0])/2) / min_dist;
+            eta = 2 * (coord[ipd * 3 + 1] - (y[2]+y[0])/2) / min_dist;
+        }
+        else if (max_dist == dist12) {
+            ksi = 2 * (coord[ipd * 3 + 0] - (x[1]+x[0])/2) / min_dist;
+            eta = 2 * (coord[ipd * 3 + 1] - (y[1]+y[0])/2) / min_dist;
+        }
+        else if (max_dist == dist14) {
+            ksi = 2 * (coord[ipd * 3 + 0] - (x[3]+x[0])/2) / min_dist;
+            eta = 2 * (coord[ipd * 3 + 1] - (y[3]+y[0])/2) / min_dist;
+        }
+
+        std::cout << ksi <<std::endl;
+        std::cout << eta <<std::endl;
+
+        // Define shape functions for PD point in local coordinates
+        double N1p = 0.25 * (1-ksi) * (1-eta);
+        double N2p = 0.25 * (1+ksi) * (1-eta);
+        double N3p = 0.25 * (1+ksi) * (1+eta);
+        double N4p = 0.25 * (1-ksi) * (1+eta);
+        
+        // Create matrix of shape function values at PD point
+        double Np[1][4] = {{N1p, N2p, N3p, N4p}};
+        
+        // Define coupling stiffness matrix
+        int I = 1;
+
+        double Np0 = Np[0][0];
+
+        couplingStiffnessMatrix[0] = kappa * I;
+        couplingStiffnessMatrix[1] = kappa * -Np0;
+        couplingStiffnessMatrix[2] = kappa * -Np[0][1];
+        couplingStiffnessMatrix[3] = kappa * -Np[0][2];
+        couplingStiffnessMatrix[4] = kappa * -Np[0][3];
+        couplingStiffnessMatrix[5] = kappa * -Np0;
+        couplingStiffnessMatrix[6] = kappa * pow(Np0, 2);
+        couplingStiffnessMatrix[7] = kappa * Np0 * Np[0][1];
+        couplingStiffnessMatrix[8] = kappa * Np0 * Np[0][2];
+        couplingStiffnessMatrix[9] = kappa * Np0 * Np[0][3];
+        couplingStiffnessMatrix[10] = kappa * -Np[0][1];
+        couplingStiffnessMatrix[11] = kappa * Np0 * Np[0][1];
+        couplingStiffnessMatrix[12] = kappa * pow(Np[0][1], 2);
+        couplingStiffnessMatrix[13] = kappa * Np[0][1] * Np[0][2];
+        couplingStiffnessMatrix[14] = kappa * Np[0][1] * Np[0][3];
+        couplingStiffnessMatrix[15] = kappa * -Np[0][2];
+        couplingStiffnessMatrix[16] = kappa * Np0 * Np[0][2];
+        couplingStiffnessMatrix[17] = kappa * Np[0][1] * Np[0][2];
+        couplingStiffnessMatrix[18] = kappa * Np[0][2] * Np[0][2];
+        couplingStiffnessMatrix[19] = kappa * Np[0][2] * Np[0][3];
+        couplingStiffnessMatrix[20] = kappa * -Np[0][3];
+        couplingStiffnessMatrix[21] = kappa * Np0 * Np[0][3];
+        couplingStiffnessMatrix[22] = kappa * Np[0][1] * Np[0][3];
+        couplingStiffnessMatrix[23] = kappa * Np[0][2] * Np[0][3];
+        couplingStiffnessMatrix[24] = kappa * Np[0][3] * Np[0][3];
+
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 5; j++) {
+                std::cout << *(couplingStiffnessMatrix + (i*5+j))<<std::endl;
+            }
+        }
+
+    }
+}
 void setGlobalStresses
 (
     const int elementID,
@@ -487,6 +628,72 @@ void setGlobalForces
       }
      }
 
+}
+void setGlobalCouplingForces
+(
+    const int nnode,
+    const int elementID,
+    int topoPtr,
+    const int* topology,
+    const double* elNodalForces,
+    const double* volume, //needed for PD solver
+    const double* deformedCoor,
+    const double* undeformedCoor,
+    const double* couplingStiffnessMatrix,
+    double* force
+)
+{
+    double ux[5], uy[5], uz[5];
+
+    int globalId;
+
+    for(int nID=0 ; nID<nnode ; ++nID){
+        globalId = topology[topoPtr + nID];
+        ux[nID + 1] = deformedCoor[3 * globalId + 0] - undeformedCoor[3 * globalId + 0];
+        uy[nID + 1] = deformedCoor[3 * globalId + 1] - undeformedCoor[3 * globalId + 1];
+        uz[nID + 1] = deformedCoor[3 * globalId + 2] - undeformedCoor[3 * globalId + 2];
+    }
+    
+    //pd nodes
+    globalId = topology[topoPtr + nnode];
+    ux[0] = deformedCoor[3 * globalId + 0] - undeformedCoor[3 * globalId + 0];
+    uy[0] = deformedCoor[3 * globalId + 1] - undeformedCoor[3 * globalId + 1];
+    uz[0] = deformedCoor[3 * globalId + 2] - undeformedCoor[3 * globalId + 2];
+
+    double* couplingForces = new double[5 * 3];
+
+    for (int i=0;i<5*3;i++){
+         couplingForces[i]=0;
+    }
+    for (int i=0;i<5;i++){
+        for (int j=0;j<5;j++){
+            couplingForces[i]+=( couplingStiffnessMatrix[i * 3 + j]*ux[j]);
+            couplingForces[i+1]+=( couplingStiffnessMatrix[i * 3 + j]*uy[j]);
+            couplingForces[i+2]+=( couplingStiffnessMatrix[i * 3 + j]*uz[j]);
+            std::cout<<"ux["<<j<<"]="<<ux[j]<<std::endl;
+            std::cout<<"uy["<<j<<"]="<<uy[j]<<std::endl;
+            std::cout<<"uz["<<j<<"]="<<uz[j]<<std::endl;
+        }
+        std::cout<<couplingForces[i]<<" "<<couplingForces[i+1]<<" "<<couplingForces[i+2]<<std::endl;
+    }
+
+    setToZero(&force[3 * elementID], 3);
+
+    for(int nID=0 ; nID<nnode ; ++nID){
+        globalId = topology[topoPtr + nID];
+
+        for (int i=0 ; i<3 ; i++){  
+            force[3*globalId+i] += elNodalForces[3*nID+i]  * volume[globalId];
+            // force[3*globalId+i] -= couplingForces[3*nID+i];
+        }
+    }
+
+    globalId = topology[topoPtr + nnode];
+
+    for (int i=0 ; i<3 ; i++){  
+        force[3*globalId+i] -= couplingForces[3 * nnode + i];
+        std::cout<< force[3*globalId+i] <<std::endl;
+    }
 }
 
 

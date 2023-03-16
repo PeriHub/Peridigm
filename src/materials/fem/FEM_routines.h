@@ -217,6 +217,13 @@ const double* weightsy,
 const double* weightsz,
 double* weights
 );
+void setCouplingStiffnessMatrix
+(
+const double* undeformedCoor,
+int topoPtr,
+const int* topology,
+double* couplingStiffnessMatrix
+);
 void setNodalStresses(
 const int nnode,
 const int elementID,
@@ -249,6 +256,20 @@ int topoPtr,
 const int* topology,
 const double* elNodalForces,
 const double* volume,
+double* force
+);
+
+void setGlobalCouplingForces
+(
+const int nnode,
+const int elementID,
+int topoPtr,
+const int* topology,
+const double* elNodalForces,
+const double* volume,
+const double* deformedCoor,
+const double* undeformedCoor,
+const double* couplingStiffnessMatrix,
 double* force
 );
 

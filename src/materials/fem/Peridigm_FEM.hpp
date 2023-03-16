@@ -114,6 +114,7 @@ namespace PeridigmNS {
     double *Bz = new double;
 
     double *weightVector  = new double;
+    double *couplingStiffnessMatrix  = new double;
     // field spec ids for all relevant data
     std::vector<int> m_fieldIds;
 
@@ -133,6 +134,7 @@ namespace PeridigmNS {
     int order[3];
     int numIntDir[3];
     bool twoD;
+    bool coupling;
 
   };
 }

@@ -115,7 +115,11 @@ PeridigmNS::FEMMaterial::FEMMaterial(const Teuchos::ParameterList& params)
     Bz = new double[nnode*numInt];
   }
 
-
+  coupling = false;
+  std::cout<<params.get<string>("Material Model")<<std::endl;
+  if (params.get<string>("Material Model")=="Coupled Elastic Correspondence"){
+    coupling = true;
+  }
  
   
   delete weightVector;
@@ -235,6 +239,13 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
         FEM::findCouplingNodes();
 
       */
+  if(coupling){
+    double *undeformedCoor;
+    const int* topology = &topologyVector[0];
+    int topoPtr = 1;
+    dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&undeformedCoor);
+    FEM::setCouplingStiffnessMatrix(undeformedCoor, topoPtr, topology, couplingStiffnessMatrix);
+  }
 
 }
 void
@@ -318,10 +329,8 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
 
     for(int iID=0 ; iID<topology[0] ; ++iID){
       // for averaging the element number to which the node is connected has to be known
-      elementID = topology[topoPtr];          
-      topoPtr++;
-      numElemNodes = topology[topoPtr];
-      topoPtr++;  
+      elementID = topology[topoPtr++];
+      numElemNodes = topology[topoPtr++];
       //
       // if statement for coupling nodes
       // elementID is then -1 -> PD nodes which are inside of this element
@@ -379,7 +388,12 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         FEM::setCouplingNodes();
 
       */
-      FEM::setGlobalForces(numElemNodes, elementID, topoPtr, topology, elNodalForces, volume, force); 
+      if(coupling){
+        FEM::setGlobalCouplingForces(numElemNodes, elementID, topoPtr, topology, elNodalForces, volume, deformedCoor, undeformedCoor, couplingStiffnessMatrix,  force); 
+      }else{
+        FEM::setGlobalForces(numElemNodes, elementID, topoPtr, topology, elNodalForces, volume, force); 
+      }
+
       FEM::setElementCoordinates(numElemNodes, elementID, topoPtr, topology, elNodalCoor, deformedCoor); 
        
 
