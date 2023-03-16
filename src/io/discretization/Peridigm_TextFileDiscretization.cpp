@@ -426,7 +426,9 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string& fileName,
   if (myPID == 0)
   {
     numFE = 0;
-    double coorAvg[3], angAvg[3], volAvg;
+    double numberOfNodes, numberOfPdNodes, coorAvg[3], angAvg[3], volAvg;
+    std::string elementType; 
+
     int numOfFiniteElements;
     std::string testString = "";
     for(unsigned int i=0 ; i<blockIds.size() ; i++) horizon.push_back(0.0);
@@ -452,8 +454,29 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string& fileName,
                istream_iterator<int>(),
                back_inserter<vector<int>>(topo));
 
-          blockIds.push_back(topo[0]);      
-          elementTopo.push_back(static_cast<int>(topo.size() - 1));
+          blockIds.push_back(topo[0]);    
+          // elementType = topo[1];   
+          numberOfNodes = topo[1];
+          numberOfPdNodes = static_cast<int>(topo.size() - 2 - numberOfNodes);
+
+          elementTopo.push_back(numberOfNodes + numberOfPdNodes);
+          std::cout<<(numberOfNodes + numberOfPdNodes)<<std::endl;
+          // if (elementType == "quad")
+          // {
+          //   numberOfNodes = 4;
+          // }
+          // else
+          // {
+          //   numberOfNodes = 4;
+          // }
+          // for (unsigned int n = 0; n < topo.size(); n++)
+          // {
+          //   std::cout<<topo[n]<<std::endl;
+          // }
+          // std::cout<<numberOfNodes<<std::endl;
+          // std::cout<<numberOfNodes<<std::endl;
+
+          // elementTopo.push_back(static_cast<int>(topo.size() - 1));
           // lenDecompElementNodes += static_cast<int>(topo.size()) + 1;
 
           /*
@@ -466,22 +489,34 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string& fileName,
           angAvg[1] = 0;
           angAvg[2] = 0;
           volAvg = 0;
-          for (unsigned int n = 1; n < topo.size(); n++)
+          for (unsigned int n = 0; n < numberOfNodes; n++)
           {
-            elementTopo.push_back(static_cast<int>(topo[n]));
-            coorAvg[0] += coordinates[3 * topo[n]];
-            coorAvg[1] += coordinates[3 * topo[n] + 1];
-            coorAvg[2] += coordinates[3 * topo[n] + 2];
-            angAvg[0] += angles[3 * topo[n]];
-            angAvg[1] += angles[3 * topo[n] + 1];
-            angAvg[2] += angles[3 * topo[n] + 2];
-            volAvg += volumes[topo[n]];
+            std::cout<<static_cast<int>(topo[n+2])<<std::endl;
+            elementTopo.push_back(static_cast<int>(topo[n+2]));
+            coorAvg[0] += coordinates[3 * topo[n+2]];
+            coorAvg[1] += coordinates[3 * topo[n+2] + 1];
+            coorAvg[2] += coordinates[3 * topo[n+2] + 2];
+            angAvg[0] += angles[3 * topo[n+2]];
+            angAvg[1] += angles[3 * topo[n+2] + 1];
+            angAvg[2] += angles[3 * topo[n+2] + 2];
+            volAvg += volumes[topo[n+2]];
+          }
+
+          //append pd nodes if available
+          // std::cout<<numberOfPdNodes<<std::endl;
+          // elementTopo.push_back(numberOfPdNodes);
+
+          for (unsigned int n = 0; n < numberOfPdNodes; n++)
+          {
+            std::cout<<static_cast<int>(topo[n + 2 + numberOfNodes])<<std::endl;
+            elementTopo.push_back(static_cast<int>(topo[n + 2 + numberOfNodes]));
+            nodeType[topo[n + 2 + numberOfNodes]]=3;
           }
 
           for (unsigned int i = 0; i < 3; i++)
           {
-            coorAvg[i] /= (topo.size() - 1);
-            angAvg[i] /= (topo.size() - 1);
+            coorAvg[i] /= numberOfNodes;
+            angAvg[i] /= numberOfNodes;
           }
           coordinates.push_back(coorAvg[0]);
           coordinates.push_back(coorAvg[1]);
@@ -491,7 +526,7 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string& fileName,
           angles.push_back(angAvg[1]);
           angles.push_back(angAvg[2]);
           horizon.push_back(get_max_dist(coordinates, coorAvg, topo));
-          volumes.push_back(volAvg / (topo.size() - 1));
+          volumes.push_back(volAvg / numberOfNodes);
           numFE = numFE + 1;
         }
       }
