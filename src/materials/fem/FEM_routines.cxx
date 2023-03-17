@@ -285,6 +285,10 @@ double* nforces
         if (twoD==false)  {
             BpsiTemp = Bz[intPointPtr + nID];
         }   
+        
+        for(int i=0;i<9;i++){
+            std::cout<<"Jinv["<<i<<"]: "<<*(Jinv+i)<< std::endl;
+        }
         nforces[3*nID]  -=( *(sigmaInt)  *(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) + *(sigmaInt+1)*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp) + *(sigmaInt+2)*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp) )*detJ;
         nforces[3*nID+1]-=( *(sigmaInt+1)*(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) + *(sigmaInt+4)*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp) + *(sigmaInt+5)*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp) )*detJ;
         nforces[3*nID+2]-=( *(sigmaInt+2)*(*(Jinv)*BxiTemp + *(Jinv+1)*BetaTemp + *(Jinv+2)*BpsiTemp) + *(sigmaInt+5)*(*(Jinv+3)*BxiTemp + *(Jinv+4)*BetaTemp + *(Jinv+5)*BpsiTemp) + *(sigmaInt+8)*(*(Jinv+6)*BxiTemp + *(Jinv+7)*BetaTemp + *(Jinv+8)*BpsiTemp) )*detJ;
@@ -381,7 +385,7 @@ void setElementMatrices
             }
         }
     }
-else
+    else
     {
         for(int k=0;k<order[2]+1;k++){
             for(int j=0;j<order[1]+1;j++){
@@ -394,6 +398,13 @@ else
             }
         }
     }
+    
+    // for(int i=0;i<4;i++){
+    //     std::cout<<"Bx["<<i<<"]: "<<Bx[offset + i]<< std::endl;
+    // }
+    // for(int i=0;i<4;i++){
+    //     std::cout<<"By["<<i<<"]: "<<By[offset + i]<< std::endl;
+    // }
  
 }
 
@@ -449,7 +460,7 @@ void setCouplingStiffnessMatrix
 
         double x[4];
         double y[4];
-        double z[4];
+        // double z[4];
 
         for(int nID=0 ; nID<numElemNodes ; nID++, topoPtr++){
             globalId = topology[topoPtr];
@@ -457,9 +468,21 @@ void setCouplingStiffnessMatrix
             // Extract coordinates of ith element nodes
             x[nID] = undeformedCoor[3*globalId+0];
             y[nID] = undeformedCoor[3*globalId+1];
-            z[nID] = undeformedCoor[3*globalId+2];
+            // z[nID] = undeformedCoor[3*globalId+2];
 
         }
+
+        double dist13, dist12, dist14, max_dist, min_dist;
+        double ksi = 0, eta = 0;
+
+        // Compute distances from point 1 to the other three points
+        dist13 = sqrt(pow((x[2]-x[0]),2) + pow((y[2]-y[0]),2));
+        dist12 = sqrt(pow((x[1]-x[0]),2) + pow((y[1]-y[0]),2));
+        dist14 = sqrt(pow((x[3]-x[0]),2) + pow((y[3]-y[0]),2));
+        
+        // Find the farthest point
+        max_dist = std::max({dist13, dist12, dist14});
+        min_dist = std::min({dist13, dist12, dist14});
 
         numPdNodes = topology[topoPtr++];
 
@@ -470,98 +493,85 @@ void setCouplingStiffnessMatrix
             for(int j = 0; j < 3; j++){
                 coord[nID * 3 + j] =undeformedCoor[3*globalId+j];
             }
-        }
 
-        // Compute distances from point 1 to the other three points
-        double dist13 = sqrt(pow((x[2]-x[0]),2) + pow((y[2]-y[0]),2));
-        double dist12 = sqrt(pow((x[1]-x[0]),2) + pow((y[1]-y[0]),2));
-        double dist14 = sqrt(pow((x[3]-x[0]),2) + pow((y[3]-y[0]),2));
-        
-        // Find the farthest point
-        double max_dist = std::max({dist13, dist12, dist14});
-        double min_dist = std::min({dist13, dist12, dist14});
-        
-        // std::cout << coord[0][0] <<std::endl;
-        // std::cout << coord[0][1] <<std::endl;
-        // std::cout << coord[0][2] <<std::endl;
-        std::cout << x[0] <<std::endl;
-        std::cout << x[1] <<std::endl;
-        std::cout << x[2] <<std::endl;
-        std::cout << x[3] <<std::endl;
-        std::cout << y[0] <<std::endl;
-        std::cout << y[1] <<std::endl;
-        std::cout << y[2] <<std::endl;
-        std::cout << y[3] <<std::endl;
-        std::cout << max_dist <<std::endl;
-        std::cout << min_dist <<std::endl;
+            // std::cout << coord[0][0] <<std::endl;
+            // std::cout << coord[0][1] <<std::endl;
+            // std::cout << coord[0][2] <<std::endl;
+            // std::cout << x[0] <<std::endl;
+            // std::cout << x[1] <<std::endl;
+            // std::cout << x[2] <<std::endl;
+            // std::cout << x[3] <<std::endl;
+            // std::cout << y[0] <<std::endl;
+            // std::cout << y[1] <<std::endl;
+            // std::cout << y[2] <<std::endl;
+            // std::cout << y[3] <<std::endl;
+            // std::cout << max_dist <<std::endl;
+            // std::cout << min_dist <<std::endl;
 
-        double ksi = 0, eta = 0;
-        
-        int ipd = 0;
-
-        // Compute ksi and eta accordingly
-        if (max_dist == dist13) {
-            ksi = 2 * (coord[ipd * 3 + 0] - (x[2]+x[0])/2) / min_dist;
-            eta = 2 * (coord[ipd * 3 + 1] - (y[2]+y[0])/2) / min_dist;
-        }
-        else if (max_dist == dist12) {
-            ksi = 2 * (coord[ipd * 3 + 0] - (x[1]+x[0])/2) / min_dist;
-            eta = 2 * (coord[ipd * 3 + 1] - (y[1]+y[0])/2) / min_dist;
-        }
-        else if (max_dist == dist14) {
-            ksi = 2 * (coord[ipd * 3 + 0] - (x[3]+x[0])/2) / min_dist;
-            eta = 2 * (coord[ipd * 3 + 1] - (y[3]+y[0])/2) / min_dist;
-        }
-
-        std::cout << ksi <<std::endl;
-        std::cout << eta <<std::endl;
-
-        // Define shape functions for PD point in local coordinates
-        double N1p = 0.25 * (1-ksi) * (1-eta);
-        double N2p = 0.25 * (1+ksi) * (1-eta);
-        double N3p = 0.25 * (1+ksi) * (1+eta);
-        double N4p = 0.25 * (1-ksi) * (1+eta);
-        
-        // Create matrix of shape function values at PD point
-        double Np[1][4] = {{N1p, N2p, N3p, N4p}};
-        
-        // Define coupling stiffness matrix
-        int I = 1;
-
-        double Np0 = Np[0][0];
-
-        couplingStiffnessMatrix[0] = kappa * I;
-        couplingStiffnessMatrix[1] = kappa * -Np0;
-        couplingStiffnessMatrix[2] = kappa * -Np[0][1];
-        couplingStiffnessMatrix[3] = kappa * -Np[0][2];
-        couplingStiffnessMatrix[4] = kappa * -Np[0][3];
-        couplingStiffnessMatrix[5] = kappa * -Np0;
-        couplingStiffnessMatrix[6] = kappa * pow(Np0, 2);
-        couplingStiffnessMatrix[7] = kappa * Np0 * Np[0][1];
-        couplingStiffnessMatrix[8] = kappa * Np0 * Np[0][2];
-        couplingStiffnessMatrix[9] = kappa * Np0 * Np[0][3];
-        couplingStiffnessMatrix[10] = kappa * -Np[0][1];
-        couplingStiffnessMatrix[11] = kappa * Np0 * Np[0][1];
-        couplingStiffnessMatrix[12] = kappa * pow(Np[0][1], 2);
-        couplingStiffnessMatrix[13] = kappa * Np[0][1] * Np[0][2];
-        couplingStiffnessMatrix[14] = kappa * Np[0][1] * Np[0][3];
-        couplingStiffnessMatrix[15] = kappa * -Np[0][2];
-        couplingStiffnessMatrix[16] = kappa * Np0 * Np[0][2];
-        couplingStiffnessMatrix[17] = kappa * Np[0][1] * Np[0][2];
-        couplingStiffnessMatrix[18] = kappa * Np[0][2] * Np[0][2];
-        couplingStiffnessMatrix[19] = kappa * Np[0][2] * Np[0][3];
-        couplingStiffnessMatrix[20] = kappa * -Np[0][3];
-        couplingStiffnessMatrix[21] = kappa * Np0 * Np[0][3];
-        couplingStiffnessMatrix[22] = kappa * Np[0][1] * Np[0][3];
-        couplingStiffnessMatrix[23] = kappa * Np[0][2] * Np[0][3];
-        couplingStiffnessMatrix[24] = kappa * Np[0][3] * Np[0][3];
-
-        for (int i = 0; i < 5; i++) {
-            for (int j = 0; j < 5; j++) {
-                std::cout << *(couplingStiffnessMatrix + (i*5+j))<<std::endl;
+            // Compute ksi and eta accordingly
+            if (max_dist == dist13) {
+                ksi = 2 * (coord[0] - (x[2]+x[0])/2) / min_dist;
+                eta = 2 * (coord[1] - (y[2]+y[0])/2) / min_dist;
             }
-        }
+            else if (max_dist == dist12) {
+                ksi = 2 * (coord[0] - (x[1]+x[0])/2) / min_dist;
+                eta = 2 * (coord[1] - (y[1]+y[0])/2) / min_dist;
+            }
+            else if (max_dist == dist14) {
+                ksi = 2 * (coord[0] - (x[3]+x[0])/2) / min_dist;
+                eta = 2 * (coord[1] - (y[3]+y[0])/2) / min_dist;
+            }
 
+            std::cout << ksi <<std::endl;
+            std::cout << eta <<std::endl;
+
+            // Define shape functions for PD point in local coordinates
+            double N1p = 0.25 * (1-ksi) * (1-eta);
+            double N2p = 0.25 * (1+ksi) * (1-eta);
+            double N3p = 0.25 * (1+ksi) * (1+eta);
+            double N4p = 0.25 * (1-ksi) * (1+eta);
+            
+            // Create matrix of shape function values at PD point
+            double Np[1][4] = {{N1p, N2p, N3p, N4p}};
+            
+            // Define coupling stiffness matrix
+            int I = 1;
+
+            double Np0 = Np[0][0];
+
+            couplingStiffnessMatrix[nID * 25 + 0] = kappa * I;
+            couplingStiffnessMatrix[nID * 25 + 1] = kappa * -Np0;
+            couplingStiffnessMatrix[nID * 25 + 2] = kappa * -Np[0][1];
+            couplingStiffnessMatrix[nID * 25 + 3] = kappa * -Np[0][2];
+            couplingStiffnessMatrix[nID * 25 + 4] = kappa * -Np[0][3];
+            couplingStiffnessMatrix[nID * 25 + 5] = kappa * -Np0;
+            couplingStiffnessMatrix[nID * 25 + 6] = kappa * pow(Np0, 2);
+            couplingStiffnessMatrix[nID * 25 + 7] = kappa * Np0 * Np[0][1];
+            couplingStiffnessMatrix[nID * 25 + 8] = kappa * Np0 * Np[0][2];
+            couplingStiffnessMatrix[nID * 25 + 9] = kappa * Np0 * Np[0][3];
+            couplingStiffnessMatrix[nID * 25 + 10] = kappa * -Np[0][1];
+            couplingStiffnessMatrix[nID * 25 + 11] = kappa * Np0 * Np[0][1];
+            couplingStiffnessMatrix[nID * 25 + 12] = kappa * pow(Np[0][1], 2);
+            couplingStiffnessMatrix[nID * 25 + 13] = kappa * Np[0][1] * Np[0][2];
+            couplingStiffnessMatrix[nID * 25 + 14] = kappa * Np[0][1] * Np[0][3];
+            couplingStiffnessMatrix[nID * 25 + 15] = kappa * -Np[0][2];
+            couplingStiffnessMatrix[nID * 25 + 16] = kappa * Np0 * Np[0][2];
+            couplingStiffnessMatrix[nID * 25 + 17] = kappa * Np[0][1] * Np[0][2];
+            couplingStiffnessMatrix[nID * 25 + 18] = kappa * Np[0][2] * Np[0][2];
+            couplingStiffnessMatrix[nID * 25 + 19] = kappa * Np[0][2] * Np[0][3];
+            couplingStiffnessMatrix[nID * 25 + 20] = kappa * -Np[0][3];
+            couplingStiffnessMatrix[nID * 25 + 21] = kappa * Np0 * Np[0][3];
+            couplingStiffnessMatrix[nID * 25 + 22] = kappa * Np[0][1] * Np[0][3];
+            couplingStiffnessMatrix[nID * 25 + 23] = kappa * Np[0][2] * Np[0][3];
+            couplingStiffnessMatrix[nID * 25 + 24] = kappa * Np[0][3] * Np[0][3];
+
+            // for (int i = 0; i < 5; i++) {
+            //     for (int j = 0; j < 5; j++) {
+            //         std::cout << *(couplingStiffnessMatrix + (i*5+j))<<std::endl;
+            //     }
+            // }
+
+        }
     }
 }
 void setGlobalStresses
@@ -654,45 +664,60 @@ void setGlobalCouplingForces
         uz[nID + 1] = deformedCoor[3 * globalId + 2] - undeformedCoor[3 * globalId + 2];
     }
     
-    //pd nodes
-    globalId = topology[topoPtr + nnode];
-    ux[0] = deformedCoor[3 * globalId + 0] - undeformedCoor[3 * globalId + 0];
-    uy[0] = deformedCoor[3 * globalId + 1] - undeformedCoor[3 * globalId + 1];
-    uz[0] = deformedCoor[3 * globalId + 2] - undeformedCoor[3 * globalId + 2];
-
-    double* couplingForces = new double[5 * 3];
-
-    for (int i=0;i<5*3;i++){
-         couplingForces[i]=0;
-    }
-    for (int i=0;i<5;i++){
-        for (int j=0;j<5;j++){
-            couplingForces[i]+=( couplingStiffnessMatrix[i * 3 + j]*ux[j]);
-            couplingForces[i+1]+=( couplingStiffnessMatrix[i * 3 + j]*uy[j]);
-            couplingForces[i+2]+=( couplingStiffnessMatrix[i * 3 + j]*uz[j]);
-            std::cout<<"ux["<<j<<"]="<<ux[j]<<std::endl;
-            std::cout<<"uy["<<j<<"]="<<uy[j]<<std::endl;
-            std::cout<<"uz["<<j<<"]="<<uz[j]<<std::endl;
-        }
-        std::cout<<couplingForces[i]<<" "<<couplingForces[i+1]<<" "<<couplingForces[i+2]<<std::endl;
-    }
-
     setToZero(&force[3 * elementID], 3);
 
-    for(int nID=0 ; nID<nnode ; ++nID){
-        globalId = topology[topoPtr + nID];
+    //pd nodes
+    int numPdNodes = topology[topoPtr + nnode];
+    double* couplingForces = new double[5 * 3];
+
+    for(int nID=0 ; nID<numPdNodes ; nID++){
+
+        globalId = topology[topoPtr + nnode + 1 + nID];
+        ux[0] = deformedCoor[3 * globalId + 0] - undeformedCoor[3 * globalId + 0];
+        uy[0] = deformedCoor[3 * globalId + 1] - undeformedCoor[3 * globalId + 1];
+        uz[0] = deformedCoor[3 * globalId + 2] - undeformedCoor[3 * globalId + 2];
+
+
+        for (int i=0;i<5*3;i++){
+            couplingForces[i]=0;
+        }
+        for (int i=0;i<5;i++){
+            for (int j=0;j<5;j++){
+                // std::cout<<"couplingStiffnessMatrix[i * 3 + j]="<<couplingStiffnessMatrix[i * 5 + j]<<std::endl;
+                // std::cout<<"ux["<<j<<"]="<<ux[j]<<std::endl;
+                couplingForces[i * 3]+=( couplingStiffnessMatrix[nID * 25 + i * 5 + j]*ux[j]);
+                couplingForces[i * 3 + 1]+=( couplingStiffnessMatrix[nID * 25 + i * 5 + j]*uy[j]);
+                couplingForces[i * 3 + 2]+=( couplingStiffnessMatrix[nID * 25 + i * 5 + j]*uz[j]);
+            }
+        }
+
+        //set forces pd
 
         for (int i=0 ; i<3 ; i++){  
-            force[3*globalId+i] += elNodalForces[3*nID+i]  * volume[globalId];
-            // force[3*globalId+i] -= couplingForces[3*nID+i];
+            force[3*globalId+i] -= couplingForces[i];
+            // std::cout<< force[3*globalId+i] <<std::endl;
         }
-    }
 
-    globalId = topology[topoPtr + nnode];
+        //set forces fem
 
-    for (int i=0 ; i<3 ; i++){  
-        force[3*globalId+i] -= couplingForces[3 * nnode + i];
-        std::cout<< force[3*globalId+i] <<std::endl;
+        for(int nID=0 ; nID<nnode ; ++nID){
+            globalId = topology[topoPtr + nID];
+
+            for (int i=0 ; i<3 ; i++){  
+                force[3*globalId+i] += elNodalForces[3*nID+i]  * volume[globalId];
+                // force[3*globalId+i] -= couplingForces[3*nID+i + 3];
+            }
+        }
+        // for (int i=0;i<5;i++){
+        //     std::cout<<"ux["<<i<<"]="<<ux[i]<<std::endl;
+        //     std::cout<<"uy["<<i<<"]="<<uy[i]<<std::endl;
+        //     std::cout<<"uz["<<i<<"]="<<uz[i]<<std::endl;
+        // }
+        // for (int i=0;i<5;i++){
+        //     for (int j=0;j<3;j++){
+        //         std::cout<<"couplingForces[i * 3 + j]: "<<couplingForces[i * 3 + j]<<std::endl;
+        //     }
+        // }
     }
 }
 
