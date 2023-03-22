@@ -94,6 +94,11 @@ namespace PeridigmNS {
       return neighborhoodData;
     }
 
+    //! Get the neighborhood data
+    Teuchos::RCP<PeridigmNS::NeighborhoodData> getSecondNeighborhoodData(){
+      return secondNeighborhoodData;
+    }
+
     /*! \brief Initialize the block.
      *
      *  This function will create the block-specific maps, neighborhood list, and DataManager.
@@ -227,6 +232,9 @@ namespace PeridigmNS {
 
     //! The neighborhood data
     Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData;
+
+    //! The neighborhood data
+    Teuchos::RCP<PeridigmNS::NeighborhoodData> secondNeighborhoodData;
 
     //! List of auxiliary field specs
     std::vector<int> auxiliaryFieldIds;

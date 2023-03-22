@@ -143,18 +143,31 @@ PeridigmNS::ModelEvaluator::evalModel(Teuchos::RCP<Workset> workset, bool damage
 
     if (materialModel->Name().find("Correspondence")!=std::string::npos) runEval = damageExist;  
     
+    Teuchos::RCP<const PeridigmNS::AdditiveModel> additiveModel = blockIt->getAdditiveModel();
+
     if(runEval){
       PeridigmNS::Timer::self().startTimer("Internal Force:Evaluate Internal Force:Compute Force");
-      const int* neighborhoodList = neighborhoodData->NeighborhoodList();
-      materialModel->computeForce(dt,
-                                  numOwnedPoints,
-                                  ownedIDs,
-                                  neighborhoodList,
-                                  *dataManager,
-                                  currentTime);
+
+      if(!additiveModel.is_null() && blockIt->getAdditiveEnabled()){
+        Teuchos::RCP<PeridigmNS::NeighborhoodData> secondNeighborhoodData = blockIt->getSecondNeighborhoodData();
+        const int* secondNeighborhoodList = secondNeighborhoodData->NeighborhoodList();
+        materialModel->computeForce(dt,
+                                    numOwnedPoints,
+                                    ownedIDs,
+                                    neighborhoodList,
+                                    secondNeighborhoodList,
+                                    *dataManager,
+                                    currentTime);
+      }else{
+        materialModel->computeForce(dt,
+                                    numOwnedPoints,
+                                    ownedIDs,
+                                    neighborhoodList,
+                                    *dataManager,
+                                    currentTime);
+      }
       PeridigmNS::Timer::self().stopTimer("Internal Force:Evaluate Internal Force:Compute Force");
     }
-    Teuchos::RCP<const PeridigmNS::AdditiveModel> additiveModel = blockIt->getAdditiveModel();
     if(!additiveModel.is_null() && blockIt->getAdditiveEnabled()){
       Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData = blockIt->getNeighborhoodData();
       const int numOwnedPoints = neighborhoodData->NumOwnedPoints();

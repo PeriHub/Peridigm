@@ -74,6 +74,8 @@ void PeridigmNS::BlockBase::initialize(Teuchos::RCP<const Epetra_BlockMap> globa
 
   neighborhoodData = createNeighborhoodDataFromGlobalNeighborhoodData(globalOverlapScalarPointMap,
                                                                       globalNeighborhoodData);
+  secondNeighborhoodData = createNeighborhoodDataFromGlobalNeighborhoodData(globalOverlapScalarPointMap,
+                                                                      globalNeighborhoodData);
 }
 
 void PeridigmNS::BlockBase::importData(Teuchos::RCP<const Epetra_Vector> source, int fieldId, PeridigmField::Step step, Epetra_CombineMode combineMode)

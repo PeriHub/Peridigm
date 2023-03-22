@@ -95,6 +95,7 @@ PeridigmNS::TextFileDiscretization::TextFileDiscretization(const Teuchos::RCP<co
   // \todo Refactor; the createMaps() call is currently inside getDecomp() due to order-of-operations issues with tracking element blocks.
   //createMaps(decomp);
   createNeighborhoodData(decomp);
+  createSecondNeighborhoodData(decomp);
 
   // 3D only
   TEUCHOS_TEST_FOR_TERMINATION(decomp.dimension != 3, "Invalid dimension in decomposition (only 3D is supported)");
@@ -392,9 +393,20 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   else{
     list = Teuchos::rcp(new PDNEIGH::NeighborhoodList(commSp,decomp.zoltanPtr.get(),decomp.numPoints,decomp.myGlobalIDs,decomp.myX,rebalancedHorizonForEachPoint,bondFilters));
   }
+  Teuchos::RCP<PDNEIGH::NeighborhoodList> secondList;
+  if(bondFilters.size() == 0){
+    secondList = Teuchos::rcp(new PDNEIGH::NeighborhoodList(commSp,decomp.zoltanPtr.get(),decomp.numPoints,decomp.myGlobalIDs,decomp.myX,rebalancedHorizonForEachPoint));
+  }
+  else{
+    secondList = Teuchos::rcp(new PDNEIGH::NeighborhoodList(commSp,decomp.zoltanPtr.get(),decomp.numPoints,decomp.myGlobalIDs,decomp.myX,rebalancedHorizonForEachPoint,bondFilters));
+  }
   decomp.neighborhood=list->get_neighborhood();
   decomp.sizeNeighborhoodList=list->get_size_neighborhood_list();
   decomp.neighborhoodPtr=list->get_neighborhood_ptr();
+
+  decomp.secondNeighborhood=secondList->get_neighborhood();
+  decomp.sizeSecondNeighborhoodList=secondList->get_size_neighborhood_list();
+  decomp.secondNeighborhoodPtr=secondList->get_neighborhood_ptr();
 
   // Create all the maps.
   createMaps(decomp);
@@ -562,6 +574,24 @@ PeridigmNS::TextFileDiscretization::createNeighborhoodData(const QUICKGRID::Data
  		 Discretization::getLocalNeighborList(decomp, *oneDimensionalOverlapMap).get(),
  		 decomp.sizeNeighborhoodList*sizeof(int));
    neighborhoodData = filterBonds(neighborhoodData);
+}
+
+void
+PeridigmNS::TextFileDiscretization::createSecondNeighborhoodData(const QUICKGRID::Data& decomp)
+{
+   secondNeighborhoodData = Teuchos::rcp(new PeridigmNS::NeighborhoodData);
+   secondNeighborhoodData->SetNumOwned(decomp.numPoints);
+   memcpy(secondNeighborhoodData->OwnedIDs(), 
+ 		 Discretization::getLocalOwnedIds(decomp, *oneDimensionalOverlapMap).get(),
+ 		 decomp.numPoints*sizeof(int));
+   memcpy(secondNeighborhoodData->NeighborhoodPtr(), 
+ 		 decomp.neighborhoodPtr.get(),
+ 		 decomp.numPoints*sizeof(int));
+   secondNeighborhoodData->SetNeighborhoodListSize(decomp.sizeNeighborhoodList);
+   memcpy(secondNeighborhoodData->NeighborhoodList(),
+ 		 Discretization::getLocalNeighborList(decomp, *oneDimensionalOverlapMap).get(),
+ 		 decomp.sizeNeighborhoodList*sizeof(int));
+   secondNeighborhoodData = filterBonds(secondNeighborhoodData);
 }
 
 Teuchos::RCP<PeridigmNS::NeighborhoodData>

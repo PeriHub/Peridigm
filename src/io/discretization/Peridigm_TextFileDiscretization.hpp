@@ -173,6 +173,9 @@ namespace PeridigmNS {
     //! Create NeighborhoodData
     void createNeighborhoodData(const QUICKGRID::Data& decomp);
 
+    //! Create NeighborhoodData
+    void createSecondNeighborhoodData(const QUICKGRID::Data& decomp);
+
     //! Filter bonds from neighborhood list
     Teuchos::RCP<PeridigmNS::NeighborhoodData> filterBonds(Teuchos::RCP<PeridigmNS::NeighborhoodData> unfilteredNeighborhoodData);
 
@@ -215,6 +218,9 @@ namespace PeridigmNS {
 
     //! Struct containing neighborhoods for owned nodes.
     Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData;
+
+    //! Struct containing neighborhoods for owned nodes.
+    Teuchos::RCP<PeridigmNS::NeighborhoodData> secondNeighborhoodData;
 
     //! Returns number of bonds on this processor
     unsigned int numBonds;
