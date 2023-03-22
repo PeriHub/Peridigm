@@ -134,11 +134,11 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
       prop = "State_Parameter_Field_";
       for(int iID=0 ; iID<nstatev ; ++iID)
       {
-        if (params.isParameter(prop + std::to_string(iID+1))){
-          m_state[iID]                = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, prop + std::to_string(iID+1));
-        }else{
-          m_state[iID] = 0.0;
-        }
+        // if (params.isParameter(prop + std::to_string(iID+1))){
+          m_state[iID] = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, prop + std::to_string(iID+1));
+        // }else{
+        //   m_state[iID] = 0.0;
+        // }
         m_fieldIds.push_back(m_state[iID]);
       }
     }
@@ -267,17 +267,15 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
                                         m_planeStrain,
                                         matName);
 
-   if (nstatev > 0) {
-      double *stat;
-      for(int iID=0 ; iID<nstatev ; ++iID)
-      { 
-        dataManager.getData(m_state[iID], PeridigmField::STEP_NONE)->ExtractView(&stat);
-        for(int jID=0 ; jID<numOwnedPoints; ++jID){
-          stat[jID] = statev[iID*numOwnedPoints + jID];
-        }
+  if (nstatev > 0) {
+    double *stat;
+    for(int iID=0 ; iID<nstatev ; ++iID)
+    { 
+      dataManager.getData(m_state[iID], PeridigmField::STEP_NONE)->ExtractView(&stat);
+      for(int jID=0 ; jID<numOwnedPoints; ++jID){
+        stat[jID] = statev[iID*numOwnedPoints + jID];
       }
-  }                                           
-                                      
-                                            
+    }
+  }                                   
                                            
 }
