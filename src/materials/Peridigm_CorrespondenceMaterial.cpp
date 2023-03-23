@@ -168,6 +168,11 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
       m_lambda.push_back(0.0);
       if (params.isParameter("Thermal Conductivity 33"))m_lambda.push_back(params.get<double>("Thermal Conductivity 33"));
       else m_lambda.push_back(params.get<double>("Thermal Conductivity")) ;
+      
+      materialProperties["Specific Heat Capacity"] = m_C;
+      materialProperties["Thermal Conductivity 11"] = m_lambda[0];
+      materialProperties["Thermal Conductivity 22"] = m_lambda[4];
+      materialProperties["Thermal Conductivity 33"] = m_lambda[8];
     }
   }
   m_applyHeatTransfer = false;

@@ -49,9 +49,15 @@
 #include "Peridigm_HorizonManager.hpp"
 #include "Peridigm_Field.hpp"
 #include "Peridigm_Constants.hpp"
+#include "Peridigm_DegreesOfFreedomManager.hpp"
 #include <cmath>
+// #include <math.h>
 
 double PeridigmNS::ComputeCriticalTimeStep(const Epetra_Comm& comm, PeridigmNS::Block& block){
+
+  PeridigmNS::DegreesOfFreedomManager &dofManager = PeridigmNS::DegreesOfFreedomManager::self();
+  bool solveForDisplacement = dofManager.displacementTreatedAsUnknown();
+  bool solveForTemperature = dofManager.temperatureTreatedAsUnknown();
 
   Teuchos::RCP<PeridigmNS::NeighborhoodData> neighborhoodData = block.getNeighborhoodData();
   const int numOwnedPoints = neighborhoodData->NumOwnedPoints();
@@ -61,6 +67,11 @@ double PeridigmNS::ComputeCriticalTimeStep(const Epetra_Comm& comm, PeridigmNS::
 
   double density = materialModel()->Density();
   double bulkModulus = materialModel()->BulkModulus();
+  double heatCapacity = materialModel()->lookupMaterialProperty("Specific Heat Capacity");
+  double lambda11 = materialModel()->lookupMaterialProperty("Thermal Conductivity 11");
+  double lambda22 = materialModel()->lookupMaterialProperty("Thermal Conductivity 22");
+  double lambda33 = materialModel()->lookupMaterialProperty("Thermal Conductivity 33");
+  double maxLambda = std::max(lambda11,std::max(lambda22,lambda33));
 
   double horizon(0.0);
   std::string blockName = block.getName();
@@ -85,6 +96,7 @@ double PeridigmNS::ComputeCriticalTimeStep(const Epetra_Comm& comm, PeridigmNS::
   for(int iID=0 ; iID<numOwnedPoints ; ++iID){
 
     double timestepDenominator = 0.0;
+
     int nodeID = ownedIDs[iID];
     double X[3] = { x[nodeID*3], x[nodeID*3+1], x[nodeID*3+2] };
     int numNeighbors = neighborhoodList[neighborhoodListIndex++];
@@ -109,12 +121,24 @@ double PeridigmNS::ComputeCriticalTimeStep(const Epetra_Comm& comm, PeridigmNS::
         warningGiven = true;
       }
 
-      timestepDenominator += neighborVolume*springConstant/initialDistance;
+      if(!solveForDisplacement && solveForTemperature){
+        timestepDenominator += ( maxLambda / initialDistance) * neighborVolume;
+      }
+      else{
+        timestepDenominator += neighborVolume*springConstant/initialDistance;
+      }
     }
 
     double criticalTimeStep = 1.0e50;
-    if(numNeighbors > 0)
-      criticalTimeStep = sqrt(2.0*density/timestepDenominator);
+    if(numNeighbors > 0){
+      if(!solveForDisplacement && solveForTemperature){
+        // Selda Oterkus, Erdogan Madenci, and Abigail G. Agwai.  Fully coupled peridynamic thermomechanics
+        criticalTimeStep = (density * heatCapacity) / timestepDenominator;
+      }
+      else{
+        criticalTimeStep = sqrt(2.0*density/timestepDenominator);
+      }
+    }
     if(criticalTimeStep < minCriticalTimeStep)
       minCriticalTimeStep = criticalTimeStep;
   }

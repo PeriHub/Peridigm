@@ -70,6 +70,9 @@ namespace PeridigmNS {
     //! Return name of the model.
     virtual std::string Name() const { return("Simple Additive"); }
 
+    //! Returns the heat capacity of the material.
+    virtual double HeatCapacity() const { return heatCapacity; }
+
     //! Returns a vector of field IDs corresponding to the variables associated with the model.
     virtual std::vector<int> FieldIds() const { return m_fieldIds; }
 

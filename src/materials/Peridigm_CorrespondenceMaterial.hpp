@@ -79,10 +79,17 @@ namespace PeridigmNS
     virtual std::vector<int> FieldIds() const { return m_fieldIds; }
     //! Returns the requested material property
     //! A dummy method here.
-    virtual double lookupMaterialProperty(const std::string keyname) const {
-      double data = 0.0; // works currently only for elasticlinearelasticorresponce, because all others are set to zero
-      if  (keyname.compare("Specific Heat Capacity") == 0) data = m_C;
-      return data;}
+    virtual double lookupMaterialProperty(const std::string keyname) const 
+    {
+      std::map<std::string, double>::const_iterator search = materialProperties.find(keyname);
+      if(search != materialProperties.end())
+        return search->second;
+      else
+        TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error: requested material property is not in Multiphysics Elastic Material");
+      // This is a fallthrough case to make the compiler happy.
+      return 0.0;
+    }
+
     //! Initialize the material model.
     virtual void initialize(const double dt,
                             const int numOwnedPoints,
@@ -190,6 +197,7 @@ namespace PeridigmNS
     double m_hourglassCoefficient;
     double scal;
     PeridigmNS::InfluenceFunction::functionPointer m_OMEGA;
+    std::map<std::string, double> materialProperties;
 
     // field spec ids for all relevant data
     std::vector<int> m_fieldIds;
