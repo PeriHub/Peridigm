@@ -130,7 +130,7 @@ const std::string matname
   }
 
   for(int iID=0 ; iID<numPoints ; ++iID, 
-          coords+=3, defGradN+=9, defGradNP1+=9, GLStrainN+=9,GLStrainNP1+=9,sigmaN+=9,sigmaNP1+=9, angles+=3){
+          statev+=nstatev, coords+=3, defGradN+=9, defGradNP1+=9, GLStrainN+=9,GLStrainNP1+=9,sigmaN+=9,sigmaNP1+=9, angles+=3){
           NOEL = iID;
     if (MATRICES::vectorNorm(angles, 3)!=0)rotation=true;
     else rotation = false;
