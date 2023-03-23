@@ -108,7 +108,7 @@ TEUCHOS_UNIT_TEST(material_utilities, getProjectedForces) {
     double t;
     std::vector<double> AVector(3);
     double* A = &AVector[0]; 
-    int dof = 3;
+    int dof = PeridigmNS::dof();
     double B;
     std::vector<double> fVector(3);
     double* f = &fVector[0]; 
