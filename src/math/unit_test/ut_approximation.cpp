@@ -105,6 +105,30 @@ TEUCHOS_UNIT_TEST(approximation, basis_func) {
     TEST_FLOATING_EQUALITY(APPROXIMATION::basis_func(1,p,k2,1.0),0.0,tolerance);
 }
 
+TEUCHOS_UNIT_TEST(approximation, deriv_basis_func) {
+    const double tolerance = 2.0e-7;
+    
+    int p = 2, n = 4;
+    std::vector<double> kVector(p+n+1);
+    double* k = &kVector[0];
+    APPROXIMATION::knots(n, p, true, k);
+    // caclulated with Python
+    TEST_FLOATING_EQUALITY(APPROXIMATION::deriv_basis_func(0,p,k,0.2),-2.4,tolerance);
+    TEST_FLOATING_EQUALITY(APPROXIMATION::deriv_basis_func(1,p,k,0.2),1.599999999999,tolerance);
+    TEST_FLOATING_EQUALITY(APPROXIMATION::deriv_basis_func(2,p,k,0.2),0.8,tolerance);
+    
+    p = 4;
+    n = 7;
+    std::vector<double> kVector2(p+n+1);
+    double* k2 = &kVector2[0];
+    APPROXIMATION::knots(n, p, true, k2);
+    TEST_FLOATING_EQUALITY(APPROXIMATION::deriv_basis_func(0,p,k2,0.1),-4.115999999999999,tolerance);
+    TEST_FLOATING_EQUALITY(APPROXIMATION::deriv_basis_func(1,p,k2,0.2),-2.58,tolerance);
+    TEST_FLOATING_EQUALITY(APPROXIMATION::deriv_basis_func(3,p,k2,0.2),1.2240000000000002,tolerance);
+    TEST_FLOATING_EQUALITY(APPROXIMATION::deriv_basis_func(1,p,k2,0.4),-0.7679999999999996,tolerance);
+    TEST_FLOATING_EQUALITY(APPROXIMATION::deriv_basis_func(1,p,k2,0.9),0.0,tolerance);
+}
+
 TEUCHOS_UNIT_TEST(approximation, knots) {
     const double tolerance = 4.0e-8;
     int n = 3;
