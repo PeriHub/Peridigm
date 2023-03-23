@@ -306,7 +306,7 @@ namespace DIFFUSION {
           heatFlowState[iID] +=  alpha * (temperature[iID] - Tenv) / sqrt(volume[iID]) * surfaceCorrection;
           }
         else {
-          heatFlowState[iID] += alpha * (temperature[iID] - Tenv) / pow(volume[iID],2.0/3.0) * surfaceCorrection;
+          heatFlowState[iID] += alpha * (temperature[iID] - Tenv) / pow(volume[iID],1.0/3.0) * surfaceCorrection;
 
           }
 
