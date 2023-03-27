@@ -3415,6 +3415,9 @@ void computeHeatFlowState(
     const double* angles,
     const bool twoD,
     const bool bondbased,
+    const bool applyThermalPrintBedFlow,
+    const double lambdaBed,
+    const double TBed,
     double* heatFlowState
     )
 
@@ -3432,6 +3435,9 @@ void computeHeatFlowState(
                                       detachedNodes,
                                       bondDamage,
                                       twoD,
+                                      applyThermalPrintBedFlow,
+                                      lambdaBed,
+                                      TBed,
                                       heatFlowState); 
       }
       else{
@@ -3448,6 +3454,9 @@ void computeHeatFlowState(
                                       bondDamage,
                                       angles,
                                       twoD,
+                                      applyThermalPrintBedFlow,
+                                      lambdaBed,
+                                      TBed,
                                       heatFlowState); 
       }
 

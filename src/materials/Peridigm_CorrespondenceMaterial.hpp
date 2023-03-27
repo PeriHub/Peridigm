@@ -181,9 +181,11 @@ namespace PeridigmNS
     int m_stabilizationType;
     double C[6][6];
     std::vector<double> m_lambda;
+    double m_lambdaBed;
     double m_C;
     double m_kappa;
     double m_Tenv;
+    double m_Tbed;
     double m_factor;
     double m_surfaceCorrection;
     double m_limit;
@@ -235,6 +237,7 @@ namespace PeridigmNS
     bool m_adaptHourGlass;
     bool linRateOfDeformation;
     bool m_applyThermalFlow;
+    bool m_applyThermalPrintBedFlow;
   };
 }
 

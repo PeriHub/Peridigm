@@ -77,6 +77,9 @@ const double* detachedNodes,
 const double* bondDamage,
 const double* angles,
 const bool twoD,
+const bool applyThermalPrintBedFlow,
+const double lambdaBed,
+const double TBed,
 double* heatFlowState
 );
 void computeHeatFlowState_bondbased(    
@@ -90,6 +93,9 @@ const double* volume,
 const double* detachedNodes,
 const double* bondDamage,
 const bool twoD,
+const bool applyThermalPrintBedFlow,
+const double lambdaBed,
+const double TBed,
 double* heatFlowState
 );
 void computeHeatTransfer(    

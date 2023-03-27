@@ -153,6 +153,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   }
 
   m_applyThermalFlow = false;
+  m_applyThermalPrintBedFlow = false;
   if (params.isParameter("Apply Thermal Flow")){
     m_applyThermalFlow = params.get<bool>("Apply Thermal Flow");
     if (m_applyThermalFlow){
@@ -173,6 +174,12 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
       materialProperties["Thermal Conductivity 11"] = m_lambda[0];
       materialProperties["Thermal Conductivity 22"] = m_lambda[4];
       materialProperties["Thermal Conductivity 33"] = m_lambda[8];
+
+      if (params.isParameter("Thermal Conductivity Print Bed") && params.isParameter("Print Bed Temperature")){
+        m_applyThermalPrintBedFlow = true;
+        m_lambdaBed = params.get<double>("Thermal Conductivity Print Bed");
+        m_Tbed = params.get<double>("Print Bed Temperature");
+      }
     }
   }
   m_applyHeatTransfer = false;
@@ -502,6 +509,9 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                   pointAngles,
                                   m_plane,
                                   m_bondbased,
+                                  m_applyThermalPrintBedFlow,
+                                  m_lambdaBed,
+                                  m_Tbed,
                                   thermalFlow);
     if (m_applyHeatTransfer){
       double *specificVolume;

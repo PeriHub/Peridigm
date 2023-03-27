@@ -108,6 +108,9 @@ namespace DIFFUSION {
     const double* detachedNodes,
     const double* bondDamage,
     const bool twoD,
+    const bool applyThermalPrintBedFlow,
+    const double lambdaBed,
+    const double TBed,
     double* heatFlowState
     )
   {
@@ -137,10 +140,22 @@ namespace DIFFUSION {
         X[2] = modelCoord[iID*3+2];
         for(iNID=0 ; iNID<numNeighbors ; ++iNID, bondDamage++){
           neighborID = neighborhoodList[neighborhoodListIndex++];
-          if (detachedNodes[neighborID]!=0)continue; 
           initialDistance = MATRICES::distance(X[0], X[1], X[2], modelCoord[neighborID*3], modelCoord[neighborID*3+1], modelCoord[neighborID*3+2]);
           if (twoD) kernel = 6.0/(pi*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
           else kernel = 6.0/(pi*horizon[iID]*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
+
+          if (applyThermalPrintBedFlow){
+            double Z_n = modelCoord[neighborID*3+2];
+            if (X[2] < horizon[iID] && X[2] < Z_n){ // check if node is near print bed and if the mirror neighbor is in a higher layer
+              if (X[2] - (Z_n - X[2]) <= 0){ // check if mirrored neighbor would be lower z=0
+                tempState = TBed - nodeTemperature;
+                heatFlowState[iID] -= lambdaBed*kernel*tempState*volume[neighborID];
+                // std::cout<< heatFlowState[iID] << std::endl;
+              }
+            }
+          }
+
+          if (detachedNodes[neighborID]!=0)continue;
           tempState = (1 - *bondDamage) * (temperature[neighborID] - nodeTemperature);
 
           heatFlowState[iID] -= lambda*kernel*tempState*volume[neighborID];
@@ -164,6 +179,9 @@ namespace DIFFUSION {
     const double* bondDamage,
     const double* angles,
     const bool twoD,
+    const bool applyThermalPrintBedFlow,
+    const double lambdaBed,
+    const double TBed,
     double* heatFlowState
     )
   {

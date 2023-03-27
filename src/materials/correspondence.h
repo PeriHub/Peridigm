@@ -279,6 +279,9 @@ const double* bondDamage,
 const double* angles,
 const bool twoD,
 const bool bondbased,
+const bool applyThermalPrintBedFlow,
+const double lambdaBed,
+const double TBed,
 double* heatFlowState
 );
 
