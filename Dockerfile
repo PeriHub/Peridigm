@@ -18,6 +18,7 @@ ADD test test
 ADD scripts scripts
 ADD examples examples 
 ADD CMakeLists.txt .
+RUN git clone https://gitlab.com/libeigen/eigen.git /usr/local/eigen
 RUN mkdir /Peridigm/build
 
 WORKDIR /Peridigm/build/
@@ -26,6 +27,7 @@ RUN cmake \
     -D CMAKE_INSTALL_PREFIX:PATH=/usr/local/peridigm \
     -D CMAKE_CXX_FLAGS:STRING="-O2 -Wall -std=c++14 -pedantic -Wno-long-long -ftrapv -Wno-deprecated" \
     -D TRILINOS_DIR:PATH=/usr/local/trilinos \
+    -D Eigen3_DIR:PATH=/usr/local/eigen \
     -D USER_LIBRARY_DIRS:PATH=/Peridigm/src/materials/umats \
     -D CMAKE_CXX_COMPILER:STRING="mpicxx" \
     # -D PERFORMANCE_TEST_MACHINE:STRING="WSL" \
