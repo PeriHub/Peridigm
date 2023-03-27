@@ -67,11 +67,14 @@ double PeridigmNS::ComputeCriticalTimeStep(const Epetra_Comm& comm, PeridigmNS::
 
   double density = materialModel()->Density();
   double bulkModulus = materialModel()->BulkModulus();
-  double heatCapacity = materialModel()->lookupMaterialProperty("Specific Heat Capacity");
-  double lambda11 = materialModel()->lookupMaterialProperty("Thermal Conductivity 11");
-  double lambda22 = materialModel()->lookupMaterialProperty("Thermal Conductivity 22");
-  double lambda33 = materialModel()->lookupMaterialProperty("Thermal Conductivity 33");
-  double maxLambda = std::max(lambda11,std::max(lambda22,lambda33));
+  double heatCapacity(0.0), lambda11(0.0), lambda22(0.0), lambda33(0.0), maxLambda(0.0);
+  if(!solveForDisplacement && solveForTemperature){
+    heatCapacity = materialModel()->lookupMaterialProperty("Specific Heat Capacity");
+    lambda11 = materialModel()->lookupMaterialProperty("Thermal Conductivity 11");
+    lambda22 = materialModel()->lookupMaterialProperty("Thermal Conductivity 22");
+    lambda33 = materialModel()->lookupMaterialProperty("Thermal Conductivity 33");
+    maxLambda = std::max(lambda11,std::max(lambda22,lambda33));
+  }
 
   double horizon(0.0);
   std::string blockName = block.getName();
