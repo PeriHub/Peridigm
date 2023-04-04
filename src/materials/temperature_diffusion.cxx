@@ -68,7 +68,7 @@ namespace DIFFUSION {
 ){
     int neighborhoodListIndex(0);
     int numNeighbors, neighborID, iID, iNID, bondListIndex;
-    double nodeInitialPosition[3], initialDistance, quadWeight;
+    double initialDistance, quadWeight;
     double kernel, nodeTemperature, temperatureDifference, nodeFluxDivergence;//, neighborFluxDivergence;
 
     const double pi = PeridigmNS::value_of_pi();
@@ -76,23 +76,19 @@ namespace DIFFUSION {
     bondListIndex = 0;
     for(iID=0 ; iID<numOwnedPoints ; ++iID){
         nodeTemperature = temperature[iID];
-        nodeInitialPosition[0] = modelCoord[iID*3];
-        nodeInitialPosition[1] = modelCoord[iID*3+1];
-        nodeInitialPosition[2] = modelCoord[iID*3+2];
         numNeighbors = neighborhoodList[neighborhoodListIndex++];
         for(iNID=0 ; iNID<numNeighbors ; ++iNID){
-        neighborID = neighborhoodList[neighborhoodListIndex++];
-        quadWeight = volume[neighborID];
-        if (useImprovedQuadrature) {
-            quadWeight = quadratureWeights[bondListIndex++];
-        }
-        initialDistance = MATRICES::distance(nodeInitialPosition[0], nodeInitialPosition[1], nodeInitialPosition[2], modelCoord[neighborID*3], modelCoord[neighborID*3+1], modelCoord[neighborID*3+2]);
-        kernel = 6.0/(pi*horizon[iID]*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
-        temperatureDifference = temperature[neighborID] - nodeTemperature;
-        nodeFluxDivergence = coefficient*kernel*temperatureDifference*quadWeight; 
-        //TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(nodeFluxDivergence), "**** NaN detected in DiffusionMaterial::computeFluxDivergence().\n");
-        fluxDivergence[iID] += nodeFluxDivergence;
-
+          neighborID = neighborhoodList[neighborhoodListIndex++];
+          quadWeight = volume[neighborID];
+          if (useImprovedQuadrature) {
+              quadWeight = quadratureWeights[bondListIndex++];
+          }
+          initialDistance = MATRICES::distance( modelCoord[iID*3],  modelCoord[iID*3+1],  modelCoord[iID*3+2], modelCoord[neighborID*3], modelCoord[neighborID*3+1], modelCoord[neighborID*3+2]);
+          kernel = 6.0/(pi*horizon[iID]*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
+          temperatureDifference = temperature[neighborID] - nodeTemperature;
+          nodeFluxDivergence = coefficient*kernel*temperatureDifference*quadWeight; 
+          //TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(nodeFluxDivergence), "**** NaN detected in DiffusionMaterial::computeFluxDivergence().\n");
+          fluxDivergence[iID] += nodeFluxDivergence;
         }
     }
     
@@ -124,6 +120,7 @@ namespace DIFFUSION {
     double tempState = 0.0; //Eq. (2)
     double nodeTemperature;
     double initialDistance, kernel;
+    double distanceToInterface, distanceFromInterface, correctedLambda, vx, vy, vz, t, x_intersect, y_intersect;
 
     const double pi = PeridigmNS::value_of_pi();
     for(iID=0 ; iID<numOwnedPoints ; ++iID){
@@ -149,7 +146,21 @@ namespace DIFFUSION {
             if (X[2] < horizon[iID] && X[2] < Z_n){ // check if node is near print bed and if the mirror neighbor is in a higher layer
               if (X[2] - (Z_n - X[2]) <= 0){ // check if mirrored neighbor would be lower z=0
                 tempState = TBed - nodeTemperature;
-                heatFlowState[iID] -= lambdaBed*kernel*tempState*volume[neighborID];
+
+                vx = modelCoord[neighborID*3] - X[0];
+                vy = modelCoord[neighborID*3+1] - X[1];
+                vz = modelCoord[neighborID*3+2] - X[2];
+
+                t = -X[2] / vz;
+
+                x_intersect = X[0] + t * vx;
+                y_intersect = X[1] + t * vy;
+
+                distanceToInterface = MATRICES::distance(X[0], X[1], X[2], x_intersect, y_intersect, 0.0);
+                distanceFromInterface = MATRICES::distance(modelCoord[neighborID*3], modelCoord[neighborID*3+1], modelCoord[neighborID*3+2], x_intersect, y_intersect, 0.0);
+                correctedLambda = initialDistance / (distanceToInterface / lambda) + (distanceFromInterface / lambdaBed);
+
+                heatFlowState[iID] -= correctedLambda*kernel*tempState*volume[neighborID];
                 // std::cout<< heatFlowState[iID] << std::endl;
               }
             }
@@ -275,6 +286,7 @@ namespace DIFFUSION {
     
   }
   void computeHeatTransfer(    
+    const double* modelCoordinates,
     const int numOwnedPoints,
     const int* neighborhoodList,
     const double* volume,
@@ -292,47 +304,105 @@ namespace DIFFUSION {
     double* heatFlowState
     )
     {
-    const double pi = PeridigmNS::value_of_pi();
+    const double* modelCoord = modelCoordinates;
+    double nodeCoord[3];
+    // const double pi = PeridigmNS::value_of_pi();
     int iID, iNID;
     int neighborhoodListIndex(0);
     int numNeighbors, neighborID;
-    double neighborhoodVolume(0.0), specificVol(0.0);
+    // double neighborhoodVolume(0.0), specificVol(0.0);
     //Selda Oterkus, Erdogan Madenci, and Abigail G. Agwai.  Peridynamicthermal diffusion.Journal of Computational Physics, 265:71–96, 2014.
     for(iID=0 ; iID<numOwnedPoints ; ++iID){
       numNeighbors = neighborhoodList[neighborhoodListIndex++];
+
       if (detachedNodes[iID]!=0){
         neighborhoodListIndex += numNeighbors;
         bondDamage += numNeighbors;
         specificVolume[iID] = 0.0;
         continue; 
       }
-      if (twoD)neighborhoodVolume = pi * horizon[iID] * horizon[iID];
-      else neighborhoodVolume = 4.0 / 3.0 * pi * horizon[iID] * horizon[iID] * horizon[iID];
+      if ((specificVolume[iID]==4 && twoD) || (specificVolume[iID]==6 && !twoD)){
+        neighborhoodListIndex += numNeighbors;
+        bondDamage += numNeighbors;
+        continue; 
+      }
+      // if (twoD)neighborhoodVolume = pi * horizon[iID] * horizon[iID];
+      // else neighborhoodVolume = 4.0 / 3.0 * pi * horizon[iID] * horizon[iID] * horizon[iID];
       
-      specificVol = volume[iID];
+      // specificVol = volume[iID];
+      
+      int compareNeighbor = 0;
+      bool above = false, below = false, before = false, behind = false, right = false, left = false;
+      
+      nodeCoord[0] = modelCoord[iID*3];
+      nodeCoord[1] = modelCoord[iID*3+1];
+      nodeCoord[2] = modelCoord[iID*3+2];
       
       for(iNID=0 ; iNID<numNeighbors ; ++iNID, bondDamage++){
         neighborID = neighborhoodList[neighborhoodListIndex++];
-        if (detachedNodes[neighborID]==0) specificVol += (1 - *bondDamage) * volume[neighborID];
+        // if (detachedNodes[neighborID]==0) specificVol += (1 - *bondDamage) * volume[neighborID];
+        if (detachedNodes[neighborID]==0){
+          double neighborX = modelCoord[neighborID*3];
+          double neighborY = modelCoord[neighborID*3+1];
+          double neighborZ = modelCoord[neighborID*3+2];
+
+          if (!right && neighborX > nodeCoord[0] && neighborY == nodeCoord[1] && neighborZ == nodeCoord[2]){
+            right = true;
+            compareNeighbor +=1;
+          }
+          if (!left && neighborX < nodeCoord[0] && neighborY == nodeCoord[1] && neighborZ == nodeCoord[2]){
+            left = true;
+            compareNeighbor +=1;
+          }
+          if (!behind && neighborY > nodeCoord[1] && neighborX == nodeCoord[0] && neighborZ == nodeCoord[2]){
+            behind = true;
+            compareNeighbor +=1;
+          }
+          if (!before && neighborY < nodeCoord[1] && neighborX == nodeCoord[0] && neighborZ == nodeCoord[2]){
+            before = true;
+            compareNeighbor +=1;
+          }
+          if (!above && neighborZ > nodeCoord[2] && neighborX == nodeCoord[0] && neighborY == nodeCoord[1]){
+            above = true;
+            compareNeighbor +=1;
+          }
+          if (!below && neighborZ < nodeCoord[2] && neighborX == nodeCoord[0] && neighborY == nodeCoord[1]){
+            below = true;
+            compareNeighbor +=1;
+          }
+        }
       }
-      specificVolume[iID] = factor * specificVol / neighborhoodVolume;
-      if (specificVolume[iID]>1)specificVolume[iID]=1;
-      if (specificVolume[iID] < limit){
-        if (twoD){
-          // sqrt(volume[iID]) -> calculate dx
-          //heatFlowState[iID] +=  alpha * (temperature[iID] - Tenv) / sqrt(volume[iID]) * surfaceCorrection;
-          heatFlowState[iID] +=  alpha * (temperature[iID] - Tenv) / sqrt(volume[iID]) * surfaceCorrection;
-          }
-        else {
-          heatFlowState[iID] += alpha * (temperature[iID] - Tenv) / pow(volume[iID],1.0/3.0) * surfaceCorrection;
 
-          }
 
-     }
+      if (twoD && compareNeighbor != 4){
+        double dx = sqrt(volume[iID]);
+        double area = dx * (4 - compareNeighbor);
+        heatFlowState[iID] += alpha * (temperature[iID] - Tenv) / area * surfaceCorrection;
+      }
+      else if (!twoD && compareNeighbor != 6){
+        double dx = pow(volume[iID],1.0/3.0);
+
+        if (nodeCoord[2]<=dx) compareNeighbor +=1; //printbed......
+
+        double area = dx * dx * (6 - compareNeighbor);
+        heatFlowState[iID] += alpha * (temperature[iID] - Tenv) * volume[iID] / area * surfaceCorrection;
+      }
+
+      specificVolume[iID] = compareNeighbor;
+
+      // specificVolume[iID] = factor * specificVol / neighborhoodVolume;
+      // if (specificVolume[iID]>1)specificVolume[iID]=1;
+      // if (specificVolume[iID] < limit){
+      //   if (twoD){
+      //     // sqrt(volume[iID]) -> calculate dx
+      //     //heatFlowState[iID] +=  alpha * (temperature[iID] - Tenv) / sqrt(volume[iID]) * surfaceCorrection;
+      //     heatFlowState[iID] +=  alpha * (temperature[iID] - Tenv) / sqrt(volume[iID]) * surfaceCorrection;
+      //   }
+      //   else {
+      //     heatFlowState[iID] += alpha * (temperature[iID] - Tenv) / pow(volume[iID],1.0/3.0) * surfaceCorrection;
+
+      //   }
+      // }
     }
-
-    
   }
-
-
 }

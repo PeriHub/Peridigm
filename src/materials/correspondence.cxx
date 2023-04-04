@@ -3463,7 +3463,8 @@ void computeHeatFlowState(
       }
         
 
-void computeHeatTransfer(    
+void computeHeatTransfer(   
+    const double* modelCoordinates,
     const int numOwnedPoints,
     const int* neighborhoodList,
     const double* volume,
@@ -3484,6 +3485,7 @@ void computeHeatTransfer(
    {
     
     DIFFUSION::computeHeatTransfer(
+                                 modelCoordinates,
                                  numOwnedPoints,
                                  neighborhoodList,
                                  volume,

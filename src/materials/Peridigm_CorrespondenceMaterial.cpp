@@ -518,6 +518,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
       dataManager.getData(m_specificVolumeFieldId, PeridigmField::STEP_NP1)->ExtractView(&specificVolume);
    
       CORRESPONDENCE::computeHeatTransfer(
+                                  modelCoordinates,
                                   numOwnedPoints,
                                   neighborhoodList,
                                   volume,

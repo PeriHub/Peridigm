@@ -98,7 +98,8 @@ const double lambdaBed,
 const double TBed,
 double* heatFlowState
 );
-void computeHeatTransfer(    
+void computeHeatTransfer(   
+const double* modelCoordinates, 
 const int numOwnedPoints,
 const int* neighborhoodList,
 const double* volume,
