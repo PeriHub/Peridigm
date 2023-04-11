@@ -159,7 +159,7 @@ const std::string matname
     CORRESPONDENCE::GetVoigtNotation(strainLoc, strainLocVoigt);
     CORRESPONDENCE::GetVoigtNotation(deps, depsLocVoigt);
     CORRESPONDENCE::GetVoigtNotation(sigmaNP1, sigmaNP1LocVoigt);
-    
+
     if (plane_stress){
       CORRESPONDENCE::ReduceComp(sigmaNP1LocVoigt, true);
       CORRESPONDENCE::ReduceComp(strainLocVoigt, true);
@@ -228,12 +228,9 @@ ScalarT* VOIGT
   *(VOIGT) = *(TENSOR);
   *(VOIGT+1) = *(TENSOR+4);
   *(VOIGT+2) = *(TENSOR+8);
-  *(VOIGT+3) = *(TENSOR+5);
-  *(VOIGT+4) = *(TENSOR+2);
-  *(VOIGT+5) = *(TENSOR+1);
-  // *(VOIGT+3) = 0.5*(*(TENSOR+5) + *(TENSOR+7));
-  // *(VOIGT+4) = 0.5*(*(TENSOR+2) + *(TENSOR+6));
-  // *(VOIGT+5) = 0.5*(*(TENSOR+1) + *(TENSOR+3));
+  *(VOIGT+3) = 0.5*(*(TENSOR+5) + *(TENSOR+7));
+  *(VOIGT+4) = 0.5*(*(TENSOR+2) + *(TENSOR+6));
+  *(VOIGT+5) = 0.5*(*(TENSOR+1) + *(TENSOR+3));
 }
 
 template void GetVoigtNotation<double>
