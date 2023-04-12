@@ -54,8 +54,18 @@ void knots(
     );
 double get_sample_weighted(
     const double coor,
-    const double maxVal,
-    const double minVal
+    const double minVal,
+    const double maxVal
+    );
+
+void get_approximation(
+    const int nnodes,
+    const int* neighborhoodList,
+    const double* coordinates,
+    const int num_control_points,
+    const int degree,
+    const bool twoD,
+    double* AMatrix
     );
 }
 #endif // APPROXIMATION_H
