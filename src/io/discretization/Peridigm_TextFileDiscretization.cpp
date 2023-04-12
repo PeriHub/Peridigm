@@ -160,17 +160,22 @@ void PeridigmNS::TextFileDiscretization::getDiscretization(const string& textFil
              back_inserter<vector<double> >(data));
         // Check for obvious problems with the data
         // Adapt to coordinate system and without --> to check
-        if (data.size() != 5 && data.size() != 6 && data.size() != 8)
+        if (data.size() != 5 && data.size() != 6 && data.size() != 8 && data.size() != 9)
         {
           string msg = "\n**** Error parsing text file, invalid line: " + str + "\n";
           TEUCHOS_TEST_FOR_EXCEPT_MSG(data.size() != 5, msg);
           TEUCHOS_TEST_FOR_EXCEPT_MSG(data.size() != 6, msg);
           TEUCHOS_TEST_FOR_EXCEPT_MSG(data.size() != 8, msg);
+          TEUCHOS_TEST_FOR_EXCEPT_MSG(data.size() != 9, msg);
         }
         bool anglesImport = false;
         if (data.size() == 8) anglesImport = true;
         bool timeImport  = false;
         if (data.size() == 6) timeImport  = true;
+        if (data.size() == 9){
+          timeImport  = true;
+          anglesImport = true;
+        }
         // Store the coordinates, block id, volumes and angles
         coordinates.push_back(data[0]);
         coordinates.push_back(data[1]);
@@ -178,21 +183,28 @@ void PeridigmNS::TextFileDiscretization::getDiscretization(const string& textFil
         nodeType.push_back(1);
         blockIds.push_back(static_cast<int>(data[3]));
         volumes.push_back(data[4]);
-        if (anglesImport == true){
-          angles.push_back(data[5]);
+        if (timeImport && anglesImport){
+          pointTime.push_back(data[5]);
           angles.push_back(data[6]);
           angles.push_back(data[7]);
-        }
-        else{
-          angles.push_back(0.0);
-          angles.push_back(0.0);
-          angles.push_back(0.0);
-        }        
-        if (timeImport == true){
-          pointTime.push_back(data[5]);
-        }
-        else{
-          pointTime.push_back(0.0);
+          angles.push_back(data[8]);
+        }else{
+          if (anglesImport){
+            angles.push_back(data[5]);
+            angles.push_back(data[6]);
+            angles.push_back(data[7]);
+          }
+          else{
+            angles.push_back(0.0);
+            angles.push_back(0.0);
+            angles.push_back(0.0);
+          }        
+          if (timeImport){
+            pointTime.push_back(data[5]);
+          }
+          else{
+            pointTime.push_back(0.0);
+          }
         }
 
       }

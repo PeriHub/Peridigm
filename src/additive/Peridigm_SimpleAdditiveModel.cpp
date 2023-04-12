@@ -122,7 +122,7 @@ PeridigmNS::SimpleAdditiveModel::computeAdditive(const double dt,
   
   int neighborhoodListIndex(0);
   int bondIndex(0);
-  int nodeId, numNeighbors;
+  int nodeId, neighborId, numNeighbors, neighborPointTime;
 
   dataManager.getData(m_fluxDivergenceFieldId, PeridigmField::STEP_NP1)->ExtractView(&fluxDivergence);
   dataManager.getData(m_pointTimeFieldId, PeridigmField::STEP_NONE)->ExtractView(&pointTime);
@@ -141,14 +141,19 @@ PeridigmNS::SimpleAdditiveModel::computeAdditive(const double dt,
       fluxDivergence[nodeId] = -printTemperature * heatCapacity * density / dt;
       detachedNodes[nodeId] = 0;
       for (int iNID = 0; iNID < numNeighbors; ++iNID) {
+          neighborId = neighborhoodList[neighborhoodListIndex++];
+          neighborPointTime = pointTime[neighborId] * timeFactor;
           bondIndex++;
-          bondDamage[bondIndex] = 0;
+          if(neighborPointTime <= currentTime){
+            bondDamage[bondIndex] = 0;
+          }
       }
     }
     else{
       bondIndex += numNeighbors;
+      neighborhoodListIndex += numNeighbors;
     }
-    neighborhoodListIndex += numNeighbors;
+    // neighborhoodListIndex += numNeighbors;
   }
 
 }

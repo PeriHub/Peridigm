@@ -135,7 +135,7 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
       for(int iID=0 ; iID<nstatev ; ++iID)
       {
         // if (params.isParameter(prop + std::to_string(iID+1))){
-          m_state[iID] = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, prop + std::to_string(iID+1));
+          m_state[iID] = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, prop + std::to_string(iID+1));
         // }else{
         //   m_state[iID] = 0.0;
         // }
@@ -144,7 +144,7 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
     }
   }
 
-  m_modelAnglesId                       = fieldManager.getFieldId(PeridigmField::NODE   , PeridigmField::VECTOR, PeridigmField::CONSTANT     , "Local_Angles");
+  m_modelAnglesId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::VECTOR, PeridigmField::CONSTANT, "Local_Angles");
   
   m_fieldIds.push_back(m_strainFieldId);
   m_fieldIds.push_back(m_modelAnglesId);
@@ -166,19 +166,25 @@ PeridigmNS::UserCorrespondenceMaterial::initialize(const double dt,
                                                              const int* neighborhoodList,
                                                              PeridigmNS::DataManager& dataManager)
 {
-      PeridigmNS::CorrespondenceMaterial::initialize(dt,
-                                                      numOwnedPoints,
-                                                      ownedIDs,
-                                                      neighborhoodList,
-                                                      dataManager);
-      dataManager.getData(m_flyingPointFlagFieldId, PeridigmField::STEP_N)->PutScalar(-1.0);
-      dataManager.getData(m_flyingPointFlagFieldId, PeridigmField::STEP_NP1)->PutScalar(-1.0);
-     
-      double *angles;
-      dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
-      /*
-       check if and where local coordinates exists; 
-      */
+  PeridigmNS::CorrespondenceMaterial::initialize(dt,
+                                                  numOwnedPoints,
+                                                  ownedIDs,
+                                                  neighborhoodList,
+                                                  dataManager);
+  dataManager.getData(m_flyingPointFlagFieldId, PeridigmField::STEP_N)->PutScalar(-1.0);
+  dataManager.getData(m_flyingPointFlagFieldId, PeridigmField::STEP_NP1)->PutScalar(-1.0);
+  
+  double *angles;
+  dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
+  /*
+    check if and where local coordinates exists; 
+  */
+  if (nstatev > 0) {
+    for(int iID=0 ; iID<nstatev ; ++iID)
+    {
+      dataManager.getData(m_state[iID], PeridigmField::STEP_NP1)->PutScalar(0.0);
+    }
+  }
       
 
 }
@@ -226,17 +232,33 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
 
   std::vector<double> statevVec(nstatev*numOwnedPoints);
   double* statev = &statevVec[0];
+  double** stat = new double*[nstatev];
   // fill with data
 
   if (nstatev > 0) {
-      double *stat;
-      for(int iID=0 ; iID<nstatev ; ++iID)
-      { 
-        dataManager.getData(m_state[iID], PeridigmField::STEP_NONE)->ExtractView(&stat);
-        for(int jID=0 ; jID<numOwnedPoints; ++jID){
-          statev[iID*numOwnedPoints + jID] = stat[jID];
-        }
+    // for(int iID=0 ; iID<nstatev ; ++iID)
+    // { 
+    //   dataManager.getData(m_state[iID], PeridigmField::STEP_NP1)->ExtractView(&stat);
+    //   for(int jID=0 ; jID<numOwnedPoints; ++jID){
+    //     statev[iID*numOwnedPoints + jID] = stat[jID];
+    //   }
+    //   if (stat[0]!=0){
+    //     std::cout<<"Before Umat, iID: " << iID << " stat[0]: " << stat[0]<<std::endl;
+    //   }
+    // }
+    for(int iID=0 ; iID<nstatev ; ++iID)
+    { 
+      dataManager.getData(m_state[iID], PeridigmField::STEP_NP1)->ExtractView(&stat[iID]);
+    }
+    for(int iID=0 ; iID<numOwnedPoints ; ++iID)
+    { 
+      for(int jID=0 ; jID<nstatev; ++jID){
+        statev[iID*nstatev + jID] = stat[jID][iID];
+        // std::cout<<"Before Umat, jID: " << jID << " stat["<<iID*nstatev + jID<<"]: " << statev[iID*nstatev + jID]<<std::endl;
       }
+      // if (stat[0]!=0){
+      // }
+    }
   }
 
   // CORRESPONDENCE::computeGreenLagrangeStrain(defGradNP1,GLStrainNP1,flyingPointFlag,numOwnedPoints);
@@ -268,13 +290,29 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
                                         matName);
 
   if (nstatev > 0) {
-    double *stat;
+    // for(int iID=0 ; iID<nstatev ; ++iID)
+    // { 
+    //   dataManager.getData(m_state[iID], PeridigmField::STEP_NP1)->ExtractView(&stat);
+    //   for(int jID=0 ; jID<numOwnedPoints; ++jID){
+    //     stat[jID] = statev[iID*numOwnedPoints + jID];
+    //   }
+    //   if (stat[0]!=0){
+    //     std::cout<<"After Umat, iID: " << iID << " stat[0]: " << stat[0]<<std::endl;
+    //   }
+    // }
     for(int iID=0 ; iID<nstatev ; ++iID)
     { 
-      dataManager.getData(m_state[iID], PeridigmField::STEP_NONE)->ExtractView(&stat);
-      for(int jID=0 ; jID<numOwnedPoints; ++jID){
-        stat[jID] = statev[iID*numOwnedPoints + jID];
+      dataManager.getData(m_state[iID], PeridigmField::STEP_NP1)->ExtractView(&stat[iID]);
+    }
+    for(int iID=0 ; iID<numOwnedPoints ; ++iID)
+    { 
+      for(int jID=0 ; jID<nstatev; ++jID){
+        stat[jID][iID] = statev[iID*nstatev + jID];
+        // std::cout<<"After Umat, jID: " << jID << " stat["<<iID*nstatev + jID<<"]: " << statev[iID*nstatev + jID]<<std::endl;
       }
+      // if (stat[0]!=0){
+      //   std::cout<<"After Umat, iID: " << iID << " stat[0]: " << stat[0]<<std::endl;
+      // }
     }
   }                                   
                                            

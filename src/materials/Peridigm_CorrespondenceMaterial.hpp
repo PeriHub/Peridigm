@@ -79,10 +79,17 @@ namespace PeridigmNS
     virtual std::vector<int> FieldIds() const { return m_fieldIds; }
     //! Returns the requested material property
     //! A dummy method here.
-    virtual double lookupMaterialProperty(const std::string keyname) const {
-      double data = 0.0; // works currently only for elasticlinearelasticorresponce, because all others are set to zero
-      if  (keyname.compare("Specific Heat Capacity") == 0) data = m_C;
-      return data;}
+    virtual double lookupMaterialProperty(const std::string keyname) const 
+    {
+      std::map<std::string, double>::const_iterator search = materialProperties.find(keyname);
+      if(search != materialProperties.end())
+        return search->second;
+      else
+        TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error: requested material property is not in Multiphysics Elastic Material");
+      // This is a fallthrough case to make the compiler happy.
+      return 0.0;
+    }
+
     //! Initialize the material model.
     virtual void initialize(const double dt,
                             const int numOwnedPoints,
@@ -175,9 +182,11 @@ namespace PeridigmNS
     int m_stabilizationType;
     double C[6][6];
     std::vector<double> m_lambda;
+    double m_lambdaBed;
     double m_C;
     double m_kappa;
     double m_Tenv;
+    double m_Tbed;
     double m_factor;
     double m_surfaceCorrection;
     double m_limit;
@@ -193,6 +202,7 @@ namespace PeridigmNS
     int degree = 2;
     int num_control_points = 3;
     PeridigmNS::InfluenceFunction::functionPointer m_OMEGA;
+    std::map<std::string, double> materialProperties;
 
     // field spec ids for all relevant data
     std::vector<int> m_fieldIds;
@@ -230,6 +240,7 @@ namespace PeridigmNS
     bool m_adaptHourGlass;
     bool linRateOfDeformation;
     bool m_applyThermalFlow;
+    bool m_applyThermalPrintBedFlow;
   };
 }
 

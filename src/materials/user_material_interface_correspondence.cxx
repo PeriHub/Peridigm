@@ -158,7 +158,8 @@ const std::string matname
     
     CORRESPONDENCE::GetVoigtNotation(strainLoc, strainLocVoigt);
     CORRESPONDENCE::GetVoigtNotation(deps, depsLocVoigt);
-    CORRESPONDENCE::GetVoigtNotation(sigmaNP1LocVoigt, sigmaNP1);
+    CORRESPONDENCE::GetVoigtNotation(sigmaNP1, sigmaNP1LocVoigt);
+
     if (plane_stress){
       CORRESPONDENCE::ReduceComp(sigmaNP1LocVoigt, true);
       CORRESPONDENCE::ReduceComp(strainLocVoigt, true);

@@ -156,11 +156,6 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
       MPI_Finalize();
       exit(0);
     }
-  if(params->isParameter("Solve For Temperature")){ 
-    heatFlux = params->get<bool>("Solve For Temperature");
-    if (heatFlux)std::cout<<"\n**** Heat flux is selected.\n"<< std::endl;
-    else heatFlux = false;
-  }
   peridigmParams = params;
   // set the comm for memory use statistics
   Memstat * memstat = Memstat::Instance();
@@ -258,6 +253,11 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
       //        For the time being, if the users requests NOX with no precondioner, go ahead and allocate the 3x3
       if(peridigmPreconditionerType == "Block 3x3" || peridigmPreconditionerType == "None")
         userSpecifiedBlockDiagonalTangent = true;
+    }
+    if(solverParameters[i]->isParameter("Solve For Temperature")){ 
+      heatFlux = solverParameters[i]->get<bool>("Solve For Temperature");
+      if (heatFlux)std::cout<<"\n**** Heat flux is selected.\n"<< std::endl;
+      else heatFlux = false;
     }
   }
   bool allocateTangent(false), allocateBlockDiagonalTangent(false);
