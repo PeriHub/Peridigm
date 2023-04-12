@@ -354,11 +354,10 @@ void PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   
   
   int len = APPROXIMATION::get_field_size(numOwnedPoints, neighborhoodList, num_control_points);
-  
+  bool interpol = false;
   delete approxMatrix;
   approxMatrix = new double[len];
-  
-  APPROXIMATION::get_approximation(numOwnedPoints, neighborhoodList,modelCoordinates,num_control_points,degree,m_plane,approxMatrix);
+  if (interpol)  APPROXIMATION::get_approximation(numOwnedPoints, neighborhoodList,modelCoordinates,num_control_points,degree,m_plane,approxMatrix);
   //APPROXIMATION::create_approximation(numNode,nPoints,nlist,coor,ncont,p,true,A);
 
 
