@@ -327,6 +327,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
       }
       for(int nID=0 ; nID<numElemNodes ; ++nID){
           globalId = topology[topoPtr + nID];
+          
           for(int i=0 ; i<3 ; ++i){
             elNodalCoor[3*nID+i]   = deformedCoor[3*globalId+i];       
             dispNodal[3*nID+i]     = deformedCoor[3*globalId+i] - undeformedCoor[3*globalId+i];
