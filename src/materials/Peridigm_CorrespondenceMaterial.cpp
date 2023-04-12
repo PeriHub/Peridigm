@@ -53,6 +53,7 @@
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
+#include "approximation.h"
 using namespace std;
 
 PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::ParameterList &params)
@@ -350,8 +351,19 @@ void PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   shapeTensorErrorMessage +=
       "****         Note that all nodes must have a minimum of three neighbors.  Is the horizon too small?\n";
   TEUCHOS_TEST_FOR_TERMINATION(shapeTensorReturnCode != 0, shapeTensorErrorMessage);
+  
+  
+  int len = APPROXIMATION::get_field_size(numOwnedPoints, neighborhoodList, num_control_points);
+  
+  delete approxMatrix;
+  approxMatrix = new double[len];
+  
+  APPROXIMATION::get_approximation(numOwnedPoints, neighborhoodList,modelCoordinates,num_control_points,degree,m_plane,approxMatrix);
+  //APPROXIMATION::create_approximation(numNode,nPoints,nlist,coor,ncont,p,true,A);
 
 
+  
+  //APPROXIMATION::create_approximation(numOwnedPoints, neighborhoodList, modelCoordinates, num_control_points,degree,true,AMatrix);
   double *pointAngles;
   double *pointOrientations;
   dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&pointAngles);
@@ -392,6 +404,9 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   // The approximate deformation gradient will be used by the derived class (specific correspondence material model)
   // to compute the Cauchy stress.
   // The inverse of the shape tensor is stored for later use after the Cauchy stress calculation
+  
+  std::cout<<approxMatrix[3]<<std::endl; // test fuer datemübergabe -> funktioniert
+
   int shapeTensorReturnCode = 0;
   shapeTensorReturnCode =
       CORRESPONDENCE::computeShapeTensorInverseAndApproximateDeformationGradient(volume,
@@ -431,7 +446,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
     // Thomas L. Warren, Stewart A. Silling, Abe Askari, Olaf Weckner, Michael A. Epton, Jifeng Xu
 
     int rotationTensorReturnCode = 0;
-
+    
     rotationTensorReturnCode = CORRESPONDENCE::computeUnrotatedRateOfDeformationAndRotationTensor(volume,
                                                                                                   horizon,
                                                                                                   modelCoordinates,

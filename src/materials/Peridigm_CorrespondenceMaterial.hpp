@@ -171,6 +171,7 @@ namespace PeridigmNS
     //    return fieldIds;
     //  }
     // enum FiniteDifferenceScheme { FORWARD_DIFFERENCE=0, CENTRAL_DIFFERENCE=1 };
+    double *approxMatrix = new double;
   protected:
     // material parameters
     double m_bulkModulus;
@@ -198,6 +199,8 @@ namespace PeridigmNS
     bool avg = false;
     double m_hourglassCoefficient;
     double scal;
+    int degree = 2;
+    int num_control_points = 3;
     PeridigmNS::InfluenceFunction::functionPointer m_OMEGA;
     std::map<std::string, double> materialProperties;
 

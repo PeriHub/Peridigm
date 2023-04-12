@@ -12,18 +12,6 @@ using namespace std;
 using namespace Eigen;
 namespace APPROXIMATION {
 
-void caller()
-{
-    MatrixXd points(5, 3);
-    points << -1.0, 1.0, 0.0,
-               -0.5, 2.0, 0.0,
-                0.0, 1.5, 0.0,
-                0.5, 2.0, 0.0,
-                1.0, 1.0, 0.0;
-    int p = 2;
-    int n_control_points = 6;
-
-}
 
 double deriv_basis_func(
     const int i, 
@@ -104,7 +92,7 @@ double  basis_func(
     }
 
 
-    void knots(
+void knots(
     const int num_control_points,
     const int degree,
     const bool inter,
@@ -140,10 +128,12 @@ void get_approximation(
 )
 {
     const int *neighborListPtr = neighborhoodList;
+    int nsquare = num_control_points * num_control_points;
     double* AMatrixLocal;
+
     for(int iID=0 ; iID<nnodes ; ++iID){
         int numNeighbors = *neighborListPtr; neighborListPtr++;
-
+        AMatrix += numNeighbors * nsquare;
         create_approximation(iID, numNeighbors, neighborListPtr,coordinates,num_control_points,degree,twoD,AMatrix);
       
     }
@@ -163,62 +153,66 @@ void create_approximation(
 {
     // vectoren müssen klar sein. Da das alles in der Init passiert ist es unkritisch
     const int dof = PeridigmNS::dof();
+    const int dof2D = 2;
+    int neighborID;
+    int nsquare = num_control_points * num_control_points;
     std::vector<double> UVector(num_control_points + degree + 1);
     double* U = &UVector[0];
     std::vector<double> VVector(num_control_points + degree + 1);
     double* V = &VVector[0];
-    Eigen::MatrixXd ATA(num_control_points,num_control_points);
-    Eigen::MatrixXd A(num_control_points,nneighbors+1);
-    Eigen::MatrixXd approx(num_control_points,nneighbors+1);
-    std::vector<double> PVector(dof*(nneighbors+1));
+    Eigen::MatrixXd A(nsquare,nneighbors+1);
+    Eigen::MatrixXd AAT(nsquare,nsquare);
+    Eigen::MatrixXd approx(nsquare,nneighbors+1);
+    std::vector<double> PVector(dof2D*(nneighbors+1));
     double* P = &PVector[0];
     double u, v;
     
     APPROXIMATION::knots(num_control_points,degree,true,U);
     APPROXIMATION::knots(num_control_points,degree,true,V);
+    
     double minVal[dof];
     double maxVal[dof];
-
-    for(int i=0 ; i<dof ; ++i){
-        P[i] = coordinates[node + i];
-        minVal[i] = P[i];
-        maxVal[i] = P[i];
+    // create a list of all points within the horizon of point A including point A
+    for(int i=0 ; i<dof2D ; ++i){
+        P[i] = coordinates[node * dof + i];
+        minVal[i] = coordinates[node * dof + i];
+        maxVal[i] = coordinates[node * dof + i];
     }
-    
-    for(int i=1 ; i<nneighbors+1 ; ++i){       
-        for(int j=0 ; j<dof ; ++j){
-            P[i * dof + j] = coordinates[i * dof + j];
-            if (maxVal[j]<P[i * dof + j])maxVal[j]=P[i * dof + j];
-            if (minVal[j]>P[i * dof + j])minVal[j]=P[i * dof + j];
+    for(int i=1 ; i<nneighbors+1 ; ++i){   
+        neighborID = neighborhoodlist[i - 1];    
+        for(int j=0 ; j<dof2D ; ++j){
+            P[i * dof2D + j] = coordinates[neighborID * dof + j];
+            if (maxVal[j]<P[i * dof2D + j])maxVal[j]=P[i * dof2D + j];
+            if (minVal[j]>P[i * dof2D + j])minVal[j]=P[i * dof2D + j];
         }
     } 
 
-    for(int pos=1 ; pos<nneighbors+1 ; ++pos){  
-        for(int i=1 ; i<num_control_points ; ++i){       
+    for(int pos=0 ; pos<nneighbors+1 ; ++pos){  
+        for(int i=0 ; i<num_control_points ; ++i){       
             for(int j=0 ; j<num_control_points ; ++j){            
-                    u = APPROXIMATION::get_sample_weighted(P[pos*dof],maxVal[0],minVal[0]);
-                    v = APPROXIMATION::get_sample_weighted(P[pos*dof+1],maxVal[1],minVal[1]);
-                    A(i*num_control_points+j,pos) = basis_func(i,degree,U,u)*basis_func(i,degree,V,v);                       
+                u = APPROXIMATION::get_sample_weighted(P[pos*dof2D],minVal[0],maxVal[0]);
+                v = APPROXIMATION::get_sample_weighted(P[pos*dof2D+1],minVal[1],maxVal[1]);
+                A(i*num_control_points+j,pos) = basis_func(i,degree,U,u)*basis_func(j,degree,V,v);    
+          
             }
         }
     }
-    ATA = A*A.transpose();
-    //Ainv = np.linalg.inv(ATA)
-    //temp = np.matmul(Ainv,A)
-    approx = ATA.inverse() * A;
-    for(int i=1 ; i<num_control_points ; ++i){       
+    AAT = A*A.transpose();
+  
+    approx = AAT.inverse()*A;
+
+    for(int i=0 ; i<nsquare ; ++i){    
         for(int j=0 ; j<nneighbors+1; ++j){ 
             AMatrix[i*(nneighbors+1) + j] = approx(i,j);
         }
     }
-    // -> das muss raus; Die Routine muss temp liefern
-    //contP = np.matmul(temp, P)
+
 }
 
 double get_sample_weighted(
     const double coor,
-    const double maxVal,
-    const double minVal
+    const double minVal,
+    const double maxVal
     )
     {
        return (coor-minVal)/(maxVal - minVal);
@@ -236,7 +230,7 @@ int get_field_size(
        int val = 0;
        for(int iID=0 ; iID<nnodes ; ++iID){
         int numNeighbors = *neighborListPtr; neighborListPtr+=numNeighbors+1;
-        val += numNeighbors + 1 + num_control_points; // +1 because of the iID node
+        val += numNeighbors + 1 + num_control_points; // +1 because of the iID node which is not in the neighborhoodlist
     }
     return val;
     }
