@@ -63,20 +63,23 @@ TEUCHOS_UNIT_TEST(approximation, get_field_size) {
     A[0] = 5;
     A[6] = 6;
     
-    int check = APPROXIMATION::get_field_size(1,A,n_cont);
-    TEST_EQUALITY(check,24); 
-    check = APPROXIMATION::get_field_size(2,A,n_cont);
-    TEST_EQUALITY(check,52);
-    check = APPROXIMATION::get_field_size(2,A,n_cont+5);
-    TEST_EQUALITY(check,117); 
+    int check = APPROXIMATION::get_field_size(1,A,n_cont,true);
+    TEST_EQUALITY(check,96); 
+    check = APPROXIMATION::get_field_size(2,A,n_cont,true);
+    TEST_EQUALITY(check,208);
+    check = APPROXIMATION::get_field_size(2,A,n_cont+5,true);
+    TEST_EQUALITY(check,1053); 
     A[6] = 0;
-    check = APPROXIMATION::get_field_size(2,A,n_cont);
-    TEST_EQUALITY(check,28); 
+    check = APPROXIMATION::get_field_size(2,A,n_cont,true);
+    TEST_EQUALITY(check,112); 
     int nlist[50] = {24, 2, 3, 4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,24, 2, 3, 4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25};
  
-    check = APPROXIMATION::get_field_size(2, nlist, n_cont-1);
-    TEST_EQUALITY(check,150);
-
+    check = APPROXIMATION::get_field_size(2, nlist, n_cont-1,true);
+    TEST_EQUALITY(check,450);
+    check = APPROXIMATION::get_field_size(2, nlist, n_cont-1,false);
+    TEST_EQUALITY(check,1350);
+    check = APPROXIMATION::get_field_size(2,A,n_cont,false);
+    TEST_EQUALITY(check,448); 
 }
 
 TEUCHOS_UNIT_TEST(approximation, get_sample_weighted) {
@@ -491,7 +494,7 @@ TEUCHOS_UNIT_TEST(approximation, get_approximation) {
     // lengths are hard coded to avoid warnings
     int nlist[50] = {24, 2, 3, 4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,24, 2, 3, 4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25};
     int ncont = 3;
-    int len = APPROXIMATION::get_field_size(2, nlist, nPoints);
+    int len = APPROXIMATION::get_field_size(2, nlist, nPoints, true);
     
     std::vector<double> AVector(len);
     double* A = &AVector[0];
@@ -869,7 +872,7 @@ TEUCHOS_UNIT_TEST(approximation, get_control_points) {
     // lengths are hard coded to avoid warnings
     int nlist[50] = {24, 2, 3, 4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,24, 2, 3, 4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25};
     int ncont = 3;
-    int len = APPROXIMATION::get_field_size(2, nlist, nPoints);
+    int len = APPROXIMATION::get_field_size(2, nlist, nPoints,true);
     double *contP;
     contP = new double[2 * ncont * ncont * PeridigmNS::dof()];
     std::vector<double> AVector(len);
