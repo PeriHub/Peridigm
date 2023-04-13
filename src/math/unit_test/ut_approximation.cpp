@@ -200,7 +200,7 @@ TEUCHOS_UNIT_TEST(approximation, create_approximation) {
 
     const double tolerance = 4.0e-8;
     
-    int nPoints = 24;
+    int nPoints = 25;
     int numNode = 12;
     int p = 2;
     // lengths are hard coded to avoid warnings
@@ -235,7 +235,7 @@ TEUCHOS_UNIT_TEST(approximation, create_approximation) {
                           0,   1,0,
                           0.5, 1,0,
                           1,   1,0};
-    APPROXIMATION::create_approximation(numNode,nPoints,nlist,coor,ncont,p,true,A);
+    APPROXIMATION::create_approximation(numNode,nPoints-1,nlist,coor,ncont,p,true,A);
     // calculated with Python
     ATest[0]= 0.562499999999996 ;
     ATest[1]= 0.0 ;
@@ -463,9 +463,9 @@ TEUCHOS_UNIT_TEST(approximation, create_approximation) {
     ATest[223]= 0.14249999999999996 ;
     ATest[224]= 0.9025 ;
     for(int i=0 ; i<ncont*ncont ; ++i){       
-        for(int j=0 ; j<nPoints+1; ++j){ 
-            TEST_FLOATING_EQUALITY(float(i*(nPoints+1) + j),float(i*(nPoints+1) + j),tolerance); 
-            TEST_FLOATING_EQUALITY(A[i*(nPoints+1) + j],ATest[i*(nPoints+1) + j],tolerance);  
+        for(int j=0 ; j<nPoints; ++j){ 
+            TEST_FLOATING_EQUALITY(float(i*nPoints + j),float(i*nPoints + j),tolerance); 
+            TEST_FLOATING_EQUALITY(A[i*nPoints + j],ATest[i*nPoints + j],tolerance);  
         }
     }
 
@@ -762,6 +762,183 @@ TEUCHOS_UNIT_TEST(approximation, get_approximation) {
         }
     }
    
+}
+TEUCHOS_UNIT_TEST(approximation, get_control_point) {
+   /*  
+    create_approximation
+        const int node,
+        const int nneighbors,
+        const int* neighborhoodlist,
+        const double* coordinates,
+        const int num_control_points,
+        const int degree,
+        const bool twoD,
+        double* AMatrix
+    */
+
+    const double tolerance = 4.0e-8;
+    
+    int nPoints = 24;
+    int numNode = 0;
+    int p = 2;
+    // lengths are hard coded to avoid warnings
+    int nlist[24] = {1, 2, 3, 4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24};
+    int ncont = 3;
+    double *contP;
+    contP = new double[ncont * ncont * PeridigmNS::dof()];
+    std::vector<double> AVector(9*25);
+    double* A = &AVector[0];
+    double contPTest[27];
+    double coor[3*25] =   {0,0,0,
+                          -1,  -1,0,
+                          -0.5,-1,0,
+                          0,   -1,0,
+                          0.5, -1,0,
+                          1,   -1,0,
+                          -1,  -0.5,0,
+                          -0.5,-0.5,0,
+                          0,   -0.5,0,
+                          0.5, -0.5,0,
+                          1,   -0.5,0,
+                          -1,  0,0,
+                          -0.5,0,0,
+                          0.5, 0,0,
+                          1,   0,0,
+                          -1,  0.5,0,
+                          -0.5,0.5,0,
+                          0,   0.5,0,
+                          0.5, 0.5,0,
+                          1,   0.5,0,
+                          -1,  1,0,
+                          -0.5,1,0,
+                          0,   1,0,
+                          0.5, 1,0,
+                          1,   1,0};
+    contPTest[0]= -0.9999999999999998 ;
+    contPTest[1]= -1.000000000000005 ;
+    contPTest[2]= 0 ;
+    contPTest[3]= -1.0000000000000036 ;
+    contPTest[4]= 0.0 ;
+    contPTest[5]= 0 ;
+    contPTest[6]= -1.0000000000000002 ;
+    contPTest[7]= 0.9999999999999991 ;
+    contPTest[8]= 0 ;
+    contPTest[9]= 0.0 ;
+    contPTest[10]= -1.0000000000000102 ;
+    contPTest[11]= 0 ;
+    contPTest[12]= 0.0 ;
+    contPTest[13]= 0 ;
+    contPTest[14]= 0 ;
+    contPTest[15]= 0 ;
+    contPTest[16]= 1.0 ;
+    contPTest[17]= 0 ;
+    contPTest[18]= 0.9999999999999987 ;
+    contPTest[19]= -0.9999999999999999 ;
+    contPTest[20]= 0 ;
+    contPTest[21]= 1.0000000000000004 ;
+    contPTest[22]= 0 ;
+    contPTest[23]= 0 ;
+    contPTest[24]= 0.9999999999999999 ;
+    contPTest[25]= 0.9999999999999999 ;
+    contPTest[26]= 0 ;
+    APPROXIMATION::create_approximation(numNode,nPoints,nlist,coor,ncont,p,true,A);
+    APPROXIMATION::get_control_point(numNode,nPoints,nlist,ncont,coor,A,true,contP);
+    // calculated with Python
+    
+    for(int i=0 ; i<ncont*ncont*PeridigmNS::dof() ; ++i){       
+            TEST_ASSERT(abs(contP[i]-contPTest[i])<tolerance);  
+        }
+}
+TEUCHOS_UNIT_TEST(approximation, get_control_points) {
+   /*  
+    create_approximation
+        const int node,
+        const int nneighbors,
+        const int* neighborhoodlist,
+        const double* coordinates,
+        const int num_control_points,
+        const int degree,
+        const bool twoD,
+        double* AMatrix
+    */
+
+    const double tolerance = 4.0e-8;
+    
+    int nPoints = 25;
+    int p = 2;
+    // lengths are hard coded to avoid warnings
+    int nlist[50] = {24, 2, 3, 4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,24, 2, 3, 4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25};
+    int ncont = 3;
+    int len = APPROXIMATION::get_field_size(2, nlist, nPoints);
+    double *contP;
+    contP = new double[2 * ncont * ncont * PeridigmNS::dof()];
+    std::vector<double> AVector(len);
+    double* A = &AVector[0];
+    double contPTest[27];
+    double coor[3*26] =   {0,0,0,
+                           0,0,0,
+                          -1,  -1,0,
+                          -0.5,-1,0,
+                          0,   -1,0,
+                          0.5, -1,0,
+                          1,   -1,0,
+                          -1,  -0.5,0,
+                          -0.5,-0.5,0,
+                          0,   -0.5,0,
+                          0.5, -0.5,0,
+                          1,   -0.5,0,
+                          -1,  0,0,
+                          -0.5,0,0,
+                          0.5, 0,0,
+                          1,   0,0,
+                          -1,  0.5,0,
+                          -0.5,0.5,0,
+                          0,   0.5,0,
+                          0.5, 0.5,0,
+                          1,   0.5,0,
+                          -1,  1,0,
+                          -0.5,1,0,
+                          0,   1,0,
+                          0.5, 1,0,
+                          1,   1,0};
+    //APPROXIMATION::create_approximation(numNode,nPoints,nlist,coor,ncont,p,true,A);
+    APPROXIMATION::get_approximation(2, nlist,coor,ncont,p,true,A);
+    APPROXIMATION::get_control_points(2,nlist,ncont,coor,A,true,contP);
+   
+    contPTest[0]= -0.9999999999999998 ;
+    contPTest[1]= -1.000000000000005 ;
+    contPTest[2]= 0 ;
+    contPTest[3]= -1.0000000000000036 ;
+    contPTest[4]= 0.0 ;
+    contPTest[5]= 0 ;
+    contPTest[6]= -1.0000000000000002 ;
+    contPTest[7]= 0.9999999999999991 ;
+    contPTest[8]= 0 ;
+    contPTest[9]= 0.0 ;
+    contPTest[10]= -1.0000000000000102 ;
+    contPTest[11]= 0 ;
+    contPTest[12]= 0.0 ;
+    contPTest[13]= 0 ;
+    contPTest[14]= 0 ;
+    contPTest[15]= 0 ;
+    contPTest[16]= 1.0 ;
+    contPTest[17]= 0 ;
+    contPTest[18]= 0.9999999999999987 ;
+    contPTest[19]= -0.9999999999999999 ;
+    contPTest[20]= 0 ;
+    contPTest[21]= 1.0000000000000004 ;
+    contPTest[22]= 0 ;
+    contPTest[23]= 0 ;
+    contPTest[24]= 0.9999999999999999 ;
+    contPTest[25]= 0.9999999999999999 ;
+    contPTest[26]= 0 ;
+
+    // calculated with Python
+    for(int iID=0 ; iID<2 ; ++iID){    
+        for(int i=0 ; i<ncont*ncont*PeridigmNS::dof() ; ++i){       
+                TEST_ASSERT(abs(contP[i+iID*ncont*ncont*PeridigmNS::dof()]-contPTest[i])<tolerance);  
+            }
+    }
 }
 
 
