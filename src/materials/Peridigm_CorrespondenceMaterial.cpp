@@ -404,7 +404,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   // to compute the Cauchy stress.
   // The inverse of the shape tensor is stored for later use after the Cauchy stress calculation
   
-  std::cout<<approxMatrix[3]<<std::endl; // test fuer datemübergabe -> funktioniert
+  // std::cout<<approxMatrix[3]<<std::endl; // test fuer datemübergabe -> funktioniert
 
   int shapeTensorReturnCode = 0;
   shapeTensorReturnCode =
