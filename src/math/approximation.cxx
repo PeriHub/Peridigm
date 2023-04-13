@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <matrices.h>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
 #include "approximation.h"
@@ -71,7 +72,7 @@ double  basis_func(
         if (p == 0){
             
             // work around -> to be checked if it works for inner cruve interpolation
-            // self.maxP assumes right now equal p degrees
+
             if (U[i] <= u && u < U[i+1] && i<=p)return 1.0;
             if (U[i] < u && u <= U[i+1] && i>=p)return 1.0;
             else return 0.0;
@@ -129,13 +130,12 @@ void get_approximation(
 {
     const int *neighborListPtr = neighborhoodList;
     int nsquare = num_control_points * num_control_points;
-    double* AMatrixLocal;
-
+    if (twoD == false) nsquare *= num_control_points;
     for(int iID=0 ; iID<nnodes ; ++iID){
         int numNeighbors = *neighborListPtr; neighborListPtr++;
-        AMatrix += numNeighbors * nsquare;
         create_approximation(iID, numNeighbors, neighborListPtr,coordinates,num_control_points,degree,twoD,AMatrix);
-      
+        neighborListPtr+=numNeighbors;
+        AMatrix += (numNeighbors+1) * nsquare;
     }
 }
 
@@ -178,8 +178,11 @@ void create_approximation(
         minVal[i] = coordinates[node * dof + i];
         maxVal[i] = coordinates[node * dof + i];
     }
+
     for(int i=1 ; i<nneighbors+1 ; ++i){   
-        neighborID = neighborhoodlist[i - 1];    
+
+        neighborID = neighborhoodlist[i - 1]; 
+
         for(int j=0 ; j<dof2D ; ++j){
             P[i * dof2D + j] = coordinates[neighborID * dof + j];
             if (maxVal[j]<P[i * dof2D + j])maxVal[j]=P[i * dof2D + j];
@@ -192,8 +195,7 @@ void create_approximation(
             for(int j=0 ; j<num_control_points ; ++j){            
                 u = APPROXIMATION::get_sample_weighted(P[pos*dof2D],minVal[0],maxVal[0]);
                 v = APPROXIMATION::get_sample_weighted(P[pos*dof2D+1],minVal[1],maxVal[1]);
-                A(i*num_control_points+j,pos) = basis_func(i,degree,U,u)*basis_func(j,degree,V,v);    
-          
+                A(i*num_control_points+j,pos) = basis_func(i,degree,U,u)*basis_func(j,degree,V,v);       
             }
         }
     }
@@ -222,16 +224,254 @@ double get_sample_weighted(
 int get_field_size(
     const int nnodes,
     const int* neighborhoodList,
-    const int num_control_points
+    const int num_control_points,
+    const bool twoD
     )
     {
        
        const int *neighborListPtr = neighborhoodList;
+       int nsquare = num_control_points * num_control_points;
+       if (twoD==false) nsquare *= num_control_points;
        int val = 0;
        for(int iID=0 ; iID<nnodes ; ++iID){
         int numNeighbors = *neighborListPtr; neighborListPtr+=numNeighbors+1;
-        val += numNeighbors + 1 + num_control_points; // +1 because of the iID node which is not in the neighborhoodlist
+        val += (numNeighbors + 1) * nsquare; // +1 because of the iID node which is not in the neighborhoodlist
     }
     return val;
     }
+
+    void get_jacobians(
+        const int nnodes,
+        const double* contP,
+        const int num_control_points,
+        const int degree,
+        const bool twoD,
+        double* jacobians    
+    )
+    {
+        /*
+            calculates the jacobian in the center of the sphere
+            -> u, v, w = 0.5; 
+            - this is valid for typical horizon designs
+        */
+        int dof = PeridigmNS::dof();
+        std::vector<double> UVector(num_control_points + degree + 1);
+        double* U = &UVector[0];
+        std::vector<double> VVector(num_control_points + degree + 1);
+        double* V = &VVector[0]; 
+        std::vector<double> WVector(num_control_points + degree + 1);
+        double* W = &WVector[0]; 
+        double u = 0.5;
+        double v = 0.5;
+        double w = 0.5;
+        
+        APPROXIMATION::knots(num_control_points,degree,true,U);
+        APPROXIMATION::knots(num_control_points,degree,true,V);
+        APPROXIMATION::knots(num_control_points,degree,true,W);
+
+        int offset = num_control_points * num_control_points;
+        if (twoD == false) offset *= num_control_points;
+
+        for(int iID=0 ; iID<nnodes ; ++iID){
+     
+            MATRICES::setToZero(jacobians,dof*dof);
+            
+            APPROXIMATION::get_jacobian(degree,num_control_points,contP,U,u,V,v,W,w,twoD,jacobians);
+            jacobians += dof*dof;
+            contP += offset;
+        }
+
+    }
+    void get_control_points(
+        const int nnodes,
+        const int* neighborhoodList,
+        const int num_control_points,
+        const double* coor,
+        const double* AMatrix,
+        const bool twoD,
+        double* contP
+    )
+    {
+    const int *neighborListPtr = neighborhoodList;
+    int nsquare = num_control_points * num_control_points;
+    if (twoD==false) nsquare *= num_control_points;
+    int dof = PeridigmNS::dof();
+
+    for(int iID=0 ; iID<nnodes ; ++iID){
+        int numNeighbors = *neighborListPtr; neighborListPtr++;
+        APPROXIMATION::get_control_point(iID,numNeighbors,neighborListPtr,num_control_points,coor,AMatrix,twoD,contP);
+        neighborListPtr += numNeighbors;
+        AMatrix +=  (numNeighbors + 1) * nsquare;
+        contP += nsquare * dof;
+        }
+
+    }
+    void get_control_point(
+        const int numNode,
+        const int nneighbors,
+        const int* neighborhoodlist,
+        const int num_control_points,
+        const double* coor,
+        const double* AMatrix,
+        const bool twoD,
+        double* contP
+    )
+    {  
+        //int len = 3;
+        //if (twoD)len = 2;
+        int dof = PeridigmNS::dof();
+
+        int nsquare = num_control_points * num_control_points;
+        Eigen::MatrixXd approx(nsquare,nneighbors+1);
+        Eigen::MatrixXd contPvec(nsquare,dof);
+        Eigen::MatrixXd P(nneighbors+1, dof);
+
+
+        for(int j=0 ; j<dof; ++j){ 
+            P(0,j) = coor[dof * numNode + j];
+        }
+
+        for(int i=1 ; i<nneighbors+1; ++i){
+            int neighborID = neighborhoodlist[i-1];
+            for(int j=0 ; j<dof; ++j){ 
+                P(i,j) = coor[dof * neighborID + j];
+                
+            }
+
+        }
+
+        for(int i=0 ; i<nsquare ; ++i){    
+            for(int j=0 ; j<nneighbors+1; ++j){ 
+                approx(i,j) = AMatrix[i*(nneighbors+1) + j];
+            }
+        }
+        contPvec = approx * P;
+        for(int i=0 ; i<nsquare ; ++i){    
+            for(int j=0 ; j<dof; ++j){ 
+                contP[i*dof + j] = contPvec(i,j);
+            }
+        }
+    }
+    void get_local_gradient(
+        const int p,
+        const int num_control_points,
+        const double* contP,
+        const bool twoD,
+        const double* jacobian,
+        double* gradient
+    ){
+
+        std::vector<double> UVector(num_control_points + p + 1);
+        double* U = &UVector[0];
+        std::vector<double> VVector(num_control_points + p + 1);
+        double* V = &VVector[0]; 
+        std::vector<double> WVector(num_control_points + p + 1);
+        double* W = &WVector[0]; 
+        double u = 0.5;
+        double v = 0.5;
+        double w = 0.5;
+        APPROXIMATION::knots(num_control_points,p,true,U);
+        APPROXIMATION::knots(num_control_points,p,true,V);
+        APPROXIMATION::knots(num_control_points,p,true,W);
+        int len = 3;
+        if (twoD)len = 2;
+        
+        
+        Eigen::MatrixXd gradientMxM(len,len);
+        Eigen::MatrixXd jacobianMxM(len,len);
+        Eigen::MatrixXd localgradientMxM(len,len);
+        APPROXIMATION::get_gradient(p,num_control_points,contP,U,u,V,v,W,w,twoD,gradientMxM);
+        for(int i=0 ; i<len ; ++i){
+            for(int j=0 ; j<len ; ++j){
+                jacobianMxM(i,j) = jacobian[i*len + j];
+            }
+        }
+        
+        localgradientMxM = gradientMxM * jacobianMxM;
+        for(int i=0 ; i<len ; ++i){
+            for(int j=0 ; j<len ; ++j){
+               gradient[i*len + j] = localgradientMxM(i,j);
+            }
+        } 
+
+    }
+
+
+    void get_jacobian(
+        const int p,
+        const int num_control_points,
+        const double* contP,
+        const double* U,
+        const double u,
+        const double* V,
+        const double v,
+        const double* W,
+        const double w,
+        const bool twoD,
+        double* jacobian
+    )
+    {   
+        int len = 3;
+        if (twoD)len = 2;
+        int dof = PeridigmNS::dof();
+        
+        Eigen::MatrixXd gradientMxM(len,len);
+        Eigen::MatrixXd jacobianMxM(len,len);
+        APPROXIMATION::get_gradient(p,num_control_points,contP,U,u,V,v,W,w,twoD,gradientMxM);
+        
+        jacobianMxM = gradientMxM.inverse();
+        for(int i=0 ; i<len ; ++i){
+            for(int j=0 ; j<len ; ++j){
+               jacobian[i*dof + j] = jacobianMxM(i,j);
+            }
+        } 
+    }
+
+    void get_gradient(
+        const int p,
+        const int num_control_points,
+        const double* contP,
+        const double* U,
+        const double u,
+        const double* V,
+        const double v,
+        const double* W,
+        const double w,
+        const bool twoD,
+        MatrixXd& gradientMxM
+    )
+    {
+
+    if (twoD){
+        for(int i=0 ; i<num_control_points ; ++i){
+            for(int j=0 ; j<num_control_points ; ++j){
+                int pos = i*num_control_points+j;
+                gradientMxM(0,0)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*contP[2*pos];
+                gradientMxM(0,1)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*contP[2*pos+1];
+                gradientMxM(1,0)+=APPROXIMATION::basis_func(i,p,U,u)*APPROXIMATION::deriv_basis_func(j,p,V,v)*contP[2*pos];
+                gradientMxM(1,1)+=APPROXIMATION::basis_func(i,p,U,u)*APPROXIMATION::deriv_basis_func(j,p,V,v)*contP[2*pos+1];
+                   
+            }
+        }
+    }
+    else{
+        for(int i=0 ; i<num_control_points ; ++i){
+            for(int j=0 ; j<num_control_points ; ++j){
+                for(int k=0 ; k<num_control_points ; ++k){
+                    int pos = i*num_control_points*num_control_points + j * num_control_points + k;
+                    gradientMxM(0,0)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*APPROXIMATION::basis_func(j,p,W,w)*contP[3*pos];
+                    gradientMxM(0,1)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*APPROXIMATION::basis_func(j,p,W,w)*contP[3*pos + 1];
+                    gradientMxM(0,1)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*APPROXIMATION::basis_func(j,p,W,w)*contP[3*pos + 2];
+                    gradientMxM(1,0)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*APPROXIMATION::basis_func(j,p,W,w)*contP[3*pos];
+                    gradientMxM(1,1)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*APPROXIMATION::basis_func(j,p,W,w)*contP[3*pos + 1];
+                    gradientMxM(1,1)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*APPROXIMATION::basis_func(j,p,W,w)*contP[3*pos + 2];
+                    gradientMxM(2,0)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*APPROXIMATION::basis_func(j,p,W,w)*contP[3*pos];
+                    gradientMxM(2,1)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*APPROXIMATION::basis_func(j,p,W,w)*contP[3*pos + 1];
+                    gradientMxM(2,1)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*APPROXIMATION::basis_func(j,p,W,w)*contP[3*pos + 2];
+                    }
+                }
+            }
+        }
+    }
 }
+
