@@ -123,7 +123,9 @@ TEUCHOS_UNIT_TEST(approximation, basis_func) {
     TEST_FLOATING_EQUALITY(APPROXIMATION::basis_func(0,p,k3,0.0),0.0,tolerance);
     TEST_FLOATING_EQUALITY(APPROXIMATION::basis_func(1,p,k3,0.0),0.0,tolerance);
     TEST_FLOATING_EQUALITY(APPROXIMATION::basis_func(2,p,k3,0.0),0.0,tolerance);
-
+    TEST_FLOATING_EQUALITY(APPROXIMATION::basis_func(0,p,k3,0.5),0.25,tolerance);
+    TEST_FLOATING_EQUALITY(APPROXIMATION::basis_func(1,p,k3,0.5),0.5,tolerance);
+    TEST_FLOATING_EQUALITY(APPROXIMATION::basis_func(2,p,k3,0.5),0.25,tolerance);
 
 
 }
@@ -150,6 +152,16 @@ TEUCHOS_UNIT_TEST(approximation, deriv_basis_func) {
     TEST_FLOATING_EQUALITY(APPROXIMATION::deriv_basis_func(3,p,k2,0.2),1.2240000000000002,tolerance);
     TEST_FLOATING_EQUALITY(APPROXIMATION::deriv_basis_func(1,p,k2,0.4),-0.7679999999999996,tolerance);
     TEST_FLOATING_EQUALITY(APPROXIMATION::deriv_basis_func(1,p,k2,0.9),0.0,tolerance);
+
+    p = 2;
+    n = 3;
+    std::vector<double> kVector3(p+n+1);
+    double* k3 = &kVector3[0];
+    APPROXIMATION::knots(n, p, true, k3);
+    TEST_FLOATING_EQUALITY(APPROXIMATION::deriv_basis_func(0,p,k3,0.5),-1.0,tolerance);
+    TEST_FLOATING_EQUALITY(APPROXIMATION::deriv_basis_func(1,p,k3,0.5),0,tolerance);
+    TEST_FLOATING_EQUALITY(APPROXIMATION::deriv_basis_func(2,p,k3,0.5),1.0,tolerance);
+    
 }
 
 TEUCHOS_UNIT_TEST(approximation, knots) {
@@ -852,7 +864,206 @@ TEUCHOS_UNIT_TEST(approximation, get_control_point) {
             TEST_ASSERT(abs(contP[i]-contPTest[i])<tolerance);  
         }
 }
-TEUCHOS_UNIT_TEST(approximation, get_control_points) {
+
+
+
+
+TEUCHOS_UNIT_TEST(approximation, get_gradient) {
+   /*  
+    create_approximation
+        const int node,
+        const int nneighbors,
+        const int* neighborhoodlist,
+        const double* coordinates,
+        const int num_control_points,
+        const int degree,
+        const bool twoD,
+        double* AMatrix
+    */
+
+    const double tolerance = 4.0e-10;
+
+    int p = 2;
+    int ncont = 3;
+    double *contP;
+    contP = new double[ncont * ncont * PeridigmNS::dof()];
+    double *contP3D;
+    contP3D = new double[ncont * ncont * ncont * PeridigmNS::dof()];
+
+    double gradTest[9];
+    contP[0]= -0.9999999999999998 ;    contP[1]= -1.000000000000005 ;    contP[2]= 0 ;
+    contP[3]= -1.0000000000000036 ;    contP[4]= 0.0 ;    contP[5]= 0 ;
+    contP[6]= -1.0000000000000002 ;    contP[7]= 0.9999999999999991 ;    contP[8]= 0 ;
+    contP[9]= 0.0 ;    contP[10]= -1.0000000000000102 ;    contP[11]= 0 ;
+    contP[12]= 0.0 ;    contP[13]= 0 ;    contP[14]= 0 ;
+    contP[15]= 0 ;    contP[16]= 1.0 ;    contP[17]= 0 ;
+    contP[18]= 0.9999999999999987 ;    contP[19]= -0.9999999999999999 ;    contP[20]= 0 ;
+    contP[21]= 1.0000000000000004 ;    contP[22]= 0 ;    contP[23]= 0 ;
+    contP[24]= 0.9999999999999999 ;    contP[25]= 0.9999999999999999 ;    contP[26]= 0 ;
+
+    std::vector<double> UVector(ncont + p + 1);
+    double* U = &UVector[0];
+    std::vector<double> VVector(ncont + p + 1);
+    double* V = &VVector[0]; 
+    std::vector<double> WVector(ncont + p + 1);
+    double* W = &WVector[0]; 
+    double u = 0.5, v = 0.5, w = 0.5;
+    APPROXIMATION::knots(ncont,p,true,U);
+    APPROXIMATION::knots(ncont,p,true,V);
+    APPROXIMATION::knots(ncont,p,true,W);
+
+    Eigen::MatrixXd gradientMxM(2,2);
+
+    APPROXIMATION::get_gradient(p,ncont,contP,U,u,V,v,W,w,true,gradientMxM);
+    gradTest[0]= 2.0000000000000013 ;
+    gradTest[1]= -1.970645868709653e-15 ;
+    gradTest[2]= -2.4702462297909733e-15 ;
+    gradTest[3]= 2.000000000000006 ;
+
+
+
+    for(int i=0 ; i<2 ; ++i){    
+        for(int j=0 ; j<2 ; ++j){        
+            TEST_ASSERT(abs(gradientMxM(i,j)-gradTest[2*i+j])<tolerance);     
+        }
+    }
+    APPROXIMATION::get_gradient(p,ncont,contP,U,u,V,v,W,w,true,gradientMxM);
+    gradTest[0]= 2.0;
+    gradTest[1]= 0 ;
+    gradTest[2]= 0 ;
+    gradTest[3]= 0.0 ;
+    gradTest[4]= 2.0 ;
+    gradTest[5]= 0 ;
+    gradTest[6]= 0 ;
+    gradTest[7]= 0 ;
+    gradTest[8]= 2.0 ;
+    Eigen::MatrixXd gradient3DMxM(3,3);
+    
+
+    contP3D[0]= -0.9999999999999998 ;    contP3D[1]= -1.000000000000005 ;    contP3D[2]= -1 ;
+    contP3D[3]= -1.0000000000000036 ;    contP3D[4]= 0.0 ;                   contP3D[5]= -1 ;
+    contP3D[6]= -1.0000000000000002 ;    contP3D[7]= 0.9999999999999991 ;    contP3D[8]= -1 ;
+    contP3D[9]= 0.0 ;                    contP3D[10]= -1.0000000000000102 ;  contP3D[11]= -1 ;
+    contP3D[12]= 0.0 ;                   contP3D[13]= 0 ;                    contP3D[14]= -1 ;
+    contP3D[15]= 0 ;                     contP3D[16]= 1.0 ;                  contP3D[17]= -1 ;
+    contP3D[18]= 0.9999999999999987 ;    contP3D[19]= -0.9999999999999999 ;  contP3D[20]= -1 ;
+    contP3D[21]= 1.0000000000000004 ;    contP3D[22]= 0 ;                    contP3D[23]= -1 ;
+    contP3D[24]= 0.9999999999999999 ;    contP3D[25]= 0.9999999999999999 ;   contP3D[26]= -1 ; 
+    int offset = 27;
+    contP3D[0+offset]= -0.9999999999999998 ;    contP3D[1+offset]= -1.000000000000005 ;    contP3D[2+offset] = 0 ;
+    contP3D[3+offset]= -1.0000000000000036 ;    contP3D[4+offset]= 0.0 ;                   contP3D[5+offset] = 0 ;
+    contP3D[6+offset]= -1.0000000000000002 ;    contP3D[7+offset]= 0.9999999999999991 ;    contP3D[8+offset] = 0 ;
+    contP3D[9+offset]= 0.0 ;                    contP3D[10+offset]= -1.0000000000000102 ;  contP3D[11+offset]= 0 ;
+    contP3D[12+offset]= 0.0 ;                   contP3D[13+offset]= 0 ;                    contP3D[14+offset]= 0 ;
+    contP3D[15+offset]= 0 ;                     contP3D[16+offset]= 1.0 ;                  contP3D[17+offset]= 0 ;
+    contP3D[18+offset]= 0.9999999999999987 ;    contP3D[19+offset]= -0.9999999999999999 ;  contP3D[20+offset]= 0 ;
+    contP3D[21+offset]= 1.0000000000000004 ;    contP3D[22+offset]= 0 ;                    contP3D[23+offset]= 0 ;
+    contP3D[24+offset]= 0.9999999999999999 ;    contP3D[25+offset]= 0.9999999999999999 ;   contP3D[26+offset]= 0 ;  
+    offset += 27;    
+    contP3D[0+offset]= -0.9999999999999998 ;    contP3D[1+offset]= -1.000000000000005 ;    contP3D[2+offset] = 1 ;
+    contP3D[3+offset]= -1.0000000000000036 ;    contP3D[4+offset]= 0.0 ;                   contP3D[5+offset] = 1 ;
+    contP3D[6+offset]= -1.0000000000000002 ;    contP3D[7+offset]= 0.9999999999999991 ;    contP3D[8+offset] = 1 ;
+    contP3D[9+offset]= 0.0 ;                    contP3D[10+offset]= -1.0000000000000102 ;  contP3D[11+offset]= 1 ;
+    contP3D[12+offset]= 0.0 ;                   contP3D[13+offset]= 0 ;                    contP3D[14+offset]= 1 ;
+    contP3D[15+offset]= 0 ;                     contP3D[16+offset]= 1.0 ;                  contP3D[17+offset]= 1 ;
+    contP3D[18+offset]= 0.9999999999999987 ;    contP3D[19+offset]= -0.9999999999999999 ;  contP3D[20+offset]= 1 ;
+    contP3D[21+offset]= 1.0000000000000004 ;    contP3D[22+offset]= 0 ;                    contP3D[23+offset]= 1 ;
+    contP3D[24+offset]= 0.9999999999999999 ;    contP3D[25+offset]= 0.9999999999999999 ;   contP3D[26+offset]= 1 ;  
+
+    APPROXIMATION::get_gradient(p,ncont,contP3D,U,u,V,v,W,w,false,gradient3DMxM);
+
+
+    for(int i=0 ; i<3 ; ++i){    
+        for(int j=0 ; j<3 ; ++j){        
+            //TEST_ASSERT(abs(jacobian[i+iID*PeridigmNS::dof()*PeridigmNS::dof()]-jacobianTest[i])<tolerance);  
+           // TEST_FLOATING_EQUALITY(gradient3DMxM(i,j),gradTest[3*i+j],tolerance);  
+           // TEST_ASSERT(abs(gradient3DMxM(i,j)-gradTest[3*i+j])<tolerance);  
+        }
+    }
+}
+
+TEUCHOS_UNIT_TEST(approximation, get_jacobian) {
+   /*  
+    create_approximation
+        const int node,
+        const int nneighbors,
+        const int* neighborhoodlist,
+        const double* coordinates,
+        const int num_control_points,
+        const int degree,
+        const bool twoD,
+        double* AMatrix
+    */
+
+    const double tolerance = 4.0e-10;
+   
+    int p = 2;
+    // lengths are hard coded to avoid warnings
+    int ncont = 3;
+    double *jacobian;
+    jacobian = new double[2 * PeridigmNS::dof() * PeridigmNS::dof()];
+    double jacobianTest[18];
+    double *contP;
+    contP = new double[ncont * ncont * PeridigmNS::dof()];
+
+    contP[0]= -0.9999999999999998 ;
+    contP[1]= -1.000000000000005 ;
+    contP[2]= 0 ;
+    contP[3]= -1.0000000000000036 ;
+    contP[4]= 0.0 ;
+    contP[5]= 0 ;
+    contP[6]= -1.0000000000000002 ;
+    contP[7]= 0.9999999999999991 ;
+    contP[8]= 0 ;
+    contP[9]= 0.0 ;
+    contP[10]= -1.0000000000000102 ;
+    contP[11]= 0 ;
+    contP[12]= 0.0 ;
+    contP[13]= 0 ;
+    contP[14]= 0 ;
+    contP[15]= 0 ;
+    contP[16]= 1.0 ;
+    contP[17]= 0 ;
+    contP[18]= 0.9999999999999987 ;
+    contP[19]= -0.9999999999999999 ;
+    contP[20]= 0 ;
+    contP[21]= 1.0000000000000004 ;
+    contP[22]= 0 ;
+    contP[23]= 0 ;
+    contP[24]= 0.9999999999999999 ;
+    contP[25]= 0.9999999999999999 ;
+    contP[26]= 0 ;
+    std::vector<double> UVector(ncont + p + 1);
+    double* U = &UVector[0];
+    std::vector<double> VVector(ncont + p + 1);
+    double* V = &VVector[0]; 
+    std::vector<double> WVector(ncont + p + 1);
+    double* W = &WVector[0]; 
+    double u = 0.5, v = 0.5, w = 0.5;
+    APPROXIMATION::knots(ncont,p,true,U);
+    APPROXIMATION::knots(ncont,p,true,V);
+    APPROXIMATION::knots(ncont,p,true,W);
+
+    APPROXIMATION::get_jacobian(p,ncont,contP,U,u,V,v,W,w,true,jacobian);
+    jacobianTest[0]= 0.49999999999999967 ;
+    jacobianTest[1]= 4.926614671774113e-16 ;
+    jacobianTest[2]= 0 ;
+    jacobianTest[3]= 6.175615574477411e-16 ;
+    jacobianTest[4]= 0.49999999999999845 ;
+    jacobianTest[5]= 0 ;
+    jacobianTest[6]= 0 ;
+    jacobianTest[7]= 0 ;
+    jacobianTest[8]= 0 ;
+
+    // calculated with Python
+     
+    for(int i=0 ; i<PeridigmNS::dof()*PeridigmNS::dof() ; ++i){       
+            TEST_ASSERT(abs(jacobian[i]-jacobianTest[i])<tolerance);  
+        }
+    
+}
+
+TEUCHOS_UNIT_TEST(approximation, get_jacobians) {
    /*  
     create_approximation
         const int node,
@@ -866,80 +1077,91 @@ TEUCHOS_UNIT_TEST(approximation, get_control_points) {
     */
 
     const double tolerance = 4.0e-8;
-    
-    int nPoints = 25;
+
     int p = 2;
     // lengths are hard coded to avoid warnings
-    int nlist[50] = {24, 2, 3, 4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,24, 2, 3, 4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25};
     int ncont = 3;
-    int len = APPROXIMATION::get_field_size(2, nlist, nPoints,true);
+    
     double *contP;
     contP = new double[2 * ncont * ncont * PeridigmNS::dof()];
-    std::vector<double> AVector(len);
-    double* A = &AVector[0];
-    double contPTest[27];
-    double coor[3*26] =   {0,0,0,
-                           0,0,0,
-                          -1,  -1,0,
-                          -0.5,-1,0,
-                          0,   -1,0,
-                          0.5, -1,0,
-                          1,   -1,0,
-                          -1,  -0.5,0,
-                          -0.5,-0.5,0,
-                          0,   -0.5,0,
-                          0.5, -0.5,0,
-                          1,   -0.5,0,
-                          -1,  0,0,
-                          -0.5,0,0,
-                          0.5, 0,0,
-                          1,   0,0,
-                          -1,  0.5,0,
-                          -0.5,0.5,0,
-                          0,   0.5,0,
-                          0.5, 0.5,0,
-                          1,   0.5,0,
-                          -1,  1,0,
-                          -0.5,1,0,
-                          0,   1,0,
-                          0.5, 1,0,
-                          1,   1,0};
-    //APPROXIMATION::create_approximation(numNode,nPoints,nlist,coor,ncont,p,true,A);
-    APPROXIMATION::get_approximation(2, nlist,coor,ncont,p,true,A);
-    APPROXIMATION::get_control_points(2,nlist,ncont,coor,A,true,contP);
-   
-    contPTest[0]= -0.9999999999999998 ;
-    contPTest[1]= -1.000000000000005 ;
-    contPTest[2]= 0 ;
-    contPTest[3]= -1.0000000000000036 ;
-    contPTest[4]= 0.0 ;
-    contPTest[5]= 0 ;
-    contPTest[6]= -1.0000000000000002 ;
-    contPTest[7]= 0.9999999999999991 ;
-    contPTest[8]= 0 ;
-    contPTest[9]= 0.0 ;
-    contPTest[10]= -1.0000000000000102 ;
-    contPTest[11]= 0 ;
-    contPTest[12]= 0.0 ;
-    contPTest[13]= 0 ;
-    contPTest[14]= 0 ;
-    contPTest[15]= 0 ;
-    contPTest[16]= 1.0 ;
-    contPTest[17]= 0 ;
-    contPTest[18]= 0.9999999999999987 ;
-    contPTest[19]= -0.9999999999999999 ;
-    contPTest[20]= 0 ;
-    contPTest[21]= 1.0000000000000004 ;
-    contPTest[22]= 0 ;
-    contPTest[23]= 0 ;
-    contPTest[24]= 0.9999999999999999 ;
-    contPTest[25]= 0.9999999999999999 ;
-    contPTest[26]= 0 ;
+;
+    double *jacobian;
+    jacobian = new double[2 * PeridigmNS::dof() * PeridigmNS::dof()];
+    double jacobianTest[18];
+    
+
+    contP[0]= -0.9999999999999998 ;
+    contP[1]= -1.000000000000005 ;
+    contP[2]= 0 ;
+    contP[3]= -1.0000000000000036 ;
+    contP[4]= 0.0 ;
+    contP[5]= 0 ;
+    contP[6]= -1.0000000000000002 ;
+    contP[7]= 0.9999999999999991 ;
+    contP[8]= 0 ;
+    contP[9]= 0.0 ;
+    contP[10]= -1.0000000000000102 ;
+    contP[11]= 0 ;
+    contP[12]= 0.0 ;
+    contP[13]= 0 ;
+    contP[14]= 0 ;
+    contP[15]= 0 ;
+    contP[16]= 1.0 ;
+    contP[17]= 0 ;
+    contP[18]= 0.9999999999999987 ;
+    contP[19]= -0.9999999999999999 ;
+    contP[20]= 0 ;
+    contP[21]= 1.0000000000000004 ;
+    contP[22]= 0 ;
+    contP[23]= 0 ;
+    contP[24]= 0.9999999999999999 ;
+    contP[25]= 0.9999999999999999 ;
+    contP[26]= 0 ;
+    contP[0+27]= -0.9999999999999998 ;
+    contP[1+27]= -1.000000000000005 ;
+    contP[2+27]= 0 ;
+    contP[3+27]= -1.0000000000000036 ;
+    contP[4+27]= 0.0 ;
+    contP[5+27]= 0 ;
+    contP[6+27]= -1.0000000000000002 ;
+    contP[7+27]= 0.9999999999999991 ;
+    contP[8+27]= 0 ;
+    contP[9+27]= 0.0 ;
+    contP[10+27]= -1.0000000000000102 ;
+    contP[11+27]= 0 ;
+    contP[12+27]= 0.0 ;
+    contP[13+27]= 0 ;
+    contP[14+27]= 0 ;
+    contP[15+27]= 0 ;
+    contP[16+27]= 1.0 ;
+    contP[17+27]= 0 ;
+    contP[18+27]= 0.9999999999999987 ;
+    contP[19+27]= -0.9999999999999999 ;
+    contP[20+27]= 0 ;
+    contP[21+27]= 1.0000000000000004 ;
+    contP[22+27]= 0 ;
+    contP[23+27]= 0 ;
+    contP[24+27]= 0.9999999999999999 ;
+    contP[25+27]= 0.9999999999999999 ;
+    contP[26+27]= 0 ;
+
+
+    APPROXIMATION::get_jacobians(2,contP,ncont,p,true,jacobian);
+    jacobianTest[0]= 0.49999999999999967 ;
+    jacobianTest[1]= 4.926614671774113e-16 ;
+    jacobianTest[2]= 0 ;
+    jacobianTest[3]= 6.175615574477411e-16 ;
+    jacobianTest[4]= 0.49999999999999845 ;
+    jacobianTest[5]= 0 ;
+    jacobianTest[6]= 0 ;
+    jacobianTest[7]= 0 ;
+    jacobianTest[8]= 0 ;
 
     // calculated with Python
+    int temp = PeridigmNS::dof()*PeridigmNS::dof();
     for(int iID=0 ; iID<2 ; ++iID){    
-        for(int i=0 ; i<ncont*ncont*PeridigmNS::dof() ; ++i){       
-                TEST_ASSERT(abs(contP[i+iID*ncont*ncont*PeridigmNS::dof()]-contPTest[i])<tolerance);  
+        for(int i=0 ; i<temp ; ++i){    
+                TEST_ASSERT(abs(jacobian[i+iID*temp]-jacobianTest[i])<tolerance);  
             }
     }
 }

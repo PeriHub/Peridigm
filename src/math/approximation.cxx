@@ -28,10 +28,10 @@ double deriv_basis_func(
         i (int): Index of the basis function to compute.
         p (int): Degree of the basis functions.
         U (ndarray): Knot vector.
-        u (float): Point to evaluate the basis function at.
+        u (double): Point to evaluate the basis function at.
         
         Returns:
-        float: The value of the ith NURBS basis function at u.
+        double: The value of the ith NURBS basis function at u.
         */
                     
        // dev comment
@@ -39,14 +39,19 @@ double deriv_basis_func(
        //
         double denom1 = U[i+p] - U[i];
         double denom2 = U[i+p+1] - U[i+1];
-        double term1, term2;
+        double numer1 = p;
+        double numer2 = p;
 
-        if (denom1 == 0.0) term1 = 0.0;
-        else term1 = p/denom1 * basis_func(i, p-1, U, u);
-        if (denom2 == 0.0) term2 = 0.0;
-        else term2 = p/denom2 * basis_func(i+1, p-1, U, u);
-        
-        return term1 - term2;    
+        double term1 = 0.0;
+        if (denom1 != 0.0) {
+            term1 = numer1/denom1 * basis_func(i, p-1, U, u);
+        }
+        double term2 = 0.0;
+        if (denom2 != 0.0) {
+            term2 = numer2/denom2 * basis_func(i+1, p-1, U, u);
+        }
+
+        return term1 - term2;  
 
     }
 
@@ -64,7 +69,7 @@ double  basis_func(
         i (int): Index of the basis function to compute.
         p (int): Degree of the basis functions.
         U (ndarray): Knot vector.
-        u (float): Point to evaluate the basis function at.
+        u (double): Point to evaluate the basis function at.
         
         Returns:
         double: The value of the ith NURBS basis function at u.
@@ -107,12 +112,12 @@ void knots(
         if (inter){
             int n = 0;
             for(int i=0 ; i<degree ; ++i,++n)knots[n] = 0; 
-            for(int i=0 ; i<num_knots-2*degree-1 ; ++i,++n)knots[n] = float(i) / (num_knots - 2*degree - 1); 
+            for(int i=0 ; i<num_knots-2*degree-1 ; ++i,++n)knots[n] = double(i) / (num_knots - 2*degree - 1); 
             for(int i=0 ; i<degree+1 ; ++i,++n)knots[n] = 1; 
         }
         else{
             for(int i=0 ; i<num_knots ; ++i){
-                knots[i] = float(i) /  (num_knots - 1); 
+                knots[i] = double(i) /  (num_knots - 1); 
             }
         }
     }
@@ -191,8 +196,8 @@ void create_approximation(
     } 
 
     for(int pos=0 ; pos<nneighbors+1 ; ++pos){  
-        for(int i=0 ; i<num_control_points ; ++i){       
-            for(int j=0 ; j<num_control_points ; ++j){            
+        for(int j=0 ; j<num_control_points ; ++j){   
+            for(int i=0 ; i<num_control_points ; ++i){         
                 u = APPROXIMATION::get_sample_weighted(P[pos*dof2D],minVal[0],maxVal[0]);
                 v = APPROXIMATION::get_sample_weighted(P[pos*dof2D+1],minVal[1],maxVal[1]);
                 A(i*num_control_points+j,pos) = basis_func(i,degree,U,u)*basis_func(j,degree,V,v);       
@@ -269,13 +274,11 @@ int get_field_size(
         APPROXIMATION::knots(num_control_points,degree,true,V);
         APPROXIMATION::knots(num_control_points,degree,true,W);
 
-        int offset = num_control_points * num_control_points;
+        int offset = num_control_points * num_control_points * dof;
         if (twoD == false) offset *= num_control_points;
 
         for(int iID=0 ; iID<nnodes ; ++iID){
      
-            MATRICES::setToZero(jacobians,dof*dof);
-            
             APPROXIMATION::get_jacobian(degree,num_control_points,contP,U,u,V,v,W,w,twoD,jacobians);
             jacobians += dof*dof;
             contP += offset;
@@ -411,10 +414,11 @@ int get_field_size(
         double* jacobian
     )
     {   
+
         int len = 3;
         if (twoD)len = 2;
         int dof = PeridigmNS::dof();
-        
+        MATRICES::setToZero(jacobian,dof*dof);
         Eigen::MatrixXd gradientMxM(len,len);
         Eigen::MatrixXd jacobianMxM(len,len);
         APPROXIMATION::get_gradient(p,num_control_points,contP,U,u,V,v,W,w,twoD,gradientMxM);
@@ -441,33 +445,46 @@ int get_field_size(
         MatrixXd& gradientMxM
     )
     {
-
+    int dof = PeridigmNS::dof();
     if (twoD){
-        for(int i=0 ; i<num_control_points ; ++i){
+        gradientMxM(0,0) = 0.0;
+        gradientMxM(0,1) = 0.0;
+        gradientMxM(1,0) = 0.0;
+        gradientMxM(1,1) = 0.0;
+        for(int i=0 ; i<num_control_points ; ++i){  
             for(int j=0 ; j<num_control_points ; ++j){
                 int pos = i*num_control_points+j;
-                gradientMxM(0,0)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*contP[2*pos];
-                gradientMxM(0,1)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*contP[2*pos+1];
-                gradientMxM(1,0)+=APPROXIMATION::basis_func(i,p,U,u)*APPROXIMATION::deriv_basis_func(j,p,V,v)*contP[2*pos];
-                gradientMxM(1,1)+=APPROXIMATION::basis_func(i,p,U,u)*APPROXIMATION::deriv_basis_func(j,p,V,v)*contP[2*pos+1];
-                   
+                gradientMxM(0,0)+=deriv_basis_func(i,p,U,u)*basis_func(j,p,V,v)*contP[dof*pos];
+                gradientMxM(0,1)+=deriv_basis_func(i,p,U,u)*basis_func(j,p,V,v)*contP[dof*pos+1];
+                gradientMxM(1,0)+=basis_func(i,p,U,u)*deriv_basis_func(j,p,V,v)*contP[dof*pos];
+                gradientMxM(1,1)+=basis_func(i,p,U,u)*deriv_basis_func(j,p,V,v)*contP[dof*pos+1];
             }
         }
     }
     else{
-        for(int i=0 ; i<num_control_points ; ++i){
+        gradientMxM(0,0) = 0.0;
+        gradientMxM(0,1) = 0.0;
+        gradientMxM(0,1) = 0.0;
+        gradientMxM(1,0) = 0.0;
+        gradientMxM(1,1) = 0.0;
+        gradientMxM(1,1) = 0.0;
+        gradientMxM(2,0) = 0.0;
+        gradientMxM(2,1) = 0.0;
+        gradientMxM(2,1) = 0.0;
+        for(int k=0 ; k<num_control_points ; ++k){
             for(int j=0 ; j<num_control_points ; ++j){
-                for(int k=0 ; k<num_control_points ; ++k){
-                    int pos = i*num_control_points*num_control_points + j * num_control_points + k;
-                    gradientMxM(0,0)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*APPROXIMATION::basis_func(j,p,W,w)*contP[3*pos];
-                    gradientMxM(0,1)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*APPROXIMATION::basis_func(j,p,W,w)*contP[3*pos + 1];
-                    gradientMxM(0,1)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*APPROXIMATION::basis_func(j,p,W,w)*contP[3*pos + 2];
-                    gradientMxM(1,0)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*APPROXIMATION::basis_func(j,p,W,w)*contP[3*pos];
-                    gradientMxM(1,1)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*APPROXIMATION::basis_func(j,p,W,w)*contP[3*pos + 1];
-                    gradientMxM(1,1)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*APPROXIMATION::basis_func(j,p,W,w)*contP[3*pos + 2];
-                    gradientMxM(2,0)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*APPROXIMATION::basis_func(j,p,W,w)*contP[3*pos];
-                    gradientMxM(2,1)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*APPROXIMATION::basis_func(j,p,W,w)*contP[3*pos + 1];
-                    gradientMxM(2,1)+=APPROXIMATION::deriv_basis_func(i,p,U,u)*APPROXIMATION::basis_func(j,p,V,v)*APPROXIMATION::basis_func(j,p,W,w)*contP[3*pos + 2];
+                for(int i=0 ; i<num_control_points ; ++i){
+                    int pos = k*num_control_points*num_control_points + j*num_control_points + i;
+                    
+                    gradientMxM(0,0)+=deriv_basis_func(i,p,U,u)*basis_func(j,p,V,v)*basis_func(k,p,W,w)*contP[dof*pos];
+                    gradientMxM(0,1)+=deriv_basis_func(i,p,U,u)*basis_func(j,p,V,v)*basis_func(k,p,W,w)*contP[dof*pos + 1];
+                    gradientMxM(0,1)+=deriv_basis_func(i,p,U,u)*basis_func(j,p,V,v)*basis_func(k,p,W,w)*contP[dof*pos + 2];
+                    gradientMxM(1,0)+=basis_func(i,p,U,u)*deriv_basis_func(j,p,V,v)*basis_func(k,p,W,w)*contP[dof*pos];
+                    gradientMxM(1,1)+=basis_func(i,p,U,u)*deriv_basis_func(j,p,V,v)*basis_func(k,p,W,w)*contP[dof*pos + 1];
+                    gradientMxM(1,1)+=basis_func(i,p,U,u)*deriv_basis_func(j,p,V,v)*basis_func(k,p,W,w)*contP[dof*pos + 2];
+                    gradientMxM(2,0)+=basis_func(i,p,U,u)*basis_func(j,p,V,v)*deriv_basis_func(k,p,W,w)*contP[dof*pos];
+                    gradientMxM(2,1)+=basis_func(i,p,U,u)*basis_func(j,p,V,v)*deriv_basis_func(k,p,W,w)*contP[dof*pos + 1];
+                    gradientMxM(2,1)+=basis_func(i,p,U,u)*basis_func(j,p,V,v)*deriv_basis_func(k,p,W,w)*contP[dof*pos + 2];
                     }
                 }
             }
