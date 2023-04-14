@@ -447,10 +447,8 @@ int get_field_size(
     {
     int dof = PeridigmNS::dof();
     if (twoD){
-        gradientMxM(0,0) = 0.0;
-        gradientMxM(0,1) = 0.0;
-        gradientMxM(1,0) = 0.0;
-        gradientMxM(1,1) = 0.0;
+        gradientMxM(0,0) = 0.0; gradientMxM(0,1) = 0.0;
+        gradientMxM(1,0) = 0.0; gradientMxM(1,1) = 0.0;
         for(int i=0 ; i<num_control_points ; ++i){  
             for(int j=0 ; j<num_control_points ; ++j){
                 int pos = i*num_control_points+j;
@@ -461,30 +459,22 @@ int get_field_size(
             }
         }
     }
-    else{
-        gradientMxM(0,0) = 0.0;
-        gradientMxM(0,1) = 0.0;
-        gradientMxM(0,1) = 0.0;
-        gradientMxM(1,0) = 0.0;
-        gradientMxM(1,1) = 0.0;
-        gradientMxM(1,1) = 0.0;
-        gradientMxM(2,0) = 0.0;
-        gradientMxM(2,1) = 0.0;
-        gradientMxM(2,1) = 0.0;
+    if (!twoD){
+        gradientMxM(0,0) = 0.0; gradientMxM(0,1) = 0.0; gradientMxM(0,2) = 0.0;
+        gradientMxM(1,0) = 0.0; gradientMxM(1,1) = 0.0; gradientMxM(1,2) = 0.0;
+        gradientMxM(2,0) = 0.0; gradientMxM(2,1) = 0.0; gradientMxM(2,2) = 0.0;
+
         for(int k=0 ; k<num_control_points ; ++k){
             for(int j=0 ; j<num_control_points ; ++j){
                 for(int i=0 ; i<num_control_points ; ++i){
-                    int pos = k*num_control_points*num_control_points + j*num_control_points + i;
+                    int pos = i*num_control_points*num_control_points + j*num_control_points + k;
                     
-                    gradientMxM(0,0)+=deriv_basis_func(i,p,U,u)*basis_func(j,p,V,v)*basis_func(k,p,W,w)*contP[dof*pos];
-                    gradientMxM(0,1)+=deriv_basis_func(i,p,U,u)*basis_func(j,p,V,v)*basis_func(k,p,W,w)*contP[dof*pos + 1];
-                    gradientMxM(0,1)+=deriv_basis_func(i,p,U,u)*basis_func(j,p,V,v)*basis_func(k,p,W,w)*contP[dof*pos + 2];
-                    gradientMxM(1,0)+=basis_func(i,p,U,u)*deriv_basis_func(j,p,V,v)*basis_func(k,p,W,w)*contP[dof*pos];
-                    gradientMxM(1,1)+=basis_func(i,p,U,u)*deriv_basis_func(j,p,V,v)*basis_func(k,p,W,w)*contP[dof*pos + 1];
-                    gradientMxM(1,1)+=basis_func(i,p,U,u)*deriv_basis_func(j,p,V,v)*basis_func(k,p,W,w)*contP[dof*pos + 2];
-                    gradientMxM(2,0)+=basis_func(i,p,U,u)*basis_func(j,p,V,v)*deriv_basis_func(k,p,W,w)*contP[dof*pos];
-                    gradientMxM(2,1)+=basis_func(i,p,U,u)*basis_func(j,p,V,v)*deriv_basis_func(k,p,W,w)*contP[dof*pos + 1];
-                    gradientMxM(2,1)+=basis_func(i,p,U,u)*basis_func(j,p,V,v)*deriv_basis_func(k,p,W,w)*contP[dof*pos + 2];
+                    for(int l=0 ; l<dof ; ++l){ 
+                        gradientMxM(0,l)+=deriv_basis_func(i,p,U,u)*basis_func(j,p,V,v)*basis_func(k,p,W,w)*contP[dof*pos+l];
+                        gradientMxM(1,l)+=basis_func(i,p,U,u)*deriv_basis_func(j,p,V,v)*basis_func(k,p,W,w)*contP[dof*pos+l];
+                        gradientMxM(2,l)+=basis_func(i,p,U,u)*basis_func(j,p,V,v)*deriv_basis_func(k,p,W,w)*contP[dof*pos+l];
+                    
+                        }
                     }
                 }
             }
