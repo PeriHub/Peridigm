@@ -456,13 +456,13 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                                                  numOwnedPoints,
                                                                                  m_plane,
                                                                                  detachedNodes);
-  }
+ 
   string shapeTensorErrorMessage =
       "**** Error:  CorrespondenceMaterial::computeForce() failed to compute shape tensor.\n";
   shapeTensorErrorMessage +=
       "****         Note that all nodes must have a minimum of three neighbors.  Is the horizon too small?\n";
   TEUCHOS_TEST_FOR_TERMINATION(shapeTensorReturnCode != 0, shapeTensorErrorMessage);
-
+ }
   double *unrotatedRateOfDeformation;
   dataManager.getData(m_unrotatedRateOfDeformationFieldId, PeridigmField::STEP_NONE)->ExtractView(&unrotatedRateOfDeformation);
 
