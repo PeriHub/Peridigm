@@ -1173,7 +1173,75 @@ TEUCHOS_UNIT_TEST(approximation, get_jacobians) {
             }
     }
 }
+TEUCHOS_UNIT_TEST(approximation, get_deformation_gradient) {
+   /*  
+    create_approximation
+        const int node,
+        const int nneighbors,
+        const int* neighborhoodlist,
+        const double* coordinates,
+        const int num_control_points,
+        const int degree,
+        const bool twoD,
+        double* AMatrix
+    */
 
+    const double tolerance = 4.0e-10;
+   
+    int p = 2;
+    // lengths are hard coded to avoid warnings
+    int ncont = 3;
+    double *jacobian;
+    jacobian = new double[2*PeridigmNS::dof() * PeridigmNS::dof()];
+    double defGradTest[18];
+    double *contP;
+    contP = new double[2*ncont * ncont * PeridigmNS::dof()];
+    double *defGrad;
+    defGrad = new double[2*PeridigmNS::dof() * PeridigmNS::dof()];
+
+    
+    jacobian[0]= 0.5 ;    jacobian[1]= 0 ;    jacobian[2]= 0 ;
+    jacobian[3]= 0 ;      jacobian[4]= 0.5 ;  jacobian[5]= 0 ;
+    jacobian[6]= 0 ;      jacobian[7]= 0 ;    jacobian[8]= 0 ;
+    jacobian[9]= 0.5 ;    jacobian[10]= 0 ;   jacobian[11]= 0 ;
+    jacobian[12]= 0 ;     jacobian[13]= 0.5 ; jacobian[14]= 0 ;
+    jacobian[15]= 0 ;     jacobian[16]= 0 ;   jacobian[17]= 0 ;
+    contP[0]= -0.9999999999999998 ;    contP[1]= -1.000000000000005 ;    contP[2]= 0 ;
+    contP[3]= -1.0000000000000036 ;    contP[4]= 0.0 ;    contP[5]= 0 ;
+    contP[6]= -1.0000000000000002 ;    contP[7]= 0.9999999999999991 ;    contP[8]= 0 ;
+    contP[9]= 0.0 ;    contP[10]= -1.0000000000000102 ;    contP[11]= 0 ;
+    contP[12]= 0.0 ;    contP[13]= 0 ;    contP[14]= 0 ;
+    contP[15]= 0 ;    contP[16]= 1.0 ;    contP[17]= 0 ;
+    contP[18]= 0.9999999999999987 ;    contP[19]= -0.9999999999999999 ;    contP[20]= 0 ;
+    contP[21]= 1.0000000000000004 ;    contP[22]= 0 ;    contP[23]= 0 ;
+    contP[24]= 0.9999999999999999 ;    contP[25]= 0.9999999999999999 ;    contP[26]= 0 ;
+    int offset = 27;
+    contP[offset+0]= -1.0 ;    contP[offset+1]= -1.1 ;  contP[offset+2]= 0 ;
+    contP[offset+3]= -1.0 ;    contP[offset+4]= 0.0 ;   contP[offset+5]= 0 ;
+    contP[offset+6]= -1.0 ;    contP[offset+7]= 1.1 ;   contP[offset+8]= 0 ;
+    contP[offset+9]= 0.0 ;     contP[offset+10]= -1.1 ; contP[offset+11]= 0 ;
+    contP[offset+12]= 0.0 ;    contP[offset+13]= 0 ;    contP[offset+14]= 0 ;
+    contP[offset+15]= 0 ;      contP[offset+16]= 1.1 ;  contP[offset+17]= 0 ;
+    contP[offset+18]= 1.0 ;    contP[offset+19]= -1.1 ; contP[offset+20]= 0 ;
+    contP[offset+21]= 1.0 ;    contP[offset+22]= 0 ;    contP[offset+23]= 0 ;
+    contP[offset+24]= 1.0 ;    contP[offset+25]= 1.1 ;  contP[offset+26]= 0 ;
+
+    defGradTest[0]=1;    defGradTest[1]=0;    defGradTest[2]=0;
+    defGradTest[3]=0;    defGradTest[4]=1;    defGradTest[5]=0;
+    defGradTest[8]=0;    defGradTest[7]=0;    defGradTest[8]=0;
+    defGradTest[9]=1.0;    defGradTest[10]=0;    defGradTest[12]=0;
+    defGradTest[12]=0;      defGradTest[13]=1.1;  defGradTest[15]=0;
+    defGradTest[15]=0;      defGradTest[16]=0;    defGradTest[17]=0;
+    
+    APPROXIMATION::get_deformation_gradient(2,contP,ncont,p,true,jacobian,defGrad);
+
+
+
+    for(int i=0 ; i<2*PeridigmNS::dof()*PeridigmNS::dof() ; ++i){       
+            TEST_ASSERT(abs(defGrad[i]-defGradTest[i])<tolerance);  
+        }
+
+}
 
 int main
 (int argc, char* argv[])

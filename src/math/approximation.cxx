@@ -370,8 +370,8 @@ void get_deformation_gradient(
             -> u, v, w = 0.5; 
             - this is valid for typical horizon designs
         */
-        int len = num_control_points * num_control_points;
-        if (!twoD) len *= num_control_points;
+        int len = 2;
+        if (!twoD) len = 3;
         int dof = PeridigmNS::dof();
         std::vector<double> UVector(num_control_points + degree + 1);
         double* U = &UVector[0];
@@ -394,16 +394,19 @@ void get_deformation_gradient(
             Eigen::MatrixXd gradientMxM(len,len);
             Eigen::MatrixXd jacobianMxM(len,len);
             Eigen::MatrixXd defGradMxM(len,len);
-            APPROXIMATION::get_gradient(degree,num_control_points,contP,U,u,V,v,W,w,twoD,gradientMxM);
+            MATRICES::setToZero(defGrad,dof*dof);
             for(int i=0 ; i<len ; ++i){
                 for(int j=0 ; j<len ; ++j){
-                    jacobianMxM(i,j) = jacobians[i*len + j];
+                    jacobianMxM(i,j) = jacobians[i*dof + j];
+                    defGradMxM(i,j) = 0.0;
                 }
             }
+            APPROXIMATION::get_gradient(degree,num_control_points,contP,U,u,V,v,W,w,twoD,gradientMxM);
+
             defGradMxM = gradientMxM * jacobianMxM;
             for(int i=0 ; i<len ; ++i){
                 for(int j=0 ; j<len ; ++j){
-                    defGrad[i*len + j] = defGradMxM(i,j);
+                    defGrad[i*dof + j] = defGradMxM(i,j);
                 }
             }
             jacobians += dof*dof;
@@ -422,7 +425,9 @@ void get_deformation_gradient(
         const double* jacobian,
         double* gradient
     ){
-
+        
+        std::cout<<"u"<<std::endl;
+        int dof = PeridigmNS::dof();
         std::vector<double> UVector(num_control_points + p + 1);
         double* U = &UVector[0];
         std::vector<double> VVector(num_control_points + p + 1);
@@ -438,21 +443,20 @@ void get_deformation_gradient(
         int len = 3;
         if (twoD)len = 2;
         
-        
         Eigen::MatrixXd gradientMxM(len,len);
         Eigen::MatrixXd jacobianMxM(len,len);
         Eigen::MatrixXd localgradientMxM(len,len);
         APPROXIMATION::get_gradient(p,num_control_points,contP,U,u,V,v,W,w,twoD,gradientMxM);
         for(int i=0 ; i<len ; ++i){
             for(int j=0 ; j<len ; ++j){
-                jacobianMxM(i,j) = jacobian[i*len + j];
+                jacobianMxM(i,j) = jacobian[i*dof + j];
             }
         }
         
         localgradientMxM = gradientMxM * jacobianMxM;
         for(int i=0 ; i<len ; ++i){
             for(int j=0 ; j<len ; ++j){
-               gradient[i*len + j] = localgradientMxM(i,j);
+               gradient[i*dof + j] = localgradientMxM(i,j);
             }
         } 
 
