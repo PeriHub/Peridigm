@@ -58,7 +58,15 @@ double get_sample_weighted(
     const double minVal,
     const double maxVal
     );
-
+void get_deformation_gradient(
+        const int nnodes,
+        const double* contP,
+        const int num_control_points,
+        const int degree,
+        const bool twoD,
+        const double* jacobians,    
+        double* defGrad
+    );
 void get_approximation(
     const int nnodes,
     const int* neighborhoodList,

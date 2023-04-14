@@ -73,7 +73,8 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
       m_unrotatedCauchyStressPlasticFieldId(-1),
       m_partialStressFieldId(-1),
       m_hourglassStiffId(-1),
-      m_thermalFlowStateFieldId(-1)
+      m_thermalFlowStateFieldId(-1),
+      m_jacobianId(-1)
 {
 
   //! \todo Add meaningful asserts on material properties.
@@ -116,6 +117,15 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   //     m_plast = true; // does not work. we have to check
   //
   // }
+ m_approximation = false; 
+ if (params.isParameter("B-Spline Approximation")){
+    m_approximation = params.get<bool>("B-Spline Approximation");
+    if (m_approximation){
+      m_num_control_points = params.get<int>("Control Points");
+      m_degree = params.get<int>("Degree");
+      if (m_num_control_points<m_degree+1)m_num_control_points = m_degree+1;
+    }
+  }
  if (params.isParameter("Thermal Bond Based"))
     m_bondbased = params.get<bool>("Thermal Bond Based");
   
@@ -236,7 +246,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     m_fieldIds.push_back(m_temperatureFieldId);
   }
   m_thermalFlowStateFieldId          = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Flux_Divergence"); // reuse of the field
-  
+  m_jacobianId = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::FULL_TENSOR,      PeridigmField::CONSTANT, "Jacobian_Matrix");
   m_fieldIds.push_back(m_thermalFlowStateFieldId); 
   m_fieldIds.push_back(m_horizonFieldId);
   m_fieldIds.push_back(m_volumeFieldId);
@@ -264,6 +274,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_fieldIds.push_back(m_hourglassStiffId);
   m_fieldIds.push_back(m_modelAnglesId);
   m_fieldIds.push_back(m_modelOrientationId);
+  m_fieldIds.push_back(m_jacobianId);
 
 }
 
@@ -321,7 +332,7 @@ void PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   double *shapeTensorInverse;
   double *deformationGradient;
   double *bondDamageNP1;
-
+  double *jacobian;
   dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&volume);
   dataManager.getData(m_horizonFieldId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
 
@@ -331,6 +342,7 @@ void PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NP1)->ExtractView(&deformationGradient);
   dataManager.getData(m_unrotatedRateOfDeformationFieldId, PeridigmField::STEP_NONE)->PutScalar(0.0);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
+  dataManager.getData(m_jacobianId, PeridigmField::STEP_NONE)->ExtractView(&jacobian);
 
   int shapeTensorReturnCode = 0;
   shapeTensorReturnCode =
@@ -353,12 +365,23 @@ void PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   TEUCHOS_TEST_FOR_TERMINATION(shapeTensorReturnCode != 0, shapeTensorErrorMessage);
   
   
-  int len = APPROXIMATION::get_field_size(numOwnedPoints, neighborhoodList, num_control_points);
-  bool interpol = false;
-  delete approxMatrix;
-  approxMatrix = new double[len];
-  if (interpol)  APPROXIMATION::get_approximation(numOwnedPoints, neighborhoodList,modelCoordinates,num_control_points,degree,m_plane,approxMatrix);
-  //APPROXIMATION::create_approximation(numNode,nPoints,nlist,coor,ncont,p,true,A);
+  if (m_approximation){
+    int len = APPROXIMATION::get_field_size(numOwnedPoints, neighborhoodList, m_num_control_points, m_plane);
+    delete approxMatrix;
+    approxMatrix = new double[len];
+    
+    if (m_plane) len = m_num_control_points * m_num_control_points;
+    else len = m_num_control_points * m_num_control_points * m_num_control_points;
+    double *contP;
+    contP = new double[numOwnedPoints * len * PeridigmNS::dof()];
+    APPROXIMATION::get_approximation(numOwnedPoints, neighborhoodList,modelCoordinates,m_num_control_points,m_degree,m_plane,approxMatrix);
+    APPROXIMATION::get_control_points(numOwnedPoints,neighborhoodList,m_num_control_points,modelCoordinates,approxMatrix,m_plane,contP);
+    APPROXIMATION::get_jacobians(numOwnedPoints,contP,m_num_control_points,m_degree,m_plane,jacobian);
+
+    
+    // jacobian fehlt noch
+  }
+
 
 
   
@@ -404,8 +427,22 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   // to compute the Cauchy stress.
   // The inverse of the shape tensor is stored for later use after the Cauchy stress calculation
   
-  std::cout<<approxMatrix[3]<<std::endl; // test fuer datemübergabe -> funktioniert
+  
+  if (m_approximation){
+    double *jacobian;
+    dataManager.getData(m_jacobianId, PeridigmField::STEP_NONE)->ExtractView(&jacobian);
+    int len;
+    if (m_plane) len = m_num_control_points * m_num_control_points;
+    else len = m_num_control_points * m_num_control_points * m_num_control_points;
+    double *contPu;
+    contPu = new double[numOwnedPoints * len * PeridigmNS::dof()];
+    
+    APPROXIMATION::get_control_points(numOwnedPoints,neighborhoodList,m_num_control_points,coordinatesNP1,approxMatrix,m_plane,contPu);
+    APPROXIMATION::get_deformation_gradient(numOwnedPoints,contPu,m_num_control_points,m_degree,m_plane,jacobian,deformationGradient);
+    
 
+  }
+  else{
   int shapeTensorReturnCode = 0;
   shapeTensorReturnCode =
       CORRESPONDENCE::computeShapeTensorInverseAndApproximateDeformationGradient(volume,
@@ -419,7 +456,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                                                                  numOwnedPoints,
                                                                                  m_plane,
                                                                                  detachedNodes);
-
+  }
   string shapeTensorErrorMessage =
       "**** Error:  CorrespondenceMaterial::computeForce() failed to compute shape tensor.\n";
   shapeTensorErrorMessage +=

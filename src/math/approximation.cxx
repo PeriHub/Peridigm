@@ -297,7 +297,7 @@ int get_field_size(
     {
     const int *neighborListPtr = neighborhoodList;
     int nsquare = num_control_points * num_control_points;
-    if (twoD==false) nsquare *= num_control_points;
+    if (!twoD) nsquare *= num_control_points;
     int dof = PeridigmNS::dof();
 
     for(int iID=0 ; iID<nnodes ; ++iID){
@@ -355,6 +355,65 @@ int get_field_size(
             }
         }
     }
+void get_deformation_gradient(
+        const int nnodes,
+        const double* contP,
+        const int num_control_points,
+        const int degree,
+        const bool twoD,
+        const double* jacobians,    
+        double* defGrad
+    )
+    {
+        /*
+            calculates the jacobian in the center of the sphere
+            -> u, v, w = 0.5; 
+            - this is valid for typical horizon designs
+        */
+        int len = num_control_points * num_control_points;
+        if (!twoD) len *= num_control_points;
+        int dof = PeridigmNS::dof();
+        std::vector<double> UVector(num_control_points + degree + 1);
+        double* U = &UVector[0];
+        std::vector<double> VVector(num_control_points + degree + 1);
+        double* V = &VVector[0]; 
+        std::vector<double> WVector(num_control_points + degree + 1);
+        double* W = &WVector[0]; 
+        double u = 0.5;
+        double v = 0.5;
+        double w = 0.5;
+        
+        APPROXIMATION::knots(num_control_points,degree,true,U);
+        APPROXIMATION::knots(num_control_points,degree,true,V);
+        APPROXIMATION::knots(num_control_points,degree,true,W);
+
+        int offset = num_control_points * num_control_points * dof;
+        if (twoD == false) offset *= num_control_points;
+ 
+        for(int iID=0 ; iID<nnodes ; ++iID){
+            Eigen::MatrixXd gradientMxM(len,len);
+            Eigen::MatrixXd jacobianMxM(len,len);
+            Eigen::MatrixXd defGradMxM(len,len);
+            APPROXIMATION::get_gradient(degree,num_control_points,contP,U,u,V,v,W,w,twoD,gradientMxM);
+            for(int i=0 ; i<len ; ++i){
+                for(int j=0 ; j<len ; ++j){
+                    jacobianMxM(i,j) = jacobians[i*len + j];
+                }
+            }
+            defGradMxM = gradientMxM * jacobianMxM;
+            for(int i=0 ; i<len ; ++i){
+                for(int j=0 ; j<len ; ++j){
+                    defGrad[i*len + j] = defGradMxM(i,j);
+                }
+            }
+            jacobians += dof*dof;
+            defGrad += dof*dof;
+            contP += offset;
+        }
+
+    }
+
+
     void get_local_gradient(
         const int p,
         const int num_control_points,
