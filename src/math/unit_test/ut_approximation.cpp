@@ -904,19 +904,23 @@ TEUCHOS_UNIT_TEST(approximation, get_gradient) {
     double *gradientBSpline2D;
     gradientBSpline2D = new double[2 * ncont * ncont ];
     APPROXIMATION::get_gradient_functions(p,ncont,true,gradientBSpline2D);
-
-    Eigen::MatrixXd gradientMxM(2,2);
+    std::vector<double> gradientVector(9);
+    double *gradientMxM = &gradientVector[0];
     APPROXIMATION::get_gradient(gradientBSpline2D,ncont,contP,true,gradientMxM);
     gradTest[0]= 2.0000000000000013 ;
     gradTest[1]= -1.970645868709653e-15 ;
-    gradTest[2]= -2.4702462297909733e-15 ;
-    gradTest[3]= 2.000000000000006 ;
-
-
-
-    for(int i=0 ; i<2 ; ++i){    
-        for(int j=0 ; j<2 ; ++j){        
-            TEST_ASSERT(abs(gradientMxM(i,j)-gradTest[2*i+j])<tolerance);     
+    gradTest[2]= 0.0 ;
+    gradTest[3]= -2.4702462297909733e-15 ;
+    gradTest[4]= 2.000000000000006 ;
+    gradTest[5]= 0.0 ;
+    gradTest[6]= 0.0 ;
+    gradTest[7]= 0.0 ;
+    gradTest[8]= 0.0 ;
+    
+    for(int i=0 ; i<9 ; ++i){    
+        for(int j=0 ; j<9 ; ++j){        
+            TEST_ASSERT(abs(gradientMxM[i]-gradTest[i])<tolerance);
+            //TEST_FLOATING_EQUALITY(gradientMxM[i],gradTest[i],tolerance)
         }
     }
     
@@ -950,7 +954,9 @@ TEUCHOS_UNIT_TEST(approximation, get_gradient) {
     contP3D[18+offset]= 0.9999999999999987 ;    contP3D[19+offset]= -0.9999999999999999 ;  contP3D[20+offset]= 1 ;
     contP3D[21+offset]= 1.0000000000000004 ;    contP3D[22+offset]= 0 ;                    contP3D[23+offset]= 1 ;
     contP3D[24+offset]= 0.9999999999999999 ;    contP3D[25+offset]= 0.9999999999999999 ;   contP3D[26+offset]= 1 ;  
-    Eigen::MatrixXd gradient3DMxM(3,3);
+    std::vector<double> gradient3DVector(9);
+    double *gradient3DMxM = &gradient3DVector[0];
+    
     double *gradientBSpline3D;
     gradientBSpline3D = new double[3 * ncont * ncont * ncont ];
     APPROXIMATION::get_gradient_functions(p,ncont,false,gradientBSpline3D);
@@ -965,10 +971,10 @@ TEUCHOS_UNIT_TEST(approximation, get_gradient) {
     gradTest[7]= 0.0 ;
     gradTest[8]= 2.0 ;
 
-    for(int i=0 ; i<3 ; ++i){    
-        for(int j=0 ; j<3 ; ++j){        
-            TEST_ASSERT(abs(gradient3DMxM(i,j)-gradTest[3*i+j])<tolerance);  
-        }
+    for(int i=0 ; i<9 ; ++i){    
+                
+        TEST_ASSERT(abs(gradient3DMxM[i]-gradTest[i])<tolerance);  
+        
     }
 
  
@@ -1044,6 +1050,7 @@ TEUCHOS_UNIT_TEST(approximation, get_jacobian) {
      
     for(int i=0 ; i<PeridigmNS::dof()*PeridigmNS::dof() ; ++i){       
             TEST_ASSERT(abs(jacobian[i]-jacobianTest[i])<tolerance);  
+           // TEST_FLOATING_EQUALITY(jacobian[i],jacobianTest[i],tolerance)
         }
     
 }

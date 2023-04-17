@@ -129,7 +129,7 @@ void get_gradient(
     //const double* W,
     //const double w,
     const bool twoD,
-    MatrixXd& gradientMxM
+    double* gradient
     );
 void get_local_gradient(
     const int p,

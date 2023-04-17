@@ -361,33 +361,18 @@ void get_deformation_gradient(
             -> u, v, w = 0.5; 
             - this is valid for typical horizon designs
         */
-        int len = 2;
-        if (!twoD) len = 3;
         int dof = PeridigmNS::dof();
-
+        std::vector<double> gradientVector(9);
+        double *gradient = &gradientVector[0];
         int offsetContP = num_control_points * num_control_points * dof;
         if (twoD == false) offsetContP *= offsetContP;
         for(int iID=0 ; iID<nnodes ; ++iID){
-            Eigen::MatrixXd gradientMxM(len,len);
-            Eigen::MatrixXd jacobianMxM(len,len);
-            Eigen::MatrixXd defGradMxM(len,len);
-            MATRICES::setToZero(defGrad,dof*dof);
-            for(int i=0 ; i<len ; ++i){
-                for(int j=0 ; j<len ; ++j){
-                    jacobianMxM(i,j) = jacobians[i*dof + j];
-                    defGradMxM(i,j) = 0.0;
-                }
-            }
             //APPROXIMATION::get_gradient(degree,num_control_points,contP,U,u,V,v,W,w,twoD,gradientMxM);
-            APPROXIMATION::get_gradient(gradientBSpline,num_control_points,contP,twoD,gradientMxM);
-
-            defGradMxM = gradientMxM * jacobianMxM;
-            for(int i=0 ; i<len ; ++i){
-                for(int j=0 ; j<len ; ++j){
-                    defGrad[i*dof + j] = defGradMxM(i,j);
-                }
-               // std::cout<<defGradMxM(i,0)<<" "<<defGradMxM(i,1)<< std::endl;
-            }
+            //APPROXIMATION::get_gradient(gradientBSpline,num_control_points,contP,twoD,gradientMxM);
+            APPROXIMATION::get_gradient(gradientBSpline,num_control_points,contP,twoD, gradient);
+            
+            MATRICES::MatrixMultiply(false,false,1.0, gradient,jacobians,defGrad);
+            
             //std::cout<<" "<<std::endl;
             jacobians += dof*dof;
             defGrad += dof*dof;
@@ -457,21 +442,16 @@ void get_deformation_gradient(
     )
     {   
 
-        int len = 3;
-        if (twoD)len = 2;
         int dof = PeridigmNS::dof();
         MATRICES::setToZero(jacobian,dof*dof);
-        Eigen::MatrixXd gradientMxM(len,len);
-        Eigen::MatrixXd jacobianMxM(len,len);
+        std::vector<double> gradientVector(9);
+        double *gradient = &gradientVector[0];
+        double det;
         //APPROXIMATION::get_gradient(p,num_control_points,contP,U,u,V,v,W,w,twoD,gradientMxM);
-        APPROXIMATION::get_gradient(gradientBSpline,num_control_points,contP,twoD,gradientMxM);
+        APPROXIMATION::get_gradient(gradientBSpline,num_control_points,contP,twoD,gradient);
+        if (twoD){MATRICES::Invert2by2Matrix(gradient,det, jacobian);}
+        else {MATRICES::Invert3by3Matrix(gradient,det, jacobian);}
         
-        jacobianMxM = gradientMxM.inverse();
-        for(int i=0 ; i<len ; ++i){
-            for(int j=0 ; j<len ; ++j){
-               jacobian[i*dof + j] = jacobianMxM(i,j);
-            }
-        } 
     }
 
     void get_gradient(
@@ -486,44 +466,40 @@ void get_deformation_gradient(
         //const double* W,
         //const double w,
         const bool twoD,
-        MatrixXd& gradientMxM
+        double* gradientMxM
     )
     {
     int dof = PeridigmNS::dof();
+    MATRICES::setToZero(gradientMxM,9);
     if (twoD){
-        gradientMxM(0,0) = 0.0; gradientMxM(0,1) = 0.0;
-        gradientMxM(1,0) = 0.0; gradientMxM(1,1) = 0.0;
         
         for(int j=0 ; j<num_control_points ; ++j){
             for(int i=0 ; i<num_control_points ; ++i){  
                 int pos = j*num_control_points+i;
-                gradientMxM(0,0) += gradientBSpline[2*pos]*contP[dof*pos];
-                gradientMxM(0,1) += gradientBSpline[2*pos]*contP[dof*pos+1];
-                gradientMxM(1,0) += gradientBSpline[2*pos+1]*contP[dof*pos];
-                gradientMxM(1,1) += gradientBSpline[2*pos+1]*contP[dof*pos+1];
+                gradientMxM[0] += gradientBSpline[2*pos]*contP[dof*pos];
+                gradientMxM[1] += gradientBSpline[2*pos]*contP[dof*pos+1];
+                gradientMxM[3] += gradientBSpline[2*pos+1]*contP[dof*pos];
+                gradientMxM[4] += gradientBSpline[2*pos+1]*contP[dof*pos+1];
 
             }
         }
     }
     if (!twoD){
-        gradientMxM(0,0) = 0.0; gradientMxM(0,1) = 0.0; gradientMxM(0,2) = 0.0;
-        gradientMxM(1,0) = 0.0; gradientMxM(1,1) = 0.0; gradientMxM(1,2) = 0.0;
-        gradientMxM(2,0) = 0.0; gradientMxM(2,1) = 0.0; gradientMxM(2,2) = 0.0;
-
+        
         for(int k=0 ; k<num_control_points ; ++k){
             for(int j=0 ; j<num_control_points ; ++j){
                 for(int i=0 ; i<num_control_points ; ++i){
                     int pos = k*num_control_points*num_control_points + j*num_control_points + i;
                    
-                    gradientMxM(0,0) += gradientBSpline[3*pos]*contP[dof*pos];
-                    gradientMxM(0,1) += gradientBSpline[3*pos]*contP[dof*pos+1];
-                    gradientMxM(0,2) += gradientBSpline[3*pos]*contP[dof*pos+2];
-                    gradientMxM(1,0) += gradientBSpline[3*pos+1]*contP[dof*pos];
-                    gradientMxM(1,1) += gradientBSpline[3*pos+1]*contP[dof*pos+1];
-                    gradientMxM(1,2) += gradientBSpline[3*pos+1]*contP[dof*pos+2];
-                    gradientMxM(2,0) += gradientBSpline[3*pos+2]*contP[dof*pos];
-                    gradientMxM(2,1) += gradientBSpline[3*pos+2]*contP[dof*pos+1];
-                    gradientMxM(2,2) += gradientBSpline[3*pos+2]*contP[dof*pos+2];
+                    gradientMxM[0] += gradientBSpline[3*pos]*contP[dof*pos];
+                    gradientMxM[1] += gradientBSpline[3*pos]*contP[dof*pos+1];
+                    gradientMxM[2] += gradientBSpline[3*pos]*contP[dof*pos+2];
+                    gradientMxM[3] += gradientBSpline[3*pos+1]*contP[dof*pos];
+                    gradientMxM[4] += gradientBSpline[3*pos+1]*contP[dof*pos+1];
+                    gradientMxM[5] += gradientBSpline[3*pos+1]*contP[dof*pos+2];
+                    gradientMxM[6] += gradientBSpline[3*pos+2]*contP[dof*pos];
+                    gradientMxM[7] += gradientBSpline[3*pos+2]*contP[dof*pos+1];
+                    gradientMxM[8] += gradientBSpline[3*pos+2]*contP[dof*pos+2];
                     
                         
                     }

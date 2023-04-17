@@ -381,7 +381,6 @@ void PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
     APPROXIMATION::get_approximation(numOwnedPoints, neighborhoodList,modelCoordinates,m_num_control_points,m_degree,m_plane,approxMatrix);
     APPROXIMATION::get_control_points(numOwnedPoints,neighborhoodList,m_num_control_points,modelCoordinates,approxMatrix,m_plane,contP);
     APPROXIMATION::get_gradient_functions(m_degree,m_num_control_points,m_plane,gradient_function);
-
     APPROXIMATION::get_jacobians(numOwnedPoints,contP,m_num_control_points,gradient_function,m_plane,jacobian);
     
     // jacobian fehlt noch
