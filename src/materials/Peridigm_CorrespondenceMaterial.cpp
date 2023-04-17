@@ -546,6 +546,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                   m_factor,
                                   m_surfaceCorrection,
                                   m_limit,
+                                  m_applyThermalPrintBedFlow,
                                   specificVolume,
                                   thermalFlow);
 

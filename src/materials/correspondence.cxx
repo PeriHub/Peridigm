@@ -93,7 +93,7 @@ double* detachedNodes
     const double* modelCoord = modelCoordinates;
     const double* neighborModelCoord;
     const ScalarT* vel = velocities;
-    const ScalarT* neighborVel;
+    // const ScalarT* neighborVel;
     ScalarT* defGrad = deformationGradient;
     const ScalarT* shapeTensorInv = shapeTensorInverse;
 
@@ -108,7 +108,7 @@ double* detachedNodes
     const int dof = PeridigmNS::dof();
     std::vector<double> X_dxVector(dof)  ; double*  X_dx = &X_dxVector[0];
     std::vector<ScalarT> velStateVector(dof)  ; double*  velState = &velStateVector[0];
-    ScalarT dummy;
+    // ScalarT dummy;
     double undeformedBondLength;
     double neighborVolume, omega, scalarTemp; 
     int inversionReturnCode(0);
@@ -128,7 +128,7 @@ double* detachedNodes
         for(int n=0; n<numNeighbors; n++, neighborListPtr++, bondDamage++){
           neighborIndex = *neighborListPtr;    
           neighborModelCoord = modelCoordinates + 3*neighborIndex;
-          neighborVel = velocities + 3*neighborIndex;
+          // neighborVel = velocities + 3*neighborIndex;
           
          if (detachedNodes[iID]!=0) continue;
          //if (detachedNodes[neighborIndex]!=0) continue;
@@ -138,7 +138,7 @@ double* detachedNodes
           undeformedBondLength = MATERIAL_EVALUATION::getDiffAndLen(modelCoord,neighborModelCoord,dof,X_dx);
           // The velState is the relative difference in velocities of the nodes at
           // each end of a bond. i.e., v_j - v_i
-          dummy = MATERIAL_EVALUATION::getDiffAndLen(vel,neighborVel,dof,velState);
+          // dummy = MATERIAL_EVALUATION::getDiffAndLen(vel,neighborVel,dof,velState);
           omega = MATERIAL_EVALUATION::scalarInfluenceFunction(undeformedBondLength, *delta);
 
           scalarTemp = (1.0 - *bondDamage) * omega * neighborVolume;
@@ -3478,6 +3478,7 @@ void computeHeatTransfer(
     const double factor,
     const double surfaceCorrection,
     const double limit,
+    const bool applyThermalPrintBedFlow,
     double* specificVolume,
     double* heatFlowState
     )
@@ -3499,6 +3500,7 @@ void computeHeatTransfer(
                                  factor,
                                  surfaceCorrection,
                                  limit,
+                                 applyThermalPrintBedFlow,
                                  specificVolume,
                                  heatFlowState);
    
