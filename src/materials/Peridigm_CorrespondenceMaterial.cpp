@@ -73,7 +73,8 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
       m_unrotatedCauchyStressPlasticFieldId(-1),
       m_partialStressFieldId(-1),
       m_hourglassStiffId(-1),
-      m_thermalFlowStateFieldId(-1)
+      m_thermalFlowStateFieldId(-1),
+      m_jacobianId(-1)
 {
 
   //! \todo Add meaningful asserts on material properties.
@@ -84,6 +85,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_stabilizationType = 0;
   m_bondbased = true;
   m_plane = false;
+  m_approximation = false; 
   nonLin = true;
   linRateOfDeformation = true;
   m_plast = false;
@@ -116,6 +118,15 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   //     m_plast = true; // does not work. we have to check
   //
   // }
+
+ if (params.isParameter("B-Spline Approximation")){
+    m_approximation = params.get<bool>("B-Spline Approximation");
+    if (m_approximation){
+      m_num_control_points = params.get<int>("Control Points");
+      m_degree = params.get<int>("Degree");
+      if (m_num_control_points<m_degree+1)m_num_control_points = m_degree+1;
+    }
+  }
  if (params.isParameter("Thermal Bond Based"))
     m_bondbased = params.get<bool>("Thermal Bond Based");
   
@@ -236,7 +247,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     m_fieldIds.push_back(m_temperatureFieldId);
   }
   m_thermalFlowStateFieldId          = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Flux_Divergence"); // reuse of the field
-  
+  m_jacobianId = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::FULL_TENSOR,      PeridigmField::CONSTANT, "Jacobian_Matrix");
   m_fieldIds.push_back(m_thermalFlowStateFieldId); 
   m_fieldIds.push_back(m_horizonFieldId);
   m_fieldIds.push_back(m_volumeFieldId);
@@ -264,6 +275,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_fieldIds.push_back(m_hourglassStiffId);
   m_fieldIds.push_back(m_modelAnglesId);
   m_fieldIds.push_back(m_modelOrientationId);
+  m_fieldIds.push_back(m_jacobianId);
 
 }
 
@@ -321,7 +333,7 @@ void PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   double *shapeTensorInverse;
   double *deformationGradient;
   double *bondDamageNP1;
-
+  double *jacobian;
   dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&volume);
   dataManager.getData(m_horizonFieldId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
 
@@ -331,6 +343,7 @@ void PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NP1)->ExtractView(&deformationGradient);
   dataManager.getData(m_unrotatedRateOfDeformationFieldId, PeridigmField::STEP_NONE)->PutScalar(0.0);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamageNP1);
+  dataManager.getData(m_jacobianId, PeridigmField::STEP_NONE)->ExtractView(&jacobian);
 
   int shapeTensorReturnCode = 0;
   shapeTensorReturnCode =
@@ -353,12 +366,22 @@ void PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
   TEUCHOS_TEST_FOR_TERMINATION(shapeTensorReturnCode != 0, shapeTensorErrorMessage);
   
   
-  int len = APPROXIMATION::get_field_size(numOwnedPoints, neighborhoodList, num_control_points);
-  bool interpol = false;
-  delete approxMatrix;
-  approxMatrix = new double[len];
-  if (interpol)  APPROXIMATION::get_approximation(numOwnedPoints, neighborhoodList,modelCoordinates,num_control_points,degree,m_plane,approxMatrix);
-  //APPROXIMATION::create_approximation(numNode,nPoints,nlist,coor,ncont,p,true,A);
+  if (m_approximation){
+    int len = APPROXIMATION::get_field_size(numOwnedPoints, neighborhoodList, m_num_control_points, m_plane);
+    delete approxMatrix;
+    approxMatrix = new double[len];
+    
+    if (m_plane) len = m_num_control_points * m_num_control_points;
+    else len = m_num_control_points * m_num_control_points * m_num_control_points;
+    double *contP;
+    contP = new double[numOwnedPoints * len * PeridigmNS::dof()];
+    APPROXIMATION::get_approximation(numOwnedPoints, neighborhoodList,modelCoordinates,m_num_control_points,m_degree,m_plane,approxMatrix);
+    APPROXIMATION::get_control_points(numOwnedPoints,neighborhoodList,m_num_control_points,modelCoordinates,approxMatrix,m_plane,contP);
+    APPROXIMATION::get_jacobians(numOwnedPoints,contP,m_num_control_points,m_degree,m_plane,jacobian);
+    
+    // jacobian fehlt noch
+  }
+
 
 
   
@@ -399,105 +422,121 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
 
   dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)->ExtractView(&detachedNodes);
   *(dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_NP1)) = *(dataManager.getData(m_detachedNodesFieldId, PeridigmField::STEP_N));
-  // Compute the inverse of the shape tensor and the approximate deformation gradient
-  // The approximate deformation gradient will be used by the derived class (specific correspondence material model)
-  // to compute the Cauchy stress.
-  // The inverse of the shape tensor is stored for later use after the Cauchy stress calculation
-  
-  // std::cout<<approxMatrix[3]<<std::endl; // test fuer datemübergabe -> funktioniert
-
-  int shapeTensorReturnCode = 0;
-  shapeTensorReturnCode =
-      CORRESPONDENCE::computeShapeTensorInverseAndApproximateDeformationGradient(volume,
-                                                                                 horizon,
-                                                                                 modelCoordinates,
-                                                                                 coordinatesNP1,
-                                                                                 shapeTensorInverse,
-                                                                                 deformationGradient,
-                                                                                 bondDamageNP1,
-                                                                                 neighborhoodList,
-                                                                                 numOwnedPoints,
-                                                                                 m_plane,
-                                                                                 detachedNodes);
-
-  string shapeTensorErrorMessage =
-      "**** Error:  CorrespondenceMaterial::computeForce() failed to compute shape tensor.\n";
-  shapeTensorErrorMessage +=
-      "****         Note that all nodes must have a minimum of three neighbors.  Is the horizon too small?\n";
-  TEUCHOS_TEST_FOR_TERMINATION(shapeTensorReturnCode != 0, shapeTensorErrorMessage);
-
   double *unrotatedRateOfDeformation;
   dataManager.getData(m_unrotatedRateOfDeformationFieldId, PeridigmField::STEP_NONE)->ExtractView(&unrotatedRateOfDeformation);
 
   double *velocities, *leftStretchTensorN, *leftStretchTensorNP1, *rotationTensorN, *rotationTensorNP1;
   dataManager.getData(m_velocitiesFieldId, PeridigmField::STEP_NP1)->ExtractView(&velocities);
-  if (nonLin == true)
-  {
-
-    dataManager.getData(m_leftStretchTensorFieldId, PeridigmField::STEP_N)->ExtractView(&leftStretchTensorN);
-    dataManager.getData(m_leftStretchTensorFieldId, PeridigmField::STEP_NP1)->ExtractView(&leftStretchTensorNP1);
-    dataManager.getData(m_rotationTensorFieldId, PeridigmField::STEP_N)->ExtractView(&rotationTensorN);
-    dataManager.getData(m_rotationTensorFieldId, PeridigmField::STEP_NP1)->ExtractView(&rotationTensorNP1);
-
-    // Compute left stretch tensor, rotation tensor, and unrotated rate-of-deformation.
-    // Performs a polar decomposition via Flanagan & Taylor (1987) algorithm.
-    //"A non-ordinary state-based peridynamic method to model solid material deformation and fracture"
-    // Thomas L. Warren, Stewart A. Silling, Abe Askari, Olaf Weckner, Michael A. Epton, Jifeng Xu
-
-    int rotationTensorReturnCode = 0;
+  // Compute the inverse of the shape tensor and the approximate deformation gradient
+  // The approximate deformation gradient will be used by the derived class (specific correspondence material model)
+  // to compute the Cauchy stress.
+  // The inverse of the shape tensor is stored for later use after the Cauchy stress calculation
+  
+  
+  if (m_approximation){
+    double *jacobian;
+    dataManager.getData(m_jacobianId, PeridigmField::STEP_NONE)->ExtractView(&jacobian);
+    int len;
+    if (m_plane) len = m_num_control_points * m_num_control_points;
+    else len = m_num_control_points * m_num_control_points * m_num_control_points;
+    double *contPu;
+    contPu = new double[numOwnedPoints * len * PeridigmNS::dof()];
     
-    rotationTensorReturnCode = CORRESPONDENCE::computeUnrotatedRateOfDeformationAndRotationTensor(volume,
-                                                                                                  horizon,
-                                                                                                  modelCoordinates,
-                                                                                                  velocities,
-                                                                                                  deformationGradient,
-                                                                                                  shapeTensorInverse,
-                                                                                                  leftStretchTensorN,
-                                                                                                  rotationTensorN,
-                                                                                                  leftStretchTensorNP1,
-                                                                                                  rotationTensorNP1,
-                                                                                                  unrotatedRateOfDeformation,
-                                                                                                  neighborhoodList,
-                                                                                                  numOwnedPoints,
-                                                                                                  dt,
-                                                                                                  bondDamageNP1,
-                                                                                                  m_plane,
-                                                                                                  detachedNodes);
+    APPROXIMATION::get_control_points(numOwnedPoints,neighborhoodList,m_num_control_points,coordinatesNP1,approxMatrix,m_plane,contPu);
+    APPROXIMATION::get_deformation_gradient(numOwnedPoints,contPu,m_num_control_points,m_degree,m_plane,jacobian,deformationGradient);
+    
 
-    string rotationTensorErrorMessage =
-        "**** Error:  CorrespondenceMaterial::computeForce() failed to compute rotation tensor.\n";
-    rotationTensorErrorMessage +=
-        "****         Note that all nodes must have a minimum of three neighbors.  Is the horizon too small?\n";
-    string rotationTensorErrorMessage2 =
-        "**** Error:  CorrespondenceMaterial::computeForce() failed to invert deformation gradient tensor.\n";
-
-    string rotationTensorErrorMessage3 =
-        "**** Error:  CorrespondenceMaterial::computeForce() failed to invert temp.\n";
-
-    TEUCHOS_TEST_FOR_TERMINATION(rotationTensorReturnCode == 1, rotationTensorErrorMessage);
-    TEUCHOS_TEST_FOR_TERMINATION(rotationTensorReturnCode == 2, rotationTensorErrorMessage2);
-    TEUCHOS_TEST_FOR_TERMINATION(rotationTensorReturnCode == 3, rotationTensorErrorMessage3);
   }
-  else
-  {
+  else{
+    int shapeTensorReturnCode = 0;
+    shapeTensorReturnCode =
+        CORRESPONDENCE::computeShapeTensorInverseAndApproximateDeformationGradient(volume,
+                                                                                  horizon,
+                                                                                  modelCoordinates,
+                                                                                  coordinatesNP1,
+                                                                                  shapeTensorInverse,
+                                                                                  deformationGradient,
+                                                                                  bondDamageNP1,
+                                                                                  neighborhoodList,
+                                                                                  numOwnedPoints,
+                                                                                  m_plane,
+                                                                                  detachedNodes);
+  
+    string shapeTensorErrorMessage =
+        "**** Error:  CorrespondenceMaterial::computeForce() failed to compute shape tensor.\n";
+    shapeTensorErrorMessage +=
+        "****         Note that all nodes must have a minimum of three neighbors.  Is the horizon too small?\n";
+    TEUCHOS_TEST_FOR_TERMINATION(shapeTensorReturnCode != 0, shapeTensorErrorMessage);
+  
 
-    // needed to create the rate of deformation for the step wise calculation
-    // all rotations are excluded; this speeds up the calculations, but assumes no large rotations
-    // is deactivated for linear elastic material, because the rate is not used in that case
-    if (linRateOfDeformation)
+    if (nonLin == true)
     {
-      CORRESPONDENCE::getLinearUnrotatedRateOfDeformation(volume,
-                                                          horizon,
-                                                          modelCoordinates,
-                                                          velocities,
-                                                          deformationGradient,
-                                                          shapeTensorInverse,
-                                                          unrotatedRateOfDeformation,
-                                                          neighborhoodList,
-                                                          numOwnedPoints,
-                                                          bondDamageNP1,
-                                                          m_plane,
-                                                          detachedNodes);
+
+      dataManager.getData(m_leftStretchTensorFieldId, PeridigmField::STEP_N)->ExtractView(&leftStretchTensorN);
+      dataManager.getData(m_leftStretchTensorFieldId, PeridigmField::STEP_NP1)->ExtractView(&leftStretchTensorNP1);
+      dataManager.getData(m_rotationTensorFieldId, PeridigmField::STEP_N)->ExtractView(&rotationTensorN);
+      dataManager.getData(m_rotationTensorFieldId, PeridigmField::STEP_NP1)->ExtractView(&rotationTensorNP1);
+
+      // Compute left stretch tensor, rotation tensor, and unrotated rate-of-deformation.
+      // Performs a polar decomposition via Flanagan & Taylor (1987) algorithm.
+      //"A non-ordinary state-based peridynamic method to model solid material deformation and fracture"
+      // Thomas L. Warren, Stewart A. Silling, Abe Askari, Olaf Weckner, Michael A. Epton, Jifeng Xu
+
+      int rotationTensorReturnCode = 0;
+      
+      rotationTensorReturnCode = CORRESPONDENCE::computeUnrotatedRateOfDeformationAndRotationTensor(volume,
+                                                                                                    horizon,
+                                                                                                    modelCoordinates,
+                                                                                                    velocities,
+                                                                                                    deformationGradient,
+                                                                                                    shapeTensorInverse,
+                                                                                                    leftStretchTensorN,
+                                                                                                    rotationTensorN,
+                                                                                                    leftStretchTensorNP1,
+                                                                                                    rotationTensorNP1,
+                                                                                                    unrotatedRateOfDeformation,
+                                                                                                    neighborhoodList,
+                                                                                                    numOwnedPoints,
+                                                                                                    dt,
+                                                                                                    bondDamageNP1,
+                                                                                                    m_plane,
+                                                                                                    detachedNodes);
+
+      string rotationTensorErrorMessage =
+          "**** Error:  CorrespondenceMaterial::computeForce() failed to compute rotation tensor.\n";
+      rotationTensorErrorMessage +=
+          "****         Note that all nodes must have a minimum of three neighbors.  Is the horizon too small?\n";
+      string rotationTensorErrorMessage2 =
+          "**** Error:  CorrespondenceMaterial::computeForce() failed to invert deformation gradient tensor.\n";
+
+      string rotationTensorErrorMessage3 =
+          "**** Error:  CorrespondenceMaterial::computeForce() failed to invert temp.\n";
+
+      TEUCHOS_TEST_FOR_TERMINATION(rotationTensorReturnCode == 1, rotationTensorErrorMessage);
+      TEUCHOS_TEST_FOR_TERMINATION(rotationTensorReturnCode == 2, rotationTensorErrorMessage2);
+      TEUCHOS_TEST_FOR_TERMINATION(rotationTensorReturnCode == 3, rotationTensorErrorMessage3);
+    }
+    else
+    {
+
+      // needed to create the rate of deformation for the step wise calculation
+      // all rotations are excluded; this speeds up the calculations, but assumes no large rotations
+      // is deactivated for linear elastic material, because the rate is not used in that case
+      if (linRateOfDeformation)
+      {
+        CORRESPONDENCE::getLinearUnrotatedRateOfDeformation(volume,
+                                                            horizon,
+                                                            modelCoordinates,
+                                                            velocities,
+                                                            deformationGradient,
+                                                            shapeTensorInverse,
+                                                            unrotatedRateOfDeformation,
+                                                            neighborhoodList,
+                                                            numOwnedPoints,
+                                                            bondDamageNP1,
+                                                            m_plane,
+                                                            detachedNodes);
+      }
     }
   }
 

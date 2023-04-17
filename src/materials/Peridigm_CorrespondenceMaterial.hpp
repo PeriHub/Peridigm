@@ -197,10 +197,11 @@ namespace PeridigmNS
     bool nonLin = false;
     bool lin = true;
     bool avg = false;
+    bool m_approximation = false;
     double m_hourglassCoefficient;
     double scal;
-    int degree = 2;
-    int num_control_points = 3;
+    int m_degree = 2;
+    int m_num_control_points = 3;
     PeridigmNS::InfluenceFunction::functionPointer m_OMEGA;
     std::map<std::string, double> materialProperties;
 
@@ -236,6 +237,7 @@ namespace PeridigmNS
     int m_modelOrientationId;
     int m_specificVolumeFieldId;
     int m_deformationGradientNonIncFieldId;
+    int m_jacobianId;
     bool m_plast;
     bool m_adaptHourGlass;
     bool linRateOfDeformation;
