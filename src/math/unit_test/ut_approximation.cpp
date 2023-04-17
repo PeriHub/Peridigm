@@ -901,20 +901,12 @@ TEUCHOS_UNIT_TEST(approximation, get_gradient) {
     contP[21]= 1.0000000000000004 ;    contP[22]= 0 ;    contP[23]= 0 ;
     contP[24]= 0.9999999999999999 ;    contP[25]= 0.9999999999999999 ;    contP[26]= 0 ;
 
-    std::vector<double> UVector(ncont + p + 1);
-    double* U = &UVector[0];
-    std::vector<double> VVector(ncont + p + 1);
-    double* V = &VVector[0]; 
-    std::vector<double> WVector(ncont + p + 1);
-    double* W = &WVector[0]; 
-    double u = 0.5, v = 0.5, w = 0.5;
-    APPROXIMATION::knots(ncont,p,true,U);
-    APPROXIMATION::knots(ncont,p,true,V);
-    APPROXIMATION::knots(ncont,p,true,W);
+    double *gradientBSpline2D;
+    gradientBSpline2D = new double[2 * ncont * ncont ];
+    APPROXIMATION::get_gradient_functions(p,ncont,true,gradientBSpline2D);
 
     Eigen::MatrixXd gradientMxM(2,2);
-
-    APPROXIMATION::get_gradient(p,ncont,contP,U,u,V,v,W,w,true,gradientMxM);
+    APPROXIMATION::get_gradient(gradientBSpline2D,ncont,contP,true,gradientMxM);
     gradTest[0]= 2.0000000000000013 ;
     gradTest[1]= -1.970645868709653e-15 ;
     gradTest[2]= -2.4702462297909733e-15 ;
@@ -927,19 +919,8 @@ TEUCHOS_UNIT_TEST(approximation, get_gradient) {
             TEST_ASSERT(abs(gradientMxM(i,j)-gradTest[2*i+j])<tolerance);     
         }
     }
-    APPROXIMATION::get_gradient(p,ncont,contP,U,u,V,v,W,w,true,gradientMxM);
-    gradTest[0]= 2.0;
-    gradTest[1]= 0 ;
-    gradTest[2]= 0 ;
-    gradTest[3]= 0.0 ;
-    gradTest[4]= 2.0 ;
-    gradTest[5]= 0 ;
-    gradTest[6]= 0 ;
-    gradTest[7]= 0 ;
-    gradTest[8]= 2.0 ;
     
-    
-
+   
     contP3D[0]= -0.9999999999999998 ;    contP3D[1]= -1.000000000000005 ;    contP3D[2]= -1 ;
     contP3D[3]= -1.0000000000000036 ;    contP3D[4]= 0.0 ;                   contP3D[5]= -1 ;
     contP3D[6]= -1.0000000000000002 ;    contP3D[7]= 0.9999999999999991 ;    contP3D[8]= -1 ;
@@ -970,16 +951,19 @@ TEUCHOS_UNIT_TEST(approximation, get_gradient) {
     contP3D[21+offset]= 1.0000000000000004 ;    contP3D[22+offset]= 0 ;                    contP3D[23+offset]= 1 ;
     contP3D[24+offset]= 0.9999999999999999 ;    contP3D[25+offset]= 0.9999999999999999 ;   contP3D[26+offset]= 1 ;  
     Eigen::MatrixXd gradient3DMxM(3,3);
-    APPROXIMATION::get_gradient(p,ncont,contP3D,U,u,V,v,W,w,false,gradient3DMxM);
-    gradTest[0]= 0.0 ;
+    double *gradientBSpline3D;
+    gradientBSpline3D = new double[3 * ncont * ncont * ncont ];
+    APPROXIMATION::get_gradient_functions(p,ncont,false,gradientBSpline3D);
+    APPROXIMATION::get_gradient(gradientBSpline3D,ncont,contP3D,false,gradient3DMxM);
+    gradTest[0]= 2.0 ;
     gradTest[1]= 0.0 ;
-    gradTest[2]= 2.0 ;
-    gradTest[3]= 2.0 ;
-    gradTest[4]= 0.0 ;
+    gradTest[2]= 0.0 ;
+    gradTest[3]= 0.0 ;
+    gradTest[4]= 2.0 ;
     gradTest[5]= 0.0 ;
     gradTest[6]= 0.0 ;
-    gradTest[7]= 2.0 ;
-    gradTest[8]= 0.0 ;
+    gradTest[7]= 0.0 ;
+    gradTest[8]= 2.0 ;
 
     for(int i=0 ; i<3 ; ++i){    
         for(int j=0 ; j<3 ; ++j){        
@@ -1041,18 +1025,11 @@ TEUCHOS_UNIT_TEST(approximation, get_jacobian) {
     contP[24]= 0.9999999999999999 ;
     contP[25]= 0.9999999999999999 ;
     contP[26]= 0 ;
-    std::vector<double> UVector(ncont + p + 1);
-    double* U = &UVector[0];
-    std::vector<double> VVector(ncont + p + 1);
-    double* V = &VVector[0]; 
-    std::vector<double> WVector(ncont + p + 1);
-    double* W = &WVector[0]; 
-    double u = 0.5, v = 0.5, w = 0.5;
-    APPROXIMATION::knots(ncont,p,true,U);
-    APPROXIMATION::knots(ncont,p,true,V);
-    APPROXIMATION::knots(ncont,p,true,W);
 
-    APPROXIMATION::get_jacobian(p,ncont,contP,U,u,V,v,W,w,true,jacobian);
+    double *gradientBSpline2D;
+    gradientBSpline2D = new double[2*ncont * ncont ];
+    APPROXIMATION::get_gradient_functions(p,ncont,true,gradientBSpline2D);
+    APPROXIMATION::get_jacobian(gradientBSpline2D,ncont,contP,true,jacobian);
     jacobianTest[0]= 0.49999999999999967 ;
     jacobianTest[1]= 4.926614671774113e-16 ;
     jacobianTest[2]= 0 ;
@@ -1153,8 +1130,10 @@ TEUCHOS_UNIT_TEST(approximation, get_jacobians) {
     contP[25+27]= 0.9999999999999999 ;
     contP[26+27]= 0 ;
 
-
-    APPROXIMATION::get_jacobians(2,contP,ncont,p,true,jacobian);
+    double *gradientBSpline2D;
+    gradientBSpline2D = new double[2*ncont * ncont ];
+    APPROXIMATION::get_gradient_functions(p,ncont,true,gradientBSpline2D);
+    APPROXIMATION::get_jacobians(2,contP,ncont,gradientBSpline2D,true,jacobian);
     jacobianTest[0]= 0.49999999999999967 ;
     jacobianTest[1]= 4.926614671774113e-16 ;
     jacobianTest[2]= 0 ;
@@ -1228,12 +1207,14 @@ TEUCHOS_UNIT_TEST(approximation, get_deformation_gradient) {
 
     defGradTest[0]=1;    defGradTest[1]=0;    defGradTest[2]=0;
     defGradTest[3]=0;    defGradTest[4]=1;    defGradTest[5]=0;
-    defGradTest[8]=0;    defGradTest[7]=0;    defGradTest[8]=0;
-    defGradTest[9]=1.0;    defGradTest[10]=0;    defGradTest[12]=0;
-    defGradTest[12]=0;      defGradTest[13]=1.1;  defGradTest[15]=0;
+    defGradTest[6]=0;    defGradTest[7]=0;    defGradTest[8]=0;
+    defGradTest[9]=1.0;    defGradTest[10]=0;    defGradTest[11]=0;
+    defGradTest[12]=0;      defGradTest[13]=1.1;  defGradTest[14]=0;
     defGradTest[15]=0;      defGradTest[16]=0;    defGradTest[17]=0;
-    
-    APPROXIMATION::get_deformation_gradient(2,contP,ncont,p,true,jacobian,defGrad);
+    double *gradientBSpline2D;
+    gradientBSpline2D = new double[2 * ncont * ncont ];
+    APPROXIMATION::get_gradient_functions(p,ncont,true,gradientBSpline2D);
+    APPROXIMATION::get_deformation_gradient(2,contP,ncont,gradientBSpline2D,true,jacobian,defGrad);
 
 
 
