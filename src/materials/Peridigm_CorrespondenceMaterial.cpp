@@ -370,14 +370,19 @@ void PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
     int len = APPROXIMATION::get_field_size(numOwnedPoints, neighborhoodList, m_num_control_points, m_plane);
     delete approxMatrix;
     approxMatrix = new double[len];
-    
+
+
     if (m_plane) len = m_num_control_points * m_num_control_points;
     else len = m_num_control_points * m_num_control_points * m_num_control_points;
     double *contP;
     contP = new double[numOwnedPoints * len * PeridigmNS::dof()];
+    delete gradient_function;
+    gradient_function = new double[len * PeridigmNS::dof()];
     APPROXIMATION::get_approximation(numOwnedPoints, neighborhoodList,modelCoordinates,m_num_control_points,m_degree,m_plane,approxMatrix);
     APPROXIMATION::get_control_points(numOwnedPoints,neighborhoodList,m_num_control_points,modelCoordinates,approxMatrix,m_plane,contP);
-    APPROXIMATION::get_jacobians(numOwnedPoints,contP,m_num_control_points,m_degree,m_plane,jacobian);
+    APPROXIMATION::get_gradient_functions(m_degree,m_num_control_points,m_plane,gradient_function);
+
+    APPROXIMATION::get_jacobians(numOwnedPoints,contP,m_num_control_points,gradient_function,m_plane,jacobian);
     
     // jacobian fehlt noch
   }
@@ -443,7 +448,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
     contPu = new double[numOwnedPoints * len * PeridigmNS::dof()];
     
     APPROXIMATION::get_control_points(numOwnedPoints,neighborhoodList,m_num_control_points,coordinatesNP1,approxMatrix,m_plane,contPu);
-    APPROXIMATION::get_deformation_gradient(numOwnedPoints,contPu,m_num_control_points,m_degree,m_plane,jacobian,deformationGradient);
+    APPROXIMATION::get_deformation_gradient(numOwnedPoints,contPu,m_num_control_points,gradient_function,m_plane,jacobian,deformationGradient);
     
 
   }

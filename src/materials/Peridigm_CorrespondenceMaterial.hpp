@@ -172,6 +172,7 @@ namespace PeridigmNS
     //  }
     // enum FiniteDifferenceScheme { FORWARD_DIFFERENCE=0, CENTRAL_DIFFERENCE=1 };
     double *approxMatrix = new double;
+    double *gradient_function = new double;
   protected:
     // material parameters
     double m_bulkModulus;
