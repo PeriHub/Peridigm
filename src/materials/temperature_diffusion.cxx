@@ -375,22 +375,24 @@ namespace DIFFUSION {
       }
 
       double area = 1.0;
+      double dx = 1.0;
 
       if (twoD && compareNeighbor != 4){
-        double dx = sqrt(volume[iID]);
-        area = dx * (4 - compareNeighbor);
+        dx = sqrt(volume[iID]);
+        area = 4 - compareNeighbor;
       }
       else if (!twoD && compareNeighbor != 6){
-        double dx = pow(volume[iID],1.0/3.0);
+        dx = pow(volume[iID],1.0/3.0);
 
         if(applyThermalPrintBedFlow){
           if (nodeCoord[2]<=dx) compareNeighbor +=1; //printbed......
         }
 
-        area = dx * dx * (6 - compareNeighbor);
+        area = 6 - compareNeighbor;
       }
 
-      heatFlowState[iID] += alpha * (temperature[iID] - Tenv) * area * surfaceCorrection;
+      heatFlowState[iID] += (alpha * (temperature[iID] - Tenv)) / dx * surfaceCorrection * area;
+      // heatFlowState[iID] += alpha * (temperature[iID] - Tenv) * area * surfaceCorrection;
 
       specificVolume[iID] = compareNeighbor;
 
