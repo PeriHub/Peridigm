@@ -193,21 +193,21 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
         m_Tbed = params.get<double>("Print Bed Temperature");
       }
     }
-  }
-  m_applyHeatTransfer = false;
-  if (params.isParameter("Apply Heat Transfer")){
-    m_applyHeatTransfer = params.get<bool>("Apply Heat Transfer");
-    if (m_applyHeatTransfer){
-      
-      m_kappa = params.get<double>("Heat Transfer Coefficient");
-      m_Tenv = params.get<double>("Environmental Temperature");
-      m_factor = 1.0;
-      m_surfaceCorrection = 1.0;
-      m_limit = 0.8;
-      if (params.isParameter("Volume Factor")) m_factor= params.get<double>("Volume Factor");
-      if (params.isParameter("Surface Correction")) m_surfaceCorrection= params.get<double>("Surface Correction");
-      if (params.isParameter("Volume Limit")) m_limit= params.get<double>("Volume Limit");
-       
+
+    m_applyHeatTransfer = false;
+    if (params.isParameter("Apply Heat Transfer")){
+      m_applyHeatTransfer = params.get<bool>("Apply Heat Transfer");
+      if (m_applyHeatTransfer){
+        m_kappa = params.get<double>("Heat Transfer Coefficient");
+        m_Tenv = params.get<double>("Environmental Temperature");
+        m_factor = 1.0;
+        m_surfaceCorrection = 1.0;
+        m_limit = 0.8;
+        if (params.isParameter("Volume Factor")) m_factor= params.get<double>("Volume Factor");
+        if (params.isParameter("Surface Correction")) m_surfaceCorrection= params.get<double>("Surface Correction");
+        if (params.isParameter("Volume Limit")) m_limit= params.get<double>("Volume Limit");
+        
+      }
     }
   }
   // TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticCorrespondence material model.\n");
@@ -578,7 +578,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
     if (m_applyHeatTransfer){
       double *specificVolume;
       dataManager.getData(m_specificVolumeFieldId, PeridigmField::STEP_NP1)->ExtractView(&specificVolume);
-   
+  
       CORRESPONDENCE::computeHeatTransfer(
                                   modelCoordinates,
                                   numOwnedPoints,
@@ -594,11 +594,9 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
                                   m_factor,
                                   m_surfaceCorrection,
                                   m_limit,
+                                  m_applyThermalPrintBedFlow,
                                   specificVolume,
                                   thermalFlow);
-
-
-
     }
   }
   // Evaluate the Cauchy stress using the routine implemented in the derived class (specific correspondence material model)

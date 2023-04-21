@@ -1436,7 +1436,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   }
   bool stopAfterAllDamaged = solverParams->get("Stop after all nodes damaged", false);
 
-  bool deformCalulation = verletParams->get("Calculate Deformation", true);
+  bool deformCalulation = solverParams->get("Solve For Displacement", true);
   bool adaptDt = verletParams->get("Adapt dt", false);
   
   // Multiply the time step by the user-supplied safety factor, if provided

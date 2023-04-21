@@ -85,7 +85,7 @@ namespace PeridigmNS
       if(search != materialProperties.end())
         return search->second;
       else
-        TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error: requested material property is not in Multiphysics Elastic Material");
+        TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error: requested material property " + keyname + " is not in Multiphysics Elastic Material");
       // This is a fallthrough case to make the compiler happy.
       return 0.0;
     }

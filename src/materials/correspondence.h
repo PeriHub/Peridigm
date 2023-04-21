@@ -300,6 +300,7 @@ void computeHeatTransfer(
     const double factor,
     const double surfaceCorrection,
     const double limit,
+    const bool applyThermalPrintBedFlow,
     double* specificVolume,
     double* heatFlowState
 );
