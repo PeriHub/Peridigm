@@ -462,13 +462,12 @@ void get_deformation_gradient(
         double w = 0.5;
         APPROXIMATION::knots(num_control_points,p,true,U);
         APPROXIMATION::knots(num_control_points,p,true,V);
-        APPROXIMATION::knots(num_control_points,p,true,W);
-        MATRICES::setToZero(gradientBSpline, 3 * num_control_points * num_control_points);
-                      
+
         if (twoD){  
+            MATRICES::setToZero(gradientBSpline, 3 * num_control_points * num_control_points);
             for(int i=0 ; i<num_control_points ; ++i){
                 for(int j=0 ; j<num_control_points ; ++j){
-                    int offset = 3 * (num_control_points * i +j);
+                    int offset = 3 * (num_control_points * i + j);
                     gradientBSpline[offset]  =deriv_basis_func(i,p,U,u)*basis_func(j,p,V,v);
                     gradientBSpline[offset+1]=basis_func(i,p,U,u)*deriv_basis_func(j,p,V,v);
                 }
@@ -476,13 +475,14 @@ void get_deformation_gradient(
         }
         if (!twoD){
             MATRICES::setToZero(gradientBSpline, 3 * num_control_points * num_control_points * num_control_points);
+            APPROXIMATION::knots(num_control_points,p,true,W);
             for(int k=0 ; k<num_control_points ; ++k){
                 for(int j=0 ; j<num_control_points ; ++j){
-                    for(int i=0 ; i<num_control_points ; ++i){
-                        int offset = 3 * (num_control_points * i + k * num_control_points *num_control_points  + j);
-                        gradientBSpline[offset]  =deriv_basis_func(i,p,U,u)*basis_func(j,p,V,v)*basis_func(k,p,W,w);
-                        gradientBSpline[offset+1]=basis_func(i,p,U,u)*deriv_basis_func(j,p,V,v)*basis_func(k,p,W,w);
-                        gradientBSpline[offset+2]=basis_func(i,p,U,u)*basis_func(j,p,V,v)*deriv_basis_func(k,p,W,w);
+                    for(int i=0 ; i<num_control_points ; ++i){  
+                        int offset = 3 * (k * num_control_points * num_control_points + j * num_control_points + i);
+                        gradientBSpline[offset]  =deriv_basis_func(j,p,U,u)*basis_func(i,p,V,v)*basis_func(k,p,W,w);
+                        gradientBSpline[offset+1]=basis_func(j,p,U,u)*deriv_basis_func(i,p,V,v)*basis_func(k,p,W,w);
+                        gradientBSpline[offset+2]=basis_func(j,p,U,u)*basis_func(i,p,V,v)*deriv_basis_func(k,p,W,w);
                     }
                 }
             }
@@ -532,15 +532,13 @@ void get_deformation_gradient(
         double* gradientMxM
     )
     {
-
-    int dof = PeridigmNS::dof();
-    MATRICES::setToZero(gradientMxM,9);
-    int offset = num_control_points * num_control_points;
-    if (!twoD)offset *= num_control_points;
-    Eigen::MatrixXd P = Eigen::Map<const Eigen::MatrixXd>(contP,dof,offset);
-    Eigen::MatrixXd gradient_functionsNxDof = Eigen::Map<const Eigen::MatrixXd>(gradientBSpline,dof,offset);  
-    Eigen::Map<Eigen::MatrixXd>(gradientMxM, dof,  dof) = gradient_functionsNxDof*P.transpose();
-
+        int dof = PeridigmNS::dof();
+        MATRICES::setToZero(gradientMxM,9);
+        int offset = num_control_points * num_control_points;
+        if (!twoD)offset *= num_control_points;
+        Eigen::MatrixXd P = Eigen::Map<const Eigen::MatrixXd>(contP,dof,offset);
+        Eigen::MatrixXd gradient_functionsNxDof = Eigen::Map<const Eigen::MatrixXd>(gradientBSpline,dof,offset);  
+        Eigen::Map<Eigen::MatrixXd>(gradientMxM, dof,  dof) = gradient_functionsNxDof*P.transpose();
     }
 }
 
