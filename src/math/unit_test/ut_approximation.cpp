@@ -1231,7 +1231,7 @@ TEUCHOS_UNIT_TEST(approximation, get_gradient) {
     contP[24]= 0.9999999999999999 ;    contP[25]= 0.9999999999999999 ;    contP[26]= 0 ;
 
     double *gradientBSpline2D;
-    gradientBSpline2D = new double[2 * ncont * ncont ];
+    gradientBSpline2D = new double[PeridigmNS::dof() * ncont * ncont ];
     APPROXIMATION::get_gradient_functions(p,ncont,true,gradientBSpline2D);
     std::vector<double> gradientVector(9);
     double *gradientMxM = &gradientVector[0];
@@ -1247,10 +1247,7 @@ TEUCHOS_UNIT_TEST(approximation, get_gradient) {
     gradTest[8]= 0.0 ;
     
     for(int i=0 ; i<9 ; ++i){    
-        for(int j=0 ; j<9 ; ++j){        
             TEST_ASSERT(abs(gradientMxM[i]-gradTest[i])<tolerance);
-           // TEST_FLOATING_EQUALITY(gradientMxM[i],gradTest[i],tolerance)
-        }
     }
     
    
@@ -1287,7 +1284,7 @@ TEUCHOS_UNIT_TEST(approximation, get_gradient) {
     double *gradient3DMxM = &gradient3DVector[0];
     
     double *gradientBSpline3D;
-    gradientBSpline3D = new double[3 * ncont * ncont * ncont ];
+    gradientBSpline3D = new double[PeridigmNS::dof() * ncont * ncont * ncont ];
     APPROXIMATION::get_gradient_functions(p,ncont,false,gradientBSpline3D);
     APPROXIMATION::get_gradient(gradientBSpline3D,ncont,contP3D,false,gradient3DMxM);
     gradTest[0]= 2.0 ;
@@ -1362,7 +1359,7 @@ TEUCHOS_UNIT_TEST(approximation, get_jacobian) {
     contP[26]= 0 ;
 
     double *gradientBSpline2D;
-    gradientBSpline2D = new double[2*ncont * ncont ];
+    gradientBSpline2D = new double[3*ncont * ncont ];
     APPROXIMATION::get_gradient_functions(p,ncont,true,gradientBSpline2D);
     APPROXIMATION::get_jacobian(gradientBSpline2D,ncont,contP,true,jacobian);
     jacobianTest[0]= 0.49999999999999967 ;
@@ -1467,7 +1464,7 @@ TEUCHOS_UNIT_TEST(approximation, get_jacobians) {
     contP[26+27]= 0 ;
 
     double *gradientBSpline2D;
-    gradientBSpline2D = new double[2*ncont * ncont ];
+    gradientBSpline2D = new double[3*ncont * ncont ];
     APPROXIMATION::get_gradient_functions(p,ncont,true,gradientBSpline2D);
     APPROXIMATION::get_jacobians(2,contP,ncont,gradientBSpline2D,true,jacobian);
     jacobianTest[0]= 0.49999999999999967 ;
@@ -1548,7 +1545,7 @@ TEUCHOS_UNIT_TEST(approximation, get_deformation_gradient) {
     defGradTest[12]=0;      defGradTest[13]=1.1;  defGradTest[14]=0;
     defGradTest[15]=0;      defGradTest[16]=0;    defGradTest[17]=0;
     double *gradientBSpline2D;
-    gradientBSpline2D = new double[2 * ncont * ncont ];
+    gradientBSpline2D = new double[3 * ncont * ncont ];
     APPROXIMATION::get_gradient_functions(p,ncont,true,gradientBSpline2D);
     APPROXIMATION::get_deformation_gradient(2,contP,ncont,gradientBSpline2D,true,jacobian,defGrad);
 
