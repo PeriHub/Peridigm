@@ -78,18 +78,18 @@ void computeInternalForceElasticBondBased
   std::vector<double> X_dxVector(dof)  ; double*  X_dx = &X_dxVector[0];
   std::vector<ScalarT> Y_dxVector(dof) ; ScalarT*  Y_dx = &Y_dxVector[0];
   std::vector<ScalarT> f_Vector(dof) ; ScalarT*  f = &f_Vector[0];
-  for(int p=0 ; p<numOwnedPoints ; p++){
+  for(int p=0 ; p<numOwnedPoints ; p++, xOwned +=dof, yOwned +=dof){
 
     const double *X = xOwned;
     const ScalarT *Y = yOwned;
     volume = volumeOverlap[p];
 
     int numNeighbors = localNeighborList[neighborhoodIndex++];
-    for(int n=0; n<numNeighbors; n++, xOwned +=3, yOwned +=3){
+    for(int n=0; n<numNeighbors; n++){
 
       neighborId = localNeighborList[neighborhoodIndex++];
-      const double *XP = &xOverlap[3*neighborId];
-      const ScalarT *YP = &yOverlap[3*neighborId];
+      const double *XP = &xOverlap[dof*neighborId];
+      const ScalarT *YP = &yOverlap[dof*neighborId];
       neighborVolume = volumeOverlap[neighborId];
       
       zeta = MATERIAL_EVALUATION::getDiffAndLen(X,XP,dof,X_dx);
