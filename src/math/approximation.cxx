@@ -249,7 +249,8 @@ int get_field_size(
         const int nnodes,
         const double* contP,
         const int num_control_points,
-        const int degree,
+        //const int degree,
+        const double* gradientBSpline,
         const bool twoD,
         double* jacobians    
     )
@@ -260,28 +261,17 @@ int get_field_size(
             - this is valid for typical horizon designs
         */
         int dof = PeridigmNS::dof();
-        std::vector<double> UVector(num_control_points + degree + 1);
-        double* U = &UVector[0];
-        std::vector<double> VVector(num_control_points + degree + 1);
-        double* V = &VVector[0]; 
-        std::vector<double> WVector(num_control_points + degree + 1);
-        double* W = &WVector[0]; 
-        double u = 0.5;
-        double v = 0.5;
-        double w = 0.5;
         
-        APPROXIMATION::knots(num_control_points,degree,true,U);
-        APPROXIMATION::knots(num_control_points,degree,true,V);
-        APPROXIMATION::knots(num_control_points,degree,true,W);
 
-        int offset = num_control_points * num_control_points * dof;
-        if (twoD == false) offset *= num_control_points;
+        int offsetContP = num_control_points * num_control_points * dof;
+        if (twoD == false) offsetContP *= num_control_points;
 
         for(int iID=0 ; iID<nnodes ; ++iID){
      
-            APPROXIMATION::get_jacobian(degree,num_control_points,contP,U,u,V,v,W,w,twoD,jacobians);
+            APPROXIMATION::get_jacobian(gradientBSpline,num_control_points,contP,twoD,jacobians);
             jacobians += dof*dof;
-            contP += offset;
+            contP += offsetContP;
+            
         }
 
     }
@@ -296,16 +286,16 @@ int get_field_size(
     )
     {
     const int *neighborListPtr = neighborhoodList;
-    int nsquare = num_control_points * num_control_points;
-    if (!twoD) nsquare *= num_control_points;
+    int offsetContP = num_control_points * num_control_points;
+    if (!twoD) offsetContP *= num_control_points;
     int dof = PeridigmNS::dof();
 
     for(int iID=0 ; iID<nnodes ; ++iID){
         int numNeighbors = *neighborListPtr; neighborListPtr++;
         APPROXIMATION::get_control_point(iID,numNeighbors,neighborListPtr,num_control_points,coor,AMatrix,twoD,contP);
         neighborListPtr += numNeighbors;
-        AMatrix +=  (numNeighbors + 1) * nsquare;
-        contP += nsquare * dof;
+        AMatrix +=  (numNeighbors + 1) * offsetContP;
+        contP += offsetContP * dof;
         }
 
     }
@@ -325,7 +315,7 @@ int get_field_size(
         int dof = PeridigmNS::dof();
 
         int nsquare = num_control_points * num_control_points;
-        Eigen::MatrixXd approx(nsquare,nneighbors+1);
+        //Eigen::MatrixXd approx(nsquare,nneighbors+1);
         Eigen::MatrixXd contPvec(nsquare,dof);
         Eigen::MatrixXd P(nneighbors+1, dof);
 
@@ -333,33 +323,99 @@ int get_field_size(
         for(int j=0 ; j<dof; ++j){ 
             P(0,j) = coor[dof * numNode + j];
         }
-
         for(int i=1 ; i<nneighbors+1; ++i){
             int neighborID = neighborhoodlist[i-1];
             for(int j=0 ; j<dof; ++j){ 
                 P(i,j) = coor[dof * neighborID + j];
-                
-            }
-
-        }
-
-        for(int i=0 ; i<nsquare ; ++i){    
-            for(int j=0 ; j<nneighbors+1; ++j){ 
-                approx(i,j) = AMatrix[i*(nneighbors+1) + j];
             }
         }
-        contPvec = approx * P;
-        for(int i=0 ; i<nsquare ; ++i){    
-            for(int j=0 ; j<dof; ++j){ 
-                contP[i*dof + j] = contPvec(i,j);
-            }
-        }
+        Eigen::MatrixXd approx = Eigen::Map<const Eigen::MatrixXd>(AMatrix,nneighbors+1,nsquare);
+        contPvec = approx.transpose() * P ;
+        Eigen::Map<Eigen::MatrixXd>(contP, dof, nsquare) = contPvec.transpose();
     }
+
+void get_B_spline_gradient(
+    const int nnodes,
+    const int* neighborhoodList,
+    const int num_control_points,
+    const double *AMatrix,
+    const double *gradient_functions,
+    const double *jacobian,
+    const bool twoD,
+    double *Bsplinegradient
+    )
+{
+
+    const int *neighborListPtr = neighborhoodList;
+    int offsetContP = num_control_points * num_control_points;
+    if (!twoD) offsetContP *= num_control_points;
+    int dof = PeridigmNS::dof();
+
+    
+    //Bsplinegradient
+    for(int iID=0 ; iID<nnodes ; ++iID){
+        int numNeighbors = *neighborListPtr;
+        neighborListPtr += numNeighbors + 1;
+        
+        Eigen::MatrixXd gradient_functionsNxDof = Eigen::Map<const Eigen::MatrixXd>(gradient_functions,dof,offsetContP).transpose();
+        Eigen::MatrixXd jacobian_DofxDof = Eigen::Map<const Eigen::MatrixXd>(jacobian,dof,dof);
+        
+        Eigen::MatrixXd AMatrixNxM = Eigen::Map<const Eigen::MatrixXd>(AMatrix,numNeighbors+1,offsetContP).transpose();
+        Eigen::Map<Eigen::MatrixXd>(Bsplinegradient, numNeighbors + 1,dof) = (AMatrixNxM.transpose() * gradient_functionsNxDof * jacobian_DofxDof);
+
+        Bsplinegradient +=  (numNeighbors + 1) * dof;
+        jacobian += dof * dof;
+        AMatrix += (numNeighbors+1) * offsetContP;
+    }
+
+}
+void get_deformation_gradient_new(
+    const int nnodes,
+    const int* neighborhoodList,
+    const double *coor,
+    const double *Bsplinegradient,
+    double *defGrad
+    )
+{
+
+
+    int dof = PeridigmNS::dof();
+    int nIndex = 0;
+    
+    //Bsplinegradient
+    for(int iID=0 ; iID<nnodes ; ++iID){
+        int numNeighbors = neighborhoodList[nIndex++];
+
+        Eigen::MatrixXd P(numNeighbors+1, dof);
+        
+        for(int j=0 ; j<dof; ++j){ 
+            P(0,j) = coor[dof * iID + j];
+        }
+
+        for(int i=1 ; i<numNeighbors+1; ++i){
+            int neighborID = neighborhoodList[nIndex++];
+            for(int j=0 ; j<dof; ++j){ 
+                P(i,j) = coor[dof * neighborID + j];
+            }
+        }
+        
+        Eigen::MatrixXd BsplinegradientMxDof = Eigen::Map<const Eigen::MatrixXd>(Bsplinegradient,numNeighbors + 1, dof);
+        Eigen::Map<Eigen::MatrixXd>(defGrad, dof,  dof) = P.transpose() * BsplinegradientMxDof;
+
+        Bsplinegradient +=  (numNeighbors + 1) * dof;
+        defGrad += dof * dof;
+
+    }
+}
+
+
+
 void get_deformation_gradient(
         const int nnodes,
         const double* contP,
         const int num_control_points,
-        const int degree,
+        //const int degree,
+        const double* gradientBSpline,
         const bool twoD,
         const double* jacobians,    
         double* defGrad
@@ -370,64 +426,31 @@ void get_deformation_gradient(
             -> u, v, w = 0.5; 
             - this is valid for typical horizon designs
         */
-        int len = 2;
-        if (!twoD) len = 3;
         int dof = PeridigmNS::dof();
-        std::vector<double> UVector(num_control_points + degree + 1);
-        double* U = &UVector[0];
-        std::vector<double> VVector(num_control_points + degree + 1);
-        double* V = &VVector[0]; 
-        std::vector<double> WVector(num_control_points + degree + 1);
-        double* W = &WVector[0]; 
-        double u = 0.5;
-        double v = 0.5;
-        double w = 0.5;
-        
-        APPROXIMATION::knots(num_control_points,degree,true,U);
-        APPROXIMATION::knots(num_control_points,degree,true,V);
-        APPROXIMATION::knots(num_control_points,degree,true,W);
-
-        int offset = num_control_points * num_control_points * dof;
-        if (twoD == false) offset *= num_control_points;
- 
+        std::vector<double> gradientVector(9);
+        double *gradient = &gradientVector[0];
+        int offsetContP = num_control_points * num_control_points * dof;
+        if (twoD == false) offsetContP *= offsetContP;
         for(int iID=0 ; iID<nnodes ; ++iID){
-            Eigen::MatrixXd gradientMxM(len,len);
-            Eigen::MatrixXd jacobianMxM(len,len);
-            Eigen::MatrixXd defGradMxM(len,len);
-            MATRICES::setToZero(defGrad,dof*dof);
-            for(int i=0 ; i<len ; ++i){
-                for(int j=0 ; j<len ; ++j){
-                    jacobianMxM(i,j) = jacobians[i*dof + j];
-                    defGradMxM(i,j) = 0.0;
-                }
-            }
-            APPROXIMATION::get_gradient(degree,num_control_points,contP,U,u,V,v,W,w,twoD,gradientMxM);
 
-            defGradMxM = gradientMxM * jacobianMxM;
-            for(int i=0 ; i<len ; ++i){
-                for(int j=0 ; j<len ; ++j){
-                    defGrad[i*dof + j] = defGradMxM(i,j);
-                }
-            }
+            APPROXIMATION::get_gradient(gradientBSpline,num_control_points,contP,twoD, gradient);
+            Eigen::MatrixXd A = Eigen::Map<const Eigen::MatrixXd>(gradient,dof,dof);
+            Eigen::MatrixXd B = Eigen::Map<const Eigen::MatrixXd>(jacobians,dof,dof);
+            Eigen::Map<Eigen::MatrixXd>(defGrad, dof, dof) = A * B;
             jacobians += dof*dof;
             defGrad += dof*dof;
-            contP += offset;
+            contP += offsetContP;
         }
 
     }
 
 
-    void get_local_gradient(
+    void get_gradient_functions(
         const int p,
         const int num_control_points,
-        const double* contP,
         const bool twoD,
-        const double* jacobian,
-        double* gradient
+        double* gradientBSpline
     ){
-        
-        std::cout<<"u"<<std::endl;
-        int dof = PeridigmNS::dof();
         std::vector<double> UVector(num_control_points + p + 1);
         double* U = &UVector[0];
         std::vector<double> VVector(num_control_points + p + 1);
@@ -439,109 +462,83 @@ void get_deformation_gradient(
         double w = 0.5;
         APPROXIMATION::knots(num_control_points,p,true,U);
         APPROXIMATION::knots(num_control_points,p,true,V);
-        APPROXIMATION::knots(num_control_points,p,true,W);
-        int len = 3;
-        if (twoD)len = 2;
-        
-        Eigen::MatrixXd gradientMxM(len,len);
-        Eigen::MatrixXd jacobianMxM(len,len);
-        Eigen::MatrixXd localgradientMxM(len,len);
-        APPROXIMATION::get_gradient(p,num_control_points,contP,U,u,V,v,W,w,twoD,gradientMxM);
-        for(int i=0 ; i<len ; ++i){
-            for(int j=0 ; j<len ; ++j){
-                jacobianMxM(i,j) = jacobian[i*dof + j];
+
+        if (twoD){  
+            MATRICES::setToZero(gradientBSpline, 3 * num_control_points * num_control_points);
+            for(int i=0 ; i<num_control_points ; ++i){
+                for(int j=0 ; j<num_control_points ; ++j){
+                    int offset = 3 * (num_control_points * i + j);
+                    gradientBSpline[offset]  =deriv_basis_func(i,p,U,u)*basis_func(j,p,V,v);
+                    gradientBSpline[offset+1]=basis_func(i,p,U,u)*deriv_basis_func(j,p,V,v);
+                }
             }
         }
-        
-        localgradientMxM = gradientMxM * jacobianMxM;
-        for(int i=0 ; i<len ; ++i){
-            for(int j=0 ; j<len ; ++j){
-               gradient[i*dof + j] = localgradientMxM(i,j);
+        if (!twoD){
+            MATRICES::setToZero(gradientBSpline, 3 * num_control_points * num_control_points * num_control_points);
+            APPROXIMATION::knots(num_control_points,p,true,W);
+            for(int k=0 ; k<num_control_points ; ++k){
+                for(int j=0 ; j<num_control_points ; ++j){
+                    for(int i=0 ; i<num_control_points ; ++i){  
+                        int offset = 3 * (k * num_control_points * num_control_points + j * num_control_points + i);
+                        gradientBSpline[offset]  =deriv_basis_func(j,p,U,u)*basis_func(i,p,V,v)*basis_func(k,p,W,w);
+                        gradientBSpline[offset+1]=basis_func(j,p,U,u)*deriv_basis_func(i,p,V,v)*basis_func(k,p,W,w);
+                        gradientBSpline[offset+2]=basis_func(j,p,U,u)*basis_func(i,p,V,v)*deriv_basis_func(k,p,W,w);
+                    }
+                }
             }
-        } 
-
+        }
     }
-
-
+    
     void get_jacobian(
-        const int p,
+        //const int p,
+        const double* gradientBSpline,
         const int num_control_points,
         const double* contP,
-        const double* U,
-        const double u,
-        const double* V,
-        const double v,
-        const double* W,
-        const double w,
+        //const double* U,
+        //const double u,
+        //const double* V,
+        //const double v,
+        //const double* W,
+        //const double w,
         const bool twoD,
         double* jacobian
     )
     {   
 
-        int len = 3;
-        if (twoD)len = 2;
         int dof = PeridigmNS::dof();
         MATRICES::setToZero(jacobian,dof*dof);
-        Eigen::MatrixXd gradientMxM(len,len);
-        Eigen::MatrixXd jacobianMxM(len,len);
-        APPROXIMATION::get_gradient(p,num_control_points,contP,U,u,V,v,W,w,twoD,gradientMxM);
+        std::vector<double> gradientVector(9);
+        double *gradient = &gradientVector[0];
+        double det;
+        //APPROXIMATION::get_gradient(p,num_control_points,contP,U,u,V,v,W,w,twoD,gradientMxM);
+        APPROXIMATION::get_gradient(gradientBSpline,num_control_points,contP,twoD,gradient);
+        if (twoD){MATRICES::Invert2by2Matrix(gradient,det, jacobian);}
+        else {MATRICES::Invert3by3Matrix(gradient,det, jacobian);}
         
-        jacobianMxM = gradientMxM.inverse();
-        for(int i=0 ; i<len ; ++i){
-            for(int j=0 ; j<len ; ++j){
-               jacobian[i*dof + j] = jacobianMxM(i,j);
-            }
-        } 
     }
 
     void get_gradient(
-        const int p,
+        //const int p,
+        const double* gradientBSpline,
         const int num_control_points,
         const double* contP,
-        const double* U,
-        const double u,
-        const double* V,
-        const double v,
-        const double* W,
-        const double w,
+        //const double* U,
+        //const double u,
+        //const double* V,
+        //const double v,
+        //const double* W,
+        //const double w,
         const bool twoD,
-        MatrixXd& gradientMxM
+        double* gradientMxM
     )
     {
-    int dof = PeridigmNS::dof();
-    if (twoD){
-        gradientMxM(0,0) = 0.0; gradientMxM(0,1) = 0.0;
-        gradientMxM(1,0) = 0.0; gradientMxM(1,1) = 0.0;
-        for(int i=0 ; i<num_control_points ; ++i){  
-            for(int j=0 ; j<num_control_points ; ++j){
-                int pos = i*num_control_points+j;
-                gradientMxM(0,0)+=deriv_basis_func(i,p,U,u)*basis_func(j,p,V,v)*contP[dof*pos];
-                gradientMxM(0,1)+=deriv_basis_func(i,p,U,u)*basis_func(j,p,V,v)*contP[dof*pos+1];
-                gradientMxM(1,0)+=basis_func(i,p,U,u)*deriv_basis_func(j,p,V,v)*contP[dof*pos];
-                gradientMxM(1,1)+=basis_func(i,p,U,u)*deriv_basis_func(j,p,V,v)*contP[dof*pos+1];
-            }
-        }
-    }
-    if (!twoD){
-        gradientMxM(0,0) = 0.0; gradientMxM(0,1) = 0.0; gradientMxM(0,2) = 0.0;
-        gradientMxM(1,0) = 0.0; gradientMxM(1,1) = 0.0; gradientMxM(1,2) = 0.0;
-        gradientMxM(2,0) = 0.0; gradientMxM(2,1) = 0.0; gradientMxM(2,2) = 0.0;
-
-        for(int k=0 ; k<num_control_points ; ++k){
-            for(int j=0 ; j<num_control_points ; ++j){
-                for(int i=0 ; i<num_control_points ; ++i){
-                    int pos = i*num_control_points*num_control_points + j*num_control_points + k;
-                    
-                    for(int l=0 ; l<dof ; ++l){ 
-                        gradientMxM(0,l)+=deriv_basis_func(i,p,U,u)*basis_func(j,p,V,v)*basis_func(k,p,W,w)*contP[dof*pos+l];
-                        gradientMxM(1,l)+=basis_func(i,p,U,u)*deriv_basis_func(j,p,V,v)*basis_func(k,p,W,w)*contP[dof*pos+l];
-                        gradientMxM(2,l)+=basis_func(i,p,U,u)*basis_func(j,p,V,v)*deriv_basis_func(k,p,W,w)*contP[dof*pos+l];
-                    
-                        }
-                    }
-                }
-            }
-        }
+        int dof = PeridigmNS::dof();
+        MATRICES::setToZero(gradientMxM,9);
+        int offset = num_control_points * num_control_points;
+        if (!twoD)offset *= num_control_points;
+        Eigen::MatrixXd P = Eigen::Map<const Eigen::MatrixXd>(contP,dof,offset);
+        Eigen::MatrixXd gradient_functionsNxDof = Eigen::Map<const Eigen::MatrixXd>(gradientBSpline,dof,offset);  
+        Eigen::Map<Eigen::MatrixXd>(gradientMxM, dof,  dof) = gradient_functionsNxDof*P.transpose();
     }
 }
 

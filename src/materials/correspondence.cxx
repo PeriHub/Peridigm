@@ -625,7 +625,6 @@ double* detachedNodes
         
             if (type==true){
                 inversionReturnCode = MATRICES::Invert2by2Matrix(shapeTensor, shapeTensorDeterminant, shapeTensorInv);
-
             }
             else{
                 inversionReturnCode = MATRICES::Invert3by3Matrix(shapeTensor, shapeTensorDeterminant, shapeTensorInv);

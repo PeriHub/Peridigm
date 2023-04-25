@@ -509,16 +509,25 @@ void PeridigmNS::Material::getStiffnessmatrix(const Teuchos::ParameterList& para
     iso = true;
     double m_bulkModulus = calculateBulkModulus(params);
     double m_shearModulus = calculateShearModulus(params);
-    double lam = m_bulkModulus - 2./3.*m_shearModulus; 
+    
+    double EMod = 9*m_bulkModulus * m_shearModulus / (3*m_bulkModulus + m_shearModulus);
+    double nu = (3*m_bulkModulus - 2*m_shearModulus) / (6*m_bulkModulus + 2*m_shearModulus);
     for(int iID=0 ; iID<6 ; ++iID)
     {
-      for(int jID=1 ; jID<6 ; ++jID){
+      for(int jID=0 ; jID<6 ; ++jID){
         ctemp[iID][jID] = 0.0;
       }
-      ctemp[iID][iID] = 2*m_shearModulus + lam;
+      if (iID < 3){
+        ctemp[iID][iID] = EMod / (1-nu) * (1-nu) / (1-2*nu);
+        for(int jID=iID+1 ; jID<3 ; ++jID){
+          ctemp[iID][jID] = EMod / nu * (1-nu) / (1-2*nu);
+          ctemp[iID][jID] = ctemp[jID][iID];
+        }
+      }
+      if (iID > 2)ctemp[iID][iID] = 0.5 * m_shearModulus;
     }
-    ctemp[0][1] = ctemp[0][0] - 2.*m_bulkModulus;
-    ctemp[0][2] = ctemp[0][1];  
+
+
   }
     // Equation (8) Dipasquale, D., Sarego, G., Zaccariotto, M., Galvanetto, U., A discussion on failure criteria
     // for ordinary state-based Peridynamics, Engineering Fracture Mechanics (2017), doi: https://doi.org/10.1016/

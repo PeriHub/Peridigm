@@ -506,7 +506,7 @@ TEUCHOS_UNIT_TEST(approximation, get_approximation) {
     // lengths are hard coded to avoid warnings
     int nlist[50] = {24, 2, 3, 4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,24, 2, 3, 4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25};
     int ncont = 3;
-    int len = APPROXIMATION::get_field_size(2, nlist, nPoints, true);
+    int len = APPROXIMATION::get_field_size(2, nlist, ncont, true);
     
     std::vector<double> AVector(len);
     double* A = &AVector[0];
@@ -862,10 +862,339 @@ TEUCHOS_UNIT_TEST(approximation, get_control_point) {
     
     for(int i=0 ; i<ncont*ncont*PeridigmNS::dof() ; ++i){       
             TEST_ASSERT(abs(contP[i]-contPTest[i])<tolerance);  
+            //TEST_FLOATING_EQUALITY(contP[i],contPTest[i],tolerance);
         }
 }
 
+TEUCHOS_UNIT_TEST(approximation, get_B_spline_gradient) {
+   /*  
+    create_approximation
+        const int node,
+        const int nneighbors,
+        const int* neighborhoodlist,
+        const double* coordinates,
+        const int num_control_points,
+        const int degree,
+        const bool twoD,
+        double* AMatrix
+    */
 
+    const double tolerance = 4.0e-8;
+
+    int p = 2;
+    // lengths are hard coded to avoid warnings
+   
+    int ncont = 3;
+    std::vector<double> AVector(9*50);
+    double* A = &AVector[0];
+   
+
+// calculated with Python
+    
+    A[0]= 0.562499999999996 ;
+    A[1]= 0.0 ;
+    A[2]= 0.0 ;
+    A[3]= 0.0 ;
+    A[4]= 0.0 ;
+    A[5]= 0.0 ;
+    A[6]= 0.0 ;
+    A[7]= 5.062499999999993 ;
+    A[8]= -1.687500000000004 ;
+    A[9]= -2.812500000000002 ;
+    A[10]= 1.6874999999999971 ;
+    A[11]= 0.0 ;
+    A[12]= -1.6875000000000073 ;
+    A[13]= 0.9374999999999978 ;
+    A[14]= -0.5625000000000022 ;
+    A[15]= 0.0 ;
+    A[16]= -2.812500000000005 ;
+    A[17]= 0.9374999999999952 ;
+    A[18]= 1.5624999999999976 ;
+    A[19]= -0.9375000000000004 ;
+    A[20]= 0.0 ;
+    A[21]= 1.6875000000000013 ;
+    A[22]= -0.5625000000000053 ;
+    A[23]= -0.9375000000000051 ;
+    A[24]= 0.5625000000000024 ;
+    A[25]= -1.162499999999995 ;
+    A[26]= 0.0 ;
+    A[27]= 0.0 ;
+    A[28]= 0.0 ;
+    A[29]= 0.0 ;
+    A[30]= 0.0 ;
+    A[31]= 0.0 ;
+    A[32]= -1.9124999999999934 ;
+    A[33]= 0.6375000000000043 ;
+    A[34]= 1.0625000000000022 ;
+    A[35]= -0.6374999999999988 ;
+    A[36]= 0.0 ;
+    A[37]= 3.4875000000000083 ;
+    A[38]= -1.9374999999999978 ;
+    A[39]= 1.1624999999999996 ;
+    A[40]= 0.0 ;
+    A[41]= 3.2625000000000037 ;
+    A[42]= -1.087499999999995 ;
+    A[43]= -1.8124999999999967 ;
+    A[44]= 1.0874999999999986 ;
+    A[45]= 0.0 ;
+    A[46]= -2.5875000000000017 ;
+    A[47]= 0.862500000000007 ;
+    A[48]= 1.4375000000000067 ;
+    A[49]= -0.862500000000002 ;
+    A[50]= 0.11249999999999957 ;
+    A[51]= 0.0 ;
+    A[52]= 0.0 ;
+    A[53]= 0.0 ;
+    A[54]= 0.0 ;
+    A[55]= 0.0 ;
+    A[56]= 0.0 ;
+    A[57]= 0.11249999999999913 ;
+    A[58]= -0.03750000000000018 ;
+    A[59]= -0.06250000000000017 ;
+    A[60]= 0.037499999999999395 ;
+    A[61]= 0.0 ;
+    A[62]= -0.3375000000000009 ;
+    A[63]= 0.18749999999999992 ;
+    A[64]= -0.11249999999999993 ;
+    A[65]= 0.0 ;
+    A[66]= 0.33749999999999963 ;
+    A[67]= -0.11250000000000077 ;
+    A[68]= -0.18750000000000058 ;
+    A[69]= 0.11250000000000043 ;
+    A[70]= 0.0 ;
+    A[71]= 2.137500000000001 ;
+    A[72]= -0.7125000000000012 ;
+    A[73]= -1.1875000000000013 ;
+    A[74]= 0.7125000000000004 ;
+    A[75]= -1.1624999999999968 ;
+    A[76]= 0.0 ;
+    A[77]= 0.0 ;
+    A[78]= 0.0 ;
+    A[79]= 0.0 ;
+    A[80]= 0.0 ;
+    A[81]= 0.0 ;
+    A[82]= -1.912499999999993 ;
+    A[83]= 3.4875000000000056 ;
+    A[84]= 3.2625000000000046 ;
+    A[85]= -2.587499999999996 ;
+    A[86]= 0.0 ;
+    A[87]= 0.6375000000000062 ;
+    A[88]= -1.0874999999999977 ;
+    A[89]= 0.8625000000000029 ;
+    A[90]= 0.0 ;
+    A[91]= 1.0625000000000022 ;
+    A[92]= -1.9374999999999984 ;
+    A[93]= -1.8124999999999987 ;
+    A[94]= 1.4375000000000009 ;
+    A[95]= 0.0 ;
+    A[96]= -0.6375000000000041 ;
+    A[97]= 1.1625000000000016 ;
+    A[98]= 1.0875000000000024 ;
+    A[99]= -0.8625000000000024 ;
+    A[100]= 2.402499999999998 ;
+    A[101]= 0.0 ;
+    A[102]= 0.0 ;
+    A[103]= 0.0 ;
+    A[104]= 0.0 ;
+    A[105]= 0.0 ;
+    A[106]= 0.0 ;
+    A[107]= 0.7224999999999951 ;
+    A[108]= -1.3175000000000028 ;
+    A[109]= -1.2325000000000017 ;
+    A[110]= 0.9774999999999985 ;
+    A[111]= 0.0 ;
+    A[112]= -1.3175000000000037 ;
+    A[113]= 2.2475 ;
+    A[114]= -1.7824999999999998 ;
+    A[115]= 0.0 ;
+    A[116]= -1.2325000000000017 ;
+    A[117]= 2.247499999999998 ;
+    A[118]= 2.102499999999999 ;
+    A[119]= -1.6674999999999986 ;
+    A[120]= 0.0 ;
+    A[121]= 0.977500000000004 ;
+    A[122]= -1.7825000000000029 ;
+    A[123]= -1.6675000000000035 ;
+    A[124]= 1.3225000000000018 ;
+    A[125]= -0.23249999999999982 ;
+    A[126]= 0.0 ;
+    A[127]= 0.0 ;
+    A[128]= 0.0 ;
+    A[129]= 0.0 ;
+    A[130]= 0.0 ;
+    A[131]= 0.0 ;
+    A[132]= -0.04249999999999919 ;
+    A[133]= 0.0775000000000002 ;
+    A[134]= 0.07250000000000018 ;
+    A[135]= -0.057499999999999385 ;
+    A[136]= 0.0 ;
+    A[137]= 0.1275000000000005 ;
+    A[138]= -0.21749999999999992 ;
+    A[139]= 0.17249999999999988 ;
+    A[140]= 0.0 ;
+    A[141]= -0.12750000000000006 ;
+    A[142]= 0.2325000000000006 ;
+    A[143]= 0.2175000000000003 ;
+    A[144]= -0.17250000000000043 ;
+    A[145]= 0.0 ;
+    A[146]= -0.807500000000001 ;
+    A[147]= 1.4725000000000008 ;
+    A[148]= 1.3775000000000008 ;
+    A[149]= -1.0925000000000002 ;
+    A[150]= 0.11249999999999957 ;
+    A[151]= 0.0 ;
+    A[152]= 0.0 ;
+    A[153]= 0.0 ;
+    A[154]= 0.0 ;
+    A[155]= 0.0 ;
+    A[156]= 0.0 ;
+    A[157]= 0.11249999999999909 ;
+    A[158]= -0.33750000000000013 ;
+    A[159]= 0.3374999999999996 ;
+    A[160]= 2.137499999999999 ;
+    A[161]= 0.0 ;
+    A[162]= -0.03750000000000062 ;
+    A[163]= -0.11250000000000045 ;
+    A[164]= -0.7125000000000005 ;
+    A[165]= 0.0 ;
+    A[166]= -0.06250000000000035 ;
+    A[167]= 0.18749999999999958 ;
+    A[168]= -0.18750000000000036 ;
+    A[169]= -1.1875 ;
+    A[170]= 0.0 ;
+    A[171]= 0.03749999999999993 ;
+    A[172]= -0.11250000000000018 ;
+    A[173]= 0.11249999999999985 ;
+    A[174]= 0.7125 ;
+    A[175]= -0.2324999999999994 ;
+    A[176]= 0.0 ;
+    A[177]= 0.0 ;
+    A[178]= 0.0 ;
+    A[179]= 0.0 ;
+    A[180]= 0.0 ;
+    A[181]= 0.0 ;
+    A[182]= -0.04249999999999941 ;
+    A[183]= 0.12750000000000006 ;
+    A[184]= -0.1274999999999999 ;
+    A[185]= -0.8074999999999994 ;
+    A[186]= 0.0 ;
+    A[187]= 0.07750000000000068 ;
+    A[188]= 0.23250000000000046 ;
+    A[189]= 1.4725000000000001 ;
+    A[190]= 0.0 ;
+    A[191]= 0.07250000000000038 ;
+    A[192]= -0.21749999999999947 ;
+    A[193]= 0.21750000000000033 ;
+    A[194]= 1.3774999999999997 ;
+    A[195]= 0.0 ;
+    A[196]= -0.057499999999999885 ;
+    A[197]= 0.1725000000000002 ;
+    A[198]= -0.17249999999999974 ;
+    A[199]= -1.0924999999999998 ;
+    A[200]= 0.022499999999999964 ;
+    A[201]= 0.0 ;
+    A[202]= 0.0 ;
+    A[203]= 0.0 ;
+    A[204]= 0.0 ;
+    A[205]= 0.0 ;
+    A[206]= 0.0 ;
+    A[207]= 0.002499999999999919 ;
+    A[208]= -0.007499999999999979 ;
+    A[209]= 0.007500000000000062 ;
+    A[210]= 0.04749999999999988 ;
+    A[211]= 0.0 ;
+    A[212]= -0.007500000000000007 ;
+    A[213]= -0.022500000000000075 ;
+    A[214]= -0.1425 ;
+    A[215]= 0.0 ;
+    A[216]= 0.007500000000000007 ;
+    A[217]= -0.02250000000000016 ;
+    A[218]= 0.02249999999999991 ;
+    A[219]= 0.14250000000000007 ;
+    A[220]= 0.0 ;
+    A[221]= 0.04750000000000004 ;
+    A[222]= -0.1425000000000001 ;
+    A[223]= 0.14249999999999996 ;
+    A[224]= 0.9025 ;
+    int offset = 225;
+    for(int i=0 ; i<225 ; ++i)     A[i+offset] = A[i];
+    
+    // calculated with Python
+    double *gradient_function, *Bsplinegradient;
+    gradient_function = new double[ncont*ncont * PeridigmNS::dof()];
+    Bsplinegradient = new double[50 * PeridigmNS::dof()];
+
+    std::vector<double> jacobianVector(2*PeridigmNS::dof()*PeridigmNS::dof());
+    double* jacobian = &jacobianVector[0];
+    
+
+    double defGradTest[18];
+    defGradTest[0]=1;    defGradTest[1]=0;    defGradTest[2]=0;
+    defGradTest[3]=0;    defGradTest[4]=1.1;    defGradTest[5]=0;
+    defGradTest[6]=0;    defGradTest[7]=0;    defGradTest[8]=0;
+    defGradTest[9]=1.0;    defGradTest[10]=0;    defGradTest[11]=0;
+    defGradTest[12]=0;      defGradTest[13]=1.1;  defGradTest[14]=0;
+    defGradTest[15]=0;      defGradTest[16]=0;    defGradTest[17]=0;
+    double *defGrad;
+    defGrad = new double[2*PeridigmNS::dof() * PeridigmNS::dof()];
+
+    int nlist[50] = {24, 2, 3, 4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,
+                     24, 2, 3, 4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25};
+    double coorU[3*50] =   {
+                            0,0,0,
+                             0,0,0,
+                          -1,  -1.1,0,
+                          -0.5,-1.1,0,
+                          0,   -1.1,0,
+                          0.5, -1.1,0,
+                          1,   -1.1,0,
+                          -1,  -0.55,0,
+                          -0.5,-0.55,0,
+                          0,   -0.55,0,
+                          0.5, -0.55,0,
+                          1,   -0.55,0,
+                          -1,  0,0,
+                          -0.5,0,0,
+                          0.5, 0,0,
+                          1,   0,0,
+                          -1,  0.55,0,
+                          -0.5,0.55,0,
+                          0,   0.55,0,
+                          0.5, 0.55,0,
+                          1,   0.55,0,
+                          -1,  1.1,0,
+                          -0.5,1.1,0,
+                          0,   1.1,0,
+                          0.5, 1.1,0,
+                          1,   1.1,0};
+    jacobian[0]= 0.5 ;
+    jacobian[1]= 0 ;
+    jacobian[2]= 0 ;
+    jacobian[3]= 0 ;
+    jacobian[4]= 0.5 ;
+    jacobian[5]= 0 ;
+    jacobian[6]= 0 ;
+    jacobian[7]= 0 ;
+    jacobian[8]= 0 ;
+    offset = 9;
+    jacobian[offset + 0]= 0.5 ;
+    jacobian[offset + 1]= 0 ;
+    jacobian[offset + 2]= 0 ;
+    jacobian[offset + 3]= 0 ;
+    jacobian[offset + 4]= 0.5 ;
+    jacobian[offset + 5]= 0 ;
+    jacobian[offset + 6]= 0 ;
+    jacobian[offset + 7]= 0 ;
+    jacobian[offset + 8]= 0 ;
+    APPROXIMATION::get_gradient_functions(p,ncont,true,gradient_function);
+    APPROXIMATION::get_B_spline_gradient(1,nlist,ncont, A, gradient_function,jacobian,true,Bsplinegradient);
+    APPROXIMATION::get_deformation_gradient_new(1,nlist,coorU,Bsplinegradient,defGrad);
+      
+    for(int j=0 ; j<9 ; ++j){  
+        TEST_ASSERT(abs(defGrad[j]-defGradTest[j])<tolerance);  
+    }
+    
+}
 
 
 TEUCHOS_UNIT_TEST(approximation, get_gradient) {
@@ -894,52 +1223,34 @@ TEUCHOS_UNIT_TEST(approximation, get_gradient) {
     contP[0]= -0.9999999999999998 ;    contP[1]= -1.000000000000005 ;    contP[2]= 0 ;
     contP[3]= -1.0000000000000036 ;    contP[4]= 0.0 ;    contP[5]= 0 ;
     contP[6]= -1.0000000000000002 ;    contP[7]= 0.9999999999999991 ;    contP[8]= 0 ;
-    contP[9]= 0.0 ;    contP[10]= -1.0000000000000102 ;    contP[11]= 0 ;
-    contP[12]= 0.0 ;    contP[13]= 0 ;    contP[14]= 0 ;
-    contP[15]= 0 ;    contP[16]= 1.0 ;    contP[17]= 0 ;
+    contP[9]= 0.0 ;                    contP[10]= -1.0000000000000102 ;    contP[11]= 0 ;
+    contP[12]= 0.0 ;                   contP[13]= 0 ;    contP[14]= 0 ;
+    contP[15]= 0 ;                     contP[16]= 1.0 ;    contP[17]= 0 ;
     contP[18]= 0.9999999999999987 ;    contP[19]= -0.9999999999999999 ;    contP[20]= 0 ;
     contP[21]= 1.0000000000000004 ;    contP[22]= 0 ;    contP[23]= 0 ;
     contP[24]= 0.9999999999999999 ;    contP[25]= 0.9999999999999999 ;    contP[26]= 0 ;
 
-    std::vector<double> UVector(ncont + p + 1);
-    double* U = &UVector[0];
-    std::vector<double> VVector(ncont + p + 1);
-    double* V = &VVector[0]; 
-    std::vector<double> WVector(ncont + p + 1);
-    double* W = &WVector[0]; 
-    double u = 0.5, v = 0.5, w = 0.5;
-    APPROXIMATION::knots(ncont,p,true,U);
-    APPROXIMATION::knots(ncont,p,true,V);
-    APPROXIMATION::knots(ncont,p,true,W);
-
-    Eigen::MatrixXd gradientMxM(2,2);
-
-    APPROXIMATION::get_gradient(p,ncont,contP,U,u,V,v,W,w,true,gradientMxM);
+    double *gradientBSpline2D;
+    gradientBSpline2D = new double[PeridigmNS::dof() * ncont * ncont ];
+    APPROXIMATION::get_gradient_functions(p,ncont,true,gradientBSpline2D);
+    std::vector<double> gradientVector(9);
+    double *gradientMxM = &gradientVector[0];
+    APPROXIMATION::get_gradient(gradientBSpline2D,ncont,contP,true,gradientMxM);
     gradTest[0]= 2.0000000000000013 ;
     gradTest[1]= -1.970645868709653e-15 ;
-    gradTest[2]= -2.4702462297909733e-15 ;
-    gradTest[3]= 2.000000000000006 ;
-
-
-
-    for(int i=0 ; i<2 ; ++i){    
-        for(int j=0 ; j<2 ; ++j){        
-            TEST_ASSERT(abs(gradientMxM(i,j)-gradTest[2*i+j])<tolerance);     
-        }
+    gradTest[2]= 0.0 ;
+    gradTest[3]= -2.4702462297909733e-15 ;
+    gradTest[4]= 2.000000000000006 ;
+    gradTest[5]= 0.0 ;
+    gradTest[6]= 0.0 ;
+    gradTest[7]= 0.0 ;
+    gradTest[8]= 0.0 ;
+    
+    for(int i=0 ; i<9 ; ++i){    
+            TEST_ASSERT(abs(gradientMxM[i]-gradTest[i])<tolerance);
     }
-    APPROXIMATION::get_gradient(p,ncont,contP,U,u,V,v,W,w,true,gradientMxM);
-    gradTest[0]= 2.0;
-    gradTest[1]= 0 ;
-    gradTest[2]= 0 ;
-    gradTest[3]= 0.0 ;
-    gradTest[4]= 2.0 ;
-    gradTest[5]= 0 ;
-    gradTest[6]= 0 ;
-    gradTest[7]= 0 ;
-    gradTest[8]= 2.0 ;
     
-    
-
+   
     contP3D[0]= -0.9999999999999998 ;    contP3D[1]= -1.000000000000005 ;    contP3D[2]= -1 ;
     contP3D[3]= -1.0000000000000036 ;    contP3D[4]= 0.0 ;                   contP3D[5]= -1 ;
     contP3D[6]= -1.0000000000000002 ;    contP3D[7]= 0.9999999999999991 ;    contP3D[8]= -1 ;
@@ -969,22 +1280,27 @@ TEUCHOS_UNIT_TEST(approximation, get_gradient) {
     contP3D[18+offset]= 0.9999999999999987 ;    contP3D[19+offset]= -0.9999999999999999 ;  contP3D[20+offset]= 1 ;
     contP3D[21+offset]= 1.0000000000000004 ;    contP3D[22+offset]= 0 ;                    contP3D[23+offset]= 1 ;
     contP3D[24+offset]= 0.9999999999999999 ;    contP3D[25+offset]= 0.9999999999999999 ;   contP3D[26+offset]= 1 ;  
-    Eigen::MatrixXd gradient3DMxM(3,3);
-    APPROXIMATION::get_gradient(p,ncont,contP3D,U,u,V,v,W,w,false,gradient3DMxM);
-    gradTest[0]= 0.0 ;
+    std::vector<double> gradient3DVector(9);
+    double *gradient3DMxM = &gradient3DVector[0];
+    
+    double *gradientBSpline3D;
+    gradientBSpline3D = new double[PeridigmNS::dof() * ncont * ncont * ncont ];
+    APPROXIMATION::get_gradient_functions(p,ncont,false,gradientBSpline3D);
+    APPROXIMATION::get_gradient(gradientBSpline3D,ncont,contP3D,false,gradient3DMxM);
+    gradTest[0]= 2.0 ;
     gradTest[1]= 0.0 ;
-    gradTest[2]= 2.0 ;
-    gradTest[3]= 2.0 ;
-    gradTest[4]= 0.0 ;
+    gradTest[2]= 0.0 ;
+    gradTest[3]= 0.0 ;
+    gradTest[4]= 2.0 ;
     gradTest[5]= 0.0 ;
     gradTest[6]= 0.0 ;
-    gradTest[7]= 2.0 ;
-    gradTest[8]= 0.0 ;
+    gradTest[7]= 0.0 ;
+    gradTest[8]= 2.0 ;
 
-    for(int i=0 ; i<3 ; ++i){    
-        for(int j=0 ; j<3 ; ++j){        
-            TEST_ASSERT(abs(gradient3DMxM(i,j)-gradTest[3*i+j])<tolerance);  
-        }
+    for(int i=0 ; i<9 ; ++i){    
+                
+        TEST_ASSERT(abs(gradient3DMxM[i]-gradTest[i])<tolerance);  
+        
     }
 
  
@@ -1041,18 +1357,11 @@ TEUCHOS_UNIT_TEST(approximation, get_jacobian) {
     contP[24]= 0.9999999999999999 ;
     contP[25]= 0.9999999999999999 ;
     contP[26]= 0 ;
-    std::vector<double> UVector(ncont + p + 1);
-    double* U = &UVector[0];
-    std::vector<double> VVector(ncont + p + 1);
-    double* V = &VVector[0]; 
-    std::vector<double> WVector(ncont + p + 1);
-    double* W = &WVector[0]; 
-    double u = 0.5, v = 0.5, w = 0.5;
-    APPROXIMATION::knots(ncont,p,true,U);
-    APPROXIMATION::knots(ncont,p,true,V);
-    APPROXIMATION::knots(ncont,p,true,W);
 
-    APPROXIMATION::get_jacobian(p,ncont,contP,U,u,V,v,W,w,true,jacobian);
+    double *gradientBSpline2D;
+    gradientBSpline2D = new double[3*ncont * ncont ];
+    APPROXIMATION::get_gradient_functions(p,ncont,true,gradientBSpline2D);
+    APPROXIMATION::get_jacobian(gradientBSpline2D,ncont,contP,true,jacobian);
     jacobianTest[0]= 0.49999999999999967 ;
     jacobianTest[1]= 4.926614671774113e-16 ;
     jacobianTest[2]= 0 ;
@@ -1067,6 +1376,7 @@ TEUCHOS_UNIT_TEST(approximation, get_jacobian) {
      
     for(int i=0 ; i<PeridigmNS::dof()*PeridigmNS::dof() ; ++i){       
             TEST_ASSERT(abs(jacobian[i]-jacobianTest[i])<tolerance);  
+           // TEST_FLOATING_EQUALITY(jacobian[i],jacobianTest[i],tolerance)
         }
     
 }
@@ -1153,8 +1463,10 @@ TEUCHOS_UNIT_TEST(approximation, get_jacobians) {
     contP[25+27]= 0.9999999999999999 ;
     contP[26+27]= 0 ;
 
-
-    APPROXIMATION::get_jacobians(2,contP,ncont,p,true,jacobian);
+    double *gradientBSpline2D;
+    gradientBSpline2D = new double[3*ncont * ncont ];
+    APPROXIMATION::get_gradient_functions(p,ncont,true,gradientBSpline2D);
+    APPROXIMATION::get_jacobians(2,contP,ncont,gradientBSpline2D,true,jacobian);
     jacobianTest[0]= 0.49999999999999967 ;
     jacobianTest[1]= 4.926614671774113e-16 ;
     jacobianTest[2]= 0 ;
@@ -1228,12 +1540,14 @@ TEUCHOS_UNIT_TEST(approximation, get_deformation_gradient) {
 
     defGradTest[0]=1;    defGradTest[1]=0;    defGradTest[2]=0;
     defGradTest[3]=0;    defGradTest[4]=1;    defGradTest[5]=0;
-    defGradTest[8]=0;    defGradTest[7]=0;    defGradTest[8]=0;
-    defGradTest[9]=1.0;    defGradTest[10]=0;    defGradTest[12]=0;
-    defGradTest[12]=0;      defGradTest[13]=1.1;  defGradTest[15]=0;
+    defGradTest[6]=0;    defGradTest[7]=0;    defGradTest[8]=0;
+    defGradTest[9]=1.0;    defGradTest[10]=0;    defGradTest[11]=0;
+    defGradTest[12]=0;      defGradTest[13]=1.1;  defGradTest[14]=0;
     defGradTest[15]=0;      defGradTest[16]=0;    defGradTest[17]=0;
-    
-    APPROXIMATION::get_deformation_gradient(2,contP,ncont,p,true,jacobian,defGrad);
+    double *gradientBSpline2D;
+    gradientBSpline2D = new double[3 * ncont * ncont ];
+    APPROXIMATION::get_gradient_functions(p,ncont,true,gradientBSpline2D);
+    APPROXIMATION::get_deformation_gradient(2,contP,ncont,gradientBSpline2D,true,jacobian,defGrad);
 
 
 

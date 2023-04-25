@@ -58,11 +58,19 @@ double get_sample_weighted(
     const double minVal,
     const double maxVal
     );
+void get_gradient_functions(
+        const int p,
+        const int num_control_points,
+        const bool twoD,
+        double* gradientBSpline
+    );
+
 void get_deformation_gradient(
         const int nnodes,
         const double* contP,
         const int num_control_points,
-        const int degree,
+        //const int degree,
+        const double* gradientBSpline,
         const bool twoD,
         const double* jacobians,    
         double* defGrad
@@ -80,20 +88,22 @@ void get_jacobians(
     const int nnodes,
     const double* contP,
     const int num_control_points,
-    const int degree,
+    //const int degree,
+    const double* gradientBSpline,
     const bool twoD,
     double* jacobians    
     );
 void get_jacobian(
-    const int p,
+    //const int p,
+    const double* gradientBSpline,
     const int num_control_points,
     const double* contP,
-    const double* U,
-    const double u,
-    const double* V,
-    const double v,
-    const double* W,
-    const double w,
+    //const double* U,
+    //const double u,
+    //const double* V,
+    //const double v,
+    //const double* W,
+    //const double w,
     const bool twoD,
     double* jacobian
     );
@@ -107,18 +117,38 @@ void get_control_point(
     const bool twoD,
     double* contP
     );
+void get_B_spline_gradient(
+    const int nnodes,
+    const int* neighborhoodList,
+    const int num_control_points,
+    const double *AMatrix,
+    const double *gradient_functions,
+    const double *jacobian,
+    const bool twoD,
+    double *Bsplinegradient
+    );
+
+void get_deformation_gradient_new(
+    const int nnodes,
+    const int* neighborhoodList,
+    const double *coor,
+    const double *Bsplinegradient,
+    double *defGrad
+    );
+
 void get_gradient(
-    const int p,
+    //const int p,
+    const double* gradientBSpline,
     const int num_control_points,
     const double* contP,
-    const double* U,
-    const double u,
-    const double* V,
-    const double v,
-    const double* W,
-    const double w,
+    //const double* U,
+    //const double u,
+    //const double* V,
+    //const double v,
+    //const double* W,
+    //const double w,
     const bool twoD,
-    MatrixXd& gradientMxM
+    double* gradient
     );
 void get_local_gradient(
     const int p,
