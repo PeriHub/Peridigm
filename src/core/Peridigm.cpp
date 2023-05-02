@@ -1762,7 +1762,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       }
     }
 
-    if(peridigmComm->MyPID() == 0 && (step-1)%displayTrigger==0)
+    if((step-1)%displayTrigger==0)
       displayProgress("Explicit time integration", (step-1)*100.0/nsteps);
 
     // rebalance, if requested
@@ -2086,9 +2086,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       break;
     }	
   }
-  if(peridigmComm->MyPID() == 0){
-    displayProgress("Explicit time integration", 100);
-  }
+  displayProgress("Explicit time integration", 100);
   *out << "\n\n";
 }
 
