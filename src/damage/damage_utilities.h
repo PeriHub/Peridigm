@@ -49,7 +49,7 @@
 #define DAMAGE_UTILITIES_H
 
 #include <cstdlib>
-
+#include "material_utilities.h"
 
 namespace DAMAGE_UTILITIES {
 

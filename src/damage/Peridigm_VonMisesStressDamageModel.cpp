@@ -158,14 +158,15 @@ PeridigmNS::VonMisesStressDamageModel::computeDamage(const double dt,
   double* neighborCoord;
   double* delta = horizon;
 
-  double deformedBondX, deformedBondY, deformedBondZ, deformedBondLength;
+  double deformedBondLength;
   double neighborVolume, omega;//, scalarTemp;
 
   double tempDmg;
 
   const int *neighborListPtr = neighborhoodList;
   int numNeighbors, neighborIndex;
-
+  int dof = PeridigmNS::dof();
+  std::vector<double> Y_dxVector(dof) ; double*  Y_dx = &Y_dxVector[0];
   // Zero out the bond damage to compute intact weighted volume (to
   // eventually evaluate damage of material points)
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->PutScalar(0.0);
@@ -204,13 +205,7 @@ PeridigmNS::VonMisesStressDamageModel::computeDamage(const double dt,
       // Compute the weighted-volume broken bonds
       neighborVolume = jacobianDeterminant[neighborIndex] * volume[neighborIndex];
       neighborCoord = coordinates + 3*neighborIndex;
-
-      deformedBondX = *(neighborCoord)   - *(coord);
-      deformedBondY = *(neighborCoord+1) - *(coord+1);
-      deformedBondZ = *(neighborCoord+2) - *(coord+2);
-      deformedBondLength = sqrt(deformedBondX*deformedBondX +
-                                deformedBondY*deformedBondY +
-                                deformedBondZ*deformedBondZ);
+      deformedBondLength = MATERIAL_EVALUATION::getDiffAndLen(coord,neighborCoord,dof,Y_dx);
 
       omega = MATERIAL_EVALUATION::scalarInfluenceFunction(deformedBondLength, *delta);
 
