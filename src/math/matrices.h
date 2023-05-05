@@ -52,7 +52,12 @@
 #include "Peridigm_Constants.hpp"
 
 namespace MATRICES {
-
+void MatrixTimesVector(
+  const double* A,
+  const double* v,
+  const int dof,
+  double* result
+  );
 //set double fields to zero
 template<typename ScalarT>
 void setToZero(

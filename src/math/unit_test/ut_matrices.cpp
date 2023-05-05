@@ -93,7 +93,37 @@ TEUCHOS_UNIT_TEST(matrices, distance) {
  
 }
 
+TEUCHOS_UNIT_TEST(matrices, MatrixTimesVector) {
+    const double tolerance = 2.0e-8;
+    double A[9] = {1,  1.2, 0, 1, 0.97029573, -0.2419219, 0, 0.2419219, 0.97029573};
+    std::vector<double> BVector(3);
+    double* B = &BVector[0];
+    std::vector<double> BtestVector(3);
+    double* Btest = &BtestVector[0];
+    double ref[3] = {2.     ,   2.41221763, 0.72837383};
+    
+    B[0] = 0; B[1] = 0; B[2] = 0;
 
+    MATRICES::MatrixTimesVector(A,B,2,Btest);
+    for (int n=0; n<2; n++){
+        TEST_FLOATING_EQUALITY(Btest[n],0,tolerance); 
+    } 
+    MATRICES::MatrixTimesVector(A,B,3,Btest);
+    for (int n=0; n<3; n++){
+        TEST_FLOATING_EQUALITY(Btest[n],0,tolerance); 
+    } 
+    B[0] = 1; B[1] = 1; B[2] = 1;
+    MATRICES::MatrixTimesVector(A,B,3,Btest);
+    for (int n=0; n<3; n++){
+        TEST_FLOATING_EQUALITY(Btest[n],ref[n],tolerance); 
+    } 
+    double ref2[3] = {-23.   ,      -27.1161562  ,  1.94059146};
+    B[0] = -23; B[1] = 0; B[2] = 2;
+    MATRICES::MatrixTimesVector(A,B,3,Btest);
+    for (int n=0; n<3; n++){
+        TEST_FLOATING_EQUALITY(Btest[n],ref2[n],tolerance); 
+    } 
+}
 TEUCHOS_UNIT_TEST(matrices, createRotationMatrix) {
     const double tolerance = 2.0e-8;
         

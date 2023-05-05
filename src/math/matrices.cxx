@@ -58,8 +58,29 @@
 #include <Epetra_SerialComm.h>
 #include <vector> 
 #include <string> 
+#include <Eigen/Dense>
+#include <Eigen/Sparse>
+#include <Eigen/SparseLU>
 
+using namespace std;
+using namespace Eigen;
 namespace MATRICES {
+// This function multiplies a matrix A with a vector v and stores the result in 'result'
+void MatrixTimesVector(
+  const double* A, // Pointer to the matrix A
+  const double* v, // Pointer to the vector v
+  const int dof,   // Dimension of the vectors/matrices
+  double* result   // Pointer to the output vector
+  )
+{
+    // Map the matrix A to an Eigen::MatrixXd type
+    Eigen::MatrixXd AMatrix = Eigen::Map<const Eigen::MatrixXd>(A, dof, dof);
+    // Map the vector v to an Eigen::VectorXd type
+    Eigen::VectorXd vec = Eigen::Map<const Eigen::VectorXd>(v, dof);
+    // Perform the matrix-vector multiplication and store the result in 'result'
+    Eigen::Map<Eigen::VectorXd>(result, dof) = AMatrix * vec;
+}
+
 template<typename ScalarT>
 void setToZero(
     ScalarT* A,
