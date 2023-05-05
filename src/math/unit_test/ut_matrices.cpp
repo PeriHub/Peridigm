@@ -93,6 +93,27 @@ TEUCHOS_UNIT_TEST(matrices, distance) {
  
 }
 
+TEUCHOS_UNIT_TEST(matrices, InvertMatrix) {
+    const double tolerance = 2.0e-8;
+    double A[9] = {1,  1.2, 0, 1, 0.97029573, -0.2419219, 0, 0.2419219, 0.97029573};
+
+    std::vector<double> BtestVector(9);
+    double* Btest = &BtestVector[0];
+    double ref[9] = {-6.08439549,  7.08439549 , 1.7663382,  5.90366291, -5.90366291, -1.4719485,-1.4719485,   1.4719485, 1.39761161};
+    double reftranspose[9] = {-6.08439549  ,   5.9036629,-1.4719485 ,7.08439549,-5.90366291,1.4719485, 1.7663382,-1.4719485 ,1.39761161};
+
+    MATRICES::InvertMatrix(A,false,3,Btest);
+    for (int n=0; n<9; n++){
+        TEST_FLOATING_EQUALITY(Btest[n],ref[n],tolerance); 
+    }
+    MATRICES::InvertMatrix(A,true,3,Btest);
+   
+    for (int n=0; n<9; n++){
+        TEST_FLOATING_EQUALITY(Btest[n],reftranspose[n],tolerance); 
+    }
+}
+
+
 TEUCHOS_UNIT_TEST(matrices, MatrixTimesVector) {
     const double tolerance = 2.0e-8;
     double A[9] = {1,  1.2, 0, 1, 0.97029573, -0.2419219, 0, 0.2419219, 0.97029573};

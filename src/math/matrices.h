@@ -58,6 +58,14 @@ void MatrixTimesVector(
   const int dof,
   double* result
   );
+
+void InvertMatrix
+(
+  const double* matrix,
+  const bool transpose,
+  const int dof,
+  double* inverse
+);
 //set double fields to zero
 template<typename ScalarT>
 void setToZero(

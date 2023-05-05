@@ -81,6 +81,28 @@ void MatrixTimesVector(
     Eigen::Map<Eigen::VectorXd>(result, dof) = AMatrix * vec;
 }
 
+
+void InvertMatrix
+(
+  const double* matrix,
+  const bool transpose,
+  const int dof,
+  double* inverse
+)
+{
+    // Map the matrix A to an Eigen::MatrixXd type
+    if (transpose){
+      Eigen::MatrixXd AMatrix = Eigen::Map<const Eigen::MatrixXd>(matrix, dof, dof).transpose();
+      Eigen::Map<Eigen::MatrixXd>(inverse, dof, dof) = AMatrix.inverse();
+    }
+    else {
+      Eigen::MatrixXd BMatrix = Eigen::Map<const Eigen::MatrixXd>(matrix, dof, dof);
+      // Perform the matrix-vector multiplication and store the result in 'result'
+      Eigen::Map<Eigen::MatrixXd>(inverse, dof, dof) = BMatrix.inverse();
+    }
+
+}
+
 template<typename ScalarT>
 void setToZero(
     ScalarT* A,
@@ -148,6 +170,9 @@ int Invert2by2Matrix
     
   return returnCode;
 }
+
+
+
 
 template<typename ScalarT>
 int Invert3by3Matrix
