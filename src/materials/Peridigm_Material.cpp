@@ -512,20 +512,28 @@ void PeridigmNS::Material::getStiffnessmatrix(const Teuchos::ParameterList& para
     
     double EMod = 9*m_bulkModulus * m_shearModulus / (3*m_bulkModulus + m_shearModulus);
     double nu = (3*m_bulkModulus - 2*m_shearModulus) / (6*m_bulkModulus + 2*m_shearModulus);
+ 
     for(int iID=0 ; iID<6 ; ++iID)
     {
       for(int jID=0 ; jID<6 ; ++jID){
         ctemp[iID][jID] = 0.0;
       }
-      if (iID < 3){
-        ctemp[iID][iID] = EMod / (1-nu) * (1-nu) / (1-2*nu);
-        for(int jID=iID+1 ; jID<3 ; ++jID){
-          ctemp[iID][jID] = EMod / nu * (1-nu) / (1-2*nu);
-          ctemp[iID][jID] = ctemp[jID][iID];
-        }
-      }
-      if (iID > 2)ctemp[iID][iID] = 0.5 * m_shearModulus;
     }
+    double temp = 1 / ((1+nu) * (1-2*nu));
+    ctemp[0][0] = EMod  * (1-nu) * temp;
+    ctemp[1][1] = EMod  * (1-nu) * temp;
+    ctemp[2][2] = EMod  * (1-nu) * temp;
+    ctemp[0][1] = EMod * nu * temp;
+    ctemp[0][2] = EMod * nu * temp;
+    ctemp[1][0] = EMod * nu * temp;
+    ctemp[2][0] = EMod * nu * temp;
+    ctemp[2][1] = EMod * nu * temp;
+    ctemp[1][2] = EMod * nu * temp;
+
+    ctemp[3][3] = m_shearModulus;
+    ctemp[4][4] = m_shearModulus;
+    ctemp[5][5] = m_shearModulus;
+    
 
 
   }
@@ -545,11 +553,13 @@ void PeridigmNS::Material::getStiffnessmatrix(const Teuchos::ParameterList& para
   else{
     if (pstress==true&&iso == true){
       //only transversal isotropic in the moment --> definition of iso missing
-      double temp = ctemp[0][2] * ctemp[0][2] / ctemp[1][1];
-      C[0][0] = ctemp[0][0] - temp;
-      C[0][1] = ctemp[0][1] - temp;
-      C[1][0] = ctemp[0][1] - temp;
-      C[1][1] = ctemp[0][0] - temp;
+      double Eps = ctemp[5][5]*(3.0*ctemp[0][0] - 4.0*ctemp[5][5])/(ctemp[0][0] - ctemp[5][5]);     
+      double nups = (Eps/2.0 - ctemp[5][5])/ctemp[5][5];
+      //https://www.efunda.com/formulae/solid_mechanics/mat_mechanics/hooke_plane_stress.cfm
+      C[0][0] = Eps / (1-nups*nups);
+      C[0][1] = Eps*nups / (1-nups*nups);
+      C[1][0] = Eps*nups / (1-nups*nups);
+      C[1][1] = Eps / (1-nups*nups);
       C[5][5] = ctemp[5][5];
     }
     else{
