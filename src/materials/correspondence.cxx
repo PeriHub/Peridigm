@@ -1168,20 +1168,14 @@ void computeForcesAndStresses
         }
     }
     if (matrixInversionReturnCode != 0){
-        *(temp)   = 0;*(temp+1) = 0;*(temp+2) = 0;
-        *(temp+3) = 0;*(temp+4) = 0;*(temp+5) = 0;
-        *(temp+6) = 0;*(temp+7) = 0;*(temp+8) = 0;
+        MATRICES::setToZero(temp, 9);
         // as a last resort. might stabilize sometimes
         detachedNodes[iID] = 1;
     }
 
     if (m_stabilizationType == 3){
-        double alpha[3];
-        alpha[0] = *(pointAnglePtr);
-        alpha[1] = *(pointAnglePtr+1);
-        alpha[2] = *(pointAnglePtr+2);
         
-        CORRESPONDENCE::createHourglassStiffness(C, alpha, shapeTensorInv, hourglassStiffVal);
+        CORRESPONDENCE::createHourglassStiffness(C, pointAnglePtr, shapeTensorInv, hourglassStiffVal);
         // scale the stiffness dependend to the plastic / elastic stress relation. If no elastic stresses are there, no additional stiffness is needed, because the bond is gone anyway
 
         *(hourglassStiff  ) = scal[0]*hourglassStiffVal[0]; *(hourglassStiff+1) = scal[1]*hourglassStiffVal[1]; *(hourglassStiff+2) = scal[2]*hourglassStiffVal[2];
@@ -1674,7 +1668,7 @@ template<typename ScalarT>
 void createHourglassStiffness
 (
 const ScalarT Cstiff[][6],
-const double alpha[],
+const double* alpha,
 const ScalarT* shapeTensorInverse,
 ScalarT* hourglassStiff
 )

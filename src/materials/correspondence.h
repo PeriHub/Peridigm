@@ -225,7 +225,7 @@ template<typename ScalarT>
 void createHourglassStiffness
 (
 const ScalarT C[][6],
-const double alpha[],
+const double* alpha,
 const ScalarT* shapeTensorInverse,
 ScalarT* hourglassStiff
 );
