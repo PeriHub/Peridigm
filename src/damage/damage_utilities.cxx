@@ -79,19 +79,14 @@ void calculateDamageIndex
         numNeighbors = neighborhoodList[neighborhoodListIndex++];
 
         totalDamage = 0.0;
-        volume = vol[nodeId];
+        volume = 0.0;
         for (int iNID = 0; iNID < numNeighbors; ++iNID) {
             
             neighborId = neighborhoodList[neighborhoodListIndex++];
             // must be zero to avoid synchronization errors
-            totalDamage += bondDamageNP1[bondIndex]*vol[neighborId];
+            totalDamage += bondDamageNP1[bondIndex++]*vol[neighborId];
             volume += vol[neighborId];
-            bondIndex += 1;
         }
-        if (numNeighbors > 0)
-            totalDamage /= numNeighbors;
-        else
-            totalDamage = 0.0;
 
         damage[nodeId] = totalDamage/volume;
 
