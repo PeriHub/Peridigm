@@ -3,8 +3,8 @@
 CWD=$(pwd)
 echo $CWD
 
-for d in test/verification/*/*/ ; do
-# for d in test/regression/*/*/ ; do
+# for d in test/verification/*/*/ ; do
+for d in test/regression/*/*/ ; do
 
     echo "$d"
     cd $d
@@ -46,3 +46,5 @@ done
 # do      
 #     (cd "$d" && dos2unix *.comp)
 # done
+
+#ERROR: parsing input file, currently at --> comp File CLRF -> LF
