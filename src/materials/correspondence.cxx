@@ -1224,9 +1224,9 @@ void computeForcesAndStresses
               
           }
             
-          TX =  (1-bondDamage[bondIndex]) * omega * ( *(temp)   * X_dx + *(temp+1) * X_dy + *(temp+2) * X_dz+ hourglassScale*TS[0]);
-          TY =  (1-bondDamage[bondIndex]) * omega * ( *(temp+3) * X_dx + *(temp+4) * X_dy + *(temp+5) * X_dz+ hourglassScale*TS[1]);
-          TZ =  (1-bondDamage[bondIndex]) * omega * ( *(temp+6) * X_dx + *(temp+7) * X_dy + *(temp+8) * X_dz+ hourglassScale*TS[2]);
+          TX = (1-bondDamage[bondIndex]) * omega * ( *(temp)   * X_dx + *(temp+1) * X_dy + *(temp+2) * X_dz + hourglassScale*TS[0]);
+          TY = (1-bondDamage[bondIndex]) * omega * ( *(temp+3) * X_dx + *(temp+4) * X_dy + *(temp+5) * X_dz + hourglassScale*TS[1]);
+          TZ = (1-bondDamage[bondIndex]) * omega * ( *(temp+6) * X_dx + *(temp+7) * X_dy + *(temp+8) * X_dz + hourglassScale*TS[2]);
           
          
           neighborVol = volume[neighborIndex];
@@ -1658,9 +1658,10 @@ ScalarT* TS
     nonUniformDeformState[0] = deformedBondX - FxsiX;
     nonUniformDeformState[1] = deformedBondY - FxsiY;
     nonUniformDeformState[2] = deformedBondZ - FxsiZ;
-    TS[0] = (hourglassStiff[0] * nonUniformDeformState[0] + hourglassStiff[1] * nonUniformDeformState[1] + hourglassStiff[2] * nonUniformDeformState[2]);
-    TS[1] = (hourglassStiff[3] * nonUniformDeformState[0] + hourglassStiff[4] * nonUniformDeformState[1] + hourglassStiff[5] * nonUniformDeformState[2]);
-    TS[2] = (hourglassStiff[6] * nonUniformDeformState[0] + hourglassStiff[7] * nonUniformDeformState[1] + hourglassStiff[8] * nonUniformDeformState[2]);
+    TS[0] = (hourglassStiff[0] * nonUniformDeformState[0] + hourglassStiff[3] * nonUniformDeformState[1] + hourglassStiff[6] * nonUniformDeformState[2]);
+
+    TS[1] = (hourglassStiff[1] * nonUniformDeformState[0] + hourglassStiff[4] * nonUniformDeformState[1] + hourglassStiff[7] * nonUniformDeformState[2]);
+    TS[2] = (hourglassStiff[2] * nonUniformDeformState[0] + hourglassStiff[5] * nonUniformDeformState[1] + hourglassStiff[8] * nonUniformDeformState[2]);
  
 }
 
