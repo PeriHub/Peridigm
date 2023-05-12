@@ -217,6 +217,11 @@ ENDIF()
 # Note that some of this functionality depends on CMAKE > 2.8.8
 SET(INSTALL_PERIDIGM FALSE)
 
+# Set compile definitions for logging
+add_compile_definitions(CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+add_compile_definitions(CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}")
+
+
 IF(ENABLE_INSTALL)
   IF(${CMAKE_VERSION} VERSION_GREATER 2.8.8 OR ${CMAKE_VERSION} VERSION_EQUAL 2.8.8)
     SET(INSTALL_PERIDIGM TRUE)

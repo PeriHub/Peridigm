@@ -56,6 +56,7 @@
 // Christian Willberg   christian.willberg@dlr.de
 #include "Peridigm_EnergyReleaseDamageModel.hpp"
 #include "Peridigm_EnergyReleaseDamageCorrepondenceModel.hpp"
+#include "Peridigm_Logging.hpp"
 using namespace std;
 
 Teuchos::RCP<PeridigmNS::DamageModel>
@@ -85,7 +86,7 @@ PeridigmNS::DamageModelFactory::create(const Teuchos::ParameterList& damageModel
     string invalidDamageModel("\n**** Unrecognized damage model type: ");
     invalidDamageModel += damageModelName;
     invalidDamageModel += ", must be \"Critical Stretch\", \"Von Mises Stress\", \"Time Dependent Critical Stretch\", \"Interface Aware\", \"Critical Energy\", \"Critical Energy Correspondence\", or \"Initial Damage\".\n";
-    TEUCHOS_TEST_FOR_TERMINATION(true, invalidDamageModel);
+    TestForTermination(true, invalidDamageModel);
   }
 
   return damageModel;

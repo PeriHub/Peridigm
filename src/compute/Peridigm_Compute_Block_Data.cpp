@@ -49,6 +49,7 @@
 
 #include "Peridigm_Compute_Block_Data.hpp"
 #include "Peridigm_Field.hpp"
+#include "Peridigm_Logging.hpp"
 
 using namespace std;
 
@@ -74,7 +75,7 @@ PeridigmNS::Compute_Block_Data::Compute_Block_Data(Teuchos::RCP<const Teuchos::P
     m_calculationType = SUM;
   }
   else{
-    TEUCHOS_TEST_FOR_TERMINATION(true, 
+    TestForTermination(true, 
      "**** Error:  invalid \"Calculation Type\" in Block_Data compute class, must be \"Minimum\", \"Maximum\", or \"Sum\".\n");
   }
 
@@ -88,7 +89,7 @@ PeridigmNS::Compute_Block_Data::Compute_Block_Data(Teuchos::RCP<const Teuchos::P
   else if(length == PeridigmField::VECTOR)
     m_variableLength = 3;
   else
-    TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error:  Block_Data compute class can be called only for SCALAR or VECTOR data.\n");
+    TestForTermination(true, "**** Error:  Block_Data compute class can be called only for SCALAR or VECTOR data.\n");
 
   if(m_variableLength == 1)
     m_outputFieldId = fieldManager.getFieldId(PeridigmField::GLOBAL, PeridigmField::SCALAR, PeridigmField::CONSTANT, m_outputLabel);
@@ -113,7 +114,7 @@ void PeridigmNS::Compute_Block_Data::initialize( Teuchos::RCP< std::vector<Perid
 
   if(m_blockId == -1){
     string msg = "**** Error:  Block_Data compute class failed to find block: " + m_blockName + "\n";
-    TEUCHOS_TEST_FOR_TERMINATION(true, msg);
+    TestForTermination(true, msg);
   }
 
 }

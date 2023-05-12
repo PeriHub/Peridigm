@@ -60,6 +60,7 @@
 
 #include "Peridigm_NeighborhoodData.hpp"
 #include "Peridigm_DataManager.hpp"
+#include "Peridigm_Logging.hpp"
 
 namespace PeridigmNS {
 
@@ -128,7 +129,7 @@ namespace PeridigmNS {
 
     //! Get the number of points in the block (does not include ghosts)
     int numPoints() {
-      TEUCHOS_TEST_FOR_TERMINATION(
+      TestForTermination(
         ownedScalarPointMap.is_null(),
         "\n**** Error in BlockBase::numPoints():  Map not set, pointer is null.\n");
       return ownedScalarPointMap->NumMyElements();
@@ -136,7 +137,7 @@ namespace PeridigmNS {
 
     //! Method for accessing data from the DataManager.
     Teuchos::RCP<Epetra_Vector> getData(int fieldId, PeridigmField::Step step){
-      TEUCHOS_TEST_FOR_TERMINATION(
+      TestForTermination(
         dataManager.is_null(),
         "\n**** DataManager must be initialized via BlockBase::initializeDataManager() prior to calling BlockBase::getData()\n");
       return dataManager->getData(fieldId, step);
@@ -144,7 +145,7 @@ namespace PeridigmNS {
 
     //! Method for querying the DataManager for the presence of a field spec.
     bool hasData(int fieldId, PeridigmField::Step step) const {
-      TEUCHOS_TEST_FOR_TERMINATION(
+      TestForTermination(
         dataManager.is_null(),
         "\n**** DataManager must be initialized via BlockBase::initializeDataManager() prior to calling BlockBase::hasData()\n");
       return dataManager->hasData(fieldId, step);

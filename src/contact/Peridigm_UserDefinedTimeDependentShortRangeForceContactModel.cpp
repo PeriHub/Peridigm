@@ -48,6 +48,7 @@
 #include "Peridigm_UserDefinedTimeDependentShortRangeForceContactModel.hpp"
 #include "Peridigm_Field.hpp"
 #include "Peridigm_Constants.hpp"
+#include "Peridigm_Logging.hpp"
 #include <Teuchos_Assert.hpp>
 
 using std::string;
@@ -113,7 +114,7 @@ void PeridigmNS::UserDefinedTimeDependentShortRangeForceContactModel::evaluatePa
   if(!success){
     string msg = "\n**** Error:  rtcFunction->addBody(functionfriction) returned nonzero error code in UserDefinedTimeDependentShortRangeForceContactModel::evaluateParserFriction().\n";
     msg += "**** " + rtcFunction->getErrors() + "\n";
-    TEUCHOS_TEST_FOR_TERMINATION(!success, msg);
+    TestForTermination(!success, msg);
   }
 
   // set the return value to 0.0
@@ -136,7 +137,7 @@ void PeridigmNS::UserDefinedTimeDependentShortRangeForceContactModel::evaluatePa
   if(!success){
     string msg = "\n**** Error in UserDefinedTimeDependentShortRangeForceContactModel::evaluateParserFriction().\n";
     msg += "**** " + rtcFunction->getErrors() + "\n";
-    TEUCHOS_TEST_FOR_TERMINATION(!success, msg);
+    TestForTermination(!success, msg);
   }
 
   m_frictionCoefficient = currentValue;
@@ -182,7 +183,7 @@ PeridigmNS::UserDefinedTimeDependentShortRangeForceContactModel::computeForce(co
       nodeVolume = cellVolume[nodeID];
       for(iNID=0 ; iNID<numNeighbors ; ++iNID){
         neighborID = contactNeighborhoodList[neighborhoodListIndex++];
-        TEUCHOS_TEST_FOR_TERMINATION(neighborID < 0, "Invalid neighbor list\n");
+        TestForTermination(neighborID < 0, "Invalid neighbor list\n");
         currentDistanceSquared =  distanceSquared(nodeCurrentX[0], nodeCurrentX[1], nodeCurrentX[2],
                                                   y[neighborID*3], y[neighborID*3+1], y[neighborID*3+2]);
         if(currentDistanceSquared < contactRadiusSquared){

@@ -47,6 +47,7 @@
 
 #include "Peridigm_BondAssociatedCorrespondenceMaterial.hpp"
 #include "Peridigm_Field.hpp"
+#include "Peridigm_Logging.hpp"
 #include "elastic.h"
 #include "bondassociated_correspondence.h"
 #include "correspondence.h"
@@ -158,9 +159,9 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::BondAssociatedCorrespondenceMa
     m_accuracyOrder = params.get<int>("Gradient Order Of Accuracy");
   }
 
-  TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticBondAssociatedCorrespondence material model.\n");
-  TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Apply Shear Correction Factor"), "**** Error:  Shear Correction Factor is not supported for the ElasticBondAssociatedCorrespondence material model.\n");
-  TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the ElasticBondAssociatedCorrespondence material model.\n");
+  TestForTermination(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticBondAssociatedCorrespondence material model.\n");
+  TestForTermination(params.isParameter("Apply Shear Correction Factor"), "**** Error:  Shear Correction Factor is not supported for the ElasticBondAssociatedCorrespondence material model.\n");
+  TestForTermination(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the ElasticBondAssociatedCorrespondence material model.\n");
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   m_horizonFieldId                    = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Horizon");
@@ -559,7 +560,7 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::initialize(const double dt,
     "**** Error:  BondAssociatedCorrespondenceMaterial::precompute() failed to compute gradient weights.\n";
   gradientWeightErrorMessage +=
     "****         Possible scenarios: 1) The horizon is too small, or 2) Too much damage around some points.\n";
-  TEUCHOS_TEST_FOR_TERMINATION(gradientWeightReturnCode != 0, gradientWeightErrorMessage);
+  TestForTermination(gradientWeightReturnCode != 0, gradientWeightErrorMessage);
 
   // Compute the weighted volume
   CORRESPONDENCE::computeWeightedVolume(volume,
@@ -716,7 +717,7 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::computeForce(const double dt,
     "**** Error:  BondAssociatedCorrespondenceMaterial::computeForce() failed to compute rotation tensor.\n";
   nodeLevelRotationTensorErrorMessage +=
     "****         Note that all nodes must have a minimum of three neighbors.  Is the horizon too small?\n";
-  TEUCHOS_TEST_FOR_TERMINATION(nodeLevelRotationTensorReturnCode != 0, nodeLevelRotationTensorErrorMessage);
+  TestForTermination(nodeLevelRotationTensorReturnCode != 0, nodeLevelRotationTensorErrorMessage);
 
   // Compute bond-level values
   int bondLevelRotationTensorReturnCode = CORRESPONDENCE::computeBondLevelUnrotatedRateOfDeformationAndRotationTensor(modelCoordinates,
@@ -791,7 +792,7 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::computeForce(const double dt,
     "**** Error:  BondAssociatedCorrespondenceMaterial::computeForce() failed to compute rotation tensor.\n";
   bondLevelRotationTensorErrorMessage +=
     "****         Note that all nodes must have a minimum of three neighbors.  Is the horizon too small?\n";
-  TEUCHOS_TEST_FOR_TERMINATION(bondLevelRotationTensorReturnCode != 0, bondLevelRotationTensorErrorMessage);
+  TestForTermination(bondLevelRotationTensorReturnCode != 0, bondLevelRotationTensorErrorMessage);
 
   // Evaluate the Cauchy stress using the routine implemented in the derived class (specific correspondence material model)
   // The general idea is to compute the stress based on:
@@ -1095,7 +1096,7 @@ void PeridigmNS::BondAssociatedCorrespondenceMaterial::precompute(const double d
     "**** Error:  BondAssociatedCorrespondenceMaterial::precompute() failed to compute gradient weights.\n";
   gradientWeightErrorMessage +=
     "****         Possible scenarios: 1) The horizon is too small, or 2) Too much damage around some points.\n";
-  TEUCHOS_TEST_FOR_TERMINATION(gradientWeightReturnCode != 0, gradientWeightErrorMessage);
+  TestForTermination(gradientWeightReturnCode != 0, gradientWeightErrorMessage);
 
   CORRESPONDENCE::computeDeformationGradient(volume,
                                              displacements,

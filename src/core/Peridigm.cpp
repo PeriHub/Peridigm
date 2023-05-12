@@ -78,6 +78,7 @@
 #include "Peridigm_UserDefinedTimeDependentCriticalStretchDamageModel.hpp"
 #include "Peridigm_ShortRangeForceContactModel.hpp"
 #include "Peridigm_UserDefinedTimeDependentShortRangeForceContactModel.hpp"
+#include "Peridigm_Logging.hpp"
 #include "Peridigm.hpp"
 #include "matrices.h" // For Invert3by3Matrix
 #include "Peridigm_DataManager.hpp" //For readBlocktoDisk & writeBlocktoDisk
@@ -152,7 +153,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
 #endif
   if(peridigmComm->MyPID() == 0)
     if(params->isParameter("Multiphysics") && params->isParameter("Restart") ){
-      TEUCHOS_TEST_FOR_TERMINATION((params->isParameter("Multiphysics") && params->isParameter("Restart") ), "Error: Restart for Multiphysics is not implemented yet.\n");
+      TestForTermination((params->isParameter("Multiphysics") && params->isParameter("Restart") ), "Error: Restart for Multiphysics is not implemented yet.\n");
       MPI_Finalize();
       exit(0);
     }
@@ -181,7 +182,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
       analysisHasMultiphysics = false;
       numMultiphysDoFs = 0;
       multiphysError = "\n**** Error, number of requested Multiphysics DoFs cannot be accomodated.\n";
-      TEUCHOS_TEST_FOR_TERMINATION(true, multiphysError);
+      TestForTermination(true, multiphysError);
     }
   }
   else{
@@ -201,13 +202,13 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
   // Throw an exception if the user is running an old input deck with the horizon in the discretization parameter list
   string msg = "\n**** Error, \"Horizon\" is no longer an allowable Discretization parameter.\n";
   msg +=         "****        A horizon for each block must be specified in the Blocks section.\n";
-  TEUCHOS_TEST_FOR_TERMINATION(discParams->isParameter("Horizon"), msg);
+  TestForTermination(discParams->isParameter("Horizon"), msg);
 
   // Check for command to compute horizon-element intersections
   if(discParams->isParameter("Compute Element-Horizon Intersections"))
     computeIntersections = discParams->get<bool>("Compute Element-Horizon Intersections");
 #ifndef PERIDIGM_PV
-  TEUCHOS_TEST_FOR_TERMINATION(computeIntersections, "\n**** Error:  Horizon-Element intersections not enabled, recompile with -DUSE_PV.\n");
+  TestForTermination(computeIntersections, "\n**** Error:  Horizon-Element intersections not enabled, recompile with -DUSE_PV.\n");
 #endif
 
   // Pass the blockParams to the HorizonManager
@@ -446,9 +447,9 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
     multiphysError += materialName;
     multiphysError += ", is not multiphysics compatible.\n";
     //The following: If we tried to enable multiphysics, but aren't using the right material model in each material block, raise an exception.
-    TEUCHOS_TEST_FOR_TERMINATION((analysisHasMultiphysics && (materialName.find("Multiphysics") == std::string::npos)), "\n**** Error, material model is not multiphysics compatible.\n");
+    TestForTermination((analysisHasMultiphysics && (materialName.find("Multiphysics") == std::string::npos)), "\n**** Error, material model is not multiphysics compatible.\n");
     //The following: If we have not tried to enable multiphysics, yet are attempting to use a multiphysics material model, raise an exception.
-    TEUCHOS_TEST_FOR_TERMINATION((!analysisHasMultiphysics && (materialName.find("Multiphysics") != std::string::npos)), "\n**** Error, multiphysics must be enabled at the top level of the input deck.\n");
+    TestForTermination((!analysisHasMultiphysics && (materialName.find("Multiphysics") != std::string::npos)), "\n**** Error, multiphysics must be enabled at the top level of the input deck.\n");
 
     Teuchos::ParameterList matParams = materialParams.sublist(materialName);
 
@@ -459,7 +460,7 @@ PeridigmNS::Peridigm::Peridigm(const MPI_Comm& comm,
 
     // If the horizon is a constant value, assign it to the material model
     // Make sure the user did not try to set the horizon in the material block
-    TEUCHOS_TEST_FOR_TERMINATION(matParams.isParameter("Horizon") , "\n**** Error, Horizon is an invalid material parameter.\n");
+    TestForTermination(matParams.isParameter("Horizon") , "\n**** Error, Horizon is an invalid material parameter.\n");
     if(constantHorizon)
       matParams.set("Horizon", blockHorizon);
 
@@ -1104,7 +1105,7 @@ void PeridigmNS::Peridigm::InitializeRestart() {
       }
     }else{
       if(peridigmComm->MyPID() == 0){
-        TEUCHOS_TEST_FOR_TERMINATION(true, "Error: Initial restart folder exists, but it is not suitable for a restart. \n");
+        TestForTermination(true, "Error: Initial restart folder exists, but it is not suitable for a restart. \n");
         MPI_Finalize();
         exit(0);
       }
@@ -1211,7 +1212,7 @@ void PeridigmNS::Peridigm::instantiateComputeManager(Teuchos::RCP<Discretization
         string msg = "Peridigm::instantiateComputeManager: ";
         msg+= name;
         msg+= " is not a Teuchos::ParameterList sublist.";
-        TEUCHOS_TEST_FOR_TERMINATION( true, msg );
+        TestForTermination( true, msg );
       }
       // Create union of all requested output fields
       Teuchos::ParameterList outputVariables2 = outputParams->sublist("Output Variables");
@@ -1272,7 +1273,7 @@ void PeridigmNS::Peridigm::initializeBlocks(Teuchos::RCP<Discretization> disc) {
       }
       // Assume that the block names are "block_" + the block ID
       size_t loc = it->find_last_of('_');
-      TEUCHOS_TEST_FOR_TERMINATION(loc == string::npos, "\n**** Parse error, invalid block name.\n");
+      TestForTermination(loc == string::npos, "\n**** Parse error, invalid block name.\n");
       stringstream blockIDSS(it->substr(loc+1, it->size()));
       int blockID;
       blockIDSS >> blockID;
@@ -1295,7 +1296,7 @@ void PeridigmNS::Peridigm::initializeBlocks(Teuchos::RCP<Discretization> disc) {
       }
       if (!blockMatch) { // Create new block. Assume block name are "block_" + block ID
         size_t loc = it->find_last_of('_');
-        TEUCHOS_TEST_FOR_TERMINATION(loc == string::npos, "\n**** Parse error, invalid block name in discretization object.\n");
+        TestForTermination(loc == string::npos, "\n**** Parse error, invalid block name in discretization object.\n");
         stringstream blockIDSS(it->substr(loc+1, it->size()));
         int blockID;
         blockIDSS >> blockID;
@@ -1326,7 +1327,7 @@ void PeridigmNS::Peridigm::initializeBlocks(Teuchos::RCP<Discretization> disc) {
     for(blockIt = blocks->begin() ; blockIt != blocks->end() ; blockIt++)
       msg += "  " + blockIt->getName()  + ",";
     msg += "\b\n\n";
-    TEUCHOS_TEST_FOR_TERMINATION(true, msg);
+    TestForTermination(true, msg);
   }
 }
 
@@ -1352,7 +1353,7 @@ void PeridigmNS::Peridigm::initializeOutputManager() {
         string msg = "Peridigm::initializeOutputManager: ";
         msg+= name;
         msg+= " is not a Teuchos::ParameterList sublist.";
-        TEUCHOS_TEST_FOR_TERMINATION( true, msg );
+        TestForTermination( true, msg );
       }
       // Add proc id data to copied list
       outputParams->set("NumProc", (int)(peridigmComm->NumProc()));
@@ -1370,7 +1371,7 @@ void PeridigmNS::Peridigm::initializeOutputManager() {
 
 void PeridigmNS::Peridigm::execute(Teuchos::RCP<Teuchos::ParameterList> solverParams) {
 
-  TEUCHOS_TEST_FOR_TERMINATION(solverParams.is_null(), "Error in Peridigm::execute, solverParams is null.\n");
+  TestForTermination(solverParams.is_null(), "Error in Peridigm::execute, solverParams is null.\n");
   
   if (solverParams->get("Verbose", false))
     PeridigmNS::Timer::self().verbose = true;
@@ -1386,7 +1387,7 @@ void PeridigmNS::Peridigm::execute(Teuchos::RCP<Teuchos::ParameterList> solverPa
   else if(solverParams->isSublist("ImplicitDiffusion"))
     executeImplicitDiffusion(solverParams);
   else {
-    TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error: Unrecognized time integration scheme.\n");
+    TestForTermination(true, "**** Error: Unrecognized time integration scheme.\n");
   }
 
   PeridigmNS::Memstat * memstat = PeridigmNS::Memstat::Instance();
@@ -1408,6 +1409,7 @@ void PeridigmNS::Peridigm::executeSolvers() {
 
 void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> solverParams) {
 
+  LOG(LogLevel::INFO,"Execute Explicit");
   Teuchos::RCP<Teuchos::ParameterList> verletParams = sublist(solverParams, "Verlet", true);
 
   // Compute the approximate critical time step
@@ -1501,6 +1503,8 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     cout << "  Time step           " << dt << "\n" << endl;
     cout << "Total number of time steps " << nsteps << "\n" << endl;
   }
+  LOG(LogLevel::INFO,"Time step: " + std::to_string(dt));
+  LOG(LogLevel::INFO,"Total number of time steps: " + std::to_string(nsteps));
 
   // Pointer index into sub-vectors for use with BLAS
   double *xPtr, *u_previousPtr, *uPtr, *yPtr, *v_previousPtr, *vPtr, *aPtr, *ptPtr, *deltaTPtr, *temp_previousPtr, *tempPtr;
@@ -2002,18 +2006,18 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
         force->PutScalar(0.0);
       }
     for(int i=0 ; i<force->MyLength() ; ++i)
-     TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite((*force)[i]), "**** NaN returned by force evaluation.\n");
+     TestForTermination(!std::isfinite((*force)[i]), "**** NaN returned by force evaluation.\n");
 
     // Check for NaNs in force evaluation
     // We'd like to know now because a NaN will likely cause a difficult-to-unravel crash downstream.
     for(int i=0 ; i<externalForce->MyLength() ; ++i)
-      TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite((*externalForce)[i]), "**** NaN returned by external force evaluation.\n");
+      TestForTermination(!std::isfinite((*externalForce)[i]), "**** NaN returned by external force evaluation.\n");
 
     if(analysisHasContact){
       contactManager->exportData(contactForce);
       // Check for NaNs in contact force evaluation
       for(int i=0 ; i<contactForce->MyLength() ; ++i)
-        TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite((*contactForce)[i]), "**** NaN returned by contact force evaluation.\n");
+        TestForTermination(!std::isfinite((*contactForce)[i]), "**** NaN returned by contact force evaluation.\n");
       // Add contact forces to forces
       force->Update(1.0, *contactForce, 1.0);
     }
@@ -2153,28 +2157,28 @@ bool PeridigmNS::Peridigm::computePreconditioner(const Epetra_Vector& x, Epetra_
 
   // Invert the 3x3 block tangent
   PeridigmNS::Timer::self().startTimer("Invert 3x3 Block Tangent");
-  TEUCHOS_TEST_FOR_TERMINATION(tangent->NumMyRows()%3 != 0, "****Error in Peridigm::computePreconditioner(), invalid number of rows.\n");
+  TestForTermination(tangent->NumMyRows()%3 != 0, "****Error in Peridigm::computePreconditioner(), invalid number of rows.\n");
   int numEntries, err;
   double *valuesRow1, *valuesRow2, *valuesRow3;
   double matrix[9], determinant, inverse[9];
   for(int iBlock=0 ; iBlock<tangent->NumMyRows() ; iBlock+=3){
     err = tangent->ExtractMyRowView(iBlock, numEntries, valuesRow1);
-    TEUCHOS_TEST_FOR_TERMINATION(err != 0, "**** PeridigmNS::Peridigm::computePreconditioner(), tangent->ExtractMyRowView() returned nonzero error code.\n");
-    TEUCHOS_TEST_FOR_TERMINATION(numEntries != 3, "**** PeridigmNS::Peridigm::computePreconditioner(), number of row entries not equal to three (block 3x3 matrix required).\n");
+    TestForTermination(err != 0, "**** PeridigmNS::Peridigm::computePreconditioner(), tangent->ExtractMyRowView() returned nonzero error code.\n");
+    TestForTermination(numEntries != 3, "**** PeridigmNS::Peridigm::computePreconditioner(), number of row entries not equal to three (block 3x3 matrix required).\n");
     for(int i=0 ; i<3 ; ++i)
       matrix[i] = valuesRow1[i];
     err = tangent->ExtractMyRowView(iBlock+1, numEntries, valuesRow2);
-    TEUCHOS_TEST_FOR_TERMINATION(err != 0, "**** PeridigmNS::Peridigm::computePreconditioner(), tangent->ExtractMyRowView() returned nonzero error code.\n");
-    TEUCHOS_TEST_FOR_TERMINATION(numEntries != 3, "**** PeridigmNS::Peridigm::computePreconditioner(), number of row entries not equal to three (block 3x3 matrix required).\n");
+    TestForTermination(err != 0, "**** PeridigmNS::Peridigm::computePreconditioner(), tangent->ExtractMyRowView() returned nonzero error code.\n");
+    TestForTermination(numEntries != 3, "**** PeridigmNS::Peridigm::computePreconditioner(), number of row entries not equal to three (block 3x3 matrix required).\n");
     for(int i=0 ; i<3 ; ++i)
       matrix[3+i] = valuesRow2[i];
     err = tangent->ExtractMyRowView(iBlock+2, numEntries, valuesRow3);
-    TEUCHOS_TEST_FOR_TERMINATION(err != 0, "**** PeridigmNS::Peridigm::computePreconditioner(), tangent->ExtractMyRowView() returned nonzero error code.\n");
-    TEUCHOS_TEST_FOR_TERMINATION(numEntries != 3, "**** PeridigmNS::Peridigm::computePreconditioner(), number of row entries not equal to three (block 3x3 matrix required).\n");
+    TestForTermination(err != 0, "**** PeridigmNS::Peridigm::computePreconditioner(), tangent->ExtractMyRowView() returned nonzero error code.\n");
+    TestForTermination(numEntries != 3, "**** PeridigmNS::Peridigm::computePreconditioner(), number of row entries not equal to three (block 3x3 matrix required).\n");
     for(int i=0 ; i<3 ; ++i)
       matrix[6+i] = valuesRow3[i];
     err = MATRICES::Invert3by3Matrix(matrix, determinant, inverse);
-    TEUCHOS_TEST_FOR_TERMINATION(err != 0, "**** PeridigmNS::Peridigm::computePreconditioner(), Invert3by3Matrix() returned nonzero error code.\n");
+    TestForTermination(err != 0, "**** PeridigmNS::Peridigm::computePreconditioner(), Invert3by3Matrix() returned nonzero error code.\n");
     for(int i=0 ; i<3 ; ++i){
       valuesRow1[i] = inverse[i];
       valuesRow2[i] = inverse[3+i];
@@ -2208,11 +2212,11 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
   }
   else if (flag == NOX::Epetra::Interface::Required::Prec) {
     // Do nothing for now
-    TEUCHOS_TEST_FOR_TERMINATION(true, "flag = Prec");
+    TestForTermination(true, "flag = Prec");
   }
   else if (flag == NOX::Epetra::Interface::Required::User) {
     // Do nothing for now
-    TEUCHOS_TEST_FOR_TERMINATION(true, "flag = User");
+    TestForTermination(true, "flag = User");
   }
 
   // Multiphysics: copy the solution vector passed in by NOX to update the deformation 
@@ -2444,10 +2448,10 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
     // copy the internal force to the residual vector
     // note that due to restrictions on CrsMatrix, these vectors have different (but equivalent) maps
     if(not analysisHasMultiphysics){
-      TEUCHOS_TEST_FOR_TERMINATION(residual->MyLength() != force->MyLength(), "**** PeridigmNS::Peridigm::evaluateNOX() incompatible vector lengths!\n");
+      TestForTermination(residual->MyLength() != force->MyLength(), "**** PeridigmNS::Peridigm::evaluateNOX() incompatible vector lengths!\n");
     }
     else{
-      TEUCHOS_TEST_FOR_TERMINATION(residual->MyLength() != unknownsForce->MyLength(), "**** PeridigmNS::Peridigm::evaluateNOX() incompatible vector lengths! (residual with unknownsForce)\n");
+      TestForTermination(residual->MyLength() != unknownsForce->MyLength(), "**** PeridigmNS::Peridigm::evaluateNOX() incompatible vector lengths! (residual with unknownsForce)\n");
     }
 
     if(analysisHasMultiphysics){
@@ -2467,7 +2471,7 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
     boundaryAndInitialConditionManager->applyKinematicBC_InsertZeros(residual);
 
     // copy back to tmp_rhs
-    TEUCHOS_TEST_FOR_TERMINATION(residual->MyLength() != tmp_rhs->MyLength(), "**** PeridigmNS::Peridigm::evaluateNOX() incompatible vector lengths! (tmp_rhs with residual)\n");
+    TestForTermination(residual->MyLength() != tmp_rhs->MyLength(), "**** PeridigmNS::Peridigm::evaluateNOX() incompatible vector lengths! (tmp_rhs with residual)\n");
     for(int i=0 ; i < tmp_rhs->MyLength() ; ++i)
       (*tmp_rhs)[i] = (*residual)[i];
   }
@@ -2478,7 +2482,7 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
     PeridigmNS::Timer::self().startTimer("Evaluate Jacobian");
     modelEvaluator->evalJacobian(workset);
     int err = tangent->GlobalAssemble();
-    TEUCHOS_TEST_FOR_TERMINATION(err != 0, "**** PeridigmNS::Peridigm::evaluateNOX(), GlobalAssemble() returned nonzero error code.\n");
+    TestForTermination(err != 0, "**** PeridigmNS::Peridigm::evaluateNOX(), GlobalAssemble() returned nonzero error code.\n");
     PeridigmNS::Timer::self().stopTimer("Evaluate Jacobian");
     boundaryAndInitialConditionManager->applyKinematicBC_InsertZerosAndSetDiagonal(tangent);
   }
@@ -2491,16 +2495,16 @@ bool PeridigmNS::Peridigm::evaluateNOX(NOX::Epetra::Interface::Required::FillTyp
 void PeridigmNS::Peridigm::computeInternalForce()
 {
 
-  TEUCHOS_TEST_FOR_TERMINATION(analysisHasMultiphysics, "**** PeridigmNS::Peridigm::computeInternalForce() is not multiphysics compatible.\n");
+  TestForTermination(analysisHasMultiphysics, "**** PeridigmNS::Peridigm::computeInternalForce() is not multiphysics compatible.\n");
   // This function is intended for use when Peridigm is called as an external library (e.g., code coupling)
   // It is assumed that the global vectors x, u, y, and v have already been set by the driver application
 
   // Run some checks to make sure things haven't gone haywire
   for(int i=0 ; i<u->MyLength() ; ++i){
-    TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite((*x)[i]), "**** NaN detetected in vector x in Peridigm::computeInternalForce().\n");
-    TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite((*u)[i]), "**** NaN detetected in vector u in Peridigm::computeInternalForce().\n");
-    TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite((*y)[i]), "**** NaN detetected in vector y in Peridigm::computeInternalForce().\n");
-    TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite((*v)[i]), "**** NaN detetected in vector v in Peridigm::computeInternalForce().\n");
+    TestForTermination(!std::isfinite((*x)[i]), "**** NaN detetected in vector x in Peridigm::computeInternalForce().\n");
+    TestForTermination(!std::isfinite((*u)[i]), "**** NaN detetected in vector u in Peridigm::computeInternalForce().\n");
+    TestForTermination(!std::isfinite((*y)[i]), "**** NaN detetected in vector y in Peridigm::computeInternalForce().\n");
+    TestForTermination(!std::isfinite((*v)[i]), "**** NaN detetected in vector v in Peridigm::computeInternalForce().\n");
   }
 
   // Copy data from mothership vectors to overlap vectors in data manager
@@ -2527,7 +2531,7 @@ void PeridigmNS::Peridigm::computeInternalForce()
 
   // Run some checks to make sure things haven't gone haywire
   for(int i=0 ; i<force->MyLength() ; ++i){
-    TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite((*force)[i]), "**** NaN detetected in force vector in Peridigm::computeInternalForce().\n");
+    TestForTermination(!std::isfinite((*force)[i]), "**** NaN detetected in force vector in Peridigm::computeInternalForce().\n");
   }
 
   // convert force density to force
@@ -2558,26 +2562,26 @@ void PeridigmNS::Peridigm::jacobianDiagnostics(Teuchos::RCP<NOX::Epetra::Group> 
   // Construct transpose
   Teuchos::RCP<Epetra_Operator> jacobianOperator = noxGroup->getLinearSystem()->getJacobianOperator();
   Epetra_CrsMatrix* jacobian = dynamic_cast<Epetra_CrsMatrix*>(jacobianOperator.get());
-  TEUCHOS_TEST_FOR_TERMINATION(jacobian == NULL, "\n****Error: jacobianDiagnostics() failed to convert jacobian to Epetra_CrsMatrix.\n");
+  TestForTermination(jacobian == NULL, "\n****Error: jacobianDiagnostics() failed to convert jacobian to Epetra_CrsMatrix.\n");
   Epetra_CrsMatrix jacobianTranspose(*jacobian);
   Epetra_CrsMatrix* jacobianTransposePtr = &jacobianTranspose;
   Epetra_RowMatrixTransposer jacobianTransposer(jacobian);
   bool makeDataContiguous = false;
   int returnCode = jacobianTransposer.CreateTranspose(makeDataContiguous, jacobianTransposePtr);
-  TEUCHOS_TEST_FOR_TERMINATION(returnCode != 0, "\n****Error: jacobianDiagnostics() failed to transpose jacobian.\n");
+  TestForTermination(returnCode != 0, "\n****Error: jacobianDiagnostics() failed to transpose jacobian.\n");
 
   // Replace entries in transpose with 0.5*(J - J^T)
   int numRows = jacobian->NumMyRows();
-  TEUCHOS_TEST_FOR_TERMINATION(numRows != jacobianTranspose.NumMyRows(), "\n****Error: jacobianDiagnostics() incompatible matrices.\n");
+  TestForTermination(numRows != jacobianTranspose.NumMyRows(), "\n****Error: jacobianDiagnostics() incompatible matrices.\n");
   int numEntries, numEntriesTranspose;
   double *values, *valuesTranspose;
   int *indices, *indicesTranspose;
   for(int i=0; i<numRows; i++){
     jacobian->ExtractMyRowView(i, numEntries, values, indices);
     jacobianTranspose.ExtractMyRowView(i, numEntriesTranspose, valuesTranspose, indicesTranspose);
-    TEUCHOS_TEST_FOR_TERMINATION(numEntries != numEntriesTranspose, "\n****Error: jacobianDiagnostics() incompatible matrices.\n");
+    TestForTermination(numEntries != numEntriesTranspose, "\n****Error: jacobianDiagnostics() incompatible matrices.\n");
     for (int j=0; j<numEntries; j++){
-      TEUCHOS_TEST_FOR_TERMINATION(indices[j] != indicesTranspose[j], "\n****Error: jacobianDiagnostics() incompatible matrices.\n");
+      TestForTermination(indices[j] != indicesTranspose[j], "\n****Error: jacobianDiagnostics() incompatible matrices.\n");
       valuesTranspose[j] = fabs(0.5*(values[j]-valuesTranspose[j]));
     }
   }
@@ -2740,7 +2744,7 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
          back_inserter<vector<double> >(timeSteps));
   }
   else{
-    TEUCHOS_TEST_FOR_TERMINATION(true, "\n****Error: No valid time step data provided.\n");
+    TestForTermination(true, "\n****Error: No valid time step data provided.\n");
   }
   double timeCurrent = timeSteps[0];
   double timePrevious = timeCurrent;
@@ -2828,7 +2832,7 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
     PeridigmNS::Timer::self().stopTimer("Apply Kinematic B.C.");
 
     // For NOX, add the increment in displacement BC directly into the displacement vector
-    //TEUCHOS_TEST_FOR_TERMINATION(initialGuess->MyLength() != unknownsV->MyLength(), "**** PeridigmNS::Peridigm::executeNOXQuasiStatic() initialGuess vector different length than unknownsV.\n");
+    //TestForTermination(initialGuess->MyLength() != unknownsV->MyLength(), "**** PeridigmNS::Peridigm::executeNOXQuasiStatic() initialGuess vector different length than unknownsV.\n");
     if(analysisHasMultiphysics){
       for(int i=0 ; i<u->MyLength() ; ++i)
         uPtr[i] += deltaUPtr[i];
@@ -2920,7 +2924,7 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
     else if(directionMethod == "NonlinearCG")
       linearSystemParams = Teuchos::rcpFromRef( noxQuasiStaticParams->sublist("Direction").sublist("Nonlinear CG").sublist("Linear Solver") );
     else{
-      TEUCHOS_TEST_FOR_TERMINATION(directionMethod != "Newton" && directionMethod != "NonlinearCG", "\n****Error:  User-supplied NOX Direction currently not supported by Peridigm.\n");
+      TestForTermination(directionMethod != "Newton" && directionMethod != "NonlinearCG", "\n****Error:  User-supplied NOX Direction currently not supported by Peridigm.\n");
     }
 
     Material::JacobianType peridigmPreconditioner = Material::FULL_MATRIX;
@@ -2933,7 +2937,7 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
       else if(peridigmPreconditionerStr == "None")
         peridigmPreconditioner = Material::BLOCK_DIAGONAL;
       else
-        TEUCHOS_TEST_FOR_TERMINATION(true, "\n****Error:  Unrecognized Peridigm Preconditioner, must be \"Full Tangent\", \"Block 3x3\", or \"None\".\n");
+        TestForTermination(true, "\n****Error:  Unrecognized Peridigm Preconditioner, must be \"Full Tangent\", \"Block 3x3\", or \"None\".\n");
     }
     bool isMatrixFree(false);
     if(linearSystemParams->isParameter("Jacobian Operator")){
@@ -2974,14 +2978,14 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
       maxAgePeridigmPreconditioner = noxQuasiStaticParams->get<int>("Max Age Of Prec", 200);
       if(noxQuasiStaticParams->isParameter("Preconditioner Reuse Policy")){
         std::string reusePolicy = noxQuasiStaticParams->get<std::string>("Preconditioner Reuse Policy");
-        TEUCHOS_TEST_FOR_TERMINATION(reusePolicy != "Reuse", "\n****Error:  Peridigm only supports \"Preconditioner Reuse Policy = Reuse\" for NOX with Jacobian Free Newton Krylov.\n");
+        TestForTermination(reusePolicy != "Reuse", "\n****Error:  Peridigm only supports \"Preconditioner Reuse Policy = Reuse\" for NOX with Jacobian Free Newton Krylov.\n");
       }
 
       // For matrix-free solves with the block 3x3 preconditioner, the only valid NOX->Direction->Newton->Linear Solver->Preconditioner options
       // are "None" and "User Defined"
       if(linearSystemParams->isParameter("Preconditioner")){
         std::string linSysPreconditioner = linearSystemParams->get<std::string>("Preconditioner");
-        TEUCHOS_TEST_FOR_TERMINATION(linSysPreconditioner != "User Defined" && linSysPreconditioner != "None",
+        TestForTermination(linSysPreconditioner != "User Defined" && linSysPreconditioner != "None",
                                   "\n****Error:  Peridigm only supports \"Preconditioner = User Defined\" and \"Preconditioner = None\" for NOX with Jacobian Free Newton Krylov and the Peridigm Block 3x3 preconditioner.\n");
         // THIS IS A HACK TO GET AROUND APPARENT NOX LINEAR SYSTEM PARAMETER GLITCH
         // We are providing a preconditioner via the LinearSystemAztecOO constructor
@@ -3065,7 +3069,7 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
     }
 
     if(!failedQS)
-      TEUCHOS_TEST_FOR_TERMINATION(noxSolverStatus != NOX::StatusTest::Converged, "\n****Error:  NOX solver failed to solve system.\n");
+      TestForTermination(noxSolverStatus != NOX::StatusTest::Converged, "\n****Error:  NOX solver failed to solve system.\n");
     
     // Get the Epetra_Vector with the final solution from the solver
     const Epetra_Vector& finalSolution = 
@@ -3357,7 +3361,7 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
     back_inserter<vector<double> >(timeSteps));
   }
   else{
-    TEUCHOS_TEST_FOR_TERMINATION(true, "\n****Error: No valid time step data provided.\n");
+    TestForTermination(true, "\n****Error: No valid time step data provided.\n");
   }
 
   // Adaptive load-stepping parameters
@@ -3376,7 +3380,7 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
     adaptiveQSparams = sublist(quasiStaticParams, "Adaptive Load-Stepping", true);
     maxSolverFailureInOneStep = adaptiveQSparams->get<int>("Maximum load step reductions in one step");
     maxTotalSolverFailure = adaptiveQSparams->get<int>("Maximum total load step reductions");
-    TEUCHOS_TEST_FOR_TERMINATION(maxTotalSolverFailure < maxSolverFailureInOneStep, "**** 'Maximum total load step reductions' cannot be smaller than 'Maximum load step reductions in one step'. ****");
+    TestForTermination(maxTotalSolverFailure < maxSolverFailureInOneStep, "**** 'Maximum total load step reductions' cannot be smaller than 'Maximum load step reductions in one step'. ****");
     if( adaptiveQSparams->isParameter("Reduce all remaining load steps") ){
       //If one load step is reduced, the remainder of the steps is also reduced
       reduceAllSteps = adaptiveQSparams->get<bool>("Reduce all remaining load steps");
@@ -3557,7 +3561,7 @@ void PeridigmNS::Peridigm::executeQuasiStatic(Teuchos::RCP<Teuchos::ParameterLis
           modelEvaluator->evalJacobian(workset);
           int err = tangent->GlobalAssemble();
 
-          TEUCHOS_TEST_FOR_TERMINATION(err != 0, "**** PeridigmNS::Peridigm::executeQuasiStatic(), GlobalAssemble() returned nonzero error code.\n");
+          TestForTermination(err != 0, "**** PeridigmNS::Peridigm::executeQuasiStatic(), GlobalAssemble() returned nonzero error code.\n");
           PeridigmNS::Timer::self().stopTimer("Evaluate Jacobian");
           boundaryAndInitialConditionManager->applyKinematicBC_InsertZeros(residual);
           boundaryAndInitialConditionManager->applyKinematicBC_InsertZerosAndSetDiagonal(tangent);
@@ -3875,7 +3879,7 @@ void PeridigmNS::Peridigm::executeImplicitDiffusion(Teuchos::RCP<Teuchos::Parame
     back_inserter<vector<double> >(timeSteps));
   }
   else{
-    TEUCHOS_TEST_FOR_TERMINATION(true, "\n****Error: No valid time step data provided.\n");
+    TestForTermination(true, "\n****Error: No valid time step data provided.\n");
   }
 
   double timeCurrent = timeSteps[0];
@@ -3959,7 +3963,7 @@ void PeridigmNS::Peridigm::executeImplicitDiffusion(Teuchos::RCP<Teuchos::Parame
       PeridigmNS::Timer::self().startTimer("Evaluate Jacobian");
       modelEvaluator->evalJacobian(workset);
       int err = tangent->GlobalAssemble();
-      TEUCHOS_TEST_FOR_TERMINATION(err != 0, "**** PeridigmNS::Peridigm::executeImplicitDiffusion(), GlobalAssemble() returned nonzero error code.\n");
+      TestForTermination(err != 0, "**** PeridigmNS::Peridigm::executeImplicitDiffusion(), GlobalAssemble() returned nonzero error code.\n");
       PeridigmNS::Timer::self().stopTimer("Evaluate Jacobian");
       boundaryAndInitialConditionManager->applyKinematicBC_InsertZeros(residual);
       boundaryAndInitialConditionManager->applyKinematicBC_InsertZerosAndSetDiagonal(tangent);
@@ -4051,11 +4055,11 @@ void PeridigmNS::Peridigm::quasiStaticsSetPreconditioner(Belos::LinearProblem<do
   Teuchos::RCP<Ifpack_Preconditioner> Prec = Teuchos::rcp( IFPFactory.Create(PrecType, &(*tangent), OverlapLevel) );
   // ifpackList.set("fact: drop tolerance", 1e-9);
   ifpackList.set("fact: ilut level-of-fill", 0);
-  TEUCHOS_TEST_FOR_TERMINATION(Prec->SetParameters(ifpackList),
+  TestForTermination(Prec->SetParameters(ifpackList),
                               "**** PeridigmNS::Peridigm::executeQuasiStatic(), Prec->SetParameters() returned nonzero error code.\n");
-  TEUCHOS_TEST_FOR_TERMINATION(Prec->Initialize(),
+  TestForTermination(Prec->Initialize(),
                               "**** PeridigmNS::Peridigm::executeQuasiStatic(), Prec->Initialize() returned nonzero error code.\n");
-  TEUCHOS_TEST_FOR_TERMINATION(Prec->Compute(),
+  TestForTermination(Prec->Compute(),
                               "**** PeridigmNS::Peridigm::executeQuasiStatic(), Prec->Compute() returned nonzero error code.\n");
   // Create the Belos preconditioned operator from the Ifpack preconditioner.
   // NOTE:  This is necessary because Belos expects an operator to apply the
@@ -4095,7 +4099,7 @@ Belos::ReturnType PeridigmNS::Peridigm::quasiStaticsSolveSystem(Teuchos::RCP<Epe
   lhs->PutScalar(0.0);
   linearProblem.setOperator(tangent);
   bool isSet = linearProblem.setProblem(lhs, residual);
-  TEUCHOS_TEST_FOR_TERMINATION(!isSet, "**** Belos::LinearProblem::setProblem() returned nonzero error code.\n");
+  TestForTermination(!isSet, "**** Belos::LinearProblem::setProblem() returned nonzero error code.\n");
   try{
     isConverged = belosSolver->solve();
   }
@@ -4160,7 +4164,7 @@ double PeridigmNS::Peridigm::quasiStaticsLineSearch(Teuchos::RCP<Epetra_Vector> 
 
   // compute the current residual
   double unperturbedResidualNorm = computeQuasiStaticResidual(residual);
-  TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(unperturbedResidualNorm), "**** NaN detected in residual calculation in quasiStaticsLineSearch().\n");
+  TestForTermination(!std::isfinite(unperturbedResidualNorm), "**** NaN detected in residual calculation in quasiStaticsLineSearch().\n");
   if(unperturbedResidualNorm == 0.0)
     return 0.0;
 
@@ -4646,7 +4650,7 @@ void PeridigmNS::Peridigm::executeImplicit(Teuchos::RCP<Teuchos::ParameterList> 
 
       bool isSet = linearProblem.setProblem(displacementIncrement, residual);
 
-      TEUCHOS_TEST_FOR_TERMINATION(!isSet, "**** Peridigm::executeImplicit(), failed to set linear problem.\n");
+      TestForTermination(!isSet, "**** Peridigm::executeImplicit(), failed to set linear problem.\n");
       PeridigmNS::Timer::self().startTimer("Solve Linear System");
       Belos::ReturnType isConverged = belosSolver->solve();
       if(isConverged != Belos::Converged && peridigmComm->MyPID() == 0)
@@ -4867,12 +4871,12 @@ void PeridigmNS::Peridigm::allocateJacobian() {
 
     // Allocate space in the global matrix
     int err = tangent->InsertGlobalValues(rowEntry->first, numRowNonzeros, (const double*)&zeros[0], (const int*)&indices[0]);
-    TEUCHOS_TEST_FOR_TERMINATION(err < 0, "**** PeridigmNS::Peridigm::allocateJacobian(), InsertGlobalValues() returned negative error code.\n");
+    TestForTermination(err < 0, "**** PeridigmNS::Peridigm::allocateJacobian(), InsertGlobalValues() returned negative error code.\n");
 
     rowEntry->second.clear();
   }
   int err = tangent->GlobalAssemble();
-  TEUCHOS_TEST_FOR_TERMINATION(err != 0, "**** PeridigmNS::Peridigm::allocateJacobian(), GlobalAssemble() returned nonzero error code.\n");
+  TestForTermination(err != 0, "**** PeridigmNS::Peridigm::allocateJacobian(), GlobalAssemble() returned nonzero error code.\n");
 
   // create the serial Jacobian
   overlapJacobian = Teuchos::rcp(new PeridigmNS::SerialMatrix(tangent));
@@ -4926,10 +4930,10 @@ void PeridigmNS::Peridigm::allocateBlockDiagonalJacobian() {
     rowEntries[1] = 3*(static_cast<int>(globalId)/3) + 1;
     rowEntries[2] = 3*(static_cast<int>(globalId)/3) + 2;
     err = blockDiagonalTangent->InsertGlobalValues(globalId, numEntriesPerRow, zeros, (const int*)rowEntries);
-    TEUCHOS_TEST_FOR_TERMINATION(err < 0, "**** PeridigmNS::Peridigm::allocateblockDiagonalJacobian(), InsertGlobalValues() returned negative error code.\n");
+    TestForTermination(err < 0, "**** PeridigmNS::Peridigm::allocateblockDiagonalJacobian(), InsertGlobalValues() returned negative error code.\n");
   }
   err = blockDiagonalTangent->GlobalAssemble();
-  TEUCHOS_TEST_FOR_TERMINATION(err != 0, "**** PeridigmNS::Peridigm::allocateBlockDiagonalJacobian(), GlobalAssemble() returned nonzero error code.\n");
+  TestForTermination(err != 0, "**** PeridigmNS::Peridigm::allocateBlockDiagonalJacobian(), GlobalAssemble() returned nonzero error code.\n");
 
   // create the serial Jacobian
   overlapJacobian = Teuchos::rcp(new PeridigmNS::SerialMatrix(blockDiagonalTangent));
@@ -5005,7 +5009,7 @@ double PeridigmNS::Peridigm::computeQuasiStaticResidual(Teuchos::RCP<Epetra_Vect
     for(int i_node = 0; i_node < force->Map().NumMyElements(); ++i_node) {
       for (int dof = 0; dof < numDisplacementDofs; ++dof) {
         double value = force_ptr[i_node*numDisplacementDofs + dof];
-        TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(value), "**** NaN returned by force evaluation.\n");
+        TestForTermination(!std::isfinite(value), "**** NaN returned by force evaluation.\n");
         residual_ptr[i_node*numDofs + displacementDofOffset + dof] = value;
       }
     }
@@ -5023,7 +5027,7 @@ double PeridigmNS::Peridigm::computeQuasiStaticResidual(Teuchos::RCP<Epetra_Vect
     fluxDivergence->ExtractView(&flux_divergence_ptr);
     for(int i_node = 0; i_node < fluxDivergence->Map().NumMyElements(); ++i_node) {
       double value = flux_divergence_ptr[i_node];
-      TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(value), "**** NaN returned by flux divergence evaluation.\n");
+      TestForTermination(!std::isfinite(value), "**** NaN returned by flux divergence evaluation.\n");
       residual_ptr[i_node*numDofs + temperatureDofOffset] = value;
     }
   }
@@ -5040,7 +5044,7 @@ double PeridigmNS::Peridigm::computeQuasiStaticResidual(Teuchos::RCP<Epetra_Vect
     concentrationFluxDivergence->ExtractView(&concentration_flux_divergence_ptr);
     for(int i_node = 0; i_node < concentrationFluxDivergence->Map().NumMyElements(); ++i_node) {
       double value = concentration_flux_divergence_ptr[i_node];
-      TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(value), "**** NaN returned by concentration flux divergence evaluation.\n");
+      TestForTermination(!std::isfinite(value), "**** NaN returned by concentration flux divergence evaluation.\n");
       residual_ptr[i_node*numDofs + concentrationDofOffset] = value;
     }
   }
@@ -5057,7 +5061,7 @@ double PeridigmNS::Peridigm::computeQuasiStaticResidual(Teuchos::RCP<Epetra_Vect
     fluidFlow->ExtractView(&fluid_flow_ptr);
     for(int i_node = 0; i_node < fluidFlow->Map().NumMyElements(); ++i_node) {
       double value = fluid_flow_ptr[i_node];
-      TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(value), "**** NaN returned by fluid flow evaluation.\n");
+      TestForTermination(!std::isfinite(value), "**** NaN returned by fluid flow evaluation.\n");
       residual_ptr[i_node*numDofs + pressureDofOffset] = value;
     }
   }
@@ -5103,7 +5107,7 @@ void PeridigmNS::Peridigm::computeImplicitJacobian(double beta, double dt) {
   PeridigmNS::Timer::self().startTimer("Evaluate Jacobian");
   modelEvaluator->evalJacobian(workset);
   int err = tangent->GlobalAssemble();
-  TEUCHOS_TEST_FOR_TERMINATION(err != 0, "**** PeridigmNS::Peridigm::computeImplicitJacobian(), GlobalAssemble() returned nonzero error code.\n");
+  TestForTermination(err != 0, "**** PeridigmNS::Peridigm::computeImplicitJacobian(), GlobalAssemble() returned nonzero error code.\n");
   PeridigmNS::Timer::self().stopTimer("Evaluate Jacobian");
 
   // tangent = M - beta*dt*dt*K
@@ -5190,7 +5194,7 @@ Teuchos::RCP< map< string, vector<int> > > PeridigmNS::Peridigm::getExodusNodeSe
     vector<int>& exodusNodeSet = (*exodusNodeSets)[nodeSetName];
     for(unsigned int i=0 ; i<nodeSet.size() ; ++i){
       int localId = oneDimensionalMap->LID(nodeSet[i]);
-      TEUCHOS_TEST_FOR_TERMINATION(localId == -1, "**** Error, Peridigm::getExodusNodeSets() encountered off-processor node in node set.\n");
+      TestForTermination(localId == -1, "**** Error, Peridigm::getExodusNodeSets() encountered off-processor node in node set.\n");
       exodusNodeSet.push_back(localId + 1);
     }
   }
@@ -5320,14 +5324,14 @@ void PeridigmNS::Peridigm::readRestart(Teuchos::RCP<Teuchos::ParameterList> solv
     if (currentTime != timeInitial){
       char timeError[251];
       sprintf(timeError, "Error, Incompatible times:\nPrevious restart final time is %e, while initial time is %e.\n",currentTime,timeInitial);
-      TEUCHOS_TEST_FOR_TERMINATION(true,timeError);
+      TestForTermination(true,timeError);
       MPI_Finalize();
       exit(0);
     }
   }
   if(analysisHasMultiphysics){
     if(peridigmComm->MyPID() == 0){
-      TEUCHOS_TEST_FOR_TERMINATION(true,"Error: Restart for Multiphysics is not implemented yet.\n");
+      TestForTermination(true,"Error: Restart for Multiphysics is not implemented yet.\n");
       MPI_Finalize();
       exit(0);
     }

@@ -49,6 +49,7 @@
 
 #include "Peridigm_Compute_Energy.hpp"
 #include "Peridigm_Field.hpp"
+#include "Peridigm_Logging.hpp"
 
 //! Standard constructor.
 PeridigmNS::Compute_Energy::Compute_Energy(Teuchos::RCP<const Teuchos::ParameterList> params,
@@ -162,7 +163,7 @@ int PeridigmNS::Compute_Energy::compute( Teuchos::RCP< std::vector<PeridigmNS::B
         for (int j=0; j<numNeighbors; j++)
           {
             int neighborID = neighborhoodList[neighborhoodListIndex++];
-            TEUCHOS_TEST_FOR_TERMINATION(neighborID < 0, "Invalid neighbor list\n");
+            TestForTermination(neighborID < 0, "Invalid neighbor list\n");
             int Ne = neighborID;
             vol2 = volume_values[Ne];
             double psi1 = (ref_values[3*Ne] - ref_values[3*i]);

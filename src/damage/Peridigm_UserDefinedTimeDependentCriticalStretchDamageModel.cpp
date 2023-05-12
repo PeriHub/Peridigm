@@ -48,6 +48,7 @@
 #include "Peridigm_UserDefinedTimeDependentCriticalStretchDamageModel.hpp"
 #include "Peridigm_Field.hpp"
 #include "damage_utilities.h"
+#include "Peridigm_Logging.hpp"
 using namespace std;
 
 PeridigmNS::UserDefinedTimeDependentCriticalStretchDamageModel::UserDefinedTimeDependentCriticalStretchDamageModel(const Teuchos::ParameterList& params)
@@ -103,7 +104,7 @@ void PeridigmNS::UserDefinedTimeDependentCriticalStretchDamageModel::evaluatePar
   if(!success){
     string msg = "\n**** Error:  rtcFunction->addBody(functiondmg) returned nonzero error code in UserDefinedTimeDependentCriticalStretchDamageModel::evaluateParserDmg().\n";
     msg += "**** " + rtcFunction->getErrors() + "\n";
-    TEUCHOS_TEST_FOR_TERMINATION(!success, msg);
+    TestForTermination(!success, msg);
   }
 
   // set the return value to 0.0
@@ -126,7 +127,7 @@ void PeridigmNS::UserDefinedTimeDependentCriticalStretchDamageModel::evaluatePar
   if(!success){
     string msg = "\n**** Error in UserDefinedTimeDependentCriticalStretchDamageModel::evaluateParserDmg().\n";
     msg += "**** " + rtcFunction->getErrors() + "\n";
-    TEUCHOS_TEST_FOR_TERMINATION(!success, msg);
+    TestForTermination(!success, msg);
   }
 
   m_criticalStretch = currentValue;

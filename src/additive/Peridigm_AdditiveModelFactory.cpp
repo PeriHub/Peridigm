@@ -50,6 +50,7 @@
 // Questions?
 // Christian Willberg   christian.willberg@dlr.de
 #include "Peridigm_SimpleAdditiveModel.hpp"
+#include "Peridigm_Logging.hpp"
 
 
 
@@ -68,7 +69,7 @@ PeridigmNS::AdditiveModelFactory::create(const Teuchos::ParameterList& additiveM
     string invalidAdditiveModel("\n**** Unrecognized additive model type: ");
     invalidAdditiveModel += additiveModelName;
     invalidAdditiveModel += ", must be \"Simple Additive\".\n";
-    TEUCHOS_TEST_FOR_TERMINATION(true, invalidAdditiveModel);
+    TestForTermination(true, invalidAdditiveModel);
   }
 
   return additiveModel;

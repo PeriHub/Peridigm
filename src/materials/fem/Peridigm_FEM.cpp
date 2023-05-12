@@ -52,6 +52,7 @@
 
 #include "Peridigm_FEM.hpp"
 #include "Peridigm_Field.hpp"
+#include "Peridigm_Logging.hpp"
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
@@ -189,7 +190,7 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
   //double* BInt = &BIntVector[0];
   success=FEM::weightsAndIntegrationPoints(order[0], elCoorx, weightsx);
   success=FEM::weightsAndIntegrationPoints(order[1], elCoory, weightsy);
-  TEUCHOS_TEST_FOR_TERMINATION(success==false, "**** Weights are not include for this polynomial degree.\n");
+  TestForTermination(success==false, "**** Weights are not include for this polynomial degree.\n");
   if (twoD){
     for (int jID=0 ; jID<numIntDir[1] ; ++jID){
       FEM::getLagrangeElementData(order[1],elCoory[jID],Neta,Beta);
@@ -202,7 +203,7 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
   }
   else{
     success=FEM::weightsAndIntegrationPoints(order[2], elCoorz, weightsz); 
-    TEUCHOS_TEST_FOR_TERMINATION(success==false, "**** Weights are not include for this polynomial degree.\n");
+    TestForTermination(success==false, "**** Weights are not include for this polynomial degree.\n");
 
     for (int kID=0 ; kID<numIntDir[2] ; ++kID){
       FEM::getLagrangeElementData(order[2],elCoorz[kID],Npsi,Bpsi);

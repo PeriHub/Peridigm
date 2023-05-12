@@ -83,6 +83,7 @@
 #ifdef PERIDIGM_CJL
   #include "Peridigm_LammiConcreteModel.hpp"
 #endif
+#include "Peridigm_Logging.hpp"
 
 Teuchos::RCP<PeridigmNS::Material>
 PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams)
@@ -142,21 +143,21 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
 #ifdef PERIDIGM_PV
     materialModel = Teuchos::rcp( new ElasticPVMaterial(materialParams) );
 #else
-    TEUCHOS_TEST_FOR_TERMINATION(true, "\n**** Elastic Partial Volume material model unavailable, recompile with -DUSE_PV.\n");
+    TestForTermination(true, "\n**** Elastic Partial Volume material model unavailable, recompile with -DUSE_PV.\n");
 #endif
   }
   else if (materialModelName == "Elastic Correspondence Partial Stress"){
 #ifdef PERIDIGM_SANDIA_INTERNAL
     materialModel = Teuchos::rcp( new ElasticCorrespondencePartialStressMaterial(materialParams) );
 #else
-    TEUCHOS_TEST_FOR_TERMINATION(true, "\n**** Elastic Correspondence Partial Stress material model unavailable, recompile with -DUSE_SANDIA_INTERNAL.\n");
+    TestForTermination(true, "\n**** Elastic Correspondence Partial Stress material model unavailable, recompile with -DUSE_SANDIA_INTERNAL.\n");
 #endif
   }
   else if (materialModelName == "Pressure Dependent Elastic Plastic"){
 #ifdef PERIDIGM_CJL
     materialModel = Teuchos::rcp( new LammiConcreteModel(materialParams) );
 #else
-    TEUCHOS_TEST_FOR_TERMINATION(true, "\n**** Pressure Dependent Elastic Plastic material model unavailable, recompile with -DUSE_CJL.\n");
+    TestForTermination(true, "\n**** Pressure Dependent Elastic Plastic material model unavailable, recompile with -DUSE_CJL.\n");
 #endif
   }
   else {
@@ -173,7 +174,7 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
     invalidMaterial += "\"User Correspondence\" or ";
     invalidMaterial += "\"FEM Elastic Material\" or ";
     invalidMaterial += "\"Linear Elastic Correspondence\".\n";
-    TEUCHOS_TEST_FOR_TERMINATION(true, invalidMaterial);
+    TestForTermination(true, invalidMaterial);
   }
 
   return materialModel;

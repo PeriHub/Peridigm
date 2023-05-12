@@ -61,6 +61,7 @@
 #include "Peridigm.hpp"
 #include "Peridigm_OutputManager_ExodusII.hpp"
 #include "Peridigm_Field.hpp"
+#include "Peridigm_Logging.hpp"
 
 using namespace std;
 
@@ -411,7 +412,7 @@ void PeridigmNS::OutputManager_ExodusII::write(Teuchos::RCP< std::vector<Peridig
               if(retval!= 0) reportExodusError(retval, "write", "ex_put_elem_var");
             }
             else if(spec.getLength() == PeridigmField::SYMMETRIC_TENSOR) {
-              TEUCHOS_TEST_FOR_TERMINATION(spec.getLength() == PeridigmField::SYMMETRIC_TENSOR,
+              TestForTermination(spec.getLength() == PeridigmField::SYMMETRIC_TENSOR,
                                           "\nPeridigmNS::OutputManager_ExodusII::initializeExodusDatabase(), output for SYMMETRIC_TENSOR currently not supported!\n");
             }
             else if(spec.getLength() == PeridigmField::FULL_TENSOR) {
@@ -645,7 +646,7 @@ void PeridigmNS::OutputManager_ExodusII::initializeExodusDatabase(Teuchos::RCP< 
   }
 
   // Write the block names
-  TEUCHOS_TEST_FOR_TERMINATION(blocks->size() < 1, "\nPeridigmNS::OutputManager_ExodusII::initializeExodusDatabase(), Zero element blocks found!\n");
+  TestForTermination(blocks->size() < 1, "\nPeridigmNS::OutputManager_ExodusII::initializeExodusDatabase(), Zero element blocks found!\n");
   char **block_names = new char*[blocks->size()];
   for(unsigned int i=0 ; i<blocks->size() ; ++i)
     block_names[i] = new char[MAX_STR_LENGTH+1];
@@ -685,7 +686,7 @@ void PeridigmNS::OutputManager_ExodusII::initializeExodusDatabase(Teuchos::RCP< 
   for(std::vector<PeridigmNS::Block>::iterator blockIt = blocks->begin(); blockIt != blocks->end() ; blockIt++) {
     Teuchos::RCP<const Epetra_BlockMap> map = blockIt->getOwnedScalarPointMap();
     for(int i=0; i<map->NumMyElements() ; ++i){
-      TEUCHOS_TEST_FOR_TERMINATION(elem_map_index >= num_nodes, "\nPeridigmNS::OutputManager_ExodusII::initializeExodusDatabase(), Error processing element map!\n");
+      TestForTermination(elem_map_index >= num_nodes, "\nPeridigmNS::OutputManager_ExodusII::initializeExodusDatabase(), Error processing element map!\n");
       elem_map[elem_map_index++] = map->GID(i)+1;
     }
   }
@@ -744,7 +745,7 @@ void PeridigmNS::OutputManager_ExodusII::initializeExodusDatabase(Teuchos::RCP< 
       }
     }
     else if(spec.getLength() == PeridigmField::SYMMETRIC_TENSOR) {
-      TEUCHOS_TEST_FOR_TERMINATION(spec.getLength() == PeridigmField::SYMMETRIC_TENSOR,
+      TestForTermination(spec.getLength() == PeridigmField::SYMMETRIC_TENSOR,
                                   "\nPeridigmNS::OutputManager_ExodusII::initializeExodusDatabase(), output for SYMMETRIC_TENSOR currently not supported!\n");
       TEUCHOS_TEST_FOR_EXCEPTION(spec.getRelation() != PeridigmField::ELEMENT, std::invalid_argument,
                                  "PeridigmNS::OutputManager_ExodusII, SYMMETRIC_TENSOR variables are valid only for element data.\n");

@@ -49,6 +49,7 @@
 
 #include "Peridigm_Compute_JIntegral.hpp"
 #include "Peridigm_Field.hpp"
+#include "Peridigm_Logging.hpp"
 #include <iostream>
 
 //! Standard constructor.
@@ -96,7 +97,7 @@ int PeridigmNS::Compute_JIntegral::compute( Teuchos::RCP< std::vector<PeridigmNS
       block = blockIt;
     }
   }
-  TEUCHOS_TEST_FOR_TERMINATION(block == blocks->end(), "**** Error:  Compute_JIntegral, specified block_id not found.\n");
+  TestForTermination(block == blocks->end(), "**** Error:  Compute_JIntegral, specified block_id not found.\n");
 
   // Extract data for the block
   Teuchos::RCP<const PeridigmNS::Material> materialModel = block->getMaterialModel();

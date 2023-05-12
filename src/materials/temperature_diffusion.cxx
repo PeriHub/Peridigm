@@ -52,6 +52,7 @@
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include "Peridigm_Constants.hpp"
+#include "Peridigm_Logging.hpp"
 using namespace std;
 namespace DIFFUSION {
   void computeFlux(
@@ -87,7 +88,7 @@ namespace DIFFUSION {
           kernel = 6.0/(pi*horizon[iID]*horizon[iID]*horizon[iID]*horizon[iID]*initialDistance);
           temperatureDifference = temperature[neighborID] - nodeTemperature;
           nodeFluxDivergence = coefficient*kernel*temperatureDifference*quadWeight; 
-          //TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(nodeFluxDivergence), "**** NaN detected in DiffusionMaterial::computeFluxDivergence().\n");
+          //TestForTermination(!std::isfinite(nodeFluxDivergence), "**** NaN detected in DiffusionMaterial::computeFluxDivergence().\n");
           fluxDivergence[iID] += nodeFluxDivergence;
         }
     }
