@@ -10,7 +10,7 @@ RUN apt-get -yq install openmpi-bin
 RUN apt-get -yq install openssh-server
 
 #Build Peridigm
-RUN git clone https://gitlab.dlr.de/fa_sw/peridynamik/peridigmDev.git /Peridigm
+RUN git clone https://github.com/PeriHub/Peridigm.git /Peridigm
 WORKDIR /Peridigm
 RUN git clone https://gitlab.com/libeigen/eigen.git /usr/local/eigen
 RUN mkdir /Peridigm/build
