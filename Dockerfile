@@ -8,16 +8,10 @@ WORKDIR /
 RUN apt-get -yq update
 RUN apt-get -yq install openmpi-bin
 RUN apt-get -yq install openssh-server
-RUN apt-get -yq install libboost1.55
 
 #Build Peridigm
-RUN mkdir Peridigm
+RUN git clone https://gitlab.dlr.de/fa_sw/peridynamik/peridigmDev.git /Peridigm
 WORKDIR /Peridigm
-ADD src src
-ADD test test
-ADD scripts scripts
-ADD examples examples 
-ADD CMakeLists.txt .
 RUN git clone https://gitlab.com/libeigen/eigen.git /usr/local/eigen
 RUN mkdir /Peridigm/build
 
