@@ -84,7 +84,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_shearModulus = calculateShearModulus(params);
   m_density = params.get<double>("Density");
 
-  m_stabilizationType = 0;
+  m_stabilizationType = 1;
   m_bondbased = true;
   m_plane = false;
   m_approximation = false; 
@@ -138,22 +138,22 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
 
   if (params.isParameter("Apply Automatic Differentiation Jacobian"))
     m_applyAutomaticDifferentiationJacobian = params.get<bool>("Apply Automatic Differentiation Jacobian");
-  if (params.isParameter("Stabilizaton Type"))
+  if (params.isParameter("Stabilization Type"))
   {
 
-    if (params.get<string>("Stabilizaton Type") == "Bond Based")
+    if (params.get<string>("Stabilization Type") == "Bond Based")
     {
       m_stabilizationType = 1;
       m_hourglassCoefficient = params.get<double>("Hourglass Coefficient");
     }
-    if (params.get<string>("Stabilizaton Type") == "State Based")
+    if (params.get<string>("Stabilization Type") == "State Based")
     {
       m_stabilizationType = 2;
       m_hourglassCoefficient = params.get<double>("Hourglass Coefficient");
     }
 
     m_adaptHourGlass = false;
-    if (params.get<string>("Stabilizaton Type") == "Global Stiffness")
+    if (params.get<string>("Stabilization Type") == "Global Stiffness")
     {
       getStiffnessmatrix(params, C, m_planeStrain, m_planeStress);
 
