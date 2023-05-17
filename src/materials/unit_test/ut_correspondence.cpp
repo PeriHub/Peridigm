@@ -107,7 +107,34 @@ TEUCHOS_UNIT_TEST(correspondence, addTemperatureStrain) {
 
 
 }
+TEUCHOS_UNIT_TEST(correspondence, computeGreenLagrangeStrain) {
+    const double tolerance = 1.0e-15;
+    std::vector<double> defGradVector(9);
+    double* defGrad = &defGradVector[0];
+    std::vector<double> strainVector(9);
+    double* strain = &strainVector[0];
+    std::vector<double> strainVectorTest(9);
+    double* strainTest = &strainVectorTest[0];
+    defGrad[0] = 1.0;
+    defGrad[4] = 1.0;
+    defGrad[8] = 1.0;
+   
+    CORRESPONDENCE::computeGreenLagrangeStrain(defGrad,strain);
 
+    for (int n=0; n<9; n++) TEST_FLOATING_EQUALITY(strain[n],0.0,tolerance);
+        
+    defGrad[0] = 2.0;defGrad[1] = 1.0;defGrad[2] = 2.0;
+    defGrad[3] = 2.0;defGrad[4] = 1.0;defGrad[5] = 2.3;
+    defGrad[6] = 2.0;defGrad[7] = -1.0;defGrad[8] = 3.0;
+   
+    strainTest[0] = 11.0;strainTest[1] = 2.0;strainTest[2] = 14.6;
+    strainTest[3] = 2.0;strainTest[4] = 2.0;strainTest[5] = 1.3;
+    strainTest[6] = 14.6;strainTest[7] = 1.3;strainTest[8] = 17.29;
+    CORRESPONDENCE::computeGreenLagrangeStrain(defGrad,strain);
+
+    for (int n=0; n<9; n++) TEST_FLOATING_EQUALITY(strain[n],0.5*strainTest[n],tolerance);
+
+}
 
 
 int main
