@@ -60,7 +60,7 @@ target_link_libraries(ut_elastic_correspondence
   ${REQUIRED_LIBS}
   ${Trilinos_LIBRARIES}
 )
-add_test(ut_material_utilities python ${CMAKE_BINARY_DIR}/scripts/run_unit_test.py ./ut_material_utilities)
+add_test(ut_elastic_correspondence python ${CMAKE_BINARY_DIR}/scripts/run_unit_test.py ./ut_elastic_correspondence)
 
 add_executable(ut_material_utilities ./ut_material_utilities.cpp)
 target_link_libraries(ut_material_utilities
