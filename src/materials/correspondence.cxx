@@ -1108,6 +1108,7 @@ void computeForcesAndStresses
   std::vector<ScalarT> piolaStressVector(9), tempVector(9), tempPlastVector(9), defGradInvVector(9), hourglassStiffVector(9), 
   TSvector(3), scalVector(9);
   ScalarT* TS = &TSvector[0];
+  MATRICES::setToZero(TS, 3);
   ScalarT* temp = &tempVector[0];
   ScalarT* tempPlast = &tempPlastVector[0];
   ScalarT* defGradInv = &defGradInvVector[0];
