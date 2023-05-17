@@ -47,6 +47,7 @@
 
 #include "Peridigm_BoundaryAndInitialConditionManager.hpp"
 #include "Peridigm_DegreesOfFreedomManager.hpp"
+#include "Peridigm_Logging.hpp"
 #include <sstream>
 #include <fstream>
 #include <set>
@@ -213,7 +214,7 @@ void PeridigmNS::BoundaryAndInitialConditionManager::initializeNodeSets(Teuchos:
   size_t position = name.find("NODE_SET");
   if(position != string::npos){
 
-      TEUCHOS_TEST_FOR_TERMINATION(nodeSets->find(name) != nodeSets->end(), "**** Duplicate node set found: " + name + "\n");
+      TestForTermination(nodeSets->find(name) != nodeSets->end(), "**** Duplicate node set found: " + name + "\n");
       vector<int>& nodeList = (*nodeSets)[name];
 
       // Determine if the string is the name of a file or a list of node numbers
@@ -226,14 +227,14 @@ void PeridigmNS::BoundaryAndInitialConditionManager::initializeNodeSets(Teuchos:
         while(ss.good()){
           ss >> nodeID;
           // Convert from 1-based node numbering (Exodus II) to 0-based node numbering (Epetra and all the rest of Peridigm)
-          TEUCHOS_TEST_FOR_TERMINATION(nodeID < 1, "**** Error:  Node number 0 detected in nodeset definition; node numbering must begin with 1.\n");
+          TestForTermination(nodeID < 1, "**** Error:  Node number 0 detected in nodeset definition; node numbering must begin with 1.\n");
           nodeList.push_back(nodeID - 1);
         }
       }
       else{
         // The string is the name of a file containing the node numbers
         ifstream inFile(fileName.c_str());
-        TEUCHOS_TEST_FOR_TERMINATION(!inFile.is_open(), "**** Error opening node set text file: " + fileName + "\n");
+        TestForTermination(!inFile.is_open(), "**** Error opening node set text file: " + fileName + "\n");
         while(inFile.good()){
           string str;
           getline(inFile, str);
@@ -247,7 +248,7 @@ void PeridigmNS::BoundaryAndInitialConditionManager::initializeNodeSets(Teuchos:
                  back_inserter<vector<int> >(nodeNumbers));
             for(unsigned int i=0 ; i<nodeNumbers.size() ; ++i){
               // Convert from 1-based node numbering (Exodus II) to 0-based node numbering (Epetra and all the rest of Peridigm)
-              TEUCHOS_TEST_FOR_TERMINATION(nodeNumbers[i] < 1, "**** Error:  Node number 0 detected in nodeset file; node numbering must begin with 1.\n");
+              TestForTermination(nodeNumbers[i] < 1, "**** Error:  Node number 0 detected in nodeset file; node numbering must begin with 1.\n");
               nodeList.push_back(nodeNumbers[i] - 1);
             }
           }
@@ -262,7 +263,7 @@ void PeridigmNS::BoundaryAndInitialConditionManager::initializeNodeSets(Teuchos:
   for(map< string, vector<int> >::iterator it=discretizationNodeSets->begin() ; it!=discretizationNodeSets->end() ; it++){
     string name = it->first;
     tidy_string(name);
-    TEUCHOS_TEST_FOR_TERMINATION(nodeSets->find(name) != nodeSets->end(), "**** Duplicate node set found: " + name + "\n");
+    TestForTermination(nodeSets->find(name) != nodeSets->end(), "**** Duplicate node set found: " + name + "\n");
     vector<int>& nodeList = it->second;
     (*nodeSets)[name] = nodeList;
   }
@@ -326,7 +327,7 @@ void PeridigmNS::BoundaryAndInitialConditionManager::applyKinematicBC_ComputeRea
 {
   PeridigmNS::Timer::self().startTimer("Apply Boundary Conditions");
 
-  TEUCHOS_TEST_FOR_TERMINATION(force->Map().ElementSize() != reaction->Map().ElementSize(), "**** In applyKinematicBC_ComputeReactions(), incompatible vector maps.");
+  TestForTermination(force->Map().ElementSize() != reaction->Map().ElementSize(), "**** In applyKinematicBC_ComputeReactions(), incompatible vector maps.");
 
   reaction->PutScalar(0.0);
 
@@ -355,7 +356,7 @@ void PeridigmNS::BoundaryAndInitialConditionManager::applyKinematicBC_ComputeRea
 
       int coord = boundaryCondition->getCoord();
 
-      TEUCHOS_TEST_FOR_TERMINATION(nodeSets->find(boundaryCondition->getNodeSetName()) == nodeSets->end(),
+      TestForTermination(nodeSets->find(boundaryCondition->getNodeSetName()) == nodeSets->end(),
                                   "**** Error in applyKinematicBC_ComputeReactions(), node set not found: " + boundaryCondition->getNodeSetName() + "\n");
       std::map< std::string, std::vector<int> >::iterator setIt = nodeSets->find(boundaryCondition->getNodeSetName());
       vector<int> & nodeList = setIt->second;
@@ -374,7 +375,7 @@ void PeridigmNS::BoundaryAndInitialConditionManager::applyKinematicBC_InsertZero
   PeridigmNS::Timer::self().startTimer("Apply Boundary Conditions");
 
   const Epetra_BlockMap& oneDimensionalMap = vec->Map();
-  TEUCHOS_TEST_FOR_TERMINATION(oneDimensionalMap.ElementSize() != 1, "**** applyKinematicBC_InsertZeros() must be called with map having element size = 1.\n");
+  TestForTermination(oneDimensionalMap.ElementSize() != 1, "**** applyKinematicBC_InsertZeros() must be called with map having element size = 1.\n");
 
   PeridigmNS::DegreesOfFreedomManager& dofManager = PeridigmNS::DegreesOfFreedomManager::self();
   int numDof = dofManager.totalNumberOfDegreesOfFreedom();
@@ -401,7 +402,7 @@ void PeridigmNS::BoundaryAndInitialConditionManager::applyKinematicBC_InsertZero
 
       int coord = boundaryCondition->getCoord();
 
-      TEUCHOS_TEST_FOR_TERMINATION(nodeSets->find(boundaryCondition->getNodeSetName()) == nodeSets->end(),
+      TestForTermination(nodeSets->find(boundaryCondition->getNodeSetName()) == nodeSets->end(),
                                   "**** Error in applyKinematicBC_ComputeReactions(), node set not found: " + boundaryCondition->getNodeSetName() + "\n");
       std::map< std::string, std::vector<int> >::iterator setIt = nodeSets->find(boundaryCondition->getNodeSetName());
       vector<int> & nodeList = setIt->second;
@@ -452,7 +453,7 @@ void PeridigmNS::BoundaryAndInitialConditionManager::applyKinematicBC_InsertZero
 
       int coord = boundaryCondition->getCoord();
 
-      TEUCHOS_TEST_FOR_TERMINATION(nodeSets->find(boundaryCondition->getNodeSetName()) == nodeSets->end(),
+      TestForTermination(nodeSets->find(boundaryCondition->getNodeSetName()) == nodeSets->end(),
                                   "**** Error in applyKinematicBC_InsertZerosAndSetDiagonal(), node set not found: " + boundaryCondition->getNodeSetName() + "\n");
       std::map< std::string, std::vector<int> >::iterator setIt = nodeSets->find(boundaryCondition->getNodeSetName());
       vector<int> & nodeList = setIt->second;

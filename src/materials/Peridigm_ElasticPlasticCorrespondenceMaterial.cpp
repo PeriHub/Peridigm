@@ -47,6 +47,7 @@
 
 #include "Peridigm_ElasticPlasticCorrespondenceMaterial.hpp"
 #include "Peridigm_Field.hpp"
+#include "Peridigm_Logging.hpp"
 #include "elastic_plastic_correspondence.h"
 #include "elastic_correspondence.h"
 #include "correspondence.h"
@@ -60,7 +61,7 @@ PeridigmNS::ElasticPlasticCorrespondenceMaterial::ElasticPlasticCorrespondenceMa
     m_yieldStress(0.0),m_modelCoordinatesFieldId(-1),
     m_unrotatedRateOfDeformationFieldId(-1), m_unrotatedCauchyStressFieldId(-1), m_vonMisesStressFieldId(-1), m_equivalentPlasticStrainFieldId(-1), m_unrotatedCauchyStressPlasticFieldId(-1)
 {
-  TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the selected correspondence material model.\n");
+  TestForTermination(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the selected correspondence material model.\n");
 
   m_yieldStress = params.get<double>("Yield Stress");
 

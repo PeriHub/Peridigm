@@ -46,6 +46,7 @@
 //@HEADER
 
 #include "Peridigm_Field.hpp"
+#include "Peridigm_Logging.hpp"
 #include <Teuchos_Assert.hpp>
 #include <algorithm>
 
@@ -125,7 +126,7 @@ int PeridigmNS::FieldManager::getFieldId(PeridigmField::Relation relation_,
       ss << "\n****           length:   " << it->length;
       ss << "\n****           temporal: " << it->temporal;
       ss << "\n****           label:    " << it->label;
-      TEUCHOS_TEST_FOR_TERMINATION(lcLabel_ == lcLabel, ss.str());
+      TestForTermination(lcLabel_ == lcLabel, ss.str());
     }
   }
 
@@ -153,7 +154,7 @@ int PeridigmNS::FieldManager::getFieldId(std::string label)
   map<string, int>::iterator it = labelToIdMap.find(label);
   if(it == labelToIdMap.end()){
     string msg = "\n**** Error:  getFieldId(), label not found:  " + label + "\n";
-    TEUCHOS_TEST_FOR_TERMINATION(it == labelToIdMap.end(), msg);
+    TestForTermination(it == labelToIdMap.end(), msg);
   }
   return it->second;
 }
@@ -161,7 +162,7 @@ int PeridigmNS::FieldManager::getFieldId(std::string label)
 PeridigmNS::FieldSpec PeridigmNS::FieldManager::getFieldSpec(int fieldId)
 {
   unsigned int id = static_cast<unsigned int>(fieldId);
-  TEUCHOS_TEST_FOR_TERMINATION(id >= fieldSpecs.size(), "\n**** Error:  getFieldSpec(), ID not found.\n");
+  TestForTermination(id >= fieldSpecs.size(), "\n**** Error:  getFieldSpec(), ID not found.\n");
   return fieldSpecs[id];
 }
 

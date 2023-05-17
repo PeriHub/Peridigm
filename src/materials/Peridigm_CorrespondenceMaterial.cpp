@@ -46,10 +46,12 @@
 //@HEADER
 
 #include "Peridigm_CorrespondenceMaterial.hpp"
+#include "Peridigm_Logging.hpp"
 #include "Peridigm_Field.hpp"
 #include "correspondence.h"
 #include "matrices.h"
 #include "Peridigm_DegreesOfFreedomManager.hpp"
+#include "Peridigm_Logging.hpp"
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
 #include <Sacado.hpp>
@@ -82,7 +84,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
   m_shearModulus = calculateShearModulus(params);
   m_density = params.get<double>("Density");
 
-  m_stabilizationType = 0;
+  m_stabilizationType = 1;
   m_bondbased = true;
   m_plane = false;
   m_approximation = false; 
@@ -136,22 +138,22 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
 
   if (params.isParameter("Apply Automatic Differentiation Jacobian"))
     m_applyAutomaticDifferentiationJacobian = params.get<bool>("Apply Automatic Differentiation Jacobian");
-  if (params.isParameter("Stabilizaton Type"))
+  if (params.isParameter("Stabilization Type"))
   {
 
-    if (params.get<string>("Stabilizaton Type") == "Bond Based")
+    if (params.get<string>("Stabilization Type") == "Bond Based")
     {
       m_stabilizationType = 1;
       m_hourglassCoefficient = params.get<double>("Hourglass Coefficient");
     }
-    if (params.get<string>("Stabilizaton Type") == "State Based")
+    if (params.get<string>("Stabilization Type") == "State Based")
     {
       m_stabilizationType = 2;
       m_hourglassCoefficient = params.get<double>("Hourglass Coefficient");
     }
 
     m_adaptHourGlass = false;
-    if (params.get<string>("Stabilizaton Type") == "Global Stiffness")
+    if (params.get<string>("Stabilization Type") == "Global Stiffness")
     {
       getStiffnessmatrix(params, C, m_planeStrain, m_planeStress);
 
@@ -210,8 +212,8 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
       }
     }
   }
-  // TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticCorrespondence material model.\n");
-  TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Apply Shear Correction Factor"), "**** Error:  Shear Correction Factor is not supported for the ElasticCorrespondence material model.\n");
+  // TestForTermination(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticCorrespondence material model.\n");
+  TestForTermination(params.isParameter("Apply Shear Correction Factor"), "**** Error:  Shear Correction Factor is not supported for the ElasticCorrespondence material model.\n");
 
   PeridigmNS::FieldManager &fieldManager = PeridigmNS::FieldManager::self();
   m_horizonFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Horizon");
@@ -363,7 +365,7 @@ void PeridigmNS::CorrespondenceMaterial::initialize(const double dt,
       "**** Error:  CorrespondenceMaterial::initialize() failed to compute shape tensor.\n";
   shapeTensorErrorMessage +=
       "****         Note that all nodes must have a minimum of three neighbors.  Is the horizon too small?\n";
-  TEUCHOS_TEST_FOR_TERMINATION(shapeTensorReturnCode != 0, shapeTensorErrorMessage);
+  TestForTermination(shapeTensorReturnCode != 0, shapeTensorErrorMessage);
   
   
   if (m_approximation){
@@ -443,11 +445,11 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
   if (m_approximation){
     double *jacobian;
     dataManager.getData(m_jacobianId, PeridigmField::STEP_NONE)->ExtractView(&jacobian);
-    int len;
-    if (m_plane) len = m_num_control_points * m_num_control_points;
-    else len = m_num_control_points * m_num_control_points * m_num_control_points;
-    double *contPu;
-    contPu = new double[numOwnedPoints * len * PeridigmNS::dof()];
+    // int len;
+    // if (m_plane) len = m_num_control_points * m_num_control_points;
+    // else len = m_num_control_points * m_num_control_points * m_num_control_points;
+    // double *contPu;
+    // contPu = new double[numOwnedPoints * len * PeridigmNS::dof()];
     
     //APPROXIMATION::get_control_points(numOwnedPoints,neighborhoodList,m_num_control_points,coordinatesNP1,approxMatrix,m_plane,contPu);
     //APPROXIMATION::get_deformation_gradient(numOwnedPoints,contPu,m_num_control_points,gradient_function,m_plane,jacobian,deformationGradient);
@@ -475,7 +477,7 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
         "**** Error:  CorrespondenceMaterial::computeForce() failed to compute shape tensor.\n";
     shapeTensorErrorMessage +=
         "****         Note that all nodes must have a minimum of three neighbors.  Is the horizon too small?\n";
-    TEUCHOS_TEST_FOR_TERMINATION(shapeTensorReturnCode != 0, shapeTensorErrorMessage);
+    TestForTermination(shapeTensorReturnCode != 0, shapeTensorErrorMessage);
   
 
     if (nonLin == true)
@@ -521,9 +523,9 @@ void PeridigmNS::CorrespondenceMaterial::computeForce(const double dt,
       string rotationTensorErrorMessage3 =
           "**** Error:  CorrespondenceMaterial::computeForce() failed to invert temp.\n";
 
-      TEUCHOS_TEST_FOR_TERMINATION(rotationTensorReturnCode == 1, rotationTensorErrorMessage);
-      TEUCHOS_TEST_FOR_TERMINATION(rotationTensorReturnCode == 2, rotationTensorErrorMessage2);
-      TEUCHOS_TEST_FOR_TERMINATION(rotationTensorReturnCode == 3, rotationTensorErrorMessage3);
+      TestForTermination(rotationTensorReturnCode == 1, rotationTensorErrorMessage);
+      TestForTermination(rotationTensorReturnCode == 2, rotationTensorErrorMessage2);
+      TestForTermination(rotationTensorReturnCode == 3, rotationTensorErrorMessage3);
     }
     else
     {
@@ -905,7 +907,7 @@ void PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian
     string shapeTensorErrorMessage =
         "**** Error:  MATRICES::Invert2by2Matrix() failed to invert.\n";
 
-    TEUCHOS_TEST_FOR_TERMINATION(shapeTensorReturnCode == 1, shapeTensorErrorMessage);
+    TestForTermination(shapeTensorReturnCode == 1, shapeTensorErrorMessage);
 
     double *cauchyStress, *cauchyStressNP1, *cauchyStressPlastic;
     tempDataManager.getData(m_cauchyStressFieldId, PeridigmField::STEP_N)->ExtractView(&cauchyStress);
@@ -975,7 +977,7 @@ void PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian
       {
         value = force_AD[row].dx(col); //--> I think this must be it, because forces are already provided
                                        // value = force_AD[row].dx(col) * volume[row/3]; // given by peridigm org
-        TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(value), "**** NaN detected in correspondence::computeAutomaticDifferentiationJacobian().\n");
+        TestForTermination(!std::isfinite(value), "**** NaN detected in correspondence::computeAutomaticDifferentiationJacobian().\n");
         scratchMatrix(row, col) = value;
       }
     }
@@ -988,7 +990,7 @@ void PeridigmNS::CorrespondenceMaterial::computeAutomaticDifferentiationJacobian
       jacobian.addBlockDiagonalValues((int)globalIndices.size(), &globalIndices[0], scratchMatrix.Data());
     }
     else // unknown jacobian type
-      TEUCHOS_TEST_FOR_TERMINATION(true, "**** Unknown Jacobian Type\n");
+      TestForTermination(true, "**** Unknown Jacobian Type\n");
   }
 }
 
@@ -1025,7 +1027,7 @@ void PeridigmNS::CorrespondenceMaterial::computeJacobianFiniteDifference(const d
   // Central difference:
   // dF_0x/dx_0 = ( F_0x(positive perturbed x_0) - F_0x(negative perturbed x_0) ) / ( 2.0*epsilon )
 
-  TEUCHOS_TEST_FOR_TERMINATION(m_finiteDifferenceProbeLength == DBL_MAX, "**** Finite-difference Jacobian requires that the \"Finite Difference Probe Length\" parameter be set.\n");
+  TestForTermination(m_finiteDifferenceProbeLength == DBL_MAX, "**** Finite-difference Jacobian requires that the \"Finite Difference Probe Length\" parameter be set.\n");
   double epsilon = m_finiteDifferenceProbeLength;
 
   PeridigmNS::DegreesOfFreedomManager &dofManager = PeridigmNS::DegreesOfFreedomManager::self();
@@ -1259,7 +1261,7 @@ void PeridigmNS::CorrespondenceMaterial::computeJacobianFiniteDifference(const d
     {
       for (unsigned int col = 0; col < globalIndices.size(); ++col)
       {
-        TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(scratchMatrix(row, col)), "**** NaN detected in finite-difference Jacobian.\n");
+        TestForTermination(!std::isfinite(scratchMatrix(row, col)), "**** NaN detected in finite-difference Jacobian.\n");
       }
     }
 
@@ -1271,7 +1273,7 @@ void PeridigmNS::CorrespondenceMaterial::computeJacobianFiniteDifference(const d
       jacobian.addBlockDiagonalValues((int)globalIndices.size(), &globalIndices[0], scratchMatrix.Data());
     }
     else // unknown jacobian type
-      TEUCHOS_TEST_FOR_TERMINATION(true, "**** Unknown Jacobian Type\n");
+      TestForTermination(true, "**** Unknown Jacobian Type\n");
   }
 }
 

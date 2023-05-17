@@ -50,6 +50,7 @@
 #include <algorithm>    // std::max
 #include "material_utilities.h" // to use Influence Function 
 #include "correspondence.h" // to compute weighted volume
+#include "Peridigm_Logging.hpp"
 
 using namespace std;
 
@@ -80,9 +81,9 @@ PeridigmNS::JohnsonCookDamageModel::JohnsonCookDamageModel(const Teuchos::Parame
   m_damageParameter2 = params.get<double>("Damage Parameter 2");
   m_damageParameter3 = params.get<double>("Damage Parameter 3");
   m_criticalDamage = params.get<double>("Critical Damage");
-  TEUCHOS_TEST_FOR_TERMINATION(1.0 <= m_criticalDamage, "**** Error: Critical Damage should be less than 1.0");
+  TestForTermination(1.0 <= m_criticalDamage, "**** Error: Critical Damage should be less than 1.0");
   m_thresholdDamage = params.get<double>("Threshold Damage");
-  TEUCHOS_TEST_FOR_TERMINATION(m_criticalDamage <= m_thresholdDamage, "**** Error: Threshold Damage should be less than Critical Damage");
+  TestForTermination(m_criticalDamage <= m_thresholdDamage, "**** Error: Threshold Damage should be less than Critical Damage");
 
   if(params.isParameter("Critical Damage To Neglect Material Point")) 
     m_criticalDamageToNeglectMaterialPoint = params.get<double>("Critical Damage To Neglect Material Point"); // default value is 95%

@@ -48,6 +48,7 @@
 #include "Peridigm_DiffusionMaterial.hpp"
 #include "Peridigm_Field.hpp"
 #include "Peridigm_Constants.hpp"
+#include "Peridigm_Logging.hpp"
 #include "temperature_diffusion.h"
 #ifdef PERIDIGM_IMPROVED_QUADRATURE
   #include <gsl/gsl_linalg.h>
@@ -90,7 +91,7 @@ PeridigmNS::DiffusionMaterial::DiffusionMaterial(const Teuchos::ParameterList& p
   }
 
 #ifndef PERIDIGM_IMPROVED_QUADRATURE
-  TEUCHOS_TEST_FOR_TERMINATION(m_useImprovedQuadrature, "**** Error:  Improved quadrature not available.  Recompile Peridigm with USE_IMPROVED_QUADRATURE:BOOL=ON\n");
+  TestForTermination(m_useImprovedQuadrature, "**** Error:  Improved quadrature not available.  Recompile Peridigm with USE_IMPROVED_QUADRATURE:BOOL=ON\n");
 #endif
 }
 

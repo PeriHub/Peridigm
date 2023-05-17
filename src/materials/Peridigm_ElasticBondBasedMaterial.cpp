@@ -47,6 +47,7 @@
 
 #include "Peridigm_ElasticBondBasedMaterial.hpp"
 #include "Peridigm_Field.hpp"
+#include "Peridigm_Logging.hpp"
 #include "elastic_bond_based.h"
 #include <Teuchos_Assert.hpp>
 
@@ -60,7 +61,7 @@ PeridigmNS::ElasticBondBasedMaterial::ElasticBondBasedMaterial(const Teuchos::Pa
   m_density = params.get<double>("Density");
   m_horizon = params.get<double>("Horizon");
   if(params.isParameter("Young's Modulus") || params.isParameter("Poisson's Ratio") || params.isParameter("Shear Modulus")){
-    TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error:  The Elastic bond based material model supports only one elastic constant, the bulk modulus.");
+    TestForTermination(true, "**** Error:  The Elastic bond based material model supports only one elastic constant, the bulk modulus.");
   }
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();

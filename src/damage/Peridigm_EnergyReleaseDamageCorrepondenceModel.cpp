@@ -53,6 +53,7 @@
 #include "material_utilities.h"
 #include "correspondence.h"
 #include "matrices.h"
+#include "Peridigm_Logging.hpp"
 #include <thread>
 #include <Teuchos_Assert.hpp>
 #include <Epetra_SerialComm.h>
@@ -145,7 +146,7 @@ m_hourglassStiffId(-1) {
             }
         }
         
-        TEUCHOS_TEST_FOR_TERMINATION(interfacesDefined==0, "**** No interblock critical energy values can be found.\n");
+        TestForTermination(interfacesDefined==0, "**** No interblock critical energy values can be found.\n");
       
     }
     m_bondDiffSt = 2147483647;

@@ -49,6 +49,7 @@
 #include "Peridigm_ContactModelFactory.hpp"
 #include "Peridigm_ShortRangeForceContactModel.hpp"
 #include "Peridigm_UserDefinedTimeDependentShortRangeForceContactModel.hpp"
+#include "Peridigm_Logging.hpp"
 
 using namespace std;
 
@@ -66,7 +67,7 @@ PeridigmNS::ContactModelFactory::create(const Teuchos::ParameterList& contactMod
     string invalidContactModel("\n**** Unrecognized contact model: ");
     invalidContactModel += contactModelName;
     invalidContactModel += ", must be \"Short Range Force\" or \"Time Dependent Short Range Force\".\n";
-    TEUCHOS_TEST_FOR_TERMINATION(true, invalidContactModel);
+    TestForTermination(true, invalidContactModel);
   }
   
   return contactModel;

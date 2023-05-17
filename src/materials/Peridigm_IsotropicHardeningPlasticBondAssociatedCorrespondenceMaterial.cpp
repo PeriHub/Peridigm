@@ -47,6 +47,7 @@
 
 #include "Peridigm_IsotropicHardeningPlasticBondAssociatedCorrespondenceMaterial.hpp"
 #include "Peridigm_Field.hpp"
+#include "Peridigm_Logging.hpp"
 #include "isotropic_hardening_correspondence.h"
 #include "material_utilities.h"
 #include <Teuchos_Assert.hpp>
@@ -83,7 +84,7 @@ PeridigmNS::IsotropicHardeningPlasticBondAssociatedCorrespondenceMaterial::Isotr
     string invalidHardeningRule("\n**** Unrecognized hardening rule type: ");
     invalidHardeningRule += m_hardeningRule;
     invalidHardeningRule += ", must be \"Power-law\", or \"Saturation type exponential.\n";
-    TEUCHOS_TEST_FOR_TERMINATION(true, invalidHardeningRule);
+    TestForTermination(true, invalidHardeningRule);
   }
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();

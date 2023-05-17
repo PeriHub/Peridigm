@@ -48,6 +48,7 @@
 #include "Peridigm_ShortRangeForceContactModel.hpp"
 #include "Peridigm_Field.hpp"
 #include "Peridigm_Constants.hpp"
+#include "Peridigm_Logging.hpp"
 #include <Teuchos_Assert.hpp>
 
 PeridigmNS::ShortRangeForceContactModel::ShortRangeForceContactModel(const Teuchos::ParameterList& params)
@@ -134,7 +135,7 @@ PeridigmNS::ShortRangeForceContactModel::computeForce(const double dt,
       nodeVolume = cellVolume[nodeID];
       for(iNID=0 ; iNID<numNeighbors ; ++iNID){
         neighborID = contactNeighborhoodList[neighborhoodListIndex++];
-        TEUCHOS_TEST_FOR_TERMINATION(neighborID < 0, "Invalid neighbor list\n");
+        TestForTermination(neighborID < 0, "Invalid neighbor list\n");
         currentDistanceSquared =  distanceSquared(nodeCurrentX[0], nodeCurrentX[1], nodeCurrentX[2],
         y[neighborID*3], y[neighborID*3+1], y[neighborID*3+2]);
         if(currentDistanceSquared < contactRadiusSquared){

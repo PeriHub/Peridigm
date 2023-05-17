@@ -49,6 +49,7 @@
 
 #include "Peridigm_Compute_Error.hpp"
 #include "Peridigm_Field.hpp"
+#include "Peridigm_Logging.hpp"
 #include <sstream>
 
 //! Standard constructor.
@@ -179,7 +180,7 @@ int PeridigmNS::Compute_Error::compute( Teuchos::RCP< std::vector<PeridigmNS::Bl
 	ss << "  numY2 = " << numY2 << std::endl;
 	ss << "  numZ1 = " << numZ1 << std::endl;
 	ss << "  numZ2 = " << numZ2 << std::endl;
-	TEUCHOS_TEST_FOR_TERMINATION(!isRectangular, ss.str());
+	TestForTermination(!isRectangular, ss.str());
       }
 
       // Model coordinates for the node at the center of the element
@@ -247,8 +248,8 @@ double PeridigmNS::Compute_Error::computeError_1(double peridynamicSolutionX,
   double z2 = limitOfIntegration_Z_ub;
 
   double h = x2 - x1;
-  TEUCHOS_TEST_FOR_TERMINATION(std::abs(y2 - y1 - h) > 1.0e12, "**** Error:  Error compute class detected non-square element.");
-  TEUCHOS_TEST_FOR_TERMINATION(std::abs(z2 - z1 - h) > 1.0e12, "**** Error:  Error compute class detected non-square element.");
+  TestForTermination(std::abs(y2 - y1 - h) > 1.0e12, "**** Error:  Error compute class detected non-square element.");
+  TestForTermination(std::abs(z2 - z1 - h) > 1.0e12, "**** Error:  Error compute class detected non-square element.");
 
   double x = x1 + 0.5*(x2 - x1);
 

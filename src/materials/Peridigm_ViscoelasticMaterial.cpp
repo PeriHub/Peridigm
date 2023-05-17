@@ -47,6 +47,7 @@
 
 #include "Peridigm_ViscoelasticMaterial.hpp"
 #include "Peridigm_Field.hpp"
+#include "Peridigm_Logging.hpp"
 #include "viscoelastic.h"
 #include "material_utilities.h"
 #include <Teuchos_Assert.hpp>
@@ -68,9 +69,9 @@ PeridigmNS::ViscoelasticMaterial::ViscoelasticMaterial(const Teuchos::ParameterL
   m_lambda_i = params.get<double>("lambda_i");
   m_tau_b = params.get<double>("tau b");
 
-  TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the Viscoelastic material model.\n");
-  TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Apply Shear Correction Factor"), "**** Error:  Shear Correction Factor is not supported for the Viscoelastic material model.\n");
-  TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the Viscoelastic material model.\n");
+  TestForTermination(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the Viscoelastic material model.\n");
+  TestForTermination(params.isParameter("Apply Shear Correction Factor"), "**** Error:  Shear Correction Factor is not supported for the Viscoelastic material model.\n");
+  TestForTermination(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the Viscoelastic material model.\n");
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   m_volumeFieldId                      = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume");

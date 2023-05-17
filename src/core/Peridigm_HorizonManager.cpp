@@ -46,6 +46,7 @@
 //@HEADER
 
 #include "Peridigm_HorizonManager.hpp"
+#include "Peridigm_Logging.hpp"
 #include <Teuchos_Assert.hpp>
 #include <Teuchos_Exceptions.hpp>
 #include <iterator>
@@ -73,8 +74,8 @@ void PeridigmNS::HorizonManager::loadHorizonInformationFromBlockParameters(Teuch
     Teuchos::ParameterList& params = blockParams.sublist(it->first);
     bool hasConstantHorizon = params.isType<double>("Horizon");
     bool hasVariableHorizon = params.isType<string>("Horizon");
-    TEUCHOS_TEST_FOR_TERMINATION(hasConstantHorizon && hasVariableHorizon, "\n**** Error parsing horizon information!  Multiple horizon definitions found!\n");
-    TEUCHOS_TEST_FOR_TERMINATION(!hasConstantHorizon && !hasVariableHorizon, "\n**** Error parsing horizon information!  Either the horizon is not defined or defined incorrectly!\n");
+    TestForTermination(hasConstantHorizon && hasVariableHorizon, "\n**** Error parsing horizon information!  Multiple horizon definitions found!\n");
+    TestForTermination(!hasConstantHorizon && !hasVariableHorizon, "\n**** Error parsing horizon information!  Either the horizon is not defined or defined incorrectly!\n");
 
     // Record the horizon as a string regardless of whether or not it is constant
     string horizonString;
@@ -118,7 +119,7 @@ bool PeridigmNS::HorizonManager::blockHasConstantHorizon(string blockName){
     isConstant = horizonIsConstant["default"];
   else{
     string msg = "\n**** Error, no Horizon parameter found for block " + blockName + " and no default block parameter list provided.\n";
-    TEUCHOS_TEST_FOR_TERMINATION(true, msg);
+    TestForTermination(true, msg);
   }
   return isConstant;
 }
@@ -131,7 +132,7 @@ double PeridigmNS::HorizonManager::getBlockConstantHorizonValue(string blockName
     name = "default";
   else{
     string msg = "\n**** Error, no Horizon parameter found for block " + blockName + " and no default block parameter list provided.\n";
-    TEUCHOS_TEST_FOR_TERMINATION(true, msg);
+    TestForTermination(true, msg);
   }
   double x(0.0), y(0.0), z(0.0);
   double horizon = evaluateHorizon(name, x, y, z);
@@ -146,7 +147,7 @@ double PeridigmNS::HorizonManager::evaluateHorizon(string blockName, double x, d
     name = "default";
   else{
     string msg = "\n**** Error, no Horizon parameter found for block " + blockName + " and no default block parameter list provided.\n";
-    TEUCHOS_TEST_FOR_TERMINATION(true, msg);
+    TestForTermination(true, msg);
   }
   string horizonFunction = horizonStrings[name];
   double horizonValue(0.0);
@@ -170,7 +171,7 @@ double PeridigmNS::HorizonManager::evaluateHorizon(string blockName, double x, d
   if(!success){
     string msg = "\n**** Error in HorizonManager::evaluateHorizon().\n";
     msg += "**** " + rtcFunction->getErrors() + "\n";
-    TEUCHOS_TEST_FOR_TERMINATION(!success, msg);
+    TestForTermination(!success, msg);
   }
 
   return horizonValue;

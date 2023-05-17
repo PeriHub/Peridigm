@@ -60,6 +60,7 @@
 #include "Peridigm_ScratchMatrix.hpp"
 #include "Peridigm_BoundaryAndInitialConditionManager.hpp"
 #include "Peridigm_InfluenceFunction.hpp"
+#include "Peridigm_Logging.hpp"
 namespace PeridigmNS {
 
   //! Base class defining the Peridigm material model interface.
@@ -93,7 +94,7 @@ namespace PeridigmNS {
       std::string errorMsg = "**Error, Material::lookupMaterialProperty() called for ";
       errorMsg += Name();
       errorMsg += " but this function is not implemented.\n";
-      TEUCHOS_TEST_FOR_TERMINATION(true, errorMsg);
+      TestForTermination(true, errorMsg);
       return 0.0;
     }
     

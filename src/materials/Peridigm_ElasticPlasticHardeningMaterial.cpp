@@ -48,6 +48,7 @@
 #include "Peridigm_ElasticPlasticMaterial.hpp"
 #include "Peridigm_ElasticPlasticHardeningMaterial.hpp"
 #include "Peridigm_Field.hpp"
+#include "Peridigm_Logging.hpp"
 #include "elastic_plastic.h"
 #include "elastic_plastic_hardening.h"
 #include "material_utilities.h"
@@ -80,7 +81,7 @@ PeridigmNS::ElasticPlasticHardeningMaterial::ElasticPlasticHardeningMaterial(con
     m_disablePlasticity = params.get<bool>("Disable Plasticity");
   if(params.isParameter("Apply Automatic Differentiation Jacobian"))
     m_applyAutomaticDifferentiationJacobian = params.get<bool>("Apply Automatic Differentiation Jacobian");
-  TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the Elastic Plastic Hardening material model.\n");
+  TestForTermination(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the Elastic Plastic Hardening material model.\n");
 
   if(m_disablePlasticity)
     m_yieldStress = std::numeric_limits<double>::max();

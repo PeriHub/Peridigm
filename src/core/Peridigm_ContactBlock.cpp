@@ -47,6 +47,7 @@
 
 #include "Peridigm_ContactBlock.hpp"
 #include "Peridigm_Field.hpp"
+#include "Peridigm_Logging.hpp"
 #include <vector>
 #include <set>
 
@@ -71,7 +72,7 @@ void PeridigmNS::ContactBlock::initialize(Teuchos::RCP<const Epetra_BlockMap> gl
 
   // Initialize the data manager
 
-  TEUCHOS_TEST_FOR_TERMINATION(contactModel.is_null(),
+  TestForTermination(contactModel.is_null(),
                               "\n**** Contact model must be set via ContactBlock::setContactModel() prior to calling ContactBlock::initialize()\n");
 
   // Collect all the required field Ids

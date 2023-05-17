@@ -50,6 +50,7 @@
 #include "Peridigm_GenesisToTriangles.hpp"
 #include "BondFilter.h"
 #include "damage_utilities.h"
+#include "Peridigm_Logging.hpp"
 
 PeridigmNS::InitialDamageModel::InitialDamageModel(const Teuchos::ParameterList& params)
   : DamageModel(params),  m_modelCoordinatesFieldId(-1), m_damageFieldId(-1), m_bondDamageFieldId(-1), m_volumeFieldId(-1)
@@ -113,7 +114,7 @@ PeridigmNS::InitialDamageModel::initialize(const double dt,
     else{
       std::string msg = "\n**** Error, invalid bond filter type:  " + type;
       msg += "\n**** Allowable types are:  Rectangular_Plane, Exodus Mesh\n";
-      TEUCHOS_TEST_FOR_TERMINATION(true, msg);
+      TestForTermination(true, msg);
     }
   }
 

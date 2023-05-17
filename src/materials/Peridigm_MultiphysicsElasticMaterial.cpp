@@ -47,6 +47,7 @@
 
 #include "Peridigm_MultiphysicsElasticMaterial.hpp"
 #include "Peridigm_Field.hpp"
+#include "Peridigm_Logging.hpp"
 #include "elastic.h"
 #include "nonlocal_diffusion.h"
 #include "material_utilities.h"
@@ -107,7 +108,7 @@ PeridigmNS::MultiphysicsElasticMaterial::MultiphysicsElasticMaterial(const Teuch
     m_applyThermalStrains = true;
   }
 
-  TEUCHOS_TEST_FOR_TERMINATION((not m_applyAutomaticDifferentiationJacobian ), "**** Error: Multiphysics Elastic currently supports only AD jacobian.\n"); 
+  TestForTermination((not m_applyAutomaticDifferentiationJacobian ), "**** Error: Multiphysics Elastic currently supports only AD jacobian.\n"); 
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   m_volumeFieldId                  = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume");
@@ -154,7 +155,7 @@ PeridigmNS::MultiphysicsElasticMaterial::lookupMaterialProperty(const std::strin
   if(search != materialProperties.end())
     return search->second;
   else
-    TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error: requested material property is not in Multiphysics Elastic Material");
+    TestForTermination(true, "**** Error: requested material property is not in Multiphysics Elastic Material");
   // This is a fallthrough case to make the compiler happy.
   return 0.0;
 }
@@ -344,7 +345,7 @@ PeridigmNS::MultiphysicsElasticMaterial::computeJacobian(const double dt,
   }
   else{
     // Call the base class function, which computes the Jacobian by finite difference
-    TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error: Base class finite difference Jacobian is incompatible with multiphysics material.\n");
+    TestForTermination(true, "**** Error: Base class finite difference Jacobian is incompatible with multiphysics material.\n");
     //PeridigmNS::Material::computeJacobian(dt, numOwnedPoints, ownedIDs, neighborhoodList, dataManager, jacobian, jacobianType);
   }
 }
@@ -486,11 +487,11 @@ PeridigmNS::MultiphysicsElasticMaterial::computeAutomaticDifferentiationJacobian
         for(int subcol=0 ; subcol<dofPerNode ; ++subcol){
           for(int subrow=0 ; subrow<(dofPerNode-1) ; ++subrow){
             value = force_AD[row*3/dofPerNode + subrow].dx(col + subcol) * cellVolume[row/dofPerNode];
-            TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(value), "**** NaN detected in MultiphysicsElasticMaterial::computeAutomaticDifferentiationJacobian() (internal force).\n");
+            TestForTermination(!std::isfinite(value), "**** NaN detected in MultiphysicsElasticMaterial::computeAutomaticDifferentiationJacobian() (internal force).\n");
             scratchMatrix(row+subrow, col+subcol) = value;
           }
           value = fluidFlow_AD[row/dofPerNode].dx(col + subcol) * cellVolume[row/dofPerNode];
-          TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(value), "**** NaN detected in MultiphysicsElasticMaterial::computeAutomaticDifferentiationJacobian() (fluid flow).\n");
+          TestForTermination(!std::isfinite(value), "**** NaN detected in MultiphysicsElasticMaterial::computeAutomaticDifferentiationJacobian() (fluid flow).\n");
           scratchMatrix(row +dofPerNode -1, col+subcol) = value;
         }
       }
@@ -503,7 +504,7 @@ PeridigmNS::MultiphysicsElasticMaterial::computeAutomaticDifferentiationJacobian
       jacobian.addBlockDiagonalValues((int)globalIndices.size(), &globalIndices[0], scratchMatrix.Data());
     }
     else // unknown jacobian type
-      TEUCHOS_TEST_FOR_TERMINATION(true, "**** Unknown Jacobian Type\n");
+      TestForTermination(true, "**** Unknown Jacobian Type\n");
   }
 }
 

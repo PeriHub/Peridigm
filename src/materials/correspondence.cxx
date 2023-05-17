@@ -49,6 +49,7 @@
 #include "temperature_diffusion.h"
 #include "matrices.h"
 #include "material_utilities.h"
+#include "Peridigm_Logging.hpp"
 #include <Sacado.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <math.h>
@@ -159,7 +160,7 @@ double* detachedNodes
         }
         std::string matrixInversionErrorMessage =
           "**** Error:  Correspondence ::getLinearUnrotatedRateOfDeformation() failed to invert deformation gradient.\n";
-        TEUCHOS_TEST_FOR_TERMINATION(inversionReturnCode != 0, matrixInversionErrorMessage);
+        TestForTermination(inversionReturnCode != 0, matrixInversionErrorMessage);
 
         // Compute the Eulerian velocity gradient L = Fdot * Finv
         MATRICES::MatrixMultiply(false, false, One, Fdot, Finverse, eulerianVelGrad);
@@ -1145,7 +1146,7 @@ void computeForcesAndStresses
              MATRICES::Invert3by3Matrix(defGrad, jacobianDeterminant, defGradInv);
             }
     }
-    TEUCHOS_TEST_FOR_TERMINATION(matrixInversionReturnCode != 0, matrixInversionErrorMessage);
+    TestForTermination(matrixInversionReturnCode != 0, matrixInversionErrorMessage);
     
     //P = J * \sigma * F^(-T)
      MATRICES::MatrixMultiply(false, true, jacobianDeterminant, stress, defGradInv, piolaStress);
@@ -2408,7 +2409,7 @@ void getStrain
   for(int iID=0 ; iID<numPoints ; ++iID, defGrad+=9, strain+=9, temperature+=1){
     if (hencky){
       int defGradLogReturnCode = CORRESPONDENCE::computeLogStrain(defGrad,strain);
-      TEUCHOS_TEST_FOR_TERMINATION(defGradLogReturnCode != 0, logStrainErrorMessage);
+      TestForTermination(defGradLogReturnCode != 0, logStrainErrorMessage);
       }
     else
       {CORRESPONDENCE::computeGreenLagrangeStrain(defGrad,strain);}

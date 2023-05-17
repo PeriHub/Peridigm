@@ -47,6 +47,7 @@
 
 #include "Peridigm_BoundaryCondition.hpp"
 #include "Peridigm.hpp"
+#include "Peridigm_Logging.hpp"
 #include <cmath>
 #include <sstream>
 
@@ -101,11 +102,11 @@ PeridigmNS::BoundaryCondition::BoundaryCondition(const string & name_,
 void PeridigmNS::BoundaryCondition::evaluateParser(const int & localNodeID, double & currentValue, double & previousValue, const double & timeCurrent, const double & timePrevious){
   Teuchos::RCP<Epetra_Vector> x = peridigm->getX();
   const Epetra_BlockMap& threeDimensionalMap = x->Map();
-  TEUCHOS_TEST_FOR_TERMINATION(threeDimensionalMap.ElementSize() != 3, "**** setVectorValues() must be called with map having element size = 3.\n");
+  TestForTermination(threeDimensionalMap.ElementSize() != 3, "**** setVectorValues() must be called with map having element size = 3.\n");
 
   Teuchos::RCP<Epetra_Vector> pointTime = peridigm->getPointTime();
   const Epetra_BlockMap& oneDimensionalMap = pointTime->Map();
-  TEUCHOS_TEST_FOR_TERMINATION(oneDimensionalMap.ElementSize() != 1, "**** setVectorValues() must be called with map having element size = 3.\n");
+  TestForTermination(oneDimensionalMap.ElementSize() != 1, "**** setVectorValues() must be called with map having element size = 3.\n");
 
   Teuchos::RCP<Epetra_Vector> temperature = peridigm->getTemperature();
 
@@ -142,7 +143,7 @@ void PeridigmNS::BoundaryCondition::evaluateParser(const int & localNodeID, doub
   if(!success){
     string msg = "\n**** Error in BoundaryCondition::evaluateParser().\n";
     msg += "**** " + rtcFunction->getErrors() + "\n";
-    TEUCHOS_TEST_FOR_TERMINATION(!success, msg);
+    TestForTermination(!success, msg);
   }
 
   // if this is any other boundary condition besides prescribed displacement
@@ -183,10 +184,10 @@ void PeridigmNS::DirichletBC::apply(Teuchos::RCP< std::map< std::string, std::ve
   if(!success){
     string msg = "\n**** Error:  rtcFunction->addBody(function) returned error code in PeridigmNS::DirichletBC::apply().\n";
     msg += "**** " + rtcFunction->getErrors() + "\n";
-    TEUCHOS_TEST_FOR_TERMINATION(!success, msg);
+    TestForTermination(!success, msg);
   }
 
-  TEUCHOS_TEST_FOR_TERMINATION(nodeSets->find(nodeSetName) == nodeSets->end(),
+  TestForTermination(nodeSets->find(nodeSetName) == nodeSets->end(),
                               "**** Error in DirichletBC::apply(), node set not found: " + nodeSetName + "\n");
   vector<int> & nodeList = nodeSets->find(nodeSetName)->second;
   for(unsigned int i=0 ; i<nodeList.size() ; i++){
@@ -195,7 +196,7 @@ void PeridigmNS::DirichletBC::apply(Teuchos::RCP< std::map< std::string, std::ve
       double currentValue = 0.0;
       double previousValue = 0.0;
       evaluateParser(localNodeID,currentValue,previousValue,timeCurrent);
-      TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(currentValue), "**** NaN returned by dirichlet BC evaluation.\n");
+      TestForTermination(!std::isfinite(currentValue), "**** NaN returned by dirichlet BC evaluation.\n");
       (*toVector)[localNodeID*fieldDimension + coord] = currentValue;
     }
   }
@@ -235,10 +236,10 @@ void PeridigmNS::DirichletIncrementBC::apply(Teuchos::RCP< std::map< std::string
   if(!success){
     string msg = "\n**** Error:  rtcFunction->addBody(function) returned nonzero error code in PeridigmNS::DirichletBC::apply().\n";
     msg += "**** " + rtcFunction->getErrors() + "\n";
-    TEUCHOS_TEST_FOR_TERMINATION(!success, msg);
+    TestForTermination(!success, msg);
   }
 
-  TEUCHOS_TEST_FOR_TERMINATION(nodeSets->find(nodeSetName) == nodeSets->end(),
+  TestForTermination(nodeSets->find(nodeSetName) == nodeSets->end(),
                               "**** Error in DirichletBC::apply(), node set not found: " + nodeSetName + "\n");
   vector<int> & nodeList = nodeSets->find(nodeSetName)->second;
   for(unsigned int i=0 ; i<nodeList.size() ; i++){
@@ -249,7 +250,7 @@ void PeridigmNS::DirichletIncrementBC::apply(Teuchos::RCP< std::map< std::string
       evaluateParser(localNodeID,currentValue,previousValue,timeCurrent,timePrevious_);
       const double value = coeff * (currentValue - previousValue)
         + deltaTCoeff * (currentValue - previousValue) * (1.0 / (timeCurrent - timePrevious_));
-      TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(value), "**** NaN returned by dirichlet increment BC evaluation.\n");
+      TestForTermination(!std::isfinite(value), "**** NaN returned by dirichlet increment BC evaluation.\n");
       (*toVector)[localNodeID*fieldDimension + coord] = value;
     }
   }
@@ -263,7 +264,7 @@ PeridigmNS::NeumannBC::NeumannBC(const string & name_,
 : BoundaryCondition(name_,bcParams_,toVector_,peridigm_){
 
   // create vector with global ids that match those in the node set
-  TEUCHOS_TEST_FOR_TERMINATION(nodeSets_->find(nodeSetName) == nodeSets_->end(),
+  TestForTermination(nodeSets_->find(nodeSetName) == nodeSets_->end(),
                               "**** Error in NeumannBC::NeumannBC(), node set not found: " + nodeSetName + "\n");
 
   vector<int> & nodeList = nodeSets_->find(nodeSetName)->second;
@@ -316,7 +317,7 @@ void PeridigmNS::NeumannBC::apply(Teuchos::RCP< std::map< std::string, std::vect
   // get the tensor order of the bc field:
   const int fieldDimension = to_dimension_size(tensorOrder);
 
-  TEUCHOS_TEST_FOR_TERMINATION(nodeSets->find(nodeSetName) == nodeSets->end(),
+  TestForTermination(nodeSets->find(nodeSetName) == nodeSets->end(),
                               "**** Error in NeumannBC::apply(), node set not found: " + nodeSetName + "\n");
   vector<int> & nodeList = nodeSets->find(nodeSetName)->second;
   for(unsigned int i=0 ; i<nodeList.size() ; i++){

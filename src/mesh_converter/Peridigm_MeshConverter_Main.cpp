@@ -57,6 +57,7 @@
 
 #include "Peridigm_HorizonManager.hpp"
 #include "Peridigm_ExodusDiscretization.hpp"
+#include "Peridigm_Logging.hpp"
 #include "exodusII.h"
 #include <iostream>
 #include <sstream>
@@ -68,7 +69,7 @@ void reportExodusError(int errorCode, const char *methodName, const char*exodusM
   std::stringstream ss;
   if(errorCode < 0){ // error
     ss << "MeshConverter -- Error code: " << errorCode << " (" << exodusMethodName << ")";
-    TEUCHOS_TEST_FOR_TERMINATION(1, ss.str());
+    TestForTermination(1, ss.str());
   }
   else {
     ss << "MeshConverter -- Warning code: " << errorCode << " (" << exodusMethodName << ")";
@@ -328,7 +329,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Write the block names
-  TEUCHOS_TEST_FOR_TERMINATION(blocks->size() < 1, "\nMeshConverter, Zero element blocks found!\n");
+  TestForTermination(blocks->size() < 1, "\nMeshConverter, Zero element blocks found!\n");
   char **block_names = new char*[blocks->size()];
   for(unsigned int i=0 ; i<blocks->size() ; ++i)
     block_names[i] = new char[MAX_STR_LENGTH+1];

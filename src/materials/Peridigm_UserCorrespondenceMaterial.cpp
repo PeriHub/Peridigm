@@ -52,6 +52,7 @@
 
 #include "Peridigm_UserCorrespondenceMaterial.hpp"
 #include "Peridigm_Field.hpp"
+#include "Peridigm_Logging.hpp"
 #include "user_material_interface_correspondence.h"
 #include "correspondence.h"
 #include <Teuchos_Assert.hpp>
@@ -87,7 +88,7 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
   matName = var.substr(var.find_last_of(delimiter)+1,var.length());
 
   nprops = params.get<int>("Number of Properties");
-  TEUCHOS_TEST_FOR_TERMINATION(nprops<1, 
+  TestForTermination(nprops<1, 
      "****         The number properties must be greater than zero.\n");
   string prop = "Prop_";
   
@@ -124,7 +125,7 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
   if (params.isParameter("Number of State Vars")){
     nstatev = params.get<int>("Number of State Vars");
     // FULL_TENSOR is used. Therefore, nine entries will be inialized at ones. 
-    TEUCHOS_TEST_FOR_TERMINATION(nstatev<1, 
+    TestForTermination(nstatev<1, 
      "****         The number of state variables must be greater than zero.\n");
 
     if (nstatev > 0) {

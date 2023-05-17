@@ -58,6 +58,7 @@
 #else
 #include "FunctionRTC.hh"
 #endif
+#include "Peridigm_Logging.hpp"
 
 namespace PeridigmNS {
 
@@ -112,7 +113,7 @@ public:
       p = &PeridigmInfluenceFunction::gaussian;
     }
     else {
-      TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error:  InfluenceFunction::getInfluenceFunction(string), invalid influence function\n");
+      TestForTermination(true, "**** Error:  InfluenceFunction::getInfluenceFunction(string), invalid influence function\n");
     }
     return p;
   }
@@ -140,7 +141,7 @@ public:
       if(!success){
         std::string msg = "\n**** Error in InfluenceFunction::setInfluenceFunction().\n";
         msg += "**** " + rtcFunction.getErrors() + "\n";
-        TEUCHOS_TEST_FOR_TERMINATION(!success, msg);
+        TestForTermination(!success, msg);
       }    
       m_influenceFunction = &userDefinedInfluenceFunction;
     }
@@ -148,8 +149,8 @@ public:
 
   //! Returns a function pointer to the influence function.
   functionPointer getInfluenceFunction() {
-    TEUCHOS_TEST_FOR_TERMINATION(m_influenceFunction == NULL,
-                                "**** Error:  InfluenceFunction::getInfluenceFunction() called prior to calling InfluenceFunction::setInfluenceFunction().\n")
+    TestForTermination(m_influenceFunction == NULL,
+                                "**** Error:  InfluenceFunction::getInfluenceFunction() called prior to calling InfluenceFunction::setInfluenceFunction().\n");
     return m_influenceFunction;
   }
 

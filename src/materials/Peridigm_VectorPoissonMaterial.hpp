@@ -49,6 +49,7 @@
 #define PERIDIGM_VECTORPOISSONMATERIAL_HPP
 
 #include "Peridigm_Material.hpp"
+#include "Peridigm_Logging.hpp"
 
 namespace PeridigmNS {
 
@@ -71,13 +72,13 @@ namespace PeridigmNS {
 
     //! Returns the bulk modulus of the material.
     virtual double BulkModulus() const {
-      TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error:  The Vector Poisson material model is valid only for Peridigm-Albany coupling.\n");
+      TestForTermination(true, "**** Error:  The Vector Poisson material model is valid only for Peridigm-Albany coupling.\n");
       return 0.0;
     }
 
     //! Returns the shear modulus of the material.
     virtual double ShearModulus() const {
-      TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error:  The Vector Poisson material model is valid only for Peridigm-Albany coupling.\n");
+      TestForTermination(true, "**** Error:  The Vector Poisson material model is valid only for Peridigm-Albany coupling.\n");
       return 0.0;
     }
 

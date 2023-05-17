@@ -62,6 +62,7 @@
 #include "Peridigm_Version.hpp"
 #include "Peridigm_Factory.hpp"
 #include "Peridigm_Timer.hpp"
+#include "Peridigm_Logging.hpp"
 
 using namespace std;
 
@@ -70,7 +71,6 @@ using namespace std;
  * peridynamics simulation code.
  */
 int main(int argc, char *argv[]) {
-
   // Initialize MPI and timer
   int mpi_id = 0;
   int mpi_size = 1;
@@ -80,6 +80,8 @@ int main(int argc, char *argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
   #endif
 
+  PeridigmNS::init_log_file();
+  LOG(PeridigmNS::LogLevel::INFO, "Peridigm started");
   // Set up communicators
   MPI_Comm peridigmComm = MPI_COMM_WORLD;
 
@@ -91,6 +93,7 @@ int main(int argc, char *argv[]) {
     cout << "-- version " << PeridigmNS::Peridigm_Version() << "\n" << endl;
     if(mpi_size > 1)
       cout << "MPI initialized on " << mpi_size << " processors.\n" << endl;
+      LOG(PeridigmNS::LogLevel::INFO, "MPI initialized on " + std::to_string(mpi_size) + " processors");
   }
 
   int status = 0;

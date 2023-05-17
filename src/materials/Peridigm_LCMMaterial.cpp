@@ -47,6 +47,7 @@
 
 #include "Peridigm_LCMMaterial.hpp"
 #include "Peridigm_Field.hpp"
+#include "Peridigm_Logging.hpp"
 #include <Teuchos_Assert.hpp>
 
 #ifdef PERIDIGM_LCM
@@ -85,7 +86,7 @@ PeridigmNS::LCMMaterial::LCMMaterial(const Teuchos::ParameterList& params)
   : Material(params)
 {
 #ifndef PERIDIGM_LCM
-  TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error:  LCM material models are not enabled.  Recompile with -D USE_LCM:BOOL=ON.\n");
+  TestForTermination(true, "**** Error:  LCM material models are not enabled.  Recompile with -D USE_LCM:BOOL=ON.\n");
 #endif
 
   //! \todo Add meaningful asserts on material properties.
@@ -94,7 +95,7 @@ PeridigmNS::LCMMaterial::LCMMaterial(const Teuchos::ParameterList& params)
   m_density = params.get<double>("Density");
   m_horizon = params.get<double>("Horizon");
 
-  TEUCHOS_TEST_FOR_TERMINATION(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for LCM material models.\n");
+  TestForTermination(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for LCM material models.\n");
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   m_volumeFieldId           = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Volume");

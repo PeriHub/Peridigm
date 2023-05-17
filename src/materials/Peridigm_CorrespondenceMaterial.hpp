@@ -50,6 +50,7 @@
 
 #include "Peridigm_Material.hpp"
 #include "Peridigm_InfluenceFunction.hpp"
+#include "Peridigm_Logging.hpp"
 
 namespace PeridigmNS
 {
@@ -85,7 +86,7 @@ namespace PeridigmNS
       if(search != materialProperties.end())
         return search->second;
       else
-        TEUCHOS_TEST_FOR_TERMINATION(true, "**** Error: requested material property " + keyname + " is not in Multiphysics Elastic Material");
+        TestForTermination(true, "**** Error: requested material property " + keyname + " is not in Multiphysics Elastic Material");
       // This is a fallthrough case to make the compiler happy.
       return 0.0;
     }

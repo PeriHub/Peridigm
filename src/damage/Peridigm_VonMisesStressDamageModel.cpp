@@ -50,6 +50,7 @@
 #include "material_utilities.h" // to use Influence Function 
 #include "correspondence.h" // to compute weighted volume
 #include "damage_utilities.h"
+#include "Peridigm_Logging.hpp"
 
 using namespace std;
 
@@ -78,7 +79,7 @@ PeridigmNS::VonMisesStressDamageModel::VonMisesStressDamageModel(const Teuchos::
     m_criticalDamage = params.get<double>("Critical Damage");
   if(params.isParameter("Threshold Damage"))
     m_thresholdDamage = params.get<double>("Threshold Damage");
-  TEUCHOS_TEST_FOR_TERMINATION(m_criticalDamage < m_thresholdDamage, "**** Error: Threshold Damage cannot be greater than Critical Damage");
+  TestForTermination(m_criticalDamage < m_thresholdDamage, "**** Error: Threshold Damage cannot be greater than Critical Damage");
 
   if(params.isParameter("Critical Damage To Neglect Material Point")) 
     m_criticalDamageToNeglectMaterialPoint = params.get<double>("Critical Damage To Neglect Material Point"); // default value is 95%

@@ -48,6 +48,7 @@
 #include "Peridigm_VectorPoissonMaterial.hpp"
 #include "Peridigm_Field.hpp"
 #include "Peridigm_Constants.hpp"
+#include "Peridigm_Logging.hpp"
 
 PeridigmNS::VectorPoissonMaterial::VectorPoissonMaterial(const Teuchos::ParameterList& params)
   : Material(params),
@@ -139,8 +140,8 @@ PeridigmNS::VectorPoissonMaterial::computeForce(const double dt,
         temp = (neighborU - nodeU)*kernel;
         nodeForce = temp*neighborVolume;
         neighborForce = -temp*nodeVolume;
-        TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(nodeForce), "**** NaN detected in VectorPoissonMaterial::computeForce().\n");
-        TEUCHOS_TEST_FOR_TERMINATION(!std::isfinite(neighborForce), "**** NaN detected in VectorPoissonMaterial::computeForce().\n");
+        TestForTermination(!std::isfinite(nodeForce), "**** NaN detected in VectorPoissonMaterial::computeForce().\n");
+        TestForTermination(!std::isfinite(neighborForce), "**** NaN detected in VectorPoissonMaterial::computeForce().\n");
         f[iID*3+eqn] += nodeForce;
         f[neighborID*3+eqn] += neighborForce;
 
