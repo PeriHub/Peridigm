@@ -547,7 +547,6 @@ void PeridigmNS::Material::getStiffnessmatrix(const Teuchos::ParameterList& para
       {
       for(int jID=iID ; jID<6 ; ++jID){
         C[iID][jID] = ctemp[jID][iID];
-        C[jID][iID] = C[iID][jID];
       }
     }
   }
