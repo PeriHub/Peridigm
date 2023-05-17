@@ -361,7 +361,7 @@ double PeridigmNS::Material::calculateBulkModulus(const Teuchos::ParameterList &
 {
   bool bulkModulusDefined(false), shearModulusDefined(false), youngsModulusDefined(false), poissonsRatioDefined(false);
   double bulkModulus(0.0), shearModulus(0.0), youngsModulus(0.0), poissonsRatio(0.0);
-  double computedValue;
+  double computedValue = 0.0;
 
   if( params.isParameter("Bulk Modulus") ){
     bulkModulusDefined = true;
