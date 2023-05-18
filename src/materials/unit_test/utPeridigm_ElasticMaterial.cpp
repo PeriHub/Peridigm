@@ -1,4 +1,4 @@
-/*! \file utPeridigm_Correspondence.cpp */
+/*! \file utPeridigm_Material.cpp */
 
 //@HEADER
 // ************************************************************************
