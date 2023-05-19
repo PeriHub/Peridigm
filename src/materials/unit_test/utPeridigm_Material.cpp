@@ -186,8 +186,52 @@ TEUCHOS_UNIT_TEST(ElasticLinearCorrespondenceMaterial, getStiffnessmatrix) {
 
 }
 
+TEUCHOS_UNIT_TEST(ElasticLinearCorrespondenceMaterial, getThermalExpansionCoefficient) {
+ // instantiate the material model
+  double tolerance = 1e-8;
+  ParameterList params;
+  double m_bulkModulus = 130.0e9;
+  double m_shearModulus = 78.0e9;
+  params.set("Density", 7800.0);
+  params.set("Bulk Modulus", m_bulkModulus);
+  params.set("Shear Modulus", m_shearModulus);
 
+  params.set("Apply Thermal Strain",false);
 
+  ElasticLinearCorrespondenceMaterial mat(params);
+
+  double alpha[3][3];
+  int i,j;
+  double alphaTest[3][3];
+
+  for(i=0; i<3; ++i){
+    alphaTest[i][i] = i/3 + 2;
+    for (j=0; j<3; ++j){
+        alphaTest[i][j] = 0.0;
+    }
+  }
+
+  TEST_ASSERT(mat.getThermalExpansionCoefficient(params,alpha)==false);
+  params.set("Apply Thermal Strain",true);
+  params.set("Thermal Expansion Coefficient", alphaTest[0][0]);
+  TEST_ASSERT(mat.getThermalExpansionCoefficient(params,alpha)==true);
+  for(i=0; i<3; ++i){
+    TEST_FLOATING_EQUALITY(alpha[i][i], alphaTest[0][0], tolerance);
+    for (j=i+1; j<3; ++j){
+        TEST_FLOATING_EQUALITY(alpha[i][j], alphaTest[i][j], tolerance);
+        TEST_FLOATING_EQUALITY(alpha[j][i], alphaTest[j][i], tolerance);
+    }
+  }
+  params.set("Thermal Expansion Coefficient Y", alphaTest[1][1]);
+  params.set("Thermal Expansion Coefficient Z", alphaTest[2][2]);
+  for(i=0; i<3; ++i){
+    for (j=0; j<3; ++j){
+        TEST_FLOATING_EQUALITY(alpha[i][j], alphaTest[i][j], tolerance);
+        
+    }
+  }
+
+}
 int main
 (int argc, char* argv[])
 {
