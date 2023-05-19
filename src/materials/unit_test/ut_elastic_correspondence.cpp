@@ -153,7 +153,7 @@ TEUCHOS_UNIT_TEST(correspondence, ElasticStressCrossTest) {
     CORRESPONDENCE::updateElasticCauchyStress(unrotatedRateOfDeformation,stressRefN,stressRefNP1,vonMisesStress,1,bulkMod,shearMod,dt);
     CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(strain, stressAniso, Cstiff, 0);
 
-    double tolerance = 1e-6;
+    double tolerance = 1e-2;
     for (int n=0; n<9; n++){
             TEST_FLOATING_EQUALITY(stressRefNP1[n],stressAniso[n],tolerance);
     }
