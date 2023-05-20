@@ -175,15 +175,6 @@ TEUCHOS_UNIT_TEST(ElasticLinearCorrespondenceMaterial, getStiffnessmatrix) {
         TEST_FLOATING_EQUALITY(C[i][j], cTest[i][j], tolerance);
     }
   }
-
-
-
-
-
-
-
-
-
 }
 
 TEUCHOS_UNIT_TEST(ElasticLinearCorrespondenceMaterial, getThermalExpansionCoefficient) {
