@@ -84,7 +84,7 @@ ScalarT* deformationGradient,
 const ScalarT* shapeTensorInverse,
 ScalarT* unrotatedRateOfDeformation,
 const int* neighborhoodList,
-int numPoints,
+const int numPoints,
 const double* bondDamage,
 const bool type,
 double* detachedNodes
@@ -303,7 +303,7 @@ int computeGradientWeights
     const double* flyingPointFlag,
     const double* bondDamage,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 )
 {
   //Using RK Implicit Gradient (Same as PD Gradient Operator) to construct
@@ -506,7 +506,7 @@ template int computeShapeTensorInverseAndApproximateDeformationGradient<Sacado::
  Sacado::Fad::DFad<double>* deformationGradient,
  const double* bondDamageNP1,
  const int* neighborhoodList,
- int numPoints,
+ const int numPoints,
  const bool type,
  double* detachedNodes
 
@@ -523,7 +523,7 @@ ScalarT* shapeTensorInverse,
 ScalarT* deformationGradient,
 const double* bondDamageNP1,
 const int* neighborhoodList,
-int numPoints,
+const int numPoints,
 const bool type,
 double* detachedNodes
 )
@@ -669,8 +669,8 @@ ScalarT* leftStretchTensorNP1,
 ScalarT* rotationTensorNP1,
 ScalarT* unrotatedRateOfDeformation,
 const int* neighborhoodList,
-int numPoints,
-double dt,
+const int numPoints,
+const double dt,
 const double* bondDamage,
 const bool type,
 double* detachedNodes
@@ -1288,7 +1288,7 @@ const ScalarT* coordinates,
 const ScalarT* deformationGradient,
 ScalarT* hourglassForceDensity,
 const int* neighborhoodList,
-int numPoints,
+const int numPoints,
 double bulkModulus,
 double hourglassCoefficient,
 const double* bondDamage
@@ -1394,7 +1394,7 @@ const ScalarT* coordinates,
 const ScalarT* deformationGradient,
 ScalarT* hourglassForceDensity,
 const int* neighborhoodList,
-int numPoints,
+const int numPoints,
 double bulkModulus,
 double hourglassCoefficient,
 const double* bondDamage
@@ -1528,7 +1528,7 @@ const double* horizon,
 const double* modelCoordinates,
 const ScalarT* coordinates,
 const int* neighborhoodList,
-int numPoints,
+const int numPoints,
 const ScalarT* deformationGradient,
 ScalarT* shapeTensorInverse,
 const double C[][6],
@@ -1701,7 +1701,7 @@ void rotateCauchyStress
  const ScalarT* rotationTensor,
  const ScalarT* unrotatedCauchyStress,
  ScalarT* rotatedCauchyStress,
- int numPoints
+ const int numPoints
 )
 {
   const ScalarT* rotTensor = rotationTensor;
@@ -1772,7 +1772,7 @@ void computeUndamagedWeightedVolume
     const double* horizon,
     const ScalarT* coordinates,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 )
 {
   const double* delta = horizon;
@@ -1822,7 +1822,7 @@ void computeWeightedVolume
     const double* flyingPointFlag,
     const double* bondDamage,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 )
 {
   const double* delta = horizon;
@@ -1879,8 +1879,8 @@ int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
     const double* flyingPointFlag,
     const double* bondDamage,
     const int* neighborhoodList,
-    int numPoints,
-    double dt
+    const int numPoints,
+    const double dt
 )
 {
   int returnCode = 0;
@@ -2020,8 +2020,8 @@ int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient
     const double* flyingPointFlag,
     const double* bondDamage,
     const int* neighborhoodList,
-    int numPoints,
-    double dt
+    const int numPoints,
+    const double dt
 )
 {
   int returnCode = 0;
@@ -2167,8 +2167,8 @@ void computeVelocityGradient
     ScalarT* velocityGradientZ,
     const double* flyingPointFlag,
     const int* neighborhoodList,
-    int numPoints,
-    double dt
+    const int numPoints,
+    const double dt
 )
 {
   const ScalarT* vel = velocities;
@@ -2247,8 +2247,8 @@ void updateDeformationGradient
     const ScalarT* deformationGradientN,
     ScalarT* deformationGradientNP1,
     const double* flyingPointFlag,
-    int numPoints,
-    double dt
+    const int numPoints,
+    const double dt
 )
 {
   const ScalarT* velGrad = velocityGradient;
@@ -2488,7 +2488,7 @@ void computeGreenLagrangeStrain
     const ScalarT* deformationGradient,
     ScalarT* greenLagrangeStrain,
     const double* flyingPointFlag,
-    int numPoints
+    const int numPoints
 )
 {
   // Green-Lagrange Strain E = 0.5*(F^T F - I)
@@ -2530,9 +2530,9 @@ int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor(
     ScalarT* rotationTensorNP1,
     ScalarT* unrotatedRateOfDeformation,
     const double* flyingPointFlag,
-    int numPoints,
-    double dt,
-    bool m_plane
+    const int numPoints,
+    const double dt,
+    const bool m_plane
 )
 {
   int returnCode = 0;
@@ -2728,7 +2728,7 @@ void rotateCauchyStress
     const ScalarT* unrotatedCauchyStress,
     ScalarT* rotatedCauchyStress,
     const double* flyingPointFlag,
-    int numPoints
+    const int numPoints
 )
 {
   const ScalarT* rotTensor = rotationTensor;
@@ -2760,7 +2760,7 @@ void updateGradientWeightEvaluationFlag
     const ScalarT* damageN,
     const ScalarT* damageNP1,
     ScalarT* gradientWeightEvaluationFlag,
-    int numPoints
+    const int numPoints
 )
 {
   const ScalarT* dmgN = damageN;
@@ -2790,7 +2790,7 @@ int computeLagrangianGradientWeights
     double* influenceState,
     const int accuracyOrder,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 )
 {
   //Using RK Implicit Gradient (Same as PD Gradient Operator) to construct
@@ -3003,7 +3003,7 @@ void computeDeformationGradient
     ScalarT* deformationGradientDotY,
     ScalarT* deformationGradientDotZ,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 )
 {
   const ScalarT* disp = displacements;
@@ -3081,7 +3081,7 @@ void computeWeightedVolume
     ScalarT* weightedVolume,
     const double* influenceState,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 )
 {
   ScalarT* w0 = weightedVolume;
@@ -3119,9 +3119,9 @@ int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor
     ScalarT* leftStretchTensorNP1,
     ScalarT* rotationTensorNP1,
     ScalarT* unrotatedRateOfDeformation,
-    int numPoints,
-    double dt,
-    bool m_plane
+    const int numPoints,
+    const double dt,
+    const bool m_plane
 )
 {
   int returnCode = 0;
@@ -3344,8 +3344,8 @@ void updateGreenLagrangeStrain
     const ScalarT* deformationGradientDotZ,
     const ScalarT* greenLagrangeStrainN,
     ScalarT* greenLagrangeStrainNP1,
-    int numPoints,
-    double dt
+    const int numPoints,
+    const double dt
 )
 {
   // Green-Lagrange Strain rate Edot = 0.5*(Fdot^T F + F^T Fdot)
@@ -3394,7 +3394,7 @@ template void rotateCauchyStress<double>
  const double* rotationTensor,
  const double* unrotatedCauchyStress,
  double* rotatedCauchyStress,
- int numPoints
+ const int numPoints
  );
 
 
@@ -3591,7 +3591,7 @@ double* shapeTensorInverse,
 double* deformationGradient,
 const double* bondDamageNP1,
 const int* neighborhoodList,
-int numPoints,
+const int numPoints,
 const bool type,
 double* detachedNodes
 );
@@ -3611,8 +3611,8 @@ template void computeVelocityGradient<double>
     double* velocityGradientZ,
     const double* flyingPointFlag,
     const int* neighborhoodList,
-    int numPoints,
-    double dt
+    const int numPoints,
+    const double dt
 );
 
 template int computeUnrotatedRateOfDeformationAndRotationTensor<double>
@@ -3629,8 +3629,8 @@ double* leftStretchTensorNP1,
 double* rotationTensorNP1,
 double* unrotatedRateOfDeformation,
 const int* neighborhoodList,
-int numPoints,
-double dt,
+const int numPoints,
+const double dt,
 const double* bondDamage,
 const bool type,
 double* detachedNodes
@@ -3646,7 +3646,7 @@ const double* coordinates,
 const double* deformationGradient,
 double* hourglassForceDensity,
 const int* neighborhoodList,
-int numPoints,
+const int numPoints,
 double bulkModulus,
 double hourglassCoefficient,
 const double* bondDamage
@@ -3661,7 +3661,7 @@ const double* coordinates,
 const double* deformationGradient,
 double* hourglassForceDensity,
 const int* neighborhoodList,
-int numPoints,
+const int numPoints,
 double bulkModulus,
 double hourglassCoefficient,
 const double* bondDamage
@@ -3674,7 +3674,7 @@ const double* bondDamage
 //const double* modelCoordinates,
 //const double* coordinates,
 //const int* neighborhoodList,
-//int numPoints,
+//const int numPoints,
 //const double* deformationGradient,
 //double* shapeTensorInverse,
 //const double C[][6],
@@ -3751,7 +3751,7 @@ template int computeGradientWeights<double>
     const double* flyingPointFlag,
     const double* bondDamage,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 );
 
 template void computeUndamagedWeightedVolume<double>
@@ -3762,7 +3762,7 @@ template void computeUndamagedWeightedVolume<double>
     const double* horizon,
     const double* coordinates,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 );
 
 template void computeWeightedVolume<double>
@@ -3775,7 +3775,7 @@ template void computeWeightedVolume<double>
     const double* flyingPointFlag,
     const double* bondDamage,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 );
 
 template int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient<double>
@@ -3791,8 +3791,8 @@ template int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient<do
     const double* flyingPointFlag,
     const double* bondDamage,
     const int* neighborhoodList,
-    int numPoints,
-    double dt
+    const int numPoints,
+    const double dt
 );
 
 template int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient<double>
@@ -3811,8 +3811,8 @@ template int computeShapeTensorInverseAndApproximateNodeLevelVelocityGradient<do
     const double* flyingPointFlag,
     const double* bondDamage,
     const int* neighborhoodList,
-    int numPoints,
-    double dt
+    const int numPoints,
+    const double dt
 );
 template int EigenVec2D<double>(
     const double* a,
@@ -3833,9 +3833,9 @@ template int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor<double>
     double* rotationTensorNP1,
     double* unrotatedRateOfDeformation,
     const double* flyingPointFlag,
-    int numPoints,
-    double dt,
-    bool m_plane
+    const int numPoints,
+    const double dt,
+    const bool m_plane
 );
 
 template void updateDeformationGradient<double>
@@ -3844,8 +3844,8 @@ template void updateDeformationGradient<double>
     const double* deformationGradientN,
     double* deformationGradientNP1,
     const double* flyingPointFlag,
-    int numPoints,
-    double dt
+    const int numPoints,
+    const double dt
 );
 
 template void computeGreenLagrangeStrain<double>
@@ -3853,7 +3853,7 @@ template void computeGreenLagrangeStrain<double>
     const double* deformationGradient,
     double* greenLagrangeStrain,
     const double* flyingPointFlag,
-    int numPoints
+    const int numPoints
 );
 
 
@@ -3863,7 +3863,7 @@ template void rotateCauchyStress<double>
     const double* unrotatedCauchyStress,
     double* rotatedCauchyStress,
     const double* flyingPointFlag,
-    int numPoints
+    const int numPoints
 );
 
 
@@ -3872,7 +3872,7 @@ template void updateGradientWeightEvaluationFlag<double>
     const double* damageN,
     const double* damageNP1,
     double* gradientWeightEvaluationFlag,
-    int numPoints
+    const int numPoints
 );
 
 template int computeLagrangianGradientWeights<double>
@@ -3888,7 +3888,7 @@ template int computeLagrangianGradientWeights<double>
     double* influenceState,
     const int accuracyOrder,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 );
 
 template void computeDeformationGradient<double>
@@ -3906,7 +3906,7 @@ template void computeDeformationGradient<double>
     double* deformationGradientDotY,
     double* deformationGradientDotZ,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 );
 
 template void computeWeightedVolume<double>
@@ -3915,7 +3915,7 @@ template void computeWeightedVolume<double>
     double* weightedVolume,
     const double* influenceState,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 );
 
 template int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor<double>
@@ -3931,9 +3931,9 @@ template int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor<double>
     double* leftStretchTensorNP1,
     double* rotationTensorNP1,
     double* unrotatedRateOfDeformation,
-    int numPoints,
-    double dt,
-    bool m_plane
+    const int numPoints,
+    const double dt,
+    const bool m_plane
 );
 
 template void updateGreenLagrangeStrain<double>
@@ -3946,8 +3946,8 @@ template void updateGreenLagrangeStrain<double>
     const double* deformationGradientDotZ,
     const double* greenLagrangeStrainN,
     double* greenLagrangeStrainNP1,
-    int numPoints,
-    double dt
+    const int numPoints,
+    const double dt
 );
 
 
@@ -3961,7 +3961,7 @@ template void getLinearUnrotatedRateOfDeformation<double>
     const double* shapeTensorInverse,
     double* unrotatedRateOfDeformation,
     const int* neighborhoodList,
-    int numPoints,
+    const int numPoints,
     const double* bondDamage,
     const bool type,
     double* detachedNodes
