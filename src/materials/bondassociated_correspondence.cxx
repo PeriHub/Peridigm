@@ -603,7 +603,8 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor(
         *(temp+8) = traceV - *(leftStretchN+8);
 
         // Compute the inverse of the temp matrix
-        MATRICES::Invert3by3Matrix(temp, determinant, tempInv);
+        if (m_plane)MATRICES::Invert2by2Matrix(temp, determinant, tempInv);
+        else MATRICES::Invert3by3Matrix(temp, determinant, tempInv);
         if(inversionReturnCode > 0){
           returnCode = inversionReturnCode;
           std::cout << inversionErrorMessage;
@@ -1055,7 +1056,9 @@ int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor
     }
 
     // Compute the inverse of the deformation gradient, Finverse
-    inversionReturnCode = MATRICES::Invert3by3Matrix(defGrad, determinant, Finverse);
+    if (m_plane)inversionReturnCode = MATRICES::Invert2by2Matrix(defGrad, determinant, Finverse);
+    else inversionReturnCode = MATRICES::Invert3by3Matrix(defGrad, determinant, Finverse);
+    
     if(inversionReturnCode > 0)
       returnCode = inversionReturnCode;
 
@@ -1124,7 +1127,8 @@ int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor
     *(temp+8) = traceV - *(leftStretchN+8);
 
     // Compute the inverse of the temp matrix
-    MATRICES::Invert3by3Matrix(temp, determinant, tempInv);
+    if (m_plane) MATRICES::Invert2by2Matrix(temp, determinant, tempInv);
+    else MATRICES::Invert3by3Matrix(temp, determinant, tempInv);
     if(inversionReturnCode > 0)
       returnCode = inversionReturnCode;
 
@@ -1494,7 +1498,9 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor
         *(defGradDot+8) = *(meanDefGradDot+8) + (velStateZ - scalarTemp) * undeformedBondZ/undeformedBondLengthSq;
 
         // Compute the inverse of the deformation gradient, Finverse
-        inversionReturnCode = MATRICES::Invert3by3Matrix(defGrad, determinant, Finverse);
+        if (m_plane)inversionReturnCode = MATRICES::Invert2by2Matrix(defGrad, determinant, Finverse);
+        else inversionReturnCode = MATRICES::Invert3by3Matrix(defGrad, determinant, Finverse);
+
         if(inversionReturnCode > 0){
           returnCode = inversionReturnCode;
           std::cout << inversionErrorMessage;
@@ -1577,7 +1583,8 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor
         *(temp+8) = traceV - *(leftStretchN+8);
 
         // Compute the inverse of the temp matrix
-        MATRICES::Invert3by3Matrix(temp, determinant, tempInv);
+        if (m_plane)MATRICES::Invert2by2Matrix(temp, determinant, tempInv);
+        else MATRICES::Invert3by3Matrix(temp, determinant, tempInv);
         if(inversionReturnCode > 0){
           returnCode = inversionReturnCode;
           std::cout << inversionErrorMessage;
