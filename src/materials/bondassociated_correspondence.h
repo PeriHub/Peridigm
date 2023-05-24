@@ -89,7 +89,8 @@ ScalarT* bondLevelVelocityGradientZY,
 ScalarT* bondLevelVelocityGradientZZ,
 const double* flyingPointFlag,
 const int* neighborhoodList,
-int numPoints
+int numPoints,
+const bool m_plane
 );
 
 

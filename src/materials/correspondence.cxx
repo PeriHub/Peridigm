@@ -2531,7 +2531,8 @@ int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor(
     ScalarT* unrotatedRateOfDeformation,
     const double* flyingPointFlag,
     int numPoints,
-    double dt
+    double dt,
+    const bool m_plane
 )
 {
   int returnCode = 0;
@@ -3119,7 +3120,8 @@ int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor
     ScalarT* rotationTensorNP1,
     ScalarT* unrotatedRateOfDeformation,
     int numPoints,
-    double dt
+    double dt,
+    const bool m_plane
 )
 {
   int returnCode = 0;
@@ -3832,7 +3834,8 @@ template int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor<double>
     double* unrotatedRateOfDeformation,
     const double* flyingPointFlag,
     int numPoints,
-    double dt
+    double dt,
+    const bool m_plane
 );
 
 template void updateDeformationGradient<double>
@@ -3929,7 +3932,8 @@ template int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor<double>
     double* rotationTensorNP1,
     double* unrotatedRateOfDeformation,
     int numPoints,
-    double dt
+    double dt,
+    const bool m_plane
 );
 
 template void updateGreenLagrangeStrain<double>

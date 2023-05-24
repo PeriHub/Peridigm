@@ -523,7 +523,8 @@ ScalarT* rotationTensorNP1,
 ScalarT* unrotatedRateOfDeformation,
 const double* flyingPointFlag,
 int numPoints,
-double dt
+double dt,
+const bool m_plane
 );
 
 template<typename ScalarT>
@@ -541,7 +542,8 @@ int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor
     ScalarT* rotationTensorNP1,
     ScalarT* unrotatedRateOfDeformation,
     int numPoints,
-    double dt
+    double dt,
+    const bool m_plane
 );
 
 

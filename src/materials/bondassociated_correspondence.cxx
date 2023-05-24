@@ -80,7 +80,8 @@ void computeBondLevelVelocityGradient
     ScalarT* bondLevelVelocityGradientZZ,
     const double* flyingPointFlag,
     const int* neighborhoodList,
-    int numPoints
+    int numPoints,
+    const bool m_plane
 )
 {
   const ScalarT* coord = coordinates;
@@ -194,7 +195,8 @@ void computeBondLevelVelocityGradient
     ScalarT* bondLevelVelocityGradientZZ,
     const double* flyingPointFlag,
     const int* neighborhoodList,
-    int numPoints
+    int numPoints,
+    const bool m_plane
 )
 {
   const ScalarT* coord = coordinates;
@@ -996,7 +998,8 @@ int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor
     ScalarT* rotationTensorNP1,
     ScalarT* unrotatedRateOfDeformation,
     int numPoints,
-    double dt
+    double dt,
+    const bool m_plane
 )
 {
   int returnCode = 0;
@@ -2041,7 +2044,8 @@ template void computeBondLevelVelocityGradient<double>
     double* bondLevelVelocityGradientZZ,
     const double* flyingPointFlag,
     const int* neighborhoodList,
-    int numPoints
+    int numPoints,
+    const bool m_plane
 );
 
 template void computeBondLevelVelocityGradient<double>
@@ -2062,7 +2066,8 @@ template void computeBondLevelVelocityGradient<double>
     double* bondLevelVelocityGradientZZ,
     const double* flyingPointFlag,
     const int* neighborhoodList,
-    int numPoints
+    int numPoints,
+    const bool m_plane
 );
 
 
