@@ -728,8 +728,7 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::computeForce(const double dt,
                                                                                                                       unrotatedRateOfDeformation,
                                                                                                                       numOwnedPoints, 
                                                                                                                       dt,
-                                                                                                                      m_plane
-                                                                                                                      );
+                                                                                                                      m_plane);
   string nodeLevelRotationTensorErrorMessage =
     "**** Error:  BondAssociatedCorrespondenceMaterial::computeForce() failed to compute rotation tensor.\n";
   nodeLevelRotationTensorErrorMessage +=

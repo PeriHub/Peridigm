@@ -565,8 +565,7 @@ PeridigmNS::HypoelasticCorrespondenceMaterial::computeForce(const double dt,
                                                    bondLevelVelocityGradientZZ,
                                                    flyingPointFlag,
                                                    neighborhoodList,
-                                                   numOwnedPoints,
-                                                   m_plane
+                                                   numOwnedPoints
                                                    );
 
   // Update the deformation gradient so that later Green Strain tensor can be
