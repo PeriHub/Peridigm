@@ -148,7 +148,10 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::BondAssociatedCorrespondenceMa
     m_bondLevelDeformationGradientInvZYFieldId(-1),
     m_bondLevelDeformationGradientInvZZFieldId(-1),
     m_bondLevelJacobianDeterminantFieldId(-1),
-    m_stressIntegralFieldId(-1)
+    m_stressIntegralFieldId(-1),
+    m_plane(false),
+    m_planeStrain(false),
+    m_planeStress(false)
 {
   //! \todo Add meaningful asserts on material properties.
   m_bulkModulus = calculateBulkModulus(params);
@@ -158,7 +161,19 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::BondAssociatedCorrespondenceMa
   if(params.isParameter("Gradient Order Of Accuracy")){
     m_accuracyOrder = params.get<int>("Gradient Order Of Accuracy");
   }
+  if (params.isParameter("Plane Strain"))
+    m_planeStrain = params.get<bool>("Plane Strain");
 
+  if (params.isParameter("Plane Stress"))
+    m_planeStress = params.get<bool>("Plane Stress");
+  if (m_planeStrain == true)
+  {
+    m_plane = true;
+  }
+  if (m_planeStress == true)
+  {
+    m_plane = true;
+  }
   TestForTermination(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticBondAssociatedCorrespondence material model.\n");
   TestForTermination(params.isParameter("Apply Shear Correction Factor"), "**** Error:  Shear Correction Factor is not supported for the ElasticBondAssociatedCorrespondence material model.\n");
   TestForTermination(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the ElasticBondAssociatedCorrespondence material model.\n");
@@ -712,7 +727,9 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::computeForce(const double dt,
                                                                                                                       rotationTensorNP1,
                                                                                                                       unrotatedRateOfDeformation,
                                                                                                                       numOwnedPoints, 
-                                                                                                                      dt);
+                                                                                                                      dt,
+                                                                                                                      m_plane
+                                                                                                                      );
   string nodeLevelRotationTensorErrorMessage =
     "**** Error:  BondAssociatedCorrespondenceMaterial::computeForce() failed to compute rotation tensor.\n";
   nodeLevelRotationTensorErrorMessage +=

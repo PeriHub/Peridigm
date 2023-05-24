@@ -137,7 +137,10 @@ PeridigmNS::HypoelasticCorrespondenceMaterial::HypoelasticCorrespondenceMaterial
     m_bondLevelVelocityGradientZYFieldId(-1),
     m_bondLevelVelocityGradientZZFieldId(-1),
     m_nonhomogeneousIntegralFieldId(-1),
-    m_flyingPointFlagFieldId(-1)
+    m_flyingPointFlagFieldId(-1),
+    m_plane(false),
+    m_planeStrain(false),
+    m_planeStress(false)
 {
   //! \todo Add meaningful asserts on material properties.
   m_bulkModulus = calculateBulkModulus(params);
@@ -145,7 +148,19 @@ PeridigmNS::HypoelasticCorrespondenceMaterial::HypoelasticCorrespondenceMaterial
   m_density = params.get<double>("Density");
 
   m_actualHorizon = params.get<double>("Actual Horizon");
+  if (params.isParameter("Plane Strain"))
+    m_planeStrain = params.get<bool>("Plane Strain");
 
+  if (params.isParameter("Plane Stress"))
+    m_planeStress = params.get<bool>("Plane Stress");
+  if (m_planeStrain == true)
+  {
+    m_plane = true;
+  }
+  if (m_planeStress == true)
+  {
+    m_plane = true;
+  }
   if(params.isParameter("Gradient Order Of Accuracy")){
     m_accuracyOrder = params.get<int>("Gradient Order Of Accuracy");
   }
@@ -550,7 +565,9 @@ PeridigmNS::HypoelasticCorrespondenceMaterial::computeForce(const double dt,
                                                    bondLevelVelocityGradientZZ,
                                                    flyingPointFlag,
                                                    neighborhoodList,
-                                                   numOwnedPoints);
+                                                   numOwnedPoints,
+                                                   m_plane
+                                                   );
 
   // Update the deformation gradient so that later Green Strain tensor can be
   // computed. This step is done only for visualization purposes.
@@ -645,7 +662,8 @@ PeridigmNS::HypoelasticCorrespondenceMaterial::computeForce(const double dt,
                                                                                                                       unrotatedRateOfDeformation,
                                                                                                                       flyingPointFlag,
                                                                                                                       numOwnedPoints, 
-                                                                                                                      dt);
+                                                                                                                      dt,
+                                                                                                                      m_plane);
   string nodeLevelRotationTensorErrorMessage =
     "**** Error:  HypoelasticCorrespondenceMaterial::computeForce() failed to compute rotation tensor.\n";
   nodeLevelRotationTensorErrorMessage +=
