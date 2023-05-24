@@ -803,7 +803,8 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::computeForce(const double dt,
                                                                                                                       influenceState,
                                                                                                                       neighborhoodList, 
                                                                                                                       numOwnedPoints, 
-                                                                                                                      dt);
+                                                                                                                      dt,
+                                                                                                                      m_plane);
   string bondLevelRotationTensorErrorMessage =
     "**** Error:  BondAssociatedCorrespondenceMaterial::computeForce() failed to compute rotation tensor.\n";
   bondLevelRotationTensorErrorMessage +=

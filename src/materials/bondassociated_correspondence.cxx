@@ -410,7 +410,8 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor(
     const double* flyingPointFlag,
     const int* neighborhoodList,
     const int numPoints,
-    const double dt
+    const double dt,
+    const bool m_plane
 )
 {
   int returnCode = 0;
@@ -1277,7 +1278,8 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor
     const double* influenceState,
     const int* neighborhoodList,
     const int numPoints,
-    const double dt
+    const double dt,
+    const bool m_plane
 )
 {
   int returnCode = 0;
@@ -2126,7 +2128,8 @@ template int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor<double>
     const double* flyingPointFlag,
     const int* neighborhoodList,
     const int numPoints,
-    const double dt
+    const double dt,
+    const bool m_plane
 );
 
 
@@ -2256,7 +2259,8 @@ template int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor<double>
     const double* influenceState,
     const int* neighborhoodList,
     const int numPoints,
-    const double dt
+    const double dt,
+    const bool m_plane
 );
 
 

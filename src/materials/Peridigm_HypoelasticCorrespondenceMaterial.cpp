@@ -727,7 +727,8 @@ PeridigmNS::HypoelasticCorrespondenceMaterial::computeForce(const double dt,
                                                                                                                       flyingPointFlag,
                                                                                                                       neighborhoodList, 
                                                                                                                       numOwnedPoints, 
-                                                                                                                      dt);
+                                                                                                                      dt,
+                                                                                                                      m_plane);
   string bondLevelRotationTensorErrorMessage =
     "**** Error:  HypoelasticCorrespondenceMaterial::computeForce() failed to compute rotation tensor.\n";
   bondLevelRotationTensorErrorMessage +=

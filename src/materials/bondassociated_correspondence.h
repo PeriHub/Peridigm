@@ -152,7 +152,8 @@ ScalarT* bondLevelUnrotatedRateOfDeformationZZ,
 const double* flyingPointFlag,
 const int* neighborhoodList,
 const int numPoints,
-const double dt
+const double dt,
+const bool m_plane
 );
 
 template<typename ScalarT>
@@ -225,7 +226,8 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor
     const double* influenceState,
     const int* neighborhoodList,
     const int numPoints,
-    const double dt
+    const double dt,
+    const bool m_plane
 );
 
 template<typename ScalarT>
