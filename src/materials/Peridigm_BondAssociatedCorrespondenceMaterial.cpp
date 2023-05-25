@@ -274,7 +274,7 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::BondAssociatedCorrespondenceMa
   m_bondLevelDeformationGradientInvZXFieldId     = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Deformation_Gradient_Inv_ZX");
   m_bondLevelDeformationGradientInvZYFieldId     = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Deformation_Gradient_Inv_ZY");
   m_bondLevelDeformationGradientInvZZFieldId     = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Deformation_Gradient_Inv_ZZ");
-  m_bondLevelJacobianDeterminantFieldId          = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Jacobian_Determinant");
+  m_bondLevelJacobianDeterminantFieldId          = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Bond_Level_Jacobian_Determinant");
   m_stressIntegralFieldId                        = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Stress_Integral");
 
   m_fieldIds.push_back(m_horizonFieldId);
