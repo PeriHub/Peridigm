@@ -216,7 +216,7 @@ PeridigmNS::VonMisesStressDamageModel::computeDamage(const double dt,
     if(*brokenBondVolumeAveragedNP1 > m_criticalDamageToNeglectMaterialPoint) // to prevent cases that only a couple of bonds are left, causing instability issues. 
       *flyingPointFlag = 1.0;
   }
-
+  dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
   //  Update the element damage (percent of bonds broken)
   DAMAGE_UTILITIES::calculateDamageIndex(numOwnedPoints,ownedIDs,volume,neighborhoodList,bondDamage, damage);
 }
