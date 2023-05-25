@@ -553,6 +553,126 @@ void updateBondLevelElasticCauchyStress
 }
 
 template<typename ScalarT>
+void updateBondLevelAnisotropicElasticCauchyStress
+(
+    const ScalarT* bondLevelUnrotatedRateOfDeformationXX, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationXY, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationXZ, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationYX, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationYY, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationYZ, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationZX, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationZY, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationZZ, 
+    const ScalarT* bondLevelUnrotatedCauchyStressXXN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressXYN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressXZN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressYXN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressYYN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressYZN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressZXN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressZYN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressZZN, 
+    ScalarT* bondLevelUnrotatedCauchyStressXXNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressXYNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressXZNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressYXNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressYYNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressYZNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressZXNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressZYNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressZZNP1, 
+    const double* flyingPointFlag,
+    const int* neighborhoodList,
+    const int numPoints, 
+    const ScalarT Cstiff[][6],
+    const double* angles,
+    const int type,
+    const double dt
+)
+{
+  
+
+  std::string logStrainErrorMessage = "**** Error:  elastic_correspondence ::updateBondLevelElasticCauchyStressAnisotropic() failed to compute logStrain.\n";
+
+    const ScalarT* rateOfDefXX = bondLevelUnrotatedRateOfDeformationXX;
+  const ScalarT* rateOfDefXY = bondLevelUnrotatedRateOfDeformationXY;
+  const ScalarT* rateOfDefXZ = bondLevelUnrotatedRateOfDeformationXZ;
+  const ScalarT* rateOfDefYX = bondLevelUnrotatedRateOfDeformationYX;
+  const ScalarT* rateOfDefYY = bondLevelUnrotatedRateOfDeformationYY;
+  const ScalarT* rateOfDefYZ = bondLevelUnrotatedRateOfDeformationYZ;
+  const ScalarT* rateOfDefZX = bondLevelUnrotatedRateOfDeformationZX;
+  const ScalarT* rateOfDefZY = bondLevelUnrotatedRateOfDeformationZY;
+  const ScalarT* rateOfDefZZ = bondLevelUnrotatedRateOfDeformationZZ;
+  const ScalarT* sigmaXXN = bondLevelUnrotatedCauchyStressXXN;
+  const ScalarT* sigmaXYN = bondLevelUnrotatedCauchyStressXYN;
+  const ScalarT* sigmaXZN = bondLevelUnrotatedCauchyStressXZN;
+  const ScalarT* sigmaYXN = bondLevelUnrotatedCauchyStressYXN;
+  const ScalarT* sigmaYYN = bondLevelUnrotatedCauchyStressYYN;
+  const ScalarT* sigmaYZN = bondLevelUnrotatedCauchyStressYZN;
+  const ScalarT* sigmaZXN = bondLevelUnrotatedCauchyStressZXN;
+  const ScalarT* sigmaZYN = bondLevelUnrotatedCauchyStressZYN;
+  const ScalarT* sigmaZZN = bondLevelUnrotatedCauchyStressZZN;
+  ScalarT* sigmaXXNP1 = bondLevelUnrotatedCauchyStressXXNP1;
+  ScalarT* sigmaXYNP1 = bondLevelUnrotatedCauchyStressXYNP1;
+  ScalarT* sigmaXZNP1 = bondLevelUnrotatedCauchyStressXZNP1;
+  ScalarT* sigmaYXNP1 = bondLevelUnrotatedCauchyStressYXNP1;
+  ScalarT* sigmaYYNP1 = bondLevelUnrotatedCauchyStressYYNP1;
+  ScalarT* sigmaYZNP1 = bondLevelUnrotatedCauchyStressYZNP1;
+  ScalarT* sigmaZXNP1 = bondLevelUnrotatedCauchyStressZXNP1;
+  ScalarT* sigmaZYNP1 = bondLevelUnrotatedCauchyStressZYNP1;
+  ScalarT* sigmaZZNP1 = bondLevelUnrotatedCauchyStressZZNP1;
+  ScalarT strainInc[9];
+  ScalarT stressInc[9];
+
+  //int defGradLogReturnCode(0);
+  bool rotation = true;
+  int numNeighbors;
+  const int *neighborListPtr = neighborhoodList;
+  for(int iID=0 ; iID<numPoints ; ++iID, angles+=3){
+    numNeighbors = *neighborListPtr; neighborListPtr++;
+    for(int n=0; n<numNeighbors; n++, neighborListPtr++, 
+        rateOfDefXX++, rateOfDefXY++, rateOfDefXZ++, 
+        rateOfDefYX++, rateOfDefYY++, rateOfDefYZ++, 
+        rateOfDefZX++, rateOfDefZY++, rateOfDefZZ++,
+        sigmaXXN++, sigmaXYN++, sigmaXZN++, 
+        sigmaYXN++, sigmaYYN++, sigmaYZN++, 
+        sigmaZXN++, sigmaZYN++, sigmaZZN++,
+        sigmaXXNP1++, sigmaXYNP1++, sigmaXZNP1++, 
+        sigmaYXNP1++, sigmaYYNP1++, sigmaYZNP1++, 
+        sigmaZXNP1++, sigmaZYNP1++, sigmaZZNP1++){
+      //if (m_applyThermalStrains){CORRESPONDENCE::addTemperatureStrain(alpha,temperature,strain)}
+
+      //https://www.continuummechanics.org/stressxforms.html
+      // Q Q^T * sigma * Q Q^T = Q C Q^T epsilon Q Q^T
+          strainInc[0] = *rateOfDefXX*dt; strainInc[1] = *rateOfDefXY*dt; strainInc[2] = *rateOfDefXZ*dt;
+          strainInc[3] = *rateOfDefYX*dt; strainInc[4] = *rateOfDefYY*dt; strainInc[5] = *rateOfDefYZ*dt;
+          strainInc[6] = *rateOfDefZX*dt; strainInc[7] = *rateOfDefZY*dt; strainInc[8] = *rateOfDefZZ*dt;
+      if (MATRICES::vectorNorm(angles, 3)!=0)rotation=true;
+      else rotation = false;
+      if (rotation){  
+        MATRICES::tensorRotation(angles,strainInc,true,strainInc);
+      }
+
+      CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(strainInc, stressInc, Cstiff, type);
+      // rotation back
+      if (rotation){  
+        MATRICES::tensorRotation(angles,stressInc,false,stressInc);
+      }
+        *sigmaXXNP1 = *sigmaXXN + stressInc[0];
+        *sigmaXYNP1 = *sigmaXYN + stressInc[1];
+        *sigmaXZNP1 = *sigmaXZN + stressInc[2];
+        *sigmaYXNP1 = *sigmaYXN + stressInc[3];
+        *sigmaYYNP1 = *sigmaYYN + stressInc[4];
+        *sigmaYZNP1 = *sigmaYZN + stressInc[5];
+        *sigmaZXNP1 = *sigmaZXN + stressInc[6];
+        *sigmaZYNP1 = *sigmaZYN + stressInc[7];
+        *sigmaZZNP1 = *sigmaZZN + stressInc[8];
+	  }
+  }
+
+}
+template<typename ScalarT>
 void updateBondLevelElasticCauchyStress
 (
     const ScalarT* bondLevelUnrotatedRateOfDeformationXX, 
@@ -842,6 +962,44 @@ template void updateBondLevelElasticCauchyStress<double>
     const double dt
 );
 
+template void updateBondLevelAnisotropicElasticCauchyStress<double>
+(
+    const double* bondLevelUnrotatedRateOfDeformationXX, 
+    const double* bondLevelUnrotatedRateOfDeformationXY, 
+    const double* bondLevelUnrotatedRateOfDeformationXZ, 
+    const double* bondLevelUnrotatedRateOfDeformationYX, 
+    const double* bondLevelUnrotatedRateOfDeformationYY, 
+    const double* bondLevelUnrotatedRateOfDeformationYZ, 
+    const double* bondLevelUnrotatedRateOfDeformationZX, 
+    const double* bondLevelUnrotatedRateOfDeformationZY, 
+    const double* bondLevelUnrotatedRateOfDeformationZZ, 
+    const double* bondLevelUnrotatedCauchyStressXXN, 
+    const double* bondLevelUnrotatedCauchyStressXYN, 
+    const double* bondLevelUnrotatedCauchyStressXZN, 
+    const double* bondLevelUnrotatedCauchyStressYXN, 
+    const double* bondLevelUnrotatedCauchyStressYYN, 
+    const double* bondLevelUnrotatedCauchyStressYZN, 
+    const double* bondLevelUnrotatedCauchyStressZXN, 
+    const double* bondLevelUnrotatedCauchyStressZYN, 
+    const double* bondLevelUnrotatedCauchyStressZZN, 
+    double* bondLevelUnrotatedCauchyStressXXNP1, 
+    double* bondLevelUnrotatedCauchyStressXYNP1, 
+    double* bondLevelUnrotatedCauchyStressXZNP1, 
+    double* bondLevelUnrotatedCauchyStressYXNP1, 
+    double* bondLevelUnrotatedCauchyStressYYNP1, 
+    double* bondLevelUnrotatedCauchyStressYZNP1, 
+    double* bondLevelUnrotatedCauchyStressZXNP1, 
+    double* bondLevelUnrotatedCauchyStressZYNP1, 
+    double* bondLevelUnrotatedCauchyStressZZNP1, 
+    const double* flyingPointFlag,
+    const int* neighborhoodList,
+    const int numPoints,
+    const double C[][6],
+    const double* angles,
+    const int type,
+    const double dt
+
+);
 
 
 
