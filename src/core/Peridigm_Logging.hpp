@@ -54,6 +54,7 @@
 #include <memory>
 #include <mpi.h>
 #include <Peridigm_Version.hpp>
+#include <Sacado.hpp>
 
 namespace PeridigmNS {
 
@@ -186,6 +187,30 @@ namespace PeridigmNS {
         log(bind(&error_log, placeholders::_1, message, file, line), message);
         break;
     }
+  }
+
+  inline void log(LogLevel level, const string& file, int line, const float message) {
+    log(level, file, line, to_string(message));
+  }
+
+  inline void log(LogLevel level, const string& file, int line,  const double message) {
+    log(level, file, line, to_string(message));
+  }
+
+  inline void log(LogLevel level, const string& file, int line,  const int message) {
+    log(level, file, line, to_string(message));
+  }
+
+  template <typename ScalarT>
+  string sacado_to_string(const ScalarT value) {
+    ostringstream oss;
+    oss << value;
+    return oss.str();
+  }
+
+  template <typename ScalarT>
+  inline void log(LogLevel level, const string& file, int line,  const ScalarT message) {
+    log(level, file, line, sacado_to_string(message));
   }
 
   #define LOG(level, message) log(level, __FILE__, __LINE__, message)

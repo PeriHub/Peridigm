@@ -48,6 +48,7 @@
 //@HEADER
 
 #include "user_material_interface_correspondence.h"
+#include "Peridigm_Logging.hpp"
 #include "correspondence.h"
 #include "matrices.h"
 #include <Sacado.hpp>
