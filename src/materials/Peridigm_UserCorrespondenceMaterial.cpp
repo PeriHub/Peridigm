@@ -233,39 +233,27 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
 
   std::vector<double> statevVec(nstatev*numOwnedPoints);
   double* statev = &statevVec[0];
-  double** stat = new double*[nstatev];
+  //double** stat = new double*[nstatev];
   // fill with data
 
   if (nstatev > 0) {
-    // for(int iID=0 ; iID<nstatev ; ++iID)
-    // { 
-    //   dataManager.getData(m_state[iID], PeridigmField::STEP_NP1)->ExtractView(&stat);
-    //   for(int jID=0 ; jID<numOwnedPoints; ++jID){
-    //     statev[iID*numOwnedPoints + jID] = stat[jID];
-    //   }
-    //   if (stat[0]!=0){
-    //     std::cout<<"Before Umat, iID: " << iID << " stat[0]: " << stat[0]<<std::endl;
-    //   }
-    // }
-    for(int iID=0 ; iID<nstatev ; ++iID)
+
+    double *stat;
+    for(int jID=0 ; jID<nstatev ; ++jID)
     { 
-      dataManager.getData(m_state[iID], PeridigmField::STEP_N)->ExtractView(&stat[iID]);
-    }
-    for(int iID=0 ; iID<numOwnedPoints ; ++iID)
-    { 
-      for(int jID=0 ; jID<nstatev; ++jID){
-        statev[iID*nstatev + jID] = stat[jID][iID];
-        // std::cout<<"Before Umat, jID: " << jID << " stat["<<iID*nstatev + jID<<"]: " << statev[iID*nstatev + jID]<<std::endl;
-      }
-      // if (stat[0]!=0){
-      // }
+      dataManager.getData(m_state[jID], PeridigmField::STEP_N)->ExtractView(&stat);
+    
+      for(int iID=0 ; iID<numOwnedPoints ; ++iID)
+      { 
+          statev[iID*nstatev + jID] = stat[iID];
+        }
     }
   }
-
   // CORRESPONDENCE::computeGreenLagrangeStrain(defGradNP1,GLStrainNP1,flyingPointFlag,numOwnedPoints);
   // dataManager.getData(m_strainFieldId, PeridigmField::STEP_NP1)->ExtractView(&GLStrainNP1);
   std::vector<double> propsVec(nprops);
   double* props = &propsVec[0];
+  
   for(int iID=0 ; iID<nprops ; ++iID){props[iID] = userProperties[iID];}
   CORRESPONDENCE::userMaterialInterface(modelCoordinates,
                                         defGradN, 
@@ -288,7 +276,8 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
                                         RotationNP1,
                                         m_planeStress,
                                         m_planeStrain,
-                                        matName);
+                                        matName,
+                                        false);
 
   if (nstatev > 0) {
     // for(int iID=0 ; iID<nstatev ; ++iID)
@@ -301,20 +290,17 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
     //     std::cout<<"After Umat, iID: " << iID << " stat[0]: " << stat[0]<<std::endl;
     //   }
     // }
-    for(int iID=0 ; iID<nstatev ; ++iID)
-    { 
-      dataManager.getData(m_state[iID], PeridigmField::STEP_NP1)->ExtractView(&stat[iID]);
-    }
-    for(int iID=0 ; iID<numOwnedPoints ; ++iID)
-    { 
-      for(int jID=0 ; jID<nstatev; ++jID){
-        stat[jID][iID] = statev[iID*nstatev + jID];
-        // std::cout<<"After Umat, jID: " << jID << " stat["<<iID*nstatev + jID<<"]: " << statev[iID*nstatev + jID]<<std::endl;
-      }
-      // if (stat[0]!=0){
-      //   std::cout<<"After Umat, iID: " << iID << " stat[0]: " << stat[0]<<std::endl;
-      // }
-    }
-  }                                   
-                                           
+      std::vector<double> statevVec(numOwnedPoints);
+      double* statNP1;
+      for(int jID=0 ; jID<nstatev ; ++jID)
+      { 
+        dataManager.getData(m_state[jID], PeridigmField::STEP_NP1)->ExtractView(&statNP1);
+      
+        for(int iID=0 ; iID<numOwnedPoints ; ++iID)
+        { 
+            statNP1[iID] = statev[iID*nstatev + jID];
+        }
+      
+    }                                   
+  }                                      
 }

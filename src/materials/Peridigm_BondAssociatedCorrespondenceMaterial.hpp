@@ -228,6 +228,9 @@ namespace PeridigmNS {
     int m_bondLevelDeformationGradientInvZYFieldId;
     int m_bondLevelDeformationGradientInvZZFieldId;
     int m_bondLevelJacobianDeterminantFieldId;
+    int m_piolaStressTimesInvShapeTensorXId;
+    int m_piolaStressTimesInvShapeTensorYId;
+    int m_piolaStressTimesInvShapeTensorZId;
     int m_JacobianDeterminantFieldId;
     int m_stressIntegralFieldId;
     bool m_plane;

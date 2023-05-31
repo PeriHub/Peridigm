@@ -279,6 +279,10 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::BondAssociatedCorrespondenceMa
   m_JacobianDeterminantFieldId          = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Jacobian_Determinant");
   m_stressIntegralFieldId                        = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Stress_Integral");
 
+  m_piolaStressTimesInvShapeTensorXId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "PiolaStressTimesInvShapeTensorX");
+  m_piolaStressTimesInvShapeTensorYId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "PiolaStressTimesInvShapeTensorY");
+  m_piolaStressTimesInvShapeTensorZId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::VECTOR, PeridigmField::TWO_STEP, "PiolaStressTimesInvShapeTensorZ");
+
   m_fieldIds.push_back(m_horizonFieldId);
   m_fieldIds.push_back(m_volumeFieldId);
   m_fieldIds.push_back(m_modelCoordinatesFieldId);
@@ -306,6 +310,9 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::BondAssociatedCorrespondenceMa
   m_fieldIds.push_back(m_cauchyStressFieldId);
   m_fieldIds.push_back(m_unrotatedRateOfDeformationFieldId);
   m_fieldIds.push_back(m_weightedVolumeFieldId);
+  m_fieldIds.push_back(m_piolaStressTimesInvShapeTensorXId);
+  m_fieldIds.push_back(m_piolaStressTimesInvShapeTensorYId);
+  m_fieldIds.push_back(m_piolaStressTimesInvShapeTensorZId);
 
   m_fieldIds.push_back(m_bondLevelLeftStretchTensorXXFieldId);
   m_fieldIds.push_back(m_bondLevelLeftStretchTensorXYFieldId);
@@ -1001,7 +1008,13 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::computeForce(const double dt,
   double undeformedBondX, undeformedBondY, undeformedBondZ, undeformedBondLengthSq;
   double TX, TY, TZ, vol, neighborVol;
   int numNeighbors, neighborIndex;
-
+  double *tempStressX, *tempStressY, *tempStressZ;
+  dataManager.getData(m_piolaStressTimesInvShapeTensorXId, PeridigmField::STEP_NP1)->ExtractView(&tempStressX);
+  dataManager.getData(m_piolaStressTimesInvShapeTensorYId, PeridigmField::STEP_NP1)->ExtractView(&tempStressY);
+  dataManager.getData(m_piolaStressTimesInvShapeTensorZId, PeridigmField::STEP_NP1)->ExtractView(&tempStressZ);
+  dataManager.getData(m_piolaStressTimesInvShapeTensorXId, PeridigmField::STEP_NP1)->PutScalar(0.0);
+  dataManager.getData(m_piolaStressTimesInvShapeTensorYId, PeridigmField::STEP_NP1)->PutScalar(0.0);
+  dataManager.getData(m_piolaStressTimesInvShapeTensorZId, PeridigmField::STEP_NP1)->PutScalar(0.0);
   // Loop over the material points and convert the Cauchy stress into pairwise peridynamic force densities
   const int *neighborListPtr = neighborhoodList;
   for(int iID=0 ; iID<numOwnedPoints ; ++iID, ++w0, stressInt+=9){
@@ -1009,13 +1022,21 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::computeForce(const double dt,
     // Loop over the neighbors and compute contribution to force densities
     modelCoordinatesPtr = modelCoordinates + 3*iID;
     numNeighbors = *neighborListPtr; neighborListPtr++;
-
+    tempStressX[3*iID  ] = *(stressInt);
+    tempStressX[3*iID+1] = *(stressInt+1);
+    tempStressX[3*iID+2] = *(stressInt+2);
+    tempStressY[3*iID  ] = *(stressInt+3);
+    tempStressY[3*iID+1] = *(stressInt+4);
+    tempStressY[3*iID+2] = *(stressInt+5);
+    tempStressZ[3*iID  ] = *(stressInt+6);
+    tempStressZ[3*iID+1] = *(stressInt+7);
+    tempStressZ[3*iID+2] = *(stressInt+8);
     for(int n=0; n<numNeighbors; n++, neighborListPtr++, 
             omega++, phiX++, phiY++, phiZ++, 
             stressXX++, stressXY++, stressXZ++, 
             stressYX++, stressYY++, stressYZ++, 
             stressZX++, stressZY++, stressZZ++){
-
+      
       if(*omega > 0.0){
         neighborIndex = *neighborListPtr;
         neighborModelmodelCoordinatesPtr = modelCoordinates + 3*neighborIndex;
