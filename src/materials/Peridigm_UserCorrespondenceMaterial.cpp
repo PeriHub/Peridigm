@@ -249,7 +249,7 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
     // }
     for(int iID=0 ; iID<nstatev ; ++iID)
     { 
-      dataManager.getData(m_state[iID], PeridigmField::STEP_NP1)->ExtractView(&stat[iID]);
+      dataManager.getData(m_state[iID], PeridigmField::STEP_N)->ExtractView(&stat[iID]);
     }
     for(int iID=0 ; iID<numOwnedPoints ; ++iID)
     { 

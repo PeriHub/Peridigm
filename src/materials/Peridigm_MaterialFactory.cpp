@@ -74,6 +74,7 @@
 #include "Peridigm_Pals_Model.hpp"
 #include "Peridigm_LinearLPSPVMaterial.hpp"
 #include "FEM_ElasticMaterial.hpp"
+#include "Peridigm_AnisotropicElasticBondAssociatedCorrespondenceMaterial.hpp"
 #ifdef PERIDIGM_PV
   #include "Peridigm_ElasticPVMaterial.hpp"
 #endif
@@ -116,6 +117,8 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
   else if (materialModelName == "Isotropic Hardening Hypoelastic Correspondence")
     materialModel = Teuchos::rcp( new IsotropicHardeningPlasticHypoelasticCorrespondenceMaterial(materialParams) );
   else if (materialModelName == "Elastic Bond Associated Correspondence")
+    materialModel = Teuchos::rcp( new ElasticBondAssociatedCorrespondenceMaterial(materialParams) );
+  else if (materialModelName == "Anisotropic Elastic Bond Associated Correspondence")
     materialModel = Teuchos::rcp( new ElasticBondAssociatedCorrespondenceMaterial(materialParams) );
   else if (materialModelName == "Elastic Plastic Bond Associated Correspondence")
     materialModel = Teuchos::rcp( new ElasticPlasticBondAssociatedCorrespondenceMaterial(materialParams) );

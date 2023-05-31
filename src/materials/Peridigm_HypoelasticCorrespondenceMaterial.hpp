@@ -220,6 +220,9 @@ namespace PeridigmNS {
     int m_bondLevelVelocityGradientZZFieldId;
     int m_nonhomogeneousIntegralFieldId;
     int m_flyingPointFlagFieldId;
+    bool m_plane;
+    bool m_planeStrain;
+    bool m_planeStress;
   };
 }
 

@@ -76,7 +76,12 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
       m_partialStressFieldId(-1),
       m_hourglassStiffId(-1),
       m_thermalFlowStateFieldId(-1),
-      m_jacobianId(-1)
+      m_jacobianId(-1),
+      m_plane(false),
+      m_planeStrain(false),
+      m_planeStress(false)
+
+      
 {
 
   //! \todo Add meaningful asserts on material properties.
@@ -101,7 +106,6 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     nonLin = params.get<bool>("Non linear");
   }
 
-  bool m_planeStrain = false, m_planeStress = false;
   if (params.isParameter("Plane Strain"))
     m_planeStrain = params.get<bool>("Plane Strain");
 

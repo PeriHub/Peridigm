@@ -148,7 +148,11 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::BondAssociatedCorrespondenceMa
     m_bondLevelDeformationGradientInvZYFieldId(-1),
     m_bondLevelDeformationGradientInvZZFieldId(-1),
     m_bondLevelJacobianDeterminantFieldId(-1),
-    m_stressIntegralFieldId(-1)
+    m_JacobianDeterminantFieldId(-1),
+    m_stressIntegralFieldId(-1),
+    m_plane(false),
+    m_planeStrain(false),
+    m_planeStress(false)
 {
   //! \todo Add meaningful asserts on material properties.
   m_bulkModulus = calculateBulkModulus(params);
@@ -158,7 +162,19 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::BondAssociatedCorrespondenceMa
   if(params.isParameter("Gradient Order Of Accuracy")){
     m_accuracyOrder = params.get<int>("Gradient Order Of Accuracy");
   }
+  if (params.isParameter("Plane Strain"))
+    m_planeStrain = params.get<bool>("Plane Strain");
 
+  if (params.isParameter("Plane Stress"))
+    m_planeStress = params.get<bool>("Plane Stress");
+  if (m_planeStrain == true)
+  {
+    m_plane = true;
+  }
+  if (m_planeStress == true)
+  {
+    m_plane = true;
+  }
   TestForTermination(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticBondAssociatedCorrespondence material model.\n");
   TestForTermination(params.isParameter("Apply Shear Correction Factor"), "**** Error:  Shear Correction Factor is not supported for the ElasticBondAssociatedCorrespondence material model.\n");
   TestForTermination(params.isParameter("Thermal Expansion Coefficient"), "**** Error:  Thermal expansion is not currently supported for the ElasticBondAssociatedCorrespondence material model.\n");
@@ -259,7 +275,8 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::BondAssociatedCorrespondenceMa
   m_bondLevelDeformationGradientInvZXFieldId     = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Deformation_Gradient_Inv_ZX");
   m_bondLevelDeformationGradientInvZYFieldId     = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Deformation_Gradient_Inv_ZY");
   m_bondLevelDeformationGradientInvZZFieldId     = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Deformation_Gradient_Inv_ZZ");
-  m_bondLevelJacobianDeterminantFieldId          = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Jacobian_Determinant");
+  m_bondLevelJacobianDeterminantFieldId          = fieldManager.getFieldId(PeridigmField::BOND, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Bond_Level_Jacobian_Determinant");
+  m_JacobianDeterminantFieldId          = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Jacobian_Determinant");
   m_stressIntegralFieldId                        = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::CONSTANT, "Stress_Integral");
 
   m_fieldIds.push_back(m_horizonFieldId);
@@ -354,6 +371,7 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::BondAssociatedCorrespondenceMa
   m_fieldIds.push_back(m_bondLevelDeformationGradientInvZYFieldId);
   m_fieldIds.push_back(m_bondLevelDeformationGradientInvZZFieldId);
   m_fieldIds.push_back(m_bondLevelJacobianDeterminantFieldId);
+  m_fieldIds.push_back(m_JacobianDeterminantFieldId);
   m_fieldIds.push_back(m_stressIntegralFieldId);
 }
 
@@ -516,6 +534,8 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::initialize(const double dt,
   dataManager.getData(m_bondLevelDeformationGradientInvZZFieldId, PeridigmField::STEP_NONE)->PutScalar(1.0);
 
   dataManager.getData(m_bondLevelJacobianDeterminantFieldId, PeridigmField::STEP_NONE)->PutScalar(1.0);
+  dataManager.getData(m_JacobianDeterminantFieldId, PeridigmField::STEP_N)->PutScalar(1.0);
+  dataManager.getData(m_JacobianDeterminantFieldId, PeridigmField::STEP_NP1)->PutScalar(1.0);
 
   dataManager.getData(m_stressIntegralFieldId, PeridigmField::STEP_NONE)->PutScalar(0.0);
   dataManager.getData(m_weightedVolumeFieldId, PeridigmField::STEP_NONE)->PutScalar(0.0);
@@ -589,6 +609,7 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::computeForce(const double dt,
   double *bondLevelDeformationGradientInvYX, *bondLevelDeformationGradientInvYY, *bondLevelDeformationGradientInvYZ;
   double *bondLevelDeformationGradientInvZX, *bondLevelDeformationGradientInvZY, *bondLevelDeformationGradientInvZZ;
   double *bondLevelJacobianDeterminant;
+  dataManager.getData(m_JacobianDeterminantFieldId, PeridigmField::STEP_NP1)->PutScalar(1.0);
   dataManager.getData(m_horizonFieldId, PeridigmField::STEP_NONE)->ExtractView(&horizon);
   dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&volume);
   dataManager.getData(m_modelCoordinatesFieldId, PeridigmField::STEP_NONE)->ExtractView(&modelCoordinates);
@@ -712,7 +733,8 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::computeForce(const double dt,
                                                                                                                       rotationTensorNP1,
                                                                                                                       unrotatedRateOfDeformation,
                                                                                                                       numOwnedPoints, 
-                                                                                                                      dt);
+                                                                                                                      dt,
+                                                                                                                      m_plane);
   string nodeLevelRotationTensorErrorMessage =
     "**** Error:  BondAssociatedCorrespondenceMaterial::computeForce() failed to compute rotation tensor.\n";
   nodeLevelRotationTensorErrorMessage +=
@@ -787,7 +809,8 @@ PeridigmNS::BondAssociatedCorrespondenceMaterial::computeForce(const double dt,
                                                                                                                       influenceState,
                                                                                                                       neighborhoodList, 
                                                                                                                       numOwnedPoints, 
-                                                                                                                      dt);
+                                                                                                                      dt,
+                                                                                                                      m_plane);
   string bondLevelRotationTensorErrorMessage =
     "**** Error:  BondAssociatedCorrespondenceMaterial::computeForce() failed to compute rotation tensor.\n";
   bondLevelRotationTensorErrorMessage +=

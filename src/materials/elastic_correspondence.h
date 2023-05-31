@@ -65,6 +65,46 @@ void updateElasticCauchyStress
 );
 
 template<typename ScalarT>
+void updateBondLevelAnisotropicElasticCauchyStress
+(
+    const ScalarT* bondLevelUnrotatedRateOfDeformationXX, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationXY, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationXZ, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationYX, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationYY, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationYZ, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationZX, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationZY, 
+    const ScalarT* bondLevelUnrotatedRateOfDeformationZZ, 
+    const ScalarT* bondLevelUnrotatedCauchyStressXXN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressXYN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressXZN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressYXN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressYYN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressYZN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressZXN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressZYN, 
+    const ScalarT* bondLevelUnrotatedCauchyStressZZN, 
+    ScalarT* bondLevelUnrotatedCauchyStressXXNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressXYNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressXZNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressYXNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressYYNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressYZNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressZXNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressZYNP1, 
+    ScalarT* bondLevelUnrotatedCauchyStressZZNP1, 
+    const double* flyingPointFlag,
+    const int* neighborhoodList,
+    const int numPoints, 
+    const ScalarT Cstiff[][6],
+    const double* angles,
+    const int type,
+    const double dt
+);
+
+
+template<typename ScalarT>
 void updateElasticCauchyStress
 (
     const ScalarT* unrotatedRateOfDeformation, 

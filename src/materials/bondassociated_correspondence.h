@@ -67,7 +67,7 @@ ScalarT* bondLevelVelocityGradientZY,
 ScalarT* bondLevelVelocityGradientZZ,
 const double* flyingPointFlag,
 const int* neighborhoodList,
-int numPoints
+const int numPoints
 );
 
 template<typename ScalarT>
@@ -89,7 +89,7 @@ ScalarT* bondLevelVelocityGradientZY,
 ScalarT* bondLevelVelocityGradientZZ,
 const double* flyingPointFlag,
 const int* neighborhoodList,
-int numPoints
+const int numPoints
 );
 
 
@@ -151,8 +151,9 @@ ScalarT* bondLevelUnrotatedRateOfDeformationZY,
 ScalarT* bondLevelUnrotatedRateOfDeformationZZ,
 const double* flyingPointFlag,
 const int* neighborhoodList,
-int numPoints,
-double dt
+const int numPoints,
+const double dt,
+const bool m_plane
 );
 
 template<typename ScalarT>
@@ -224,8 +225,9 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor
     ScalarT* bondLevelUnrotatedRateOfDeformationZZ,
     const double* influenceState,
     const int* neighborhoodList,
-    int numPoints,
-    double dt
+    const int numPoints,
+    const double dt,
+    const bool m_plane
 );
 
 template<typename ScalarT>
@@ -259,7 +261,7 @@ ScalarT* bondLevelRotatedCauchyStressZY,
 ScalarT* bondLevelRotatedCauchyStressZZ,
 const double* flyingPointFlag,
 const int* neighborhoodList,
-int numPoints
+const int numPoints
 );
 
 template<typename ScalarT>
@@ -293,7 +295,7 @@ void rotateBondLevelCauchyStress
     ScalarT* bondLevelRotatedCauchyStressZY,
     ScalarT* bondLevelRotatedCauchyStressZZ,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 );
 
 
@@ -318,7 +320,7 @@ ScalarT* nonhomogeneousIntegral,
 const double* flyingPointFlag,
 const double* bondDamage,
 const int* neighborhoodList,
-int numPoints
+const int numPoints
 );
 
 
@@ -354,7 +356,7 @@ void computeBondLevelPiolaStress
     ScalarT* bondLevelPiolaStressZY,
     ScalarT* bondLevelPiolaStressZZ,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 );
 
 template<typename ScalarT>
@@ -375,7 +377,7 @@ void computeStressIntegral
     ScalarT* stressIntegral,
     const double* influenceState,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 );
 
 }

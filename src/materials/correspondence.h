@@ -70,7 +70,7 @@ void rotateCauchyStress
 const ScalarT* rotationTensor,
 const ScalarT* unrotatedCauchyStress,
 ScalarT* rotatedCauchyStress,
-int numPoints
+const int numPoints
 );
 
 template<typename ScalarT>
@@ -87,7 +87,7 @@ int computeGradientWeights
     const double* flyingPointFlag,
     const double* bondDamage,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 );
 
 template<typename ScalarT>
@@ -101,7 +101,7 @@ ScalarT* shapeTensorInverse,
 ScalarT* deformationGradient,
 const double* bondDamageNP1,
 const int* neighborhoodList,
-int numPoints,
+const int numPoints,
 const bool type,
 double* detachedNodes
 );
@@ -121,8 +121,8 @@ ScalarT* leftStretchTensorNP1,
 ScalarT* rotationTensorNP1,
 ScalarT* unrotatedRateOfDeformation,
 const int* neighborhoodList,
-int numPoints,
-double dt,
+const int numPoints,
+const double dt,
 const double* bondDamage,
 const bool type,
 double* detachedNodes
@@ -184,7 +184,7 @@ const ScalarT* coordinates,
 const ScalarT* deformationGradient,
 ScalarT* hourglassForceDensity,
 const int* neighborhoodList,
-int numPoints,
+const int numPoints,
 double bulkModulus,
 double hourglassCoefficient,
 const double* bondDamage
@@ -200,7 +200,7 @@ const ScalarT* coordinates,
 const ScalarT* deformationGradient,
 ScalarT* hourglassForceDensity,
 const int* neighborhoodList,
-int numPoints,
+const int numPoints,
 double bulkModulus,
 double hourglassCoefficient,
 const double* bondDamage
@@ -213,7 +213,7 @@ const double* horizon,
 const double* modelCoordinates,
 const ScalarT* coordinates,
 const int* neighborhoodList,
-int numPoints,
+const int numPoints,
 const ScalarT* deformationGradient,
 const ScalarT* shapeTensorInverse,
 const double* C,
@@ -263,7 +263,7 @@ bool transpose
 );
 
 template<typename ScalarT>
-void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints);
+void setOnesOnDiagonalFullTensor(ScalarT* tensor, const int numPoints);
 
 void computeHeatFlowState(    
 const double* modelCoord,
@@ -350,7 +350,7 @@ const bool m_adaptHourGlass,
 double* detachedNodes
     );
 template<typename ScalarT>
-void setOnesOnDiagonalFullTensor(ScalarT* tensor, int numPoints);
+void setOnesOnDiagonalFullTensor(ScalarT* tensor, const int numPoints);
 
 template<typename ScalarT>
 void computeUndamagedWeightedVolume
@@ -361,7 +361,7 @@ const ScalarT* jacobianDeterminant,
 const double* horizon,
 const ScalarT* coordinates,
 const int* neighborhoodList,
-int numPoints
+const int numPoints
 );
 
 template<typename ScalarT>
@@ -370,7 +370,7 @@ void updateGradientWeightEvaluationFlag
     const ScalarT* damageN,
     const ScalarT* damageNP1,
     ScalarT* gradientWeightEvaluationFlag,
-    int numPoints
+    const int numPoints
 );
 
 template<typename ScalarT>
@@ -387,7 +387,7 @@ int computeLagrangianGradientWeights
     double* influenceState,
     const int accuracyOrder,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 );
 
 template<typename ScalarT>
@@ -406,7 +406,7 @@ void computeDeformationGradient
     ScalarT* deformationGradientDotY,
     ScalarT* deformationGradientDotZ,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 );
 
 template<typename ScalarT>
@@ -420,7 +420,7 @@ const ScalarT* coordinates,
 const double* flyingPointFlag,
 const double* bondDamage,
 const int* neighborhoodList,
-int numPoints
+const int numPoints
 );
 
 template<typename ScalarT>
@@ -437,8 +437,8 @@ ScalarT* velocityGradient,
 const double* flyingPointFlag,
 const double* bondDamage,
 const int* neighborhoodList,
-int numPoints,
-double dt
+const int numPoints,
+const double dt
 );
 
 template<typename ScalarT>
@@ -457,8 +457,8 @@ void computeVelocityGradient
     ScalarT* velocityGradientZ,
     const double* flyingPointFlag,
     const int* neighborhoodList,
-    int numPoints,
-    double dt
+    const int numPoints,
+    const double dt
 );
 
 template<typename ScalarT>
@@ -478,8 +478,8 @@ ScalarT* velocityGradientZ,
 const double* flyingPointFlag,
 const double* bondDamage,
 const int* neighborhoodList,
-int numPoints,
-double dt
+const int numPoints,
+const double dt
 );
 
 
@@ -490,8 +490,8 @@ const ScalarT* velocityGradient,
 const ScalarT* deformationGradientN,
 ScalarT* deformationGradientNP1,
 const double* flyingPointFlag,
-int numPoints,
-double dt
+const int numPoints,
+const double dt
 );
 
 template<typename ScalarT>
@@ -500,7 +500,7 @@ void computeGreenLagrangeStrain
 const ScalarT* deformationGradient,
 ScalarT* greenLagrangeStrain,
 const double* flyingPointFlag,
-int numPoints
+const int numPoints
 );
 
 template<typename ScalarT>
@@ -510,7 +510,7 @@ void computeWeightedVolume
     ScalarT* weightedVolume,
     const double* influenceState,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 );
 
 template<typename ScalarT>
@@ -522,8 +522,9 @@ ScalarT* leftStretchTensorNP1,
 ScalarT* rotationTensorNP1,
 ScalarT* unrotatedRateOfDeformation,
 const double* flyingPointFlag,
-int numPoints,
-double dt
+const int numPoints,
+const double dt,
+const bool m_plane
 );
 
 template<typename ScalarT>
@@ -540,8 +541,9 @@ int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor
     ScalarT* leftStretchTensorNP1,
     ScalarT* rotationTensorNP1,
     ScalarT* unrotatedRateOfDeformation,
-    int numPoints,
-    double dt
+    const int numPoints,
+    const double dt,
+    const bool m_plane
 );
 
 
@@ -552,7 +554,7 @@ const ScalarT* rotationTensor,
 const ScalarT* unrotatedCauchyStress,
 ScalarT* rotatedCauchyStress,
 const double* flyingPointFlag,
-int numPoints
+const int numPoints
 );
 
 template<typename ScalarT>
@@ -566,8 +568,8 @@ void updateGreenLagrangeStrain
     const ScalarT* deformationGradientDotZ,
     const ScalarT* greenLagrangeStrainN,
     ScalarT* greenLagrangeStrainNP1,
-    int numPoints,
-    double dt
+    const int numPoints,
+    const double dt
 );
 
 
@@ -582,7 +584,7 @@ ScalarT* deformationGradient,
 const ScalarT* shapeTensorInverse,
 ScalarT* unrotatedRateOfDeformation,
 const int* neighborhoodList,
-int numPoints,
+const int numPoints,
 const double* bondDamage,
 const bool type,
 double* detachedNodes

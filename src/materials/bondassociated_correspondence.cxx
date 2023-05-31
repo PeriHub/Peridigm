@@ -80,7 +80,7 @@ void computeBondLevelVelocityGradient
     ScalarT* bondLevelVelocityGradientZZ,
     const double* flyingPointFlag,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 )
 {
   const ScalarT* coord = coordinates;
@@ -194,7 +194,7 @@ void computeBondLevelVelocityGradient
     ScalarT* bondLevelVelocityGradientZZ,
     const double* flyingPointFlag,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 )
 {
   const ScalarT* coord = coordinates;
@@ -310,8 +310,8 @@ void updateDeformationGradient
     const ScalarT* deformationGradientN,
     ScalarT* deformationGradientNP1,
     const double* flyingPointFlag,
-    int numPoints,
-    double dt
+    const int numPoints,
+    const double dt
 )
 {
   const ScalarT* velGrad = velocityGradient;
@@ -409,8 +409,9 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor(
     ScalarT* bondLevelUnrotatedRateOfDeformationZZ,
     const double* flyingPointFlag,
     const int* neighborhoodList,
-    int numPoints,
-    double dt
+    const int numPoints,
+    const double dt,
+    const bool m_plane
 )
 {
   int returnCode = 0;
@@ -602,7 +603,8 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor(
         *(temp+8) = traceV - *(leftStretchN+8);
 
         // Compute the inverse of the temp matrix
-        MATRICES::Invert3by3Matrix(temp, determinant, tempInv);
+        if (m_plane)MATRICES::Invert2by2Matrix(temp, determinant, tempInv);
+        else MATRICES::Invert3by3Matrix(temp, determinant, tempInv);
         if(inversionReturnCode > 0){
           returnCode = inversionReturnCode;
           std::cout << inversionErrorMessage;
@@ -757,7 +759,7 @@ void rotateBondLevelCauchyStress(
     ScalarT* bondLevelRotatedCauchyStressZZ,
     const double* flyingPointFlag,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 )
 {
   const ScalarT* rotTensorXX = bondLevelRotationTensorXX;
@@ -995,8 +997,9 @@ int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor
     ScalarT* leftStretchTensorNP1,
     ScalarT* rotationTensorNP1,
     ScalarT* unrotatedRateOfDeformation,
-    int numPoints,
-    double dt
+    const int numPoints,
+    const double dt,
+    const bool m_plane
 )
 {
   int returnCode = 0;
@@ -1053,7 +1056,9 @@ int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor
     }
 
     // Compute the inverse of the deformation gradient, Finverse
-    inversionReturnCode = MATRICES::Invert3by3Matrix(defGrad, determinant, Finverse);
+    if (m_plane)inversionReturnCode = MATRICES::Invert2by2Matrix(defGrad, determinant, Finverse);
+    else inversionReturnCode = MATRICES::Invert3by3Matrix(defGrad, determinant, Finverse);
+    
     if(inversionReturnCode > 0)
       returnCode = inversionReturnCode;
 
@@ -1122,7 +1127,8 @@ int computeNodeLevelUnrotatedRateOfDeformationAndRotationTensor
     *(temp+8) = traceV - *(leftStretchN+8);
 
     // Compute the inverse of the temp matrix
-    MATRICES::Invert3by3Matrix(temp, determinant, tempInv);
+    if (m_plane) MATRICES::Invert2by2Matrix(temp, determinant, tempInv);
+    else MATRICES::Invert3by3Matrix(temp, determinant, tempInv);
     if(inversionReturnCode > 0)
       returnCode = inversionReturnCode;
 
@@ -1275,8 +1281,9 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor
     ScalarT* bondLevelUnrotatedRateOfDeformationZZ,
     const double* influenceState,
     const int* neighborhoodList,
-    int numPoints,
-    double dt
+    const int numPoints,
+    const double dt,
+    const bool m_plane
 )
 {
   int returnCode = 0;
@@ -1491,7 +1498,9 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor
         *(defGradDot+8) = *(meanDefGradDot+8) + (velStateZ - scalarTemp) * undeformedBondZ/undeformedBondLengthSq;
 
         // Compute the inverse of the deformation gradient, Finverse
-        inversionReturnCode = MATRICES::Invert3by3Matrix(defGrad, determinant, Finverse);
+        if (m_plane)inversionReturnCode = MATRICES::Invert2by2Matrix(defGrad, determinant, Finverse);
+        else inversionReturnCode = MATRICES::Invert3by3Matrix(defGrad, determinant, Finverse);
+
         if(inversionReturnCode > 0){
           returnCode = inversionReturnCode;
           std::cout << inversionErrorMessage;
@@ -1574,7 +1583,8 @@ int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor
         *(temp+8) = traceV - *(leftStretchN+8);
 
         // Compute the inverse of the temp matrix
-        MATRICES::Invert3by3Matrix(temp, determinant, tempInv);
+        if (m_plane)MATRICES::Invert2by2Matrix(temp, determinant, tempInv);
+        else MATRICES::Invert3by3Matrix(temp, determinant, tempInv);
         if(inversionReturnCode > 0){
           returnCode = inversionReturnCode;
           std::cout << inversionErrorMessage;
@@ -1717,7 +1727,7 @@ void rotateBondLevelCauchyStress
     ScalarT* bondLevelRotatedCauchyStressZY,
     ScalarT* bondLevelRotatedCauchyStressZZ,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 )
 {
   const ScalarT* rotTensorXX = bondLevelRotationTensorXX;
@@ -1821,7 +1831,7 @@ void computeBondLevelPiolaStress
     ScalarT* bondLevelPiolaStressZY,
     ScalarT* bondLevelPiolaStressZZ,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 )
 {
   const ScalarT* J = bondLevelJacobianDeterminant;
@@ -1934,7 +1944,7 @@ void computeStressIntegral
     ScalarT* stressIntegral,
     const double* influenceState,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 )
 {
   const double* modelCoord = modelCoordinates;
@@ -2041,7 +2051,7 @@ template void computeBondLevelVelocityGradient<double>
     double* bondLevelVelocityGradientZZ,
     const double* flyingPointFlag,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 );
 
 template void computeBondLevelVelocityGradient<double>
@@ -2062,7 +2072,7 @@ template void computeBondLevelVelocityGradient<double>
     double* bondLevelVelocityGradientZZ,
     const double* flyingPointFlag,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 );
 
 
@@ -2124,8 +2134,9 @@ template int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor<double>
     double* bondLevelUnrotatedRateOfDeformationZZ,
     const double* flyingPointFlag,
     const int* neighborhoodList,
-    int numPoints,
-    double dt
+    const int numPoints,
+    const double dt,
+    const bool m_plane
 );
 
 
@@ -2159,7 +2170,7 @@ template void rotateBondLevelCauchyStress(
     double* bondLevelRotatedCauchyStressZZ,
     const double* flyingPointFlag,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 );
 
 template void computeNonhomogeneityIntegral<double>
@@ -2182,7 +2193,7 @@ template void computeNonhomogeneityIntegral<double>
     const double* flyingPointFlag,
     const double* bondDamage,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 );
 
 
@@ -2254,8 +2265,9 @@ template int computeBondLevelUnrotatedRateOfDeformationAndRotationTensor<double>
     double* bondLevelUnrotatedRateOfDeformationZZ,
     const double* influenceState,
     const int* neighborhoodList,
-    int numPoints,
-    double dt
+    const int numPoints,
+    const double dt,
+    const bool m_plane
 );
 
 
@@ -2289,7 +2301,7 @@ template void rotateBondLevelCauchyStress
     double* bondLevelRotatedCauchyStressZY,
     double* bondLevelRotatedCauchyStressZZ,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 );
 
 template void computeBondLevelPiolaStress<double>
@@ -2323,7 +2335,7 @@ template void computeBondLevelPiolaStress<double>
     double* bondLevelPiolaStressZY,
     double* bondLevelPiolaStressZZ,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 );
 
 template void computeStressIntegral<double>
@@ -2343,7 +2355,7 @@ template void computeStressIntegral<double>
     double* stressIntegral,
     const double* influenceState,
     const int* neighborhoodList,
-    int numPoints
+    const int numPoints
 );
 
 
