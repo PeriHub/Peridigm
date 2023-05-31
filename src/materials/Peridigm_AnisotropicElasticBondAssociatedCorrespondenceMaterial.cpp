@@ -48,12 +48,13 @@
 #include "Peridigm_AnisotropicElasticBondAssociatedCorrespondenceMaterial.hpp"
 #include "Peridigm_Field.hpp"
 #include "elastic_correspondence.h"
+#include "correspondence.h"
 #include "material_utilities.h"
 #include <Teuchos_Assert.hpp>
 
 using namespace std;
 
-PeridigmNS::AnisotropicElasticBondAssociatedCorrespondenceMaterial::ElasticBondAssociatedCorrespondenceMaterial(const Teuchos::ParameterList& params)
+PeridigmNS::AnisotropicElasticBondAssociatedCorrespondenceMaterial::AnisotropicElasticBondAssociatedCorrespondenceMaterial(const Teuchos::ParameterList& params)
   : BondAssociatedCorrespondenceMaterial(params),
     m_vonMisesStressFieldId(-1), 
     m_bondLevelVonMisesStressFieldId(-1),m_planeStrain(false),m_planeStress(false),m_type(0),m_applyThermalStrains(false)
@@ -207,7 +208,7 @@ PeridigmNS::AnisotropicElasticBondAssociatedCorrespondenceMaterial::computeCauch
   double *bondLevelVonMisesStress;
   dataManager.getData(m_bondLevelVonMisesStressFieldId, PeridigmField::STEP_NONE)->ExtractView(&bondLevelVonMisesStress);
 
-  CORRESPONDENCE::updateAnisotropicBondLevelElasticCauchyStress(bondLevelUnrotatedRateOfDeformationXX,
+  CORRESPONDENCE::updateBondLevelAnisotropicElasticCauchyStress(bondLevelUnrotatedRateOfDeformationXX,
                                                      bondLevelUnrotatedRateOfDeformationXY,
                                                      bondLevelUnrotatedRateOfDeformationXZ,
                                                      bondLevelUnrotatedRateOfDeformationYX,
