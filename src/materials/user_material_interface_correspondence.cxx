@@ -69,7 +69,7 @@ const ScalarT* unrotatedCauchyStressN,
 ScalarT* unrotatedCauchyStressNP1, 
 const int numPoints, 
 const int nstatev,
-ScalarT* statev,
+ScalarT* statevVector,
 const int nprops,
 const ScalarT* props,
 const double* angles,
@@ -81,7 +81,8 @@ const double* RotationN,
 const double* RotationNP1,
 const bool plane_stress,
 const bool plane_strain,
-const std::string matname
+const std::string matname,
+const bool testing
 )
 {
   // Hooke's law
@@ -91,7 +92,7 @@ const std::string matname
   ScalarT* GLStrainNP1 = strainNP1;
   ScalarT* sigmaNP1 = unrotatedCauchyStressNP1;
   const ScalarT* sigmaN = unrotatedCauchyStressN;
-  
+  ScalarT* statev = statevVector;
   bool rotation = false;
   int nshr = 3;
   int nnormal = 3;
@@ -171,22 +172,27 @@ const std::string matname
       CORRESPONDENCE::ReduceComp(depsLocVoigt, false);
     }
     // std::cout<<"Run UMAT"<<std::endl;
-    CORRESPONDENCE::UMATINT(sigmaNP1LocVoigt,statev,DDSDDE,&SSE,&SPD,&SCD,&RPL,
-    DDSDDT, DRPLDE,&DRPLDT,strainLocVoigt,depsLocVoigt,timeArray,&dtime,temp,dtemp,
-    &PREDEF,&DPRED,matnameArray,&nnormal,&nshr,&nstresscomp,&nstatev,props,
-    &nprops,coords,drot,&PNEWDT,&CELENT,defGradN,defGradNP1,
-    &NOEL,&NPT,&KSLAY,&KSPT,&JSTEP,&KINC,&nname);
+    if (testing){
+      CORRESPONDENCE::UMATINTTEST(sigmaNP1LocVoigt,statev,DDSDDE,&SSE,&SPD,&SCD,&RPL,
+      DDSDDT, DRPLDE,&DRPLDT,strainLocVoigt,depsLocVoigt,timeArray,&dtime,temp,dtemp,
+      &PREDEF,&DPRED,matnameArray,&nnormal,&nshr,&nstresscomp,&nstatev,props,
+      &nprops,coords,drot,&PNEWDT,&CELENT,defGradN,defGradNP1,
+      &NOEL,&NPT,&KSLAY,&KSPT,&JSTEP,&KINC,&nname);
+    }
+    else{
+      CORRESPONDENCE::UMATINT(sigmaNP1LocVoigt,statev,DDSDDE,&SSE,&SPD,&SCD,&RPL,
+      DDSDDT, DRPLDE,&DRPLDT,strainLocVoigt,depsLocVoigt,timeArray,&dtime,temp,dtemp,
+      &PREDEF,&DPRED,matnameArray,&nnormal,&nshr,&nstresscomp,&nstatev,props,
+      &nprops,coords,drot,&PNEWDT,&CELENT,defGradN,defGradNP1,
+      &NOEL,&NPT,&KSLAY,&KSPT,&JSTEP,&KINC,&nname);
+    }
     // std::cout<<"Umat finished"<<std::endl;
 
     if (plane_stress){
       CORRESPONDENCE::ExtendToSixComp(sigmaNP1LocVoigt, true);
-      CORRESPONDENCE::ExtendToSixComp(strainLocVoigt, true);
-      CORRESPONDENCE::ExtendToSixComp(depsLocVoigt, true);
     }
     if (plane_strain){
       CORRESPONDENCE::ExtendToSixComp(sigmaNP1LocVoigt, false);
-      CORRESPONDENCE::ExtendToSixComp(strainLocVoigt, false);
-      CORRESPONDENCE::ExtendToSixComp(depsLocVoigt, false);
     }
 
     CORRESPONDENCE::GetTensorFromVoigtNotation(sigmaNP1LocVoigt, sigmaNP1);
@@ -344,7 +350,7 @@ const double* unrotatedCauchyStressN,
 double* unrotatedCauchyStressNP1, 
 const int numPoints, 
 const int nstatev,
-double* statev,
+double* statevVector,
 const int nprops,
 const double* props,
 const double* angles,
@@ -356,7 +362,8 @@ const double* RotationN,
 const double* RotationNP1,
 const bool plane_stress,
 const bool plane_strain,
-const std::string matname
+const std::string matname,
+const bool testing
 );
 
 

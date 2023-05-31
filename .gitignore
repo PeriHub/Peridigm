@@ -31,3 +31,5 @@ src/materials/unit_test/Testing/Temporary/CTestCostData.txt
 src/materials/unit_test/Testing/Temporary/LastTest.log
 src/additive/unit_test/Testing/Temporary/CTestCostData.txt
 src/additive/unit_test/Testing/Temporary/LastTest.log
+Testing/Temporary/LastTest.log
+Testing/Temporary/CTestCostData.txt

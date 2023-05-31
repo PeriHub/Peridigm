@@ -66,7 +66,7 @@ const ScalarT* unrotatedCauchyStressN,
 ScalarT* unrotatedCauchyStressNP1, 
 const int numPoints, 
 const int nstatev,
-ScalarT* statev,
+ScalarT* statevVector,
 const int nprops,
 const ScalarT* props,
 const double* angles,
@@ -78,7 +78,8 @@ const double* RotationN,
 const double* RotationNP1,
 const bool plane_stress,
 const bool plane_strain,
-const std::string matname
+const std::string matname,
+const bool testing
 );
 
 template<typename ScalarT>
