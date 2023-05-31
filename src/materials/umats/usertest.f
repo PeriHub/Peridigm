@@ -24,11 +24,13 @@ C
       END DO
       DO K1=1,NTENS
             STRESS(K1) = STRESS(K1)*PROPS(1)
-            STATEV(K1) = STATEV(K1)*PROPS(1)
             STRAN(K1) = STRAN(K1)*PROPS(1)
             DSTRAN(K1) = DSTRAN(K1)*PROPS(1)
             DDSDDT(K1) = DDSDDT(K1)*PROPS(1)
             DRPLDE(K1) = DRPLDE(K1)*PROPS(1)
+      END DO
+      DO K1=1,NSTATV
+            STATEV(K1) = STATEV(K1)*PROPS(1)
       END DO
       DO K1=1,3
             COORDS(K1) = COORDS(K1)*PROPS(1)

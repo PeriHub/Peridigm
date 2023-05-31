@@ -49,14 +49,15 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include "Teuchos_UnitTestRepository.hpp"
 #include "user_material_interface_correspondence.h"
+#include "correspondence.h"
 
 using namespace std;
 using namespace Teuchos;
 
 TEUCHOS_UNIT_TEST(correspondence, ut_user_material_interface) {
     const double tolerance = 1.0e-15;
-    
-    std::vector<double> sigmaNP1LocVector(6), strainLocVector(6), depsLocVector(6), statevVector(6), coordsVector(3), drotVector(9), defGradNVector(9), defGradNP1Vector(9);
+    const int nstatev = 6;
+    std::vector<double> sigmaNP1LocVector(6), strainLocVector(6), depsLocVector(6), statevVector(nstatev), coordsVector(3), drotVector(9), defGradNVector(9), defGradNP1Vector(9);
     std::vector<double> sigmaNP1LocTestVector(6), strainLocTestVector(6), depsLocTestVector(6), statevTestVector(6), coordsTestVector(3), drotTestVector(9), defGradNTestVector(9), defGradNP1TestVector(9);
     double* sigmaNP1Loc = &sigmaNP1LocVector[0];
     double* sigmaNP1LocTest = &sigmaNP1LocTestVector[0];
@@ -91,7 +92,7 @@ TEUCHOS_UNIT_TEST(correspondence, ut_user_material_interface) {
     int nstresscomp = 6; 
     int NOEL;
     int NPT = -1, KSLAY = -1, KSPT = -1, JSTEP = -1, KINC = -1;
-    const int nstatev = 9;
+
     const int nprops = 1;
     const double props = 3;
     
@@ -166,6 +167,102 @@ TEUCHOS_UNIT_TEST(correspondence, ut_user_material_interface) {
             num++;
         }
     } 
+}
+
+TEUCHOS_UNIT_TEST(correspondence, userMaterialInterface) {
+    const double tolerance = 1.0e-15;
+    int nnodes = 2;
+    const int nstatev = 9;
+    std::vector<double> sigmaNLocVector(nnodes*9), sigmaNP1LocVector(nnodes*9), strainLocNVector(nnodes*9), strainNLocVector(nnodes*9), strainNP1LocVector(nnodes*9), statevVector(nnodes*nstatev), coordsVector(nnodes*3), anglesVector(nnodes*3), defGradNVector(nnodes*9), defGradNP1Vector(nnodes*9), rotNVector(nnodes*9), rotNP1Vector(nnodes*9);
+    std::vector<double> sigmaNP1LocTestVector(nnodes*9), strainLocTestVector(nnodes*9), statevTestVector(nnodes*nstatev);
+    double* sigmaNLoc = &sigmaNLocVector[0];
+    double* sigmaNP1Loc = &sigmaNP1LocVector[0];
+    double* sigmaNP1LocTest = &sigmaNP1LocTestVector[0];
+    double* strainNLoc= &strainNLocVector[0];
+    double* strainNP1Loc= &strainNP1LocVector[0];
+    double* strainLocTest = &strainLocTestVector[0];
+    double* statev = &statevVector[0];
+    double* statevTest = &statevTestVector[0];
+    double* coords = &coordsVector[0];
+    double* rotN = &rotNVector[0];
+    double* rotNP1 = &rotNP1Vector[0];
+    double* angles = &anglesVector[0];
+    double* defGradN = &defGradNVector[0];
+    double* defGradNP1 = &defGradNP1Vector[0];
+
+
+    const double time = 0.1, dtime = 0.1;
+    std::vector<double> tempVector(nnodes), dtempVector(nnodes);
+    double* temp = &tempVector[0];
+    double* dtemp = &dtempVector[0];
+    temp[0] = 200.0; temp[1] = 200.0;
+    dtemp[0] = 200.0; dtemp[1] = 200.0;
+    const std::string matname = "Elastic";
+    
+    const int nprops = 1;
+    const double propsValue = 3;
+    std::vector<double> propsVector(nprops);
+    double* props = &propsVector[0];
+    props[0] = propsValue;
+
+    int m;
+    for (m=0; m<nnodes*9; m++){
+        *(defGradN+m) = 0;
+        *(defGradNP1+m) = m+1;
+        *(sigmaNLoc+m) = m;
+        *(sigmaNP1Loc+m) = 0;
+        *(sigmaNP1LocTest+m) = m*propsValue;
+
+        *(strainNLoc+m) = 0;
+        *(strainNP1Loc+m) = 0;
+    } 
+    for (m=0; m<nnodes*nstatev; m++){
+        *(statev+m) = m;
+        *(statevTest+m) = m*propsValue;
+    }
+            
+    for (m=0; m<nnodes*3; m++){
+        *(angles+m) = m;
+    }
+  for (m=0; m<nnodes; m++){
+    CORRESPONDENCE::computeGreenLagrangeStrain(&defGradNP1[9*m],&strainLocTest[9*m]);
+  }
+  CORRESPONDENCE::userMaterialInterface(coords,
+                                        defGradN, 
+                                        defGradNP1, 
+                                        strainNLoc,
+                                        strainNP1Loc, //
+                                        sigmaNLoc,
+                                        sigmaNP1Loc,//
+                                        nnodes,
+                                        nstatev,
+                                        statev,//
+                                        nprops,
+                                        props,
+                                        angles,
+                                        time,
+                                        dtime,
+                                        temp,
+                                        dtemp,
+                                        rotN,
+                                        rotNP1,
+                                        false,
+                                        false,
+                                        matname,
+                                        true);
+   
+
+//    for (m=0; m<nnodes*9; m++){
+//        TEST_FLOATING_EQUALITY(*(sigmaNP1Loc+m),*(sigmaNP1LocTest+m),tolerance);
+//    }
+    for (m=0; m<nnodes*9; m++){
+        TEST_FLOATING_EQUALITY(*(strainNP1Loc+m),*(strainLocTest+m),tolerance);
+    } 
+    for (m=0; m<nnodes*nstatev; m++){
+        TEST_FLOATING_EQUALITY(*(statev+m),*(statevTest+m),tolerance);
+    } 
+        
+
 }
 
 int main
