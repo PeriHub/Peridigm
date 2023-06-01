@@ -206,16 +206,18 @@ TEUCHOS_UNIT_TEST(correspondence, userMaterialInterface) {
     props[0] = propsValue;
 
     int m;
+    *(sigmaNLoc) = 1;  *(sigmaNLoc+1) = 1;*(sigmaNLoc+2) = 13;
+    *(sigmaNLoc+3) = 1;*(sigmaNLoc+4) = 5;*(sigmaNLoc+5) = 2;
+    *(sigmaNLoc+6) = 13;*(sigmaNLoc+7) = 2;*(sigmaNLoc+8) = 8.5;
     for (m=0; m<nnodes*9; m++){
         *(defGradN+m) = 0;
         *(defGradNP1+m) = m+1;
-        *(sigmaNLoc+m) = m;
         *(sigmaNP1Loc+m) = 0;
-        *(sigmaNP1LocTest+m) = m*propsValue;
-
+        *(sigmaNP1LocTest+m) =  *(sigmaNLoc+m)*propsValue;
         *(strainNLoc+m) = 0;
         *(strainNP1Loc+m) = 0;
     } 
+ 
     for (m=0; m<nnodes*nstatev; m++){
         *(statev+m) = m;
         *(statevTest+m) = m*propsValue;
@@ -252,9 +254,9 @@ TEUCHOS_UNIT_TEST(correspondence, userMaterialInterface) {
                                         true);
    
 
-//    for (m=0; m<nnodes*9; m++){
-//        TEST_FLOATING_EQUALITY(*(sigmaNP1Loc+m),*(sigmaNP1LocTest+m),tolerance);
-//    }
+    for (m=0; m<nnodes*9; m++){
+        TEST_FLOATING_EQUALITY(*(sigmaNP1Loc+m),*(sigmaNP1LocTest+m),tolerance);
+   }
     for (m=0; m<nnodes*9; m++){
         TEST_FLOATING_EQUALITY(*(strainNP1Loc+m),*(strainLocTest+m),tolerance);
     } 
