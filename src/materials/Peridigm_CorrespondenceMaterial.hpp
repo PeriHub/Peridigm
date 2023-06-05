@@ -194,10 +194,10 @@ namespace PeridigmNS
     double m_surfaceCorrection;
     double m_limit;
     bool m_applyHeatTransfer;
-    bool m_planeStress;
-    bool m_planeStrain;
-    bool m_bondbased = true;
     bool m_plane;
+    bool m_planeStrain;
+    bool m_planeStress;
+    bool m_bondbased = true;
     bool nonLin = false;
     bool lin = true;
     bool avg = false;
