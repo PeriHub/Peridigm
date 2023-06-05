@@ -60,6 +60,7 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_RCP.hpp>
+#include <Peridigm_Logging.hpp>
 
 #include <sstream>
 #include <fstream>
@@ -233,7 +234,7 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
   int numFE = 0;
   if (params->isParameter("Input FEM Topology File"))
   {
-    if (myPID == 0) std::cout<<" End Input FEM Topology " <<std::endl;
+    LOG(LogLevel::INFO,"Read FEM Topology");
     getFETopology(topologyFileName, coordinates, blockIds, volumes, angles, horizon_of_element, elementTopo, nodeType, numFE);
     int numNodes = static_cast<int>(blockIds.size());
     int etz = static_cast<int>(elementTopo.size());
@@ -263,9 +264,9 @@ QUICKGRID::Data PeridigmNS::TextFileDiscretization::getDecomp(const string& text
     bondFilters.push_back(bondFilter);
  
     
-    if (myPID == 0) std::cout<<" End Input FEM Topology " <<std::endl;
+    LOG(LogLevel::INFO,"End Input FEM Topology");
     
-    }
+  }
   
   int numElements = static_cast<int>(blockIds.size());
   TestForTermination(myPID == 0 && numElements < 1, "**** Error reading discretization text file, no data found.\n");
