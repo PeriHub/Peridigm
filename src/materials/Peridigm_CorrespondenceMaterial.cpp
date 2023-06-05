@@ -60,7 +60,11 @@ using namespace std;
 
 PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::ParameterList &params)
     : Material(params),
-      m_density(0.0), m_C(0.0), m_hourglassCoefficient(0.0),
+      m_density(0.0), m_C(0.0),
+      m_plane(false),
+      m_planeStrain(false),
+      m_planeStress(false),
+      m_hourglassCoefficient(0.0),
       m_OMEGA(PeridigmNS::InfluenceFunction::self().getInfluenceFunction()),
       m_horizonFieldId(-1), m_volumeFieldId(-1),
       m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_velocitiesFieldId(-1),
@@ -76,10 +80,7 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
       m_partialStressFieldId(-1),
       m_hourglassStiffId(-1),
       m_thermalFlowStateFieldId(-1),
-      m_jacobianId(-1),
-      m_plane(false),
-      m_planeStrain(false),
-      m_planeStress(false)
+      m_jacobianId(-1)
 
       
 {

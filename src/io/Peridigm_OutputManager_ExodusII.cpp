@@ -1132,4 +1132,5 @@ void PeridigmNS::OutputManager_ExodusII::multiplyOutputFrequency(double multipli
 
 void PeridigmNS::OutputManager_ExodusII::changeOutputFrequency(int output_frequency) {
   frequency = output_frequency;
+  LOG_WITH_VALUE(PeridigmNS::LogLevel::INFO, "Changed Output Frequency to", output_frequency);
 }
