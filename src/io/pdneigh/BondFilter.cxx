@@ -241,10 +241,10 @@ bool PreDefinedTopologyFilter::idNotInTopology(const int uid, const int id) cons
   // global how
   if (mapping[id] != -1){
 
-    for (int i = 0; i < topoList[mapping[id]]; i++)
+    for (int i = 1; i < topoList[mapping[id]]+1; i++)
     {
       
-      if (uid == topoList[mapping[id] + i + 1])
+      if (uid == topoList[mapping[id] + i])
       {
         check = false;
         break;
