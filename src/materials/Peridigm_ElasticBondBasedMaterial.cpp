@@ -57,7 +57,7 @@ PeridigmNS::ElasticBondBasedMaterial::ElasticBondBasedMaterial(const Teuchos::Pa
     m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_forceDensityFieldId(-1), m_bondDamageFieldId(-1),m_partialStressFieldId(-1)
 {
   //! \todo Add meaningful asserts on material properties.
-  m_bulkModulus = params.get<double>("Bulk Modulus");
+  m_bulkModulus = calculateBulkModulus(params);
   m_density = params.get<double>("Density");
   m_horizon = params.get<double>("Horizon");
   if(params.isParameter("Young's Modulus") || params.isParameter("Poisson's Ratio") || params.isParameter("Shear Modulus")){
