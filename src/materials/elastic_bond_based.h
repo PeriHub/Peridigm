@@ -61,7 +61,8 @@ void computeInternalForceElasticBondBased
     const int* localNeighborList,
     int numOwnedPoints,
     double BULK_MODULUS,
-    double horizon
+    double horizon,
+    ScalarT* partialStressPtr
 );
 
 }

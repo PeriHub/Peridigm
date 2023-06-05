@@ -63,7 +63,8 @@ void computeInternalForceElasticBondBased
     const int* localNeighborList,
     int numOwnedPoints,
     double BULK_MODULUS,
-    double horizon
+    double horizon,
+    ScalarT* partialStressPtr
 )
 {
   const double *xOwned = xOverlap;
@@ -78,7 +79,7 @@ void computeInternalForceElasticBondBased
   std::vector<double> X_dxVector(dof)  ; double*  X_dx = &X_dxVector[0];
   std::vector<ScalarT> Y_dxVector(dof) ; ScalarT*  Y_dx = &Y_dxVector[0];
   std::vector<ScalarT> f_Vector(dof) ; ScalarT*  f = &f_Vector[0];
-  for(int p=0 ; p<numOwnedPoints ; p++, xOwned +=dof, yOwned +=dof){
+  for(int p=0 ; p<numOwnedPoints ; p++, xOwned +=dof, yOwned +=dof, partialStressPtr+=dof*dof){
 
     const double *X = xOwned;
     const ScalarT *Y = yOwned;
@@ -102,6 +103,8 @@ void computeInternalForceElasticBondBased
 
       MATERIAL_EVALUATION::getProjectedForces(t,Y_dx,dY,dof,f);
       MATERIAL_EVALUATION::setForces(f[0], f[1], f[2], volume, neighborVolume, &fInternalOverlap[3*p], &fInternalOverlap[3*neighborId]);
+      
+      MATERIAL_EVALUATION::setPartialStresses(f[0], f[1], f[2], X_dx[0], X_dx[1], X_dx[2], neighborVolume, partialStressPtr);
 
     }
   }
@@ -118,7 +121,8 @@ template void computeInternalForceElasticBondBased<double>
     const int*  localNeighborList,
     int numOwnedPoints,
     double BULK_MODULUS,
-    double horizon
+    double horizon,
+    double* partialStressPtr
  );
 
 /** Explicit template instantiation for Sacado::Fad::DFad<double>. */
@@ -132,7 +136,8 @@ template void computeInternalForceElasticBondBased<Sacado::Fad::DFad<double> >
     const int*  localNeighborList,
     int numOwnedPoints,
     double BULK_MODULUS,
-    double horizon
+    double horizon,
+    Sacado::Fad::DFad<double>* partialStressPtr
 );
 
 }
