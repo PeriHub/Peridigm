@@ -189,16 +189,16 @@ namespace PeridigmNS {
     }
   }
 
-  inline void log(LogLevel level, const string& file, int line, const float message) {
-    log(level, file, line, to_string(message));
+  inline void log(LogLevel level, const string& file, int line, const string& message,const float value) {
+    log(level, file, line, message + " " + to_string(value));
   }
 
-  inline void log(LogLevel level, const string& file, int line,  const double message) {
-    log(level, file, line, to_string(message));
+  inline void log(LogLevel level, const string& file, int line, const string& message, const double value) {
+    log(level, file, line, message + " " + to_string(value));
   }
 
-  inline void log(LogLevel level, const string& file, int line,  const int message) {
-    log(level, file, line, to_string(message));
+  inline void log(LogLevel level, const string& file, int line, const string& message, const int value) {
+    log(level, file, line, message + " " + to_string(value));
   }
 
   template <typename ScalarT>
@@ -209,11 +209,12 @@ namespace PeridigmNS {
   }
 
   template <typename ScalarT>
-  inline void log(LogLevel level, const string& file, int line,  const ScalarT message) {
-    log(level, file, line, sacado_to_string(message));
+  inline void log(LogLevel level, const string& file, int line, const string& message, const ScalarT value) {
+    log(level, file, line, message + " " + sacado_to_string(value));
   }
 
   #define LOG(level, message) log(level, __FILE__, __LINE__, message)
+  #define LOG_WITH_VALUE(level, message, value) log(level, __FILE__, __LINE__, message, value)
 
   inline void testForTermination(bool test, const string& file, int line, const string& message) {
 
