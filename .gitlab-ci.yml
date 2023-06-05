@@ -5,7 +5,6 @@ stages:
 build_job:
   only:
     - master
-  #   - tags
   extends: [.build_before_script_template]
   allow_failure: 
     exit_codes:
@@ -19,14 +18,14 @@ build_job:
     - line=$(head -n 1 Testing/TAG)
     - if [ -f Testing/Temporary/LastTestsFailed_$line.log ]; then  exit 1; else docker push perihub/peridigm; fi
   artifacts:
+    when: always
     paths:
-      - Testing
-    expire_in: 1 day
+      - Testing/
+    expire_in: 1 week
 
 deploy_job:
   only:
     - master
-  #   - tags
   stage: deploy
   script:
     # - cd $CI_PROJECT_DIR/
