@@ -54,7 +54,7 @@
 PeridigmNS::ElasticBondBasedMaterial::ElasticBondBasedMaterial(const Teuchos::ParameterList& params)
   : Material(params),
     m_bulkModulus(0.0), m_density(0.0), m_horizon(0.0), m_volumeFieldId(-1), m_damageFieldId(-1),
-    m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_forceDensityFieldId(-1), m_bondDamageFieldId(-1)
+    m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_forceDensityFieldId(-1), m_bondDamageFieldId(-1),m_partialStressFieldId(-1)
 {
   //! \todo Add meaningful asserts on material properties.
   m_bulkModulus = params.get<double>("Bulk Modulus");
@@ -71,13 +71,14 @@ PeridigmNS::ElasticBondBasedMaterial::ElasticBondBasedMaterial(const Teuchos::Pa
   m_coordinatesFieldId             = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR,      PeridigmField::TWO_STEP, "Coordinates");
   m_forceDensityFieldId            = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::VECTOR,      PeridigmField::TWO_STEP, "Force_Density");
   m_bondDamageFieldId              = fieldManager.getFieldId(PeridigmField::BOND,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Bond_Damage");
-
+  m_partialStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Partial_Stress");
   m_fieldIds.push_back(m_volumeFieldId);
   m_fieldIds.push_back(m_damageFieldId);
   m_fieldIds.push_back(m_modelCoordinatesFieldId);
   m_fieldIds.push_back(m_coordinatesFieldId);
   m_fieldIds.push_back(m_forceDensityFieldId);
   m_fieldIds.push_back(m_bondDamageFieldId);
+  m_fieldIds.push_back(m_partialStressFieldId);
 }
 
 PeridigmNS::ElasticBondBasedMaterial::~ElasticBondBasedMaterial()
@@ -112,6 +113,7 @@ PeridigmNS::ElasticBondBasedMaterial::computeForce(const double dt,
   dataManager.getData(m_volumeFieldId, PeridigmField::STEP_NONE)->ExtractView(&cellVolume);
   dataManager.getData(m_bondDamageFieldId, PeridigmField::STEP_NP1)->ExtractView(&bondDamage);
   dataManager.getData(m_forceDensityFieldId, PeridigmField::STEP_NP1)->ExtractView(&force);
-
-  MATERIAL_EVALUATION::computeInternalForceElasticBondBased(x,y,cellVolume,bondDamage,force,neighborhoodList,numOwnedPoints,m_bulkModulus,m_horizon);
+  double *partialStress;
+  dataManager.getData(m_partialStressFieldId, PeridigmField::STEP_NP1)->ExtractView(&partialStress);
+  MATERIAL_EVALUATION::computeInternalForceElasticBondBased(x,y,cellVolume,bondDamage,force,neighborhoodList,numOwnedPoints,m_bulkModulus,m_horizon,partialStress);
 }
