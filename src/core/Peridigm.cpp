@@ -1455,6 +1455,12 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
   double dt2 = dt/2.0;
   int nsteps = static_cast<int>( floor((timeFinal-timeInitial)/dt) );
 
+  if(solverParams->isParameter("Number of Output Steps")){
+    int output_steps = solverParams->get<int>("Number of Output Steps");
+    int output_frequency = (int) nsteps/output_steps;
+    outputManager->changeOutputFrequency(output_frequency);
+  }
+
   double numericalDamping = 0.0;
  
   int stableStepDiff  = verletParams->get("Stable Step Difference", 4);
