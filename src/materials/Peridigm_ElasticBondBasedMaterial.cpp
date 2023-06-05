@@ -61,7 +61,7 @@ PeridigmNS::ElasticBondBasedMaterial::ElasticBondBasedMaterial(const Teuchos::Pa
   m_density = params.get<double>("Density");
   m_horizon = params.get<double>("Horizon");
   if(params.isParameter("Young's Modulus") || params.isParameter("Poisson's Ratio") || params.isParameter("Shear Modulus")){
-    TestForTermination(true, "**** Error:  The Elastic bond based material model supports only one elastic constant, the bulk modulus.");
+    LOG(LogLevel::WARNING,"The Elastic bond based material model supports only one elastic constant, the bulk modulus. It is calculated from the other elasticity constants if not defined.");
   }
 
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
