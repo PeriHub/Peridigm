@@ -108,6 +108,7 @@ PeridigmNS::OutputManager_ExodusII::OutputManager_ExodusII(const Teuchos::RCP<Te
     TEUCHOS_TEST_FOR_EXCEPTION(1,  std::invalid_argument, "PeridigmNS::OutputManager_ExodusII:::OutputManager_ExodusII() -- MyPID not present.");
   }
 
+  output_steps = params->get<int>("Number of Output Steps",-1);
   // Default to no output
   frequency = params->get<int>("Output Frequency",-1); 
 
@@ -177,6 +178,7 @@ Teuchos::ParameterList PeridigmNS::OutputManager_ExodusII::getValidParameterList
   setIntParameter("Final Output Step",std::numeric_limits<int>::max()-1,"Integer number of last output dump.",&validParameterList,intParam);
   Teuchos::setStringToIntegralParameter<int>("Output Format","BINARY","ASCII or BINARY",Teuchos::tuple<string>("ASCII","BINARY"),&validParameterList);
   setIntParameter("Output Frequency",-1,"Frequency of Output",&validParameterList,intParam);
+  setIntParameter("Number of Output Steps",-1,"Number of Output Steps",&validParameterList,intParam);
   validParameterList.set("Parallel Write",true);
   validParameterList.set("Write After Damage",false);
 
@@ -1133,4 +1135,13 @@ void PeridigmNS::OutputManager_ExodusII::multiplyOutputFrequency(double multipli
 void PeridigmNS::OutputManager_ExodusII::changeOutputFrequency(int output_frequency) {
   frequency = output_frequency;
   LOG_WITH_VALUE(PeridigmNS::LogLevel::INFO, "Changed Output Frequency to", output_frequency);
+}
+
+void PeridigmNS::OutputManager_ExodusII::changeOutputFrequencyBasedOnTimeSteps(int nsteps) {
+  
+  if(output_steps!=-1){
+    int output_frequency = (int) nsteps/output_steps;
+    frequency = output_frequency;
+    LOG_WITH_VALUE(PeridigmNS::LogLevel::INFO, "Changed Output Frequency to", output_frequency);
+  }
 }
