@@ -482,14 +482,15 @@ void PeridigmNS::TextFileDiscretization::getFETopology(const string& fileName,
           volAvg = 0;
           for (unsigned int n = 1; n < topo.size(); n++)
           {
-            elementTopo.push_back(static_cast<int>(topo[n]));
-            coorAvg[0] += coordinates[3 * topo[n]];
-            coorAvg[1] += coordinates[3 * topo[n] + 1];
-            coorAvg[2] += coordinates[3 * topo[n] + 2];
-            angAvg[0] += angles[3 * topo[n]];
-            angAvg[1] += angles[3 * topo[n] + 1];
-            angAvg[2] += angles[3 * topo[n] + 2];
-            volAvg += volumes[topo[n]];
+            elementTopo.push_back(static_cast<int>(topo[n] - 1));
+            int num = topo[n] - 1;
+            coorAvg[0] += coordinates[3 * num];
+            coorAvg[1] += coordinates[3 * num + 1];
+            coorAvg[2] += coordinates[3 * num + 2];
+            angAvg[0] += angles[3 * num];
+            angAvg[1] += angles[3 * num + 1];
+            angAvg[2] += angles[3 * num + 2];
+            volAvg += volumes[num];
           }
 
           for (unsigned int i = 0; i < 3; i++)
@@ -521,9 +522,9 @@ double PeridigmNS::TextFileDiscretization::get_max_dist(const vector<double> &co
   double horizon = 0.0;
   double dist = 0.0;
   for (int n = 1; n < topo[0] + 1; n++)
-  {
+  { int num = topo[n] - 1;
     dist = abs(distance(coorAvg[0], coorAvg[1], coorAvg[2],
-                        coordinates[3 * topo[n]], coordinates[3 * topo[n] + 1], coordinates[3 * topo[n] + 2]));
+                        coordinates[3 * num], coordinates[3 * num + 1], coordinates[3 * num + 2]));
     if (horizon < dist)
       // adding on percent to avoid round off errors
       // because the neighborhoodlist is later adapted it does not matter if
