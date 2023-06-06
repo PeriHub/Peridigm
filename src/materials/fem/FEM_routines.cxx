@@ -468,7 +468,6 @@ void setGlobalForces
     int topoPtr,
     const int* topology,
     const double* elNodalForces,
-    const double* volume, //needed for PD solver
     double* force
 )
 {
@@ -479,7 +478,7 @@ void setGlobalForces
     for(int nID=0 ; nID<nnode ; ++nID){
       globalId = topology[topoPtr + nID];
       for (int i=0 ; i<3 ; ++i){  
-          force[3*globalId+i]      += elNodalForces[3*nID+i]  * volume[globalId];
+          force[3*globalId+i] += elNodalForces[3*nID+i] ;
       }
      }
 
@@ -492,7 +491,6 @@ void setElementCoordinates
     const int elementID,
     int topoPtr,
     const int* topology,
-    const double* nodalCoor,
     double* elCoor
 )
 {
@@ -504,7 +502,7 @@ void setElementCoordinates
       globalId = topology[topoPtr + nID];
       
       for (int i=0 ; i<3 ; ++i){    
-          elCoor[3 * elementID + i] += nodalCoor[3 * globalId + i] / nnode;
+          elCoor[3 * elementID + i] += elCoor[3 * globalId + i] / nnode;
       }
      }
 

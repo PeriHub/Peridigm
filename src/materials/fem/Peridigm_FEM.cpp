@@ -376,8 +376,8 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         FEM::setCouplingNodes();
 
       */
-      FEM::setGlobalForces(numElemNodes, elementID, topoPtr, topology, elNodalForces, volume, force); 
-      FEM::setElementCoordinates(numElemNodes, elementID, topoPtr, topology, elNodalCoor, deformedCoor); 
+      FEM::setGlobalForces(numElemNodes, elementID, topoPtr, topology, elNodalForces, force); 
+      FEM::setElementCoordinates(numElemNodes, elementID, topoPtr, topology, deformedCoor); 
        
 
       topoPtr+=numElemNodes;
