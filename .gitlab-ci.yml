@@ -5,7 +5,6 @@ stages:
 build_job:
   only:
     - master
-  #   - tags
   extends: [.build_before_script_template]
   allow_failure: 
     exit_codes:
@@ -16,23 +15,24 @@ build_job:
     - docker run perihub/peridigm /opt/cmake/bin/ctest -T Test --test-dir /Peridigm/build || true
     - CONTAINERNAME=$(docker ps -a --format "{{.Names}}")
     - docker cp $CONTAINERNAME:/Peridigm/build/Testing Testing
-    - line=$(head -n 1 Testing/TAG)
-    - if [ -f Testing/Temporary/LastTestsFailed_$line.log ]; then  exit 1; else docker push perihub/peridigm; fi
+    - docker cp $CONTAINERNAME:/Peridigm/build testBuild
+    - line=$(head -n 1 testBuild/Testing/TAG)
+    - if [ -f testBuild/Testing/Temporary/LastTestsFailed_$line.log ]; then  exit 1; else docker push perihub/peridigm; fi
   artifacts:
+    when: always
     paths:
-      - Testing
+      - testBuild/
     expire_in: 1 day
 
 deploy_job:
   only:
     - master
-  #   - tags
   stage: deploy
   script:
     # - cd $CI_PROJECT_DIR/
     - apk add libxslt
     - ls
-    - xsltproc $CI_PROJECT_DIR/scripts/CTest2JUnit.xsl Testing/`head -n 1 < Testing/TAG`/Test.xml > JUnitTestResults.xml
+    - xsltproc $CI_PROJECT_DIR/scripts/CTest2JUnit.xsl testBuild/Testing/`head -n 1 < testBuild/Testing/TAG`/Test.xml > JUnitTestResults.xml
   artifacts:
     when: always
     reports:

@@ -81,6 +81,9 @@ namespace PeridigmNS {
     //! Change output frequency (for the sake of Adaptive time-stepping)
     virtual void changeOutputFrequency(int) = 0;
 
+    //! Change output frequency, for a fixed number of output steps
+    virtual void changeOutputFrequencyBasedOnTimeSteps(int) = 0;
+
   protected:
 
     //! Number of processors and processor ID
@@ -93,6 +96,8 @@ namespace PeridigmNS {
     int count;
     // Output frequency
     int frequency;
+    // Number of Output Steps
+    int output_steps;
     // ASCII or BINARY?
     std::string outputFormat;
     // Write full neighborlist for each particle?

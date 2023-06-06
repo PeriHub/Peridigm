@@ -94,6 +94,14 @@ namespace PeridigmNS {
         (*it)->changeOutputFrequency(output_frequency);
     }
 
+    //! Change output frequency of all output managers in container
+    //  for a fixed number of output steps
+    void changeOutputFrequencyBasedOnTimeSteps(int nsteps){
+      std::vector< Teuchos::RCP< PeridigmNS::OutputManager > >::iterator it;
+      for( it=outputManagers.begin() ; it < outputManagers.end(); it++ )
+        (*it)->changeOutputFrequencyBasedOnTimeSteps(nsteps);
+    }
+
   protected:
 
     //! Container for RCPs to individual output managers

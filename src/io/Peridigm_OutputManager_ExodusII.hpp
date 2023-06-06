@@ -80,6 +80,9 @@ namespace PeridigmNS {
     //! Change output frequency, for the sake of switching from Quasi-static to explicit solver
     virtual void changeOutputFrequency(int);
 
+    //! Change output frequency, for a fixed number of output steps
+    virtual void changeOutputFrequencyBasedOnTimeSteps(int);
+
   private:
     
     //! Copy constructor.
