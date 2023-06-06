@@ -57,6 +57,7 @@
 #include <cmath> 
 #include "FEM_routines.h"
 #include <Teuchos_Assert.hpp>
+#include <Peridigm_Logging.hpp>
 //#include <Epetra_SerialComm.h>
 
 
