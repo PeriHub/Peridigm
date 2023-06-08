@@ -161,8 +161,7 @@ PeridigmNS::FEMMaterial::initialize(const double dt,
                             const int* neighborhoodList,
                             PeridigmNS::DataManager& dataManager)
 {
-  std::cout<<"init FEM"<<std::endl;
-
+  LOG(LogLevel::INFO,"init FEM");
  // FEM::createLumbedMassesSomeHow()
   std::vector<double> NxiVector(order[0]+1), NetaVector(order[1]+1), NpsiVector(order[2]+1);
   double* Nxi  = &NxiVector[0];
@@ -300,7 +299,7 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
     double detJ = 0.0;
     int globalId, numElemNodes;
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //FEM::getDisplacements(nnode,modelCoordinates, deformedCoor,dispNodal);
+    //FEM::getDisplacements(nnode,undeformedCoor, deformedCoor,dispNodal);
     int topoPtr = 1;
     int elementID = 0;
 //std::cout<< topologyVector[0]<<" numEL"<<std::endl;
@@ -377,8 +376,8 @@ PeridigmNS::FEMMaterial::computeForce(const double dt,
         FEM::setCouplingNodes();
 
       */
-      FEM::setGlobalForces(numElemNodes, elementID, topoPtr, topology, elNodalForces, volume, force); 
-      FEM::setElementCoordinates(numElemNodes, elementID, topoPtr, topology, elNodalCoor, deformedCoor); 
+      FEM::setGlobalForces(numElemNodes, elementID, topoPtr, topology, elNodalForces, force); 
+      FEM::setElementCoordinates(numElemNodes, elementID, topoPtr, topology, deformedCoor); 
        
 
       topoPtr+=numElemNodes;

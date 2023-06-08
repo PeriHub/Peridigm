@@ -86,7 +86,6 @@ void setElementCoordinates
     const int elementID,
     int topoPtr,
     const int* topology,
-    const double* nodalCoor,
     double* elCoor
 );
 void derivativeShapeFunctionsLagrangeRecursive
@@ -246,7 +245,6 @@ const int elementID,
 int topoPtr,
 const int* topology,
 const double* elNodalForces,
-const double* volume,
 double* force
 );
 
