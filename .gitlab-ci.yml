@@ -2,6 +2,13 @@ stages:
   - build
   - deploy
 
+variables:
+  DOCKER_DRIVER: overlay2
+
+cache:
+  paths:
+    - ~/.docker
+
 build_job:
   only:
     - master
@@ -11,7 +18,8 @@ build_job:
       - 1
   stage: build
   script:
-    - docker build -t perihub/peridigm .
+    - docker pull perihub/trilinos:latest || true
+    - docker build --cache-from perihub/trilinos:latest -t perihub/peridigm .
     - docker run perihub/peridigm /opt/cmake/bin/ctest -T Test --test-dir /Peridigm/build || true
     - CONTAINERNAME=$(docker ps -a --format "{{.Names}}")
     - docker cp $CONTAINERNAME:/Peridigm/build/Testing Testing
@@ -23,7 +31,11 @@ build_job:
     paths:
       - testBuild/
     expire_in: 1 day
-
+  cache:
+    key: trilinos-image
+    paths:
+      - ~/.docker
+      
 deploy_job:
   only:
     - master
