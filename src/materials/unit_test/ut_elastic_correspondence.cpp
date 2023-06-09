@@ -50,6 +50,7 @@
 #include "Teuchos_UnitTestRepository.hpp"
 #include "elastic_correspondence.h"
 #include "correspondence.h"
+#include "matrices.h"
 
 using namespace std;
 using namespace Teuchos;
@@ -145,7 +146,7 @@ TEUCHOS_UNIT_TEST(correspondence, ElasticStressCrossTest) {
     double* stressAniso = &stressAnisoVector[0];
     double dt = 2.34e-7;
     for (int n=0; n<9; n++) defGrad[n] = 0.1*n*n - 3 / (1+n) + n * 2 + 1;
-
+    MATRICES::setToZero(stressRefN,9);
     CORRESPONDENCE::computeGreenLagrangeStrain(defGrad,strain);
 
     for (int n=0; n<9; n++) unrotatedRateOfDeformation[n] = strain[n]/dt;
