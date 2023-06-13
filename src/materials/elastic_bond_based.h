@@ -62,6 +62,7 @@ void computeInternalForceElasticBondBased
     const double BULK_MODULUS,
     const double horizon,
     const bool applyThermalStrain,
+    const double alpha,
     const double* temperature,
     ScalarT* fInternalOverlapPtr,
     ScalarT* partialStressPtr

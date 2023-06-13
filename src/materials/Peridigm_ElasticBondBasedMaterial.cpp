@@ -194,5 +194,5 @@ PeridigmNS::ElasticBondBasedMaterial::computeForce(const double dt,
                                   thermalFlow);
     }
   }
-  MATERIAL_EVALUATION::computeInternalForceElasticBondBased(x,y,cellVolume,bondDamage,neighborhoodList,numOwnedPoints,m_bulkModulus,m_horizon,m_applyThermalStrains,temperature,force,partialStress);
+  MATERIAL_EVALUATION::computeInternalForceElasticBondBased(x,y,cellVolume,bondDamage,neighborhoodList,numOwnedPoints,m_bulkModulus,m_horizon,m_applyThermalStrains,alpha[0][0],temperature,force,partialStress);
 }
