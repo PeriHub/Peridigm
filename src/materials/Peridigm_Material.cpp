@@ -473,6 +473,57 @@ bool PeridigmNS::Material::getThermalExpansionCoefficient(const Teuchos::Paramet
   return m_applyThermalStrains;
 }
 
+std::vector<double> PeridigmNS::Material::getThermalFlowAndConductivityCoefficients(const Teuchos::ParameterList & params, double& m_C, double& m_lambdaBed, double& m_Tbed, bool m_applyThermalFlow, bool m_applyThermalPrintBedFlow) const
+{
+  std::vector<double> m_lambda;
+  m_applyThermalFlow = false;
+  m_applyThermalPrintBedFlow = false;
+  m_C = 0.0;
+  m_lambdaBed = 0.0;
+  if (params.isParameter("Apply Thermal Flow")){
+    bool m_applyThermalFlow = params.get<bool>("Apply Thermal Flow");
+    if (m_applyThermalFlow){
+      m_C = params.get<double>( "Specific Heat Capacity");
+      m_lambda.push_back(params.get<double>("Thermal Conductivity"));
+      m_lambda.push_back(0.0);
+      m_lambda.push_back(0.0);
+      m_lambda.push_back(0.0);
+      if (params.isParameter("Thermal Conductivity 22"))m_lambda.push_back(params.get<double>("Thermal Conductivity 22"));
+      else m_lambda.push_back(params.get<double>("Thermal Conductivity")) ;
+      m_lambda.push_back(0.0);
+      m_lambda.push_back(0.0);
+      m_lambda.push_back(0.0);
+      if (params.isParameter("Thermal Conductivity 33"))m_lambda.push_back(params.get<double>("Thermal Conductivity 33"));
+      else m_lambda.push_back(params.get<double>("Thermal Conductivity")) ;
+      if (params.isParameter("Thermal Conductivity Print Bed") && params.isParameter("Print Bed Temperature")){
+        m_applyThermalPrintBedFlow = true;
+        m_lambdaBed = params.get<double>("Thermal Conductivity Print Bed");
+        m_Tbed = params.get<double>("Print Bed Temperature");
+      }
+    }
+  }
+  return m_lambda;
+}
+
+bool PeridigmNS::Material::getHeatTransferCoefficients(const Teuchos::ParameterList & params, double& m_kappa, double& m_Tenv, double& m_factor, double& m_surfaceCorrection, double& m_limit) const
+{
+  bool m_applyHeatTransfer = false;
+  if (params.isParameter("Apply Heat Transfer")){
+    m_applyHeatTransfer = params.get<bool>("Apply Heat Transfer");
+    if (m_applyHeatTransfer){
+      m_kappa = params.get<double>("Heat Transfer Coefficient");
+      m_Tenv = params.get<double>("Environmental Temperature");
+      m_factor = 1.0;
+      m_surfaceCorrection = 1.0;
+      m_limit = 0.8;
+      if (params.isParameter("Volume Factor")) m_factor= params.get<double>("Volume Factor");
+      if (params.isParameter("Surface Correction")) m_surfaceCorrection= params.get<double>("Surface Correction");
+      if (params.isParameter("Volume Limit")) m_limit= params.get<double>("Volume Limit");
+    }
+  }
+  return m_applyHeatTransfer;
+}
+
 void PeridigmNS::Material::getStiffnessmatrix(const Teuchos::ParameterList& params, double C[][6], bool pstrain, bool pstress) const
 {
   double ctemp[6][6];

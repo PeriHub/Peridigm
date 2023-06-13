@@ -171,51 +171,16 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
     }
   }
 
-  m_applyThermalFlow = false;
-  m_applyThermalPrintBedFlow = false;
   if (params.isParameter("Apply Thermal Flow")){
-    m_applyThermalFlow = params.get<bool>("Apply Thermal Flow");
-    if (m_applyThermalFlow){
-      m_C = params.get<double>( "Specific Heat Capacity");
-      m_lambda.push_back(params.get<double>("Thermal Conductivity"));
-      m_lambda.push_back(0.0);
-      m_lambda.push_back(0.0);
-      m_lambda.push_back(0.0);
-      if (params.isParameter("Thermal Conductivity 22"))m_lambda.push_back(params.get<double>("Thermal Conductivity 22"));
-      else m_lambda.push_back(params.get<double>("Thermal Conductivity")) ;
-      m_lambda.push_back(0.0);
-      m_lambda.push_back(0.0);
-      m_lambda.push_back(0.0);
-      if (params.isParameter("Thermal Conductivity 33"))m_lambda.push_back(params.get<double>("Thermal Conductivity 33"));
-      else m_lambda.push_back(params.get<double>("Thermal Conductivity")) ;
-      
+    m_lambda = getThermalFlowAndConductivityCoefficients(params, m_C, m_lambdaBed, m_Tbed, m_applyThermalFlow, m_applyThermalPrintBedFlow);
+    m_applyHeatTransfer = getHeatTransferCoefficients(params, m_kappa, m_Tenv, m_factor, m_surfaceCorrection, m_limit);
+    if (m_applyHeatTransfer){     
       materialProperties["Specific Heat Capacity"] = m_C;
       materialProperties["Thermal Conductivity 11"] = m_lambda[0];
       materialProperties["Thermal Conductivity 22"] = m_lambda[4];
       materialProperties["Thermal Conductivity 33"] = m_lambda[8];
-
-      if (params.isParameter("Thermal Conductivity Print Bed") && params.isParameter("Print Bed Temperature")){
-        m_applyThermalPrintBedFlow = true;
-        m_lambdaBed = params.get<double>("Thermal Conductivity Print Bed");
-        m_Tbed = params.get<double>("Print Bed Temperature");
-      }
     }
-
-    m_applyHeatTransfer = false;
-    if (params.isParameter("Apply Heat Transfer")){
-      m_applyHeatTransfer = params.get<bool>("Apply Heat Transfer");
-      if (m_applyHeatTransfer){
-        m_kappa = params.get<double>("Heat Transfer Coefficient");
-        m_Tenv = params.get<double>("Environmental Temperature");
-        m_factor = 1.0;
-        m_surfaceCorrection = 1.0;
-        m_limit = 0.8;
-        if (params.isParameter("Volume Factor")) m_factor= params.get<double>("Volume Factor");
-        if (params.isParameter("Surface Correction")) m_surfaceCorrection= params.get<double>("Surface Correction");
-        if (params.isParameter("Volume Limit")) m_limit= params.get<double>("Volume Limit");
-        
-      }
-    }
+    
   }
   // TestForTermination(params.isParameter("Apply Automatic Differentiation Jacobian"), "**** Error:  Automatic Differentiation is not supported for the ElasticCorrespondence material model.\n");
   TestForTermination(params.isParameter("Apply Shear Correction Factor"), "**** Error:  Shear Correction Factor is not supported for the ElasticCorrespondence material model.\n");
