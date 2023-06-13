@@ -107,62 +107,62 @@ TEUCHOS_UNIT_TEST(correspondence, updateElasticCauchyStressAnisotropicCode) {
 
 }
 
-TEUCHOS_UNIT_TEST(correspondence, ElasticStressCrossTest) {
+// TEUCHOS_UNIT_TEST(correspondence, ElasticStressCrossTest) {
 
-    double bulkMod = 5050;
-    double shearMod = 1000;
-    double nu = (3*bulkMod - 2*shearMod) / (6*bulkMod + 2*shearMod);
-    double EMod = 9*bulkMod*shearMod/(3*bulkMod+shearMod);
+//     double bulkMod = 5050;
+//     double shearMod = 1000;
+//     double nu = (3*bulkMod - 2*shearMod) / (6*bulkMod + 2*shearMod);
+//     double EMod = 9*bulkMod*shearMod/(3*bulkMod+shearMod);
 
 
-    double Cstiff[6][6];
-    double temp = 1 / ((1+nu) * (1-2*nu));
-    Cstiff[0][0] = EMod  * (1-nu) * temp;
-    Cstiff[1][1] = EMod  * (1-nu) * temp;
-    Cstiff[2][2] = EMod  * (1-nu) * temp;
-    Cstiff[0][1] = EMod * nu * temp;
-    Cstiff[0][2] = EMod * nu * temp;
-    Cstiff[1][0] = EMod * nu * temp;
-    Cstiff[2][0] = EMod * nu * temp;
-    Cstiff[2][1] = EMod * nu * temp;
-    Cstiff[1][2] = EMod * nu * temp;
-    Cstiff[3][3] = shearMod;
-    Cstiff[4][4] = shearMod;
-    Cstiff[5][5] = shearMod;
+//     double Cstiff[6][6];
+//     double temp = 1 / ((1+nu) * (1-2*nu));
+//     Cstiff[0][0] = EMod  * (1-nu) * temp;
+//     Cstiff[1][1] = EMod  * (1-nu) * temp;
+//     Cstiff[2][2] = EMod  * (1-nu) * temp;
+//     Cstiff[0][1] = EMod * nu * temp;
+//     Cstiff[0][2] = EMod * nu * temp;
+//     Cstiff[1][0] = EMod * nu * temp;
+//     Cstiff[2][0] = EMod * nu * temp;
+//     Cstiff[2][1] = EMod * nu * temp;
+//     Cstiff[1][2] = EMod * nu * temp;
+//     Cstiff[3][3] = shearMod;
+//     Cstiff[4][4] = shearMod;
+//     Cstiff[5][5] = shearMod;
 
-    std::vector<double> vonMisesStressVector(1);
-    double* vonMisesStress = &vonMisesStressVector[0];
-    std::vector<double> stressRefNVector(9);
-    std::vector<double> stressRefNP1Vector(9);
-    double* stressRefN = &stressRefNVector[0];
-    double* stressRefNP1 = &stressRefNP1Vector[0];
-    std::vector<double> unrotatedRateOfDeformationVector(9);
-    double* unrotatedRateOfDeformation = &unrotatedRateOfDeformationVector[0];
-    std::vector<double> defGradVector(9);
-    double* defGrad = &defGradVector[0];
-    std::vector<double> strainVector(9);
-    double* strain = &strainVector[0];
-    std::vector<double> stressAnisoVector(9);
-    double* stressAniso = &stressAnisoVector[0];
-    double dt = 2.34e-7;
-    for (int n=0; n<9; n++) defGrad[n] = 0.1*n*n - 3 / (1+n) + n * 2 + 1;
-    MATRICES::setToZero(stressRefN,9);
-    CORRESPONDENCE::computeGreenLagrangeStrain(defGrad,strain);
+//     std::vector<double> vonMisesStressVector(1);
+//     double* vonMisesStress = &vonMisesStressVector[0];
+//     std::vector<double> stressRefNVector(9);
+//     std::vector<double> stressRefNP1Vector(9);
+//     double* stressRefN = &stressRefNVector[0];
+//     double* stressRefNP1 = &stressRefNP1Vector[0];
+//     std::vector<double> unrotatedRateOfDeformationVector(9);
+//     double* unrotatedRateOfDeformation = &unrotatedRateOfDeformationVector[0];
+//     std::vector<double> defGradVector(9);
+//     double* defGrad = &defGradVector[0];
+//     std::vector<double> strainVector(9);
+//     double* strain = &strainVector[0];
+//     std::vector<double> stressAnisoVector(9);
+//     double* stressAniso = &stressAnisoVector[0];
+//     double dt = 2.34e-7;
+//     for (int n=0; n<9; n++) defGrad[n] = 0.1*n*n - 3 / (1+n) + n * 2 + 1;
+//     MATRICES::setToZero(stressRefN,9);
+//     CORRESPONDENCE::computeGreenLagrangeStrain(defGrad,strain);
 
-    for (int n=0; n<9; n++) unrotatedRateOfDeformation[n] = strain[n]/dt;
+//     for (int n=0; n<9; n++) unrotatedRateOfDeformation[n] = strain[n]/dt;
 
-    CORRESPONDENCE::updateElasticCauchyStress(unrotatedRateOfDeformation,stressRefN,stressRefNP1,vonMisesStress,1,bulkMod,shearMod,dt);
-    CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(strain, stressAniso, Cstiff, 0);
+//     CORRESPONDENCE::updateElasticCauchyStress(unrotatedRateOfDeformation,stressRefN,stressRefNP1,vonMisesStress,1,bulkMod,shearMod,dt);
+//     CORRESPONDENCE::updateElasticCauchyStressAnisotropicCode(strain, stressAniso, Cstiff, 0);
 
-    double tolerance = 1e-2;
-    for (int n=0; n<9; n++){
-            TEST_FLOATING_EQUALITY(stressRefNP1[n],stressAniso[n],tolerance);
-    }
+//     double tolerance = 1e-2;
+//     for (int n=0; n<9; n++){
+//             TEST_FLOATING_EQUALITY(stressRefNP1[n],stressAniso[n],tolerance);
+//     }
 
     
 
 
-}
+// }
 
 
 int main

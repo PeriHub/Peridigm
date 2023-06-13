@@ -18,8 +18,8 @@ build_job:
       - 1
   stage: build
   script:
-    - docker pull perihub/trilinos:latest || true
-    - docker build --cache-from perihub/trilinos:latest -t perihub/peridigm .
+    - docker pull perihub/peridigm:latest || true
+    - docker build --cache-from perihub/peridigm:latest -t perihub/peridigm .
     - docker run perihub/peridigm /opt/cmake/bin/ctest -T Test --test-dir /Peridigm/build || true
     - CONTAINERNAME=$(docker ps -a --format "{{.Names}}")
     - docker cp $CONTAINERNAME:/Peridigm/build/Testing Testing
