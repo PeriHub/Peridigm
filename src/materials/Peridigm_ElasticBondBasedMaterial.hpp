@@ -97,7 +97,16 @@ namespace PeridigmNS {
                  const int* neighborhoodList,
                  PeridigmNS::DataManager& dataManager,
                  const double currentTime = 0.0) const;
-
+  virtual double lookupMaterialProperty(const std::string keyname) const 
+    {
+      std::map<std::string, double>::const_iterator search = materialProperties.find(keyname);
+      if(search != materialProperties.end())
+        return search->second;
+      else
+        TestForTermination(true, "**** Error: requested material property " + keyname + " is not in Multiphysics Elastic Material");
+      // This is a fallthrough case to make the compiler happy.
+      return 0.0;
+    }
   protected:
 
     //! Computes the distance between nodes (a1, a2, a3) and (b1, b2, b3).
@@ -108,10 +117,24 @@ namespace PeridigmNS {
       }
 
     // material parameters
+    std::map<std::string, double> materialProperties;
     double m_bulkModulus;
     double m_density;
     double m_horizon;
-
+    std::vector<double> m_lambda;
+    double m_lambdaBed;
+    double m_C;
+    double m_kappa;
+    double m_Tenv;
+    double m_Tbed;
+    double m_factor;
+    double m_surfaceCorrection;
+    double m_limit;
+    bool m_applyHeatTransfer;
+    bool m_applyThermalFlow;
+    bool m_applyThermalPrintBedFlow;
+    bool m_applyThermalStrains;
+    double alpha[3][3];
     // field spec ids for all relevant data
     std::vector<int> m_fieldIds;
     int m_volumeFieldId;
@@ -121,6 +144,11 @@ namespace PeridigmNS {
     int m_forceDensityFieldId;
     int m_bondDamageFieldId;
     int m_partialStressFieldId;
+    int m_temperatureFieldId;
+    int m_thermalFlowStateFieldId;
+    int m_detachedNodesFieldId;
+    int m_specificVolumeFieldId;
+    int m_horizonFieldId;
   };
 }
 

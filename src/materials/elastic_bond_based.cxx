@@ -49,7 +49,7 @@
 #include <Sacado.hpp>
 #include "elastic_bond_based.h"
 #include "material_utilities.h"
-
+ #include "temperature_diffusion.h"
 namespace MATERIAL_EVALUATION {
 
 template<typename ScalarT>
@@ -59,11 +59,13 @@ void computeInternalForceElasticBondBased
     const ScalarT* yOverlap,
     const double* volumeOverlap,
     const double* bondDamage,
-    ScalarT* fInternalOverlap,
     const int* localNeighborList,
-    int numOwnedPoints,
-    double BULK_MODULUS,
-    double horizon,
+    const int numOwnedPoints,
+    const double BULK_MODULUS,
+    const double horizon,
+    const bool applyThermalStrain,
+    const double* temperature,
+    ScalarT* fInternalOverlap,
     ScalarT* partialStressPtr
 )
 {
@@ -113,31 +115,117 @@ void computeInternalForceElasticBondBased
 /** Explicit template instantiation for double. */
 template void computeInternalForceElasticBondBased<double>
 (
-    const double* xOverlap,
-    const double* yOverlap,
-    const double* volumeOverlap,
+    const double* xOverlapPtr,
+    const double* yOverlapPtr,
+    const double* volumeOverlapPtr,
     const double* bondDamage,
-    double* fInternalOverlap,
-    const int*  localNeighborList,
-    int numOwnedPoints,
-    double BULK_MODULUS,
-    double horizon,
+    const int* localNeighborList,
+    const int numOwnedPoints,
+    const double BULK_MODULUS,
+    const double horizon,
+    const bool applyThermalStrain,
+    const double* temperature,
+    double* fInternalOverlapPtr,
     double* partialStressPtr
  );
 
 /** Explicit template instantiation for Sacado::Fad::DFad<double>. */
 template void computeInternalForceElasticBondBased<Sacado::Fad::DFad<double> >
 (
-    const double* xOverlap,
-    const Sacado::Fad::DFad<double>* yOverlap,
-    const double* volumeOverlap,
+    const double* xOverlapPtr,
+    const Sacado::Fad::DFad<double>* yOverlapPtr,
+    const double* volumeOverlapPtr,
     const double* bondDamage,
-    Sacado::Fad::DFad<double>* fInternalOverlap,
-    const int*  localNeighborList,
-    int numOwnedPoints,
-    double BULK_MODULUS,
-    double horizon,
+    const int* localNeighborList,
+    const int numOwnedPoints,
+    const double BULK_MODULUS,
+    const double horizon,
+    const bool applyThermalStrain,
+    const double* temperature,
+    Sacado::Fad::DFad<double>* fInternalOverlapPtr,
     Sacado::Fad::DFad<double>* partialStressPtr
 );
+void computeHeatFlowState(    
+    const double* modelCoord,
+    const int numOwnedPoints,
+    const int* neighborhoodList,
+    const double* temperature,
+    const double* horizon,
+    const double lambda,
+    const double* volume,
+    const double* detachedNodes,
+    const double* bondDamage,
+    const bool twoD,
+    const bool applyThermalPrintBedFlow,
+    const double lambdaBed,
+    const double TBed,
+    double* heatFlowState
+    )
+
+    {
+        DIFFUSION::computeHeatFlowState_bondbased(
+                                      modelCoord,
+                                      numOwnedPoints,
+                                      neighborhoodList,
+                                      temperature,
+                                      horizon,
+                                      lambda,
+                                      volume,
+                                      detachedNodes,
+                                      bondDamage,
+                                      twoD,
+                                      applyThermalPrintBedFlow,
+                                      lambdaBed,
+                                      TBed,
+                                      heatFlowState); 
+      
+      
+    }
+        
+
+void computeHeatTransfer(   
+    const double* modelCoordinates,
+    const int numOwnedPoints,
+    const int* neighborhoodList,
+    const double* volume,
+    const double* temperature,
+    const double* horizon,
+    const double* detachedNodes,
+    const double* bondDamage,
+    const bool twoD,
+    const double alpha,
+    const double Tenv,
+    const double factor,
+    const double surfaceCorrection,
+    const double limit,
+    const bool applyThermalPrintBedFlow,
+    double* specificVolume,
+    double* heatFlowState
+    )
+
+   {
+    
+    DIFFUSION::computeHeatTransfer(
+                                 modelCoordinates,
+                                 numOwnedPoints,
+                                 neighborhoodList,
+                                 volume,
+                                 temperature,
+                                 horizon,
+                                 detachedNodes,
+                                 bondDamage,
+                                 twoD,
+                                 alpha,
+                                 Tenv,
+                                 factor,
+                                 surfaceCorrection,
+                                 limit,
+                                 applyThermalPrintBedFlow,
+                                 specificVolume,
+                                 heatFlowState);
+   
+   
+    
+    }
 
 }

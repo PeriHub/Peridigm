@@ -57,14 +57,50 @@ void computeInternalForceElasticBondBased
     const ScalarT* yOverlapPtr,
     const double* volumeOverlapPtr,
     const double* bondDamage,
-    ScalarT* fInternalOverlapPtr,
     const int* localNeighborList,
-    int numOwnedPoints,
-    double BULK_MODULUS,
-    double horizon,
+    const int numOwnedPoints,
+    const double BULK_MODULUS,
+    const double horizon,
+    const bool applyThermalStrain,
+    const double* temperature,
+    ScalarT* fInternalOverlapPtr,
     ScalarT* partialStressPtr
 );
-
+void computeHeatFlowState(    
+    const double* modelCoord,
+    const int numOwnedPoints,
+    const int* neighborhoodList,
+    const double* temperature,
+    const double* horizon,
+    const double lambda,
+    const double* volume,
+    const double* detachedNodes,
+    const double* bondDamage,
+    const bool twoD,
+    const bool applyThermalPrintBedFlow,
+    const double lambdaBed,
+    const double TBed,
+    double* heatFlowState
+    );
+void computeHeatTransfer(   
+    const double* modelCoordinates,
+    const int numOwnedPoints,
+    const int* neighborhoodList,
+    const double* volume,
+    const double* temperature,
+    const double* horizon,
+    const double* detachedNodes,
+    const double* bondDamage,
+    const bool twoD,
+    const double alpha,
+    const double Tenv,
+    const double factor,
+    const double surfaceCorrection,
+    const double limit,
+    const bool applyThermalPrintBedFlow,
+    double* specificVolume,
+    double* heatFlowState
+    );
 }
 
 #endif // ELASTIC_BOND_BASED_H
