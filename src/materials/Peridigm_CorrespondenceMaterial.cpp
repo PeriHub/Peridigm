@@ -80,7 +80,10 @@ PeridigmNS::CorrespondenceMaterial::CorrespondenceMaterial(const Teuchos::Parame
       m_partialStressFieldId(-1),
       m_hourglassStiffId(-1),
       m_thermalFlowStateFieldId(-1),
-      m_jacobianId(-1)
+      m_jacobianId(-1),
+      m_applyHeatTransfer(false),
+      m_applyThermalFlow(false),
+      m_applyThermalPrintBedFlow(false)
 
       
 {

@@ -54,7 +54,7 @@
 PeridigmNS::ElasticBondBasedMaterial::ElasticBondBasedMaterial(const Teuchos::ParameterList& params)
   : Material(params),
     m_bulkModulus(0.0), m_density(0.0), m_horizon(0.0), m_volumeFieldId(-1), m_damageFieldId(-1),
-    m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_forceDensityFieldId(-1), m_bondDamageFieldId(-1),m_partialStressFieldId(-1)
+    m_modelCoordinatesFieldId(-1), m_coordinatesFieldId(-1), m_forceDensityFieldId(-1), m_bondDamageFieldId(-1),m_partialStressFieldId(-1),   m_applyHeatTransfer(false), m_applyThermalFlow(false), m_applyThermalPrintBedFlow(false)
 {
   //! \todo Add meaningful asserts on material properties.
   m_bulkModulus = calculateBulkModulus(params);
