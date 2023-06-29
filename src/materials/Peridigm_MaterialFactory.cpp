@@ -75,6 +75,7 @@
 #include "Peridigm_LinearLPSPVMaterial.hpp"
 #include "FEM_ElasticMaterial.hpp"
 #include "Peridigm_AnisotropicElasticBondAssociatedCorrespondenceMaterial.hpp"
+#include "Peridigm_UserBondAssociatedCorrespondenceMaterial.hpp"
 #ifdef PERIDIGM_PV
   #include "Peridigm_ElasticPVMaterial.hpp"
 #endif
@@ -119,7 +120,7 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
   else if (materialModelName == "Elastic Bond Associated Correspondence")
     materialModel = Teuchos::rcp( new ElasticBondAssociatedCorrespondenceMaterial(materialParams) );
   else if (materialModelName == "Anisotropic Elastic Bond Associated Correspondence")
-    materialModel = Teuchos::rcp( new ElasticBondAssociatedCorrespondenceMaterial(materialParams) );
+    materialModel = Teuchos::rcp( new AnisotropicElasticBondAssociatedCorrespondenceMaterial(materialParams) );
   else if (materialModelName == "Elastic Plastic Bond Associated Correspondence")
     materialModel = Teuchos::rcp( new ElasticPlasticBondAssociatedCorrespondenceMaterial(materialParams) );
   else if (materialModelName == "Isotropic Hardening Bond Associated Correspondence")
@@ -142,6 +143,8 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
     materialModel = Teuchos::rcp( new FEMElasticMaterial(materialParams));
   else if (materialModelName == "User Correspondence")
     materialModel = Teuchos::rcp( new UserCorrespondenceMaterial(materialParams) );    
+  else if (materialModelName == "User Bond Associated Correspondence")
+    materialModel = Teuchos::rcp( new UserBondAssociatedCorrespondenceMaterial(materialParams) );    
   else if (materialModelName == "Elastic Partial Volume"){
 #ifdef PERIDIGM_PV
     materialModel = Teuchos::rcp( new ElasticPVMaterial(materialParams) );
