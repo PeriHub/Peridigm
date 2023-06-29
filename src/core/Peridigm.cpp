@@ -1571,7 +1571,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
     scratch->PutScalar(0.0);
     blockIt->exportData(scratch, forceDensityFieldId, PeridigmField::STEP_NP1, Add);
     force->Update(1.0, *scratch, 1.0);
-    if (blockIt->getMaterialModel()->Name().find("Correspondence")!=std::string::npos){  
+    if (blockIt->getMaterialModel()->Name().find("Correspondence")!=std::string::npos or blockIt->getAdditiveModel()->Name()!=std::string::npos){  
       scalarScratch->PutScalar(0.0);
       blockIt->exportData(scalarScratch, detachedNodesFieldId, PeridigmField::STEP_NP1, Add);
       detachedNodesList->Update(1.0, *scalarScratch, 1.0);
@@ -1988,7 +1988,7 @@ void PeridigmNS::Peridigm::executeExplicit(Teuchos::RCP<Teuchos::ParameterList> 
       scratch->PutScalar(0.0);
       blockIt->exportData(scratch, forceDensityFieldId, adaptiveExportStep, Add);
       force->Update(1.0, *scratch, 1.0);
-      if (blockIt->getMaterialModel()->Name().find("Correspondence")){
+      if (blockIt->getMaterialModel()->Name().find("Correspondence")!=std::string::npos or blockIt->getAdditiveModel()->Name()!=std::string::npos){  
         scalarScratch->PutScalar(0.0);
         blockIt->exportData(scalarScratch, detachedNodesFieldId, adaptiveExportStep, Add);
         detachedNodesList->Update(1.0, *scalarScratch, 1.0);
