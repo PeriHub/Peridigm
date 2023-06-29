@@ -90,8 +90,10 @@ PeridigmNS::ElasticBondBasedMaterial::ElasticBondBasedMaterial(const Teuchos::Pa
     m_detachedNodesFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Detached_Nodes");
     m_fieldIds.push_back(m_detachedNodesFieldId);
     if (m_applyThermalFlow){
-      m_thermalFlowStateFieldId          = fieldManager.getFieldId(PeridigmField::NODE,    PeridigmField::SCALAR,      PeridigmField::TWO_STEP, "Flux_Divergence"); // reuse of the field
-      m_fieldIds.push_back(m_thermalFlowStateFieldId); 
+      m_thermalFlowStateFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Flux_Divergence"); // reuse of the field
+      m_specificVolumeFieldId = fieldManager.getFieldId(PeridigmField::NODE, PeridigmField::SCALAR, PeridigmField::TWO_STEP, "Specific_Volume");
+      m_fieldIds.push_back(m_thermalFlowStateFieldId);
+      m_fieldIds.push_back(m_specificVolumeFieldId);
     }
   }
 
