@@ -473,15 +473,13 @@ bool PeridigmNS::Material::getThermalExpansionCoefficient(const Teuchos::Paramet
   return m_applyThermalStrains;
 }
 
-std::vector<double> PeridigmNS::Material::getThermalFlowAndConductivityCoefficients(const Teuchos::ParameterList & params, double& m_C, double& m_lambdaBed, double& m_Tbed, bool m_applyThermalFlow, bool m_applyThermalPrintBedFlow) const
+std::vector<double> PeridigmNS::Material::getThermalFlowAndConductivityCoefficients(const Teuchos::ParameterList & params, double& m_C, double& m_lambdaBed, double& m_Tbed, bool& m_applyThermalFlow, bool& m_applyThermalPrintBedFlow) const
 {
   std::vector<double> m_lambda;
-  m_applyThermalFlow = false;
-  m_applyThermalPrintBedFlow = false;
   m_C = 0.0;
   m_lambdaBed = 0.0;
   if (params.isParameter("Apply Thermal Flow")){
-    bool m_applyThermalFlow = params.get<bool>("Apply Thermal Flow");
+    m_applyThermalFlow = params.get<bool>("Apply Thermal Flow");
     if (m_applyThermalFlow){
       m_C = params.get<double>( "Specific Heat Capacity");
       m_lambda.push_back(params.get<double>("Thermal Conductivity"));
