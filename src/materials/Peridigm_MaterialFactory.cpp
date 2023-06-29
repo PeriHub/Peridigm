@@ -143,8 +143,8 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
     materialModel = Teuchos::rcp( new FEMElasticMaterial(materialParams));
   else if (materialModelName == "User Correspondence")
     materialModel = Teuchos::rcp( new UserCorrespondenceMaterial(materialParams) );    
-  else if (materialModelName == "User Bond Associated Correspondence")
-    materialModel = Teuchos::rcp( new UserBondAssociatedCorrespondenceMaterial(materialParams) );    
+  //else if (materialModelName == "User Bond Associated Correspondence")
+  //  materialModel = Teuchos::rcp( new UserBondAssociatedCorrespondenceMaterial(materialParams) );    
   else if (materialModelName == "Elastic Partial Volume"){
 #ifdef PERIDIGM_PV
     materialModel = Teuchos::rcp( new ElasticPVMaterial(materialParams) );
@@ -179,6 +179,9 @@ PeridigmNS::MaterialFactory::create(const Teuchos::ParameterList& materialParams
     invalidMaterial += "\"Vector Poisson\" or ";
     invalidMaterial += "\"User Correspondence\" or ";
     invalidMaterial += "\"FEM Elastic Material\" or ";
+    invalidMaterial += "\"User Correspondence\" or ";
+    invalidMaterial += "\"Anisotropic Elastic Bond Associated Correspondence\" or ";
+    invalidMaterial += "\"User Bond Associated Correspondence\" or ";
     invalidMaterial += "\"Linear Elastic Correspondence\".\n";
     TestForTermination(true, invalidMaterial);
   }
