@@ -186,24 +186,24 @@ TEUCHOS_UNIT_TEST(SearchTree_Performance, ZoltanTest) {
   inFile.open(fileName.c_str());
   if(!inFile.is_open())
     cout << "\n**** Warning:  This test can only be run from the directory where it resides (otherwise it won't find the input files) ****\n" << endl;
-    TEST_EQUALITY(inFile.is_open(), true);
+  TEST_EQUALITY(inFile.is_open(), true);
 
-    while(inFile.good()){
+  while(inFile.good()){
     
-          getline(inFile, str);
-    
-          if( !(str[0] == '#' || str[0] == '/' || str[0] == '*' || str.size() == 0) ){
-              istringstream iss(str);
-      
-              while ( iss >> num) data.push_back(num);
+    getline(inFile, str);
 
-              TEST_EQUALITY_CONST(static_cast<int>(data.size()), 5);
+    if( !(str[0] == '#' || str[0] == '/' || str[0] == '*' || str.size() == 0) ){
+      istringstream iss(str);
 
-              mesh.push_back(data[0]);
-              mesh.push_back(data[1]);
-              mesh.push_back(data[2]);
+      while ( iss >> num) data.push_back(num);
 
-              data.clear();
+      TEST_EQUALITY_CONST(static_cast<int>(data.size()), 5);
+
+      mesh.push_back(data[0]);
+      mesh.push_back(data[1]);
+      mesh.push_back(data[2]);
+
+      data.clear();
     }
   }
   inFile.close();

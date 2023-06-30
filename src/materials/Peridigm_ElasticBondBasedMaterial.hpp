@@ -131,10 +131,6 @@ namespace PeridigmNS {
     double m_factor;
     double m_surfaceCorrection;
     double m_limit;
-    bool m_applyHeatTransfer;
-    bool m_applyThermalFlow;
-    bool m_applyThermalPrintBedFlow;
-    bool m_applyThermalStrains;
     double alpha[3][3];
     // field spec ids for all relevant data
     std::vector<int> m_fieldIds;
@@ -150,6 +146,10 @@ namespace PeridigmNS {
     int m_detachedNodesFieldId;
     int m_specificVolumeFieldId;
     int m_horizonFieldId;
+    bool m_applyHeatTransfer;
+    bool m_applyThermalFlow;
+    bool m_applyThermalPrintBedFlow;
+    bool m_applyThermalStrains;
   };
 }
 

@@ -86,14 +86,13 @@ namespace PeridigmNS {
     double C[6][6];
     double alpha[3][3];
     double m_Tref;
-    
-    int m_type;
-    bool m_planeStress;
-    bool m_planeStrain;
-    bool m_applyThermalStrains;
     // field spec ids for all relevant data
     int m_vonMisesStressFieldId;
     int m_bondLevelVonMisesStressFieldId;
+    bool m_planeStrain;
+    bool m_planeStress;
+    int m_type;
+    bool m_applyThermalStrains;
     int m_temperatureFieldId;
     int m_deformationGradientFieldId;
     int m_modelAnglesId;

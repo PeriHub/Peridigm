@@ -91,9 +91,10 @@ int main(int argc, char *argv[]) {
   if(mpi_id == 0){
     cout << "\n-- Peridigm" << endl;
     cout << "-- version " << PeridigmNS::Peridigm_Version() << "\n" << endl;
-    if(mpi_size > 1)
+    if(mpi_size > 1){
       cout << "MPI initialized on " << mpi_size << " processors.\n" << endl;
       LOG(PeridigmNS::LogLevel::INFO, "MPI initialized on " + std::to_string(mpi_size) + " processors");
+    }
   }
 
   int status = 0;

@@ -144,6 +144,7 @@ PeridigmNS::AnisotropicElasticBondAssociatedCorrespondenceMaterial::computeCauch
   dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NP1)->ExtractView(&defGrad);
   dataManager.getData(m_strain, PeridigmField::STEP_NONE)->ExtractView(&strain);
+  dataManager.getData(m_temperatureFieldId, PeridigmField::STEP_NP1)->ExtractView(&temperature);
   CORRESPONDENCE::getStrain(numOwnedPoints, defGrad, alpha, temperature, m_Tref, false, m_applyThermalStrains, strain);
 
 
@@ -196,7 +197,7 @@ PeridigmNS::AnisotropicElasticBondAssociatedCorrespondenceMaterial::computeCauch
   dataManager.getData(m_bondLevelUnrotatedRateOfDeformationZXFieldId, PeridigmField::STEP_NONE)->ExtractView(&bondLevelUnrotatedRateOfDeformationZX);
   dataManager.getData(m_bondLevelUnrotatedRateOfDeformationZYFieldId, PeridigmField::STEP_NONE)->ExtractView(&bondLevelUnrotatedRateOfDeformationZY);
   dataManager.getData(m_bondLevelUnrotatedRateOfDeformationZZFieldId, PeridigmField::STEP_NONE)->ExtractView(&bondLevelUnrotatedRateOfDeformationZZ);
-  double *flyingPoint;
+  double flyingPoint(0.0);
   double *bondLevelVonMisesStress;
   dataManager.getData(m_bondLevelVonMisesStressFieldId, PeridigmField::STEP_NONE)->ExtractView(&bondLevelVonMisesStress);
 
@@ -227,7 +228,7 @@ PeridigmNS::AnisotropicElasticBondAssociatedCorrespondenceMaterial::computeCauch
                                                      bondLevelUnrotatedCauchyStressZXNP1, 
                                                      bondLevelUnrotatedCauchyStressZYNP1, 
                                                      bondLevelUnrotatedCauchyStressZZNP1, 
-                                                     flyingPoint,
+                                                     &flyingPoint,
                                                      neighborhoodList,
                                                      numOwnedPoints,
                                                      C,

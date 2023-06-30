@@ -193,7 +193,6 @@ namespace PeridigmNS
     double m_factor;
     double m_surfaceCorrection;
     double m_limit;
-    bool m_applyHeatTransfer;
     bool m_plane;
     bool m_planeStrain;
     bool m_planeStress;
@@ -245,6 +244,7 @@ namespace PeridigmNS
     bool m_plast;
     bool m_adaptHourGlass;
     bool linRateOfDeformation;
+    bool m_applyHeatTransfer;
     bool m_applyThermalFlow;
     bool m_applyThermalPrintBedFlow;
   };
