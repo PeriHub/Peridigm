@@ -156,14 +156,6 @@ PeridigmNS::AnisotropicElasticBondAssociatedCorrespondenceMaterial::computeCauch
                                                        m_type,
                                                        dt
                                                        );
-  CORRESPONDENCE::updateElasticCauchyStress(unrotatedRateOfDeformation, 
-                                            unrotatedCauchyStressN, 
-                                            unrotatedCauchyStressNP1,
-                                            vonMisesStress,
-                                            numOwnedPoints,
-                                            m_bulkModulus,
-                                            m_shearModulus,
-                                            dt);
 
   // Compute the bond-level stress values
   double *bondLevelUnrotatedCauchyStressXXN, *bondLevelUnrotatedCauchyStressXYN, *bondLevelUnrotatedCauchyStressXZN;
