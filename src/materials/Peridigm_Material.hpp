@@ -213,7 +213,7 @@ namespace PeridigmNS {
     
     bool getThermalExpansionCoefficient(const Teuchos::ParameterList & params, double m_alpha[][3]) const;
 
-    std::vector<double> getThermalFlowAndConductivityCoefficients(const Teuchos::ParameterList & params, double& m_C, double& m_lambdaBed, double& m_Tbed, bool m_applyThermalFlow, bool m_applyThermalPrintBedFlow) const;
+    std::vector<double> getThermalFlowAndConductivityCoefficients(const Teuchos::ParameterList & params, double& m_C, double& m_lambdaBed, double& m_Tbed, bool& m_applyThermalFlow, bool& m_applyThermalPrintBedFlow) const;
     
     bool getHeatTransferCoefficients(const Teuchos::ParameterList & params, double& m_kappa, double& m_Tenv, double& m_factor, double& m_surfaceCorrection, double& m_limit) const;
     
