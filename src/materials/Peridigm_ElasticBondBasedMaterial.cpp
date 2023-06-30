@@ -63,7 +63,7 @@ PeridigmNS::ElasticBondBasedMaterial::ElasticBondBasedMaterial(const Teuchos::Pa
   if(params.isParameter("Young's Modulus") || params.isParameter("Poisson's Ratio") || params.isParameter("Shear Modulus")){
     LOG(LogLevel::WARNING,"The Elastic bond based material model supports only one elastic constant, the bulk modulus. It is calculated from the other elasticity constants if not defined.");
   }
-  m_applyThermalStrains = getThermalExpansionCoefficient(params,alpha);
+  m_applyThermalStrains = getThermalExpansionCoefficient(params,alpha,m_Tref);
   if (params.isParameter("Apply Thermal Flow")){
     m_lambda = getThermalFlowAndConductivityCoefficients(params, m_C, m_lambdaBed, m_Tbed, m_applyThermalFlow, m_applyThermalPrintBedFlow);
     m_applyHeatTransfer = getHeatTransferCoefficients(params, m_kappa, m_Tenv, m_factor, m_surfaceCorrection, m_limit);
@@ -196,5 +196,5 @@ PeridigmNS::ElasticBondBasedMaterial::computeForce(const double dt,
                                   thermalFlow);
     }
   }
-  MATERIAL_EVALUATION::computeInternalForceElasticBondBased(x,y,cellVolume,bondDamage,neighborhoodList,numOwnedPoints,m_bulkModulus,m_horizon,m_applyThermalStrains,alpha[0][0],temperature,force,partialStress);
+  MATERIAL_EVALUATION::computeInternalForceElasticBondBased(x,y,cellVolume,bondDamage,neighborhoodList,numOwnedPoints,m_bulkModulus,m_horizon,m_applyThermalStrains,alpha[0][0],temperature,m_Tref,force,partialStress);
 }

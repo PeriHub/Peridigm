@@ -211,7 +211,7 @@ namespace PeridigmNS {
     //! Reads all elastic material parameters and provide an elasticity matrix
     void getStiffnessmatrix(const Teuchos::ParameterList & params, double C[][6], bool pstrain, bool pstress) const;
     
-    bool getThermalExpansionCoefficient(const Teuchos::ParameterList & params, double m_alpha[][3]) const;
+    bool getThermalExpansionCoefficient(const Teuchos::ParameterList & params, double m_alpha[][3], double& m_Tref) const;
 
     std::vector<double> getThermalFlowAndConductivityCoefficients(const Teuchos::ParameterList & params, double& m_C, double& m_lambdaBed, double& m_Tbed, bool& m_applyThermalFlow, bool& m_applyThermalPrintBedFlow) const;
     

@@ -126,6 +126,7 @@ namespace PeridigmNS {
     double m_C;
     double m_kappa;
     double m_Tenv;
+    double m_Tref;
     double m_Tbed;
     double m_factor;
     double m_surfaceCorrection;

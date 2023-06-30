@@ -192,8 +192,10 @@ TEUCHOS_UNIT_TEST(ElasticLinearCorrespondenceMaterial, getThermalExpansionCoeffi
   ElasticLinearCorrespondenceMaterial mat(params);
 
   double alpha[3][3];
+  double m_Tref = 10;
   int i,j;
   double alphaTest[3][3];
+  double m_TrefTest = 10;
 
   for(i=0; i<3; ++i){
     alphaTest[i][i] = i/3 + 2;
@@ -202,10 +204,11 @@ TEUCHOS_UNIT_TEST(ElasticLinearCorrespondenceMaterial, getThermalExpansionCoeffi
     }
   }
 
-  TEST_ASSERT(mat.getThermalExpansionCoefficient(params,alpha)==false);
+  TEST_ASSERT(mat.getThermalExpansionCoefficient(params,alpha,m_Tref)==false);
   params.set("Apply Thermal Strain",true);
   params.set("Thermal Expansion Coefficient", alphaTest[0][0]);
-  TEST_ASSERT(mat.getThermalExpansionCoefficient(params,alpha)==true);
+  params.set("Thermal Expansion Reference Termperature", m_TrefTest);
+  TEST_ASSERT(mat.getThermalExpansionCoefficient(params,alpha,m_Tref)==true);
   for(i=0; i<3; ++i){
     TEST_FLOATING_EQUALITY(alpha[i][i], alphaTest[0][0], tolerance);
     for (j=i+1; j<3; ++j){
@@ -221,6 +224,7 @@ TEUCHOS_UNIT_TEST(ElasticLinearCorrespondenceMaterial, getThermalExpansionCoeffi
         
     }
   }
+  TEST_FLOATING_EQUALITY(m_Tref, m_TrefTest, tolerance);
 
 }
 int main

@@ -101,7 +101,7 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
     userProperties[iID-1] = params.get<double>(prop + std::to_string(iID));
   }
   
-  m_applyThermalStrains = getThermalExpansionCoefficient(params,alpha);
+  m_applyThermalStrains = getThermalExpansionCoefficient(params,alpha,m_Tref);
  
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   

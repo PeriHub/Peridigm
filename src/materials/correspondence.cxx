@@ -2401,6 +2401,7 @@ void getStrain
   const ScalarT* defGrad,
   const double alpha[][3],
   const ScalarT* temperature,
+  const double m_Tref,
   const bool hencky,
   const bool applyThermalStrains,
   ScalarT* strain
@@ -2427,6 +2428,7 @@ const int numPoints,
 const Sacado::Fad::DFad<double>* defGrad,
 const double alpha[][3],
 const Sacado::Fad::DFad<double>* temperature,
+const double m_Tref,
 const bool hencky,
 const bool applyThermalStrains,
 Sacado::Fad::DFad<double>* strain
@@ -2437,6 +2439,7 @@ const int numPoints,
 const double* defGrad,
 const double alpha[][3],
 const double* temperature,
+const double m_Tref,
 const bool hencky,
 const bool applyThermalStrains,
 double* strain

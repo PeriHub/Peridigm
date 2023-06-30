@@ -64,6 +64,7 @@ void computeInternalForceElasticBondBased
     const bool applyThermalStrain,
     const double alpha,
     const double* temperature,
+    const double refTemperature,
     ScalarT* fInternalOverlapPtr,
     ScalarT* partialStressPtr
 );

@@ -135,6 +135,7 @@ const int numPoints,
 const ScalarT* defGrad,
 const double alpha[][3],
 const ScalarT* temperature,
+const double m_Tref,
 const bool hencky,
 const bool applyThermalStrains,
 ScalarT* strain

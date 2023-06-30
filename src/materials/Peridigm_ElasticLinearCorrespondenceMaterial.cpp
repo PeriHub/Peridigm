@@ -84,7 +84,7 @@ PeridigmNS::ElasticLinearCorrespondenceMaterial::ElasticLinearCorrespondenceMate
     m_hencky = params.get<bool>("Hencky Strain");
   }
   getStiffnessmatrix(params, C, m_planeStrain, m_planeStress);
-  m_applyThermalStrains = getThermalExpansionCoefficient(params,alpha);
+  m_applyThermalStrains = getThermalExpansionCoefficient(params,alpha,m_Tref);
   
   PeridigmNS::FieldManager &fieldManager = PeridigmNS::FieldManager::self();
 
@@ -149,7 +149,7 @@ void PeridigmNS::ElasticLinearCorrespondenceMaterial::computeCauchyStress(const 
   dataManager.getData(m_strain, PeridigmField::STEP_NONE)->ExtractView(&strain);
   dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
 
-  CORRESPONDENCE::getStrain(numOwnedPoints, defGrad, alpha, temperature, m_hencky, m_applyThermalStrains, strain);
+  CORRESPONDENCE::getStrain(numOwnedPoints, defGrad, alpha, temperature, m_Tref, m_hencky, m_applyThermalStrains, strain);
 
 
   CORRESPONDENCE::updateElasticCauchyStressAnisotropic(strain,

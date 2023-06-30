@@ -90,6 +90,7 @@ namespace PeridigmNS {
     // should be adapted in future release to the specific needs of properties
     // is now set to 100 properties for one material
     double alpha[3][3];
+    double m_Tref;
 
     int nprops;
     double *userProperties = new double;

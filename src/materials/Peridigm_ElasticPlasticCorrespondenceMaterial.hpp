@@ -94,6 +94,7 @@ namespace PeridigmNS {
     double m_flawMagnitude;
     double C[6][6];
     double alpha[3][3];
+    double m_Tref;
     int m_type;
     int m_stabilizationType;
     int m_modelAnglesId;

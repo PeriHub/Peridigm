@@ -76,7 +76,7 @@ PeridigmNS::AnisotropicElasticBondAssociatedCorrespondenceMaterial::AnisotropicE
     m_type = 2;
 
   getStiffnessmatrix(params, C, m_planeStrain, m_planeStress);
-  m_applyThermalStrains = getThermalExpansionCoefficient(params,alpha);
+  m_applyThermalStrains = getThermalExpansionCoefficient(params,alpha,m_Tref);
   PeridigmNS::FieldManager& fieldManager = PeridigmNS::FieldManager::self();
   m_vonMisesStressFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::SCALAR, PeridigmField::CONSTANT, "Von_Mises_Stress");
   m_deformationGradientFieldId = fieldManager.getFieldId(PeridigmField::ELEMENT, PeridigmField::FULL_TENSOR, PeridigmField::TWO_STEP, "Deformation_Gradient");
@@ -144,7 +144,7 @@ PeridigmNS::AnisotropicElasticBondAssociatedCorrespondenceMaterial::computeCauch
   dataManager.getData(m_modelAnglesId, PeridigmField::STEP_NONE)->ExtractView(&angles);
   dataManager.getData(m_deformationGradientFieldId, PeridigmField::STEP_NP1)->ExtractView(&defGrad);
   dataManager.getData(m_strain, PeridigmField::STEP_NONE)->ExtractView(&strain);
-  CORRESPONDENCE::getStrain(numOwnedPoints, defGrad, alpha, temperature, false, m_applyThermalStrains, strain);
+  CORRESPONDENCE::getStrain(numOwnedPoints, defGrad, alpha, temperature, m_Tref, false, m_applyThermalStrains, strain);
 
 
   CORRESPONDENCE::updateElasticCauchyStressAnisotropic(strain,

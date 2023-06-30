@@ -446,7 +446,7 @@ double PeridigmNS::Material::calculateShearModulus(const Teuchos::ParameterList 
   return computedValue;
 }
 
-bool PeridigmNS::Material::getThermalExpansionCoefficient(const Teuchos::ParameterList & params, double m_alpha[][3]) const
+bool PeridigmNS::Material::getThermalExpansionCoefficient(const Teuchos::ParameterList & params, double m_alpha[][3], double& m_Tref) const
 {
   bool m_applyThermalStrains = false;
 
@@ -467,6 +467,10 @@ bool PeridigmNS::Material::getThermalExpansionCoefficient(const Teuchos::Paramet
         m_alpha[1][1] = params.get<double>("Thermal Expansion Coefficient Y");
       if (params.isParameter("Thermal Expansion Coefficient Z"))
         m_alpha[2][2] = params.get<double>("Thermal Expansion Coefficient Z");
+      m_Tref = 0.0;
+      if (params.isParameter("Thermal Expansion Reference Termperature")){
+        m_Tref = params.get<double>("Thermal Expansion Reference Termperature");
+      }
     }
   }  
   

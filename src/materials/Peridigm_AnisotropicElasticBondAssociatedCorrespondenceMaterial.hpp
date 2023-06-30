@@ -85,6 +85,7 @@ namespace PeridigmNS {
   protected:
     double C[6][6];
     double alpha[3][3];
+    double m_Tref;
     
     int m_type;
     bool m_planeStress;

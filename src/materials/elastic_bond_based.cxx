@@ -66,6 +66,7 @@ void computeInternalForceElasticBondBased
     const bool applyThermalStrain,
     const double alpha,
     const double* temperature,
+    const double refTemperature,
     ScalarT* fInternalOverlap,
     ScalarT* partialStressPtr
 )
@@ -100,7 +101,7 @@ void computeInternalForceElasticBondBased
       zeta = MATERIAL_EVALUATION::getDiffAndLen(X,XP,dof,X_dx);
       dY = MATERIAL_EVALUATION::getDiffAndLen(Y,YP,dof,Y_dx);
       stretch = (dY - zeta)/zeta;
-      if (applyThermalStrain) stretch -= alpha * temperature[p] * zeta;
+      if (applyThermalStrain) stretch -= alpha * (temperature[p] - refTemperature);
       damageOnBond = bondDamage[bondDamageIndex++];
 
       t = 0.5*(1.0 - damageOnBond)*stretch*constant;
@@ -128,6 +129,7 @@ template void computeInternalForceElasticBondBased<double>
     const bool applyThermalStrain,
     const double alpha,
     const double* temperature,
+    const double refTemperature,
     double* fInternalOverlapPtr,
     double* partialStressPtr
  );
@@ -146,6 +148,7 @@ template void computeInternalForceElasticBondBased<Sacado::Fad::DFad<double> >
     const bool applyThermalStrain,
     const double alpha,
     const double* temperature,
+    const double refTemperature,
     Sacado::Fad::DFad<double>* fInternalOverlapPtr,
     Sacado::Fad::DFad<double>* partialStressPtr
 );
