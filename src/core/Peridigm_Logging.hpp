@@ -189,7 +189,7 @@ namespace PeridigmNS {
     }
   }
 
-  inline void log(LogLevel level, const string& file, int line, const string& message,const float value) {
+  inline void log(LogLevel level, const string& file, int line, const string& message, const float value) {
     log(level, file, line, message + " " + to_string(value));
   }
 

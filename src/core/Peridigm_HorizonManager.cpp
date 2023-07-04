@@ -112,7 +112,7 @@ void PeridigmNS::HorizonManager::loadHorizonInformationFromBlockParameters(Teuch
 }
 
 bool PeridigmNS::HorizonManager::blockHasConstantHorizon(string blockName){
-  bool isConstant;
+  bool isConstant = true;
   if(horizonIsConstant.find(blockName) != horizonIsConstant.end())
     isConstant = horizonIsConstant[blockName];
   else if(horizonIsConstant.find("default") != horizonIsConstant.end())
