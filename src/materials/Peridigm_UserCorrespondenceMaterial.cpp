@@ -98,7 +98,13 @@ PeridigmNS::UserCorrespondenceMaterial::UserCorrespondenceMaterial(const Teuchos
 
   for(int iID=1 ; iID<nprops+1 ; ++iID)
   {
-    userProperties[iID-1] = params.get<double>(prop + std::to_string(iID));
+    if (params.isParameter(prop + std::to_string(iID)))
+    {
+      userProperties[iID-1] = params.get<double>(prop + std::to_string(iID));
+    }else{
+      LOG(PeridigmNS::LogLevel::WARNING,prop + std::to_string(iID) + " missing, set to zero.");
+      userProperties[iID-1] = 0.0;
+    }
   }
   
   m_applyThermalStrains = getThermalExpansionCoefficient(params,alpha,m_Tref);
@@ -175,6 +181,7 @@ PeridigmNS::UserCorrespondenceMaterial::initialize(const double dt,
   dataManager.getData(m_flyingPointFlagFieldId, PeridigmField::STEP_N)->PutScalar(-1.0);
   dataManager.getData(m_flyingPointFlagFieldId, PeridigmField::STEP_NP1)->PutScalar(-1.0);
   
+  *step = 0;
 
   if (nstatev > 0) {
     for(int iID=0 ; iID<nstatev ; ++iID)
@@ -249,7 +256,7 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
   // dataManager.getData(m_strainFieldId, PeridigmField::STEP_NP1)->ExtractView(&GLStrainNP1);
   std::vector<double> propsVec(nprops);
   double* props = &propsVec[0];
-  
+
   for(int iID=0 ; iID<nprops ; ++iID){props[iID] = userProperties[iID];}
   CORRESPONDENCE::userMaterialInterface(modelCoordinates,
                                         defGradN, 
@@ -258,6 +265,7 @@ PeridigmNS::UserCorrespondenceMaterial::computeCauchyStress(const double dt,
                                         GLStrainNP1,
                                         CauchyStressN,
                                         CauchyStressNP1,
+                                        step,
                                         numOwnedPoints,
                                         nstatev,
                                         statev,

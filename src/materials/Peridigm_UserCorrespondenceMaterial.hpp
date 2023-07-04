@@ -83,6 +83,7 @@ namespace PeridigmNS {
     //! A dummy method here.
     virtual double lookupMaterialProperty(const std::string keyname) const {return 0.0;}
 
+    int *step;
 
   protected:
 

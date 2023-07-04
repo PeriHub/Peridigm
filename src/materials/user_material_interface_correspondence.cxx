@@ -68,6 +68,7 @@ const ScalarT* strainN,
 ScalarT* strainNP1, 
 const ScalarT* unrotatedCauchyStressN,
 ScalarT* unrotatedCauchyStressNP1, 
+int* step, 
 const int numPoints, 
 const int nstatev,
 ScalarT* statevVector,
@@ -106,7 +107,11 @@ const bool testing
 
   // not supported
   double PREDEF = -1, DPRED = -1, PNEWDT = -1, CELENT = -1;
-  int NPT = -1, KSLAY = -1, KSPT = -1, JSTEP = -1, KINC = -1;
+  int NPT = -1, KSLAY = -1, KSPT = -1, KINC = 1;
+  
+  *step+=1;
+  int JSTEP=*step;
+  
   double DDSDDE[6*6];
   double DDSDDT[6], DRPLDE[6];
   // double* DDSDDT;
@@ -349,6 +354,7 @@ const double* strainN,
 double* strainNP1, 
 const double* unrotatedCauchyStressN, 
 double* unrotatedCauchyStressNP1, 
+int* step, 
 const int numPoints, 
 const int nstatev,
 double* statevVector,
