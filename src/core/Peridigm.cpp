@@ -2673,10 +2673,16 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
 
   bool stopBeforeOutput = solverParams->get("Stop before damage initiation", false);
   bool stopAfterOutput = solverParams->get("Stop after damage initiation", false);
+  bool stopAfterCertainDamage = solverParams->get("Stop after certain damage value", false);
   int numberOfDamageSteps = 0;
   int endStepAfterDamage = 0;
+  double maxDamageValue = 0.0;
+  double currentMaxDamage = 0.0;
   if(stopAfterOutput){
     endStepAfterDamage = solverParams->get("End step after damage", 0);
+  }
+  if(stopAfterCertainDamage){
+    maxDamageValue = solverParams->get("Max. damage value", 0.3);
   }
   // bool stopAfterAllDamaged = solverParams->get("Stop after all nodes damaged", false);
   bool performJacobianDiagnostics = solverParams->get("Jacobian Diagnostics", false);
@@ -3155,6 +3161,7 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
     bool allNodeDamage = true;
     for(int i=0 ; i<u->MyLength() ; ++i){
       if ((*netDamageField)[i/3]!=0) damageExist = true;
+      if ((*netDamageField)[i/3]>currentMaxDamage) currentMaxDamage = (*netDamageField)[i/3];
       else allNodeDamage = false;
     }
 
@@ -3165,6 +3172,11 @@ void PeridigmNS::Peridigm::executeNOXQuasiStatic(Teuchos::RCP<Teuchos::Parameter
     if (stopBeforeOutput && damageExist){ 
       if (allNodeDamage) std::cout<<"Break before all nodes damaged."<<std::endl;
       else std::cout<<"Break before damage."<<std::endl;
+      stopPeridigm=true;
+    }
+    if (stopAfterCertainDamage && currentMaxDamage >= maxDamageValue){ 
+      outputManager->write(blocks, timeCurrent, damageExist, true);
+      std::cout<<"Max damage value reached."<<std::endl;
       stopPeridigm=true;
     }
     if (stopAfterOutput && damageExist){ 
