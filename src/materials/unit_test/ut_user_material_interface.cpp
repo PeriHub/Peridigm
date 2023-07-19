@@ -172,7 +172,6 @@ TEUCHOS_UNIT_TEST(correspondence, ut_user_material_interface) {
 TEUCHOS_UNIT_TEST(correspondence, userMaterialInterface) {
     const double tolerance = 1.0e-15;
     int nnodes = 2;
-    int step = 1;
     const int nstatev = 9;
     std::vector<double> sigmaNLocVector(nnodes*9), sigmaNP1LocVector(nnodes*9), strainLocNVector(nnodes*9), strainNLocVector(nnodes*9), strainNP1LocVector(nnodes*9), statevVector(nnodes*nstatev), coordsVector(nnodes*3), anglesVector(nnodes*3), defGradNVector(nnodes*9), defGradNP1Vector(nnodes*9), rotNVector(nnodes*9), rotNP1Vector(nnodes*9);
     std::vector<double> sigmaNP1LocTestVector(nnodes*9), strainLocTestVector(nnodes*9), statevTestVector(nnodes*nstatev);
@@ -237,7 +236,6 @@ TEUCHOS_UNIT_TEST(correspondence, userMaterialInterface) {
                                         strainNP1Loc, //
                                         sigmaNLoc,
                                         sigmaNP1Loc,//
-                                        &step,
                                         nnodes,
                                         nstatev,
                                         statev,//
