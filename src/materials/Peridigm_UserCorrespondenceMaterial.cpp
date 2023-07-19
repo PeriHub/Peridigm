@@ -180,8 +180,6 @@ PeridigmNS::UserCorrespondenceMaterial::initialize(const double dt,
                                                   dataManager);
   dataManager.getData(m_flyingPointFlagFieldId, PeridigmField::STEP_N)->PutScalar(-1.0);
   dataManager.getData(m_flyingPointFlagFieldId, PeridigmField::STEP_NP1)->PutScalar(-1.0);
-  
-  *step = 0;
 
   if (nstatev > 0) {
     for(int iID=0 ; iID<nstatev ; ++iID)
