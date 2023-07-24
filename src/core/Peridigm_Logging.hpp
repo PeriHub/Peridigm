@@ -218,9 +218,8 @@ namespace PeridigmNS {
 
   inline void testForTermination(bool test, const string& file, int line, const string& message) {
 
-    ofstream logfile("log.txt", ios_base::app);
-
     if(test){
+      ofstream logfile("log.txt", ios_base::app);
       if(false){
         int mpi_id = 0;
         MPI_Comm_rank(MPI_COMM_WORLD, &mpi_id);
