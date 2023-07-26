@@ -46,13 +46,16 @@
 #ifndef PERIDIGM_LOGGING_HPP
 #define PERIDIGM_LOGGING_HPP
 
+#include <Epetra_ConfigDefs.h> // used to define HAVE_MPI
+#ifdef HAVE_MPI
+  #include <Epetra_MpiComm.h>
+#endif
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <cstdio>
 #include <functional>
 #include <memory>
-#include <mpi.h>
 #include <Peridigm_Version.hpp>
 #include <Sacado.hpp>
 
@@ -104,16 +107,15 @@ namespace PeridigmNS {
   #ifdef CMAKE_BUILD_TYPE
     const string buildType = CMAKE_BUILD_TYPE;
   #endif
-  // int mpi_size = 0;
-  // bool mpiEnabled = false;
-  // #ifdef HAVE_MPI
-  //   MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
-  //   if (mpi_size>0){
-  //     mpiEnabled = true;
-  //   }
-  // #endif
+
+  inline int mpi_size;
+  inline bool mpiEnabled;
 
   inline void init_log_file() {
+    #ifdef HAVE_MPI
+      MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    #endif
+    mpiEnabled = (mpi_size > 1);
     time_t currentTime = time(nullptr);
     string datetime = asctime(localtime(&currentTime));
     ofstream logfile("log.txt", ios::out | ios::trunc);
@@ -136,9 +138,12 @@ namespace PeridigmNS {
 
   inline void debug_log(ofstream& logfile, const string& message, const string& file, int line) {
     int mpi_id = 0;
-    if(false){
+    if(mpiEnabled){
       MPI_Comm_rank(MPI_COMM_WORLD, &mpi_id);
-      logfile << "DEBUG" << " - mpi_id " << mpi_id << " - " << file << ":" << line << " - " << message << endl;
+      if(mpi_id==0)
+      {
+        logfile << "DEBUG" << " - mpi_id " << mpi_id << " - " << file << ":" << line << " - " << message << endl;
+      }
     }
     else{
       logfile << "DEBUG" << " - " << file << ":" << line << " - " << message << endl;
@@ -146,15 +151,29 @@ namespace PeridigmNS {
   }
 
   inline void info_log(ofstream& logfile, const string& message) {
-    logfile << "INFO" << " - " << message << endl;
-    cout << "INFO" << " - " << message << endl;
+    int mpi_id = 0;
+    if(mpiEnabled){
+      MPI_Comm_rank(MPI_COMM_WORLD, &mpi_id);
+      if(mpi_id==0)
+      {
+        logfile << "INFO" << " - " << message << endl;
+        cout << "INFO" << " - " << message << endl;
+      }
+    }
+    else{
+        logfile << "INFO" << " - " << message << endl;
+        cout << "INFO" << " - " << message << endl;
+    }
   }
 
   inline void warning_log(ofstream& logfile, const string& message, const string& file, int line) {
     int mpi_id = 0;
-    if(false){
+    if(mpiEnabled){
       MPI_Comm_rank(MPI_COMM_WORLD, &mpi_id);
-      logfile << "WARNING" << " - mpi_id " << mpi_id << " - " << file << ":" << line << " - " << message << endl;
+      if(mpi_id==0)
+      {
+        logfile << "WARNING" << " - mpi_id " << mpi_id << " - " << file << ":" << line << " - " << message << endl;
+      }
     }
     else{
       logfile << "WARNING" << " - " << file << ":" << line << " - " << message << endl;
@@ -163,9 +182,12 @@ namespace PeridigmNS {
 
   inline void error_log(ofstream& logfile, const string& message, const string& file, int line) {
     int mpi_id = 0;
-    if(false){
+    if(mpiEnabled){
       MPI_Comm_rank(MPI_COMM_WORLD, &mpi_id);
-      logfile << "ERROR" << " - mpi_id " << mpi_id << " - " << file << ":" << line << " - " << message << endl;
+      if(mpi_id==0)
+      {
+        logfile << "ERROR" << " - mpi_id " << mpi_id << " - " << file << ":" << line << " - " << message << endl;
+      }
     }
     else{
       logfile << "ERROR" << " - " << file << ":" << line << " - " << message << endl;
